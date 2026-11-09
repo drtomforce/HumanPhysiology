@@ -832,19 +832,27 @@ const Physio = {
     for (const k in PHYSIO) out[k] = sampleKF(PHYSIO[k], h);
     out.phase = phaseAt(h);
     out.accent = PHASE_BY_ID[out.phase].color;
+    /* after a meal (gut channel above its fasting level) cardiac output rises
+       ~10–15%, mostly through a bigger stroke volume, to feed the gut */
+    const pp = clamp((out.gut - .3) / .7) * (1 - out.muscle);
+    out.strokeVol *= 1 + .1 * pp;
+    out.heartRate += 3 * pp;
     /* derived heart–lung numbers */
     out.co = out.heartRate * out.strokeVol / 1000;              /* cardiac output, L/min */
     out.ve = out.breathRate * out.tidalVol / 1000;              /* minute ventilation, L/min */
     out.avDiff = out.vo2 / out.co;                              /* Fick: a–v O₂ difference, mL O₂ per L */
     out.svo2 = clamp(out.spo2 - 100 * out.avDiff / O2_CAP, 15, 99); /* mixed venous saturation, % */
-    /* where the cardiac output goes, L/min. Brain flow is held steady; gut flow
-       rises after meals and is cut in exercise; kidney flow falls in exercise;
+    /* where the cardiac output goes, L/min. The brain autoregulates, so its
+       flow is fixed and the rest of the output is shared out by relative
+       demand: gut flow roughly doubles after meals (postprandial hyperaemia)
+       and is cut by two-thirds in exercise; kidney flow falls in exercise;
        working legs take most of the rise; skin opens up to dump heat. */
-    const brain = .75, kidneys = 1.15 - .55 * out.muscle, gut = 1.05 + .7 * out.gut - .7 * out.muscle;
-    const arms = .45 + .9 * out.sweat, legs = .55 + 11.5 * Math.max(0, out.muscle - .12);
-    const sum = brain + kidneys + gut + arms + legs;
-    out.flow = { brain, kidneys, gut, arms, legs };
-    for (const k in out.flow) out.flow[k] *= out.co / sum;
+    const brain = .75;
+    const rel = { kidneys: 1.15 - .55 * out.muscle, gut: (1.1 + 1.5 * pp) * (1 - .65 * out.muscle),
+                  arms: .45 + .9 * out.sweat, legs: .55 + 11.5 * Math.max(0, out.muscle - .12) };
+    let sum = 0; for (const k in rel) sum += rel[k];
+    out.flow = { brain };
+    for (const k in rel) out.flow[k] = rel[k] * Math.max(0, out.co - brain) / sum;
     /* O₂ extraction per bed (fraction of arterial content removed) */
     out.extract = { brain: .34, kidneys: .08, gut: .2, arms: .3 - .12 * out.sweat, legs: .32 + .5 * out.muscle };
     return out;

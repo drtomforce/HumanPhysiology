@@ -1,4 +1,4 @@
-# Body Day
+# HumanPhysiology
 A day in the life of the human body: a fun, standalone, single-file educational web app about human physiology.
 
 Open `index.html` in any modern browser. No build step and no dependencies (Google Fonts are optional).

@@ -16,7 +16,9 @@
  Structure follows the Oak Year template.
 
  1. DATA (JSON blocks in <script type="application/json">)
-    #body-content  topics → phases → levels → text. The schema is the contract.
+    #body-content  topics → phases → levels → text, and systems (circulatory,
+                   nervous, endocrine) → phases → levels → text plus fact pins
+                   {title, x, y, levels…}. The schema is the contract.
     #body-glossary term → definition + match forms. Terms are auto-linked.
     #body-hours    one short "what's happening now" note per hour (24).
 
@@ -27,13 +29,21 @@
                    output, ventilation, venous O₂ (Fick) and the organ flow split. Missing text falls back to the
                    nearest lower level.
 
- 3. STORE           Single source of truth {hour, level, topic, playing}.
+ 3. STORE           Single source of truth {hour, level, topic, playing, shown, live}.
+                   shown = which body systems are drawn; live = the one that is
+                   animated (setSystem / setLive keep the two consistent).
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
                    Renders physiology → SVG attributes. RHYTHM keeps the beat and
                    breath phases (breath waveform, RSA, ventricular volume), and
                    PARTICLES animates blood, food, breath, sweat and Zzz. Blood
                    cells run the CIRC network: lungs ↔ heart ↔ each organ.
+                   Each body system is a layer (.sys-<id>: shown, .dim or .off)
+                   with its own animator, and only the live one runs:
+                   blood cells (PARTICLES), action potentials along the NERV
+                   routes (NERVES), and hormones secreted by GLANDS that ride
+                   the CIRC routes to their target organ (HORMONES).
+                   PINS draws the live system's level-aware fact pins.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -45,7 +55,9 @@
  6. VITALS          Live readout: ECG, breathing, glucose trace, temperature,
                    blood pressure, cardiac output, blood O₂, hormones.
 
- 7. UI              Panel, timeline, level switch, glossary tooltips.
+ 7. UI              Panel (intro with the live-system card, organ view with
+                   "Part of" chips), timeline, level switch, system switches,
+                   glossary tooltips.
 
  Values are typical for a healthy adult and simplified for teaching; this is
  not medical advice.
@@ -56,6 +68,7 @@
   --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
   --line:#DCD2C9; --line-strong:#A99B91;
   --skin:#EBCDB6; --skin-line:#C9A186; --vessel:#C2414B; --vein:#4F5FB0;
+  --nerve:#C99318; --gland:#D9A43E; --gland-line:#9C7020;
   --accent:#2f8f83;
   --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans:"Schibsted Grotesk", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -67,6 +80,7 @@
     --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
     --line:#342B26; --line-strong:#5A4B42;
     --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0;
+    --nerve:#E8BC45; --gland:#E6B656; --gland-line:#F3D58E;
     color-scheme: dark;
   }
 }
@@ -74,6 +88,7 @@
   --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
   --line:#342B26; --line-strong:#5A4B42;
   --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0;
+  --nerve:#E8BC45; --gland:#E6B656; --gland-line:#F3D58E;
   color-scheme: dark;
 }
 :root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
@@ -155,7 +170,7 @@ button{ font:inherit; color:inherit; }
 .vt-wide{ grid-column:1 / -1; display:grid; grid-template-columns:auto 1fr; gap:3px 8px; align-items:center; padding:7px 9px; }
 .hbar{ height:5px; border-radius:3px; background:var(--surface-2); overflow:hidden; }
 .hbar i{ display:block; height:100%; border-radius:3px; transition:width .2s; }
-#hCort{ background:#e0a43a; } #hMel{ background:#6c6fc4; } #hIns{ background:#3f9a5a; } #hGcg{ background:#8a5cc4; }
+#hAdr{ background:#e0533d; } #hCort{ background:#e0a43a; } #hMel{ background:#6c6fc4; } #hIns{ background:#3f9a5a; } #hGcg{ background:#8a5cc4; }
 .vt-circ{ gap:1px 8px; padding:5px 9px 6px; }
 .vt-circ .vt-val{ justify-content:flex-end; }
 .vt-circ .vt-val b{ font-size:16px; }
@@ -208,6 +223,24 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .chip.primary:hover{ opacity:.88; background:var(--ink); }
 .related{ margin-top:26px; padding-top:18px; border-top:1px solid var(--line); }
 .related p{ margin:0 0 8px; font-size:13px; color:var(--muted); }
+.sys-chip{ display:inline-flex; align-items:center; gap:7px; }
+.sys-chip::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--sc); }
+.sys-chip[aria-pressed="true"]{ border-color:var(--sc); box-shadow:0 0 0 1px var(--sc) inset; }
+
+/* live system card (intro view) */
+.sys-card{ margin:0 0 24px; padding:16px 18px 14px; border-radius:14px; background:var(--bg); border-left:4px solid var(--sc, var(--line-strong)); }
+.sys-head{ display:flex; align-items:center; gap:9px; }
+.sys-head h3{ margin:0; font-family:var(--serif); font-weight:500; font-size:20px; flex:1; }
+.sys-dot{ width:10px; height:10px; border-radius:50%; background:var(--sc); flex:none; }
+.sys-blurb{ margin:3px 0 10px; font-size:13.5px; color:var(--muted); }
+.sys-empty{ margin:0; font-size:14px; color:var(--muted); }
+.sys-legend{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:4px 12px; font-size:12px; color:var(--muted); }
+.sys-legend li{ display:flex; align-items:center; gap:5px; }
+.sys-legend i{ width:8px; height:8px; border-radius:2px; background:var(--c); transform:rotate(45deg); flex:none; }
+.sys-card .reading{ margin-top:14px; }
+.sys-card .reading p.text{ font-size:15.5px; }
+.sys-card .depth{ margin-top:12px; }
+.sys-card .hint{ margin:12px 0 0; font-size:12.5px; }
 .term{ border:0; background:none; padding:0; font:inherit; color:inherit; cursor:help; text-decoration:underline; text-decoration-style:dotted; text-decoration-color:var(--line-strong); text-underline-offset:3px; text-decoration-thickness:1.5px; }
 .term:hover{ text-decoration-color:var(--ink); }
 #tip{ position:fixed; z-index:20; max-width:280px; background:var(--ink); color:var(--surface); padding:10px 12px; border-radius:10px; font-size:13px; line-height:1.45; pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity .15s, transform .15s; }
@@ -258,6 +291,50 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .vessel{ fill:none; stroke:var(--vessel); stroke-width:3; opacity:.28; stroke-linecap:round; stroke-linejoin:round; }
 .vessel.dx{ stroke:var(--vein); }
 .rbc{ stroke:#00000022; stroke-width:.6; }
+/* body-system layers: shown + live, shown + dimmed (still), or hidden */
+.sys{ transition:opacity .35s, visibility .35s; }
+.sys.dim{ opacity:.38; }
+.sys.off{ opacity:0; visibility:hidden; }
+.sys.off.ghost{ opacity:.55; visibility:visible; }
+.nerve{ fill:none; stroke:var(--nerve); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; opacity:.8; }
+.nerve.vagus{ stroke-width:1.5; stroke-dasharray:5 2.5; }
+.nerve.symp{ stroke-width:1.3; }
+.nerve.ens{ stroke:#d97bb6; stroke-width:1.4; stroke-dasharray:1.5 3.5; opacity:.9; }
+.nerve.cord{ stroke-width:6; opacity:.9; }
+.nerve.cauda{ stroke-width:3.5; opacity:.85; }
+.nerve.chain{ stroke-width:1.2; opacity:.7; }
+.ganglion{ fill:var(--nerve); }
+.brain-glow{ fill:var(--nerve); opacity:0; }
+.spark{ fill:#fff3c4; }
+.pulse{ stroke:#ffffffb0; stroke-width:.8; }
+.gland{ fill:var(--gland); stroke:var(--gland-line); stroke-width:1; }
+.gland.soft{ opacity:.6; }
+.gland-stalk{ stroke:var(--gland-line); stroke-width:2; }
+.gland-halo{ fill:#8a5cc4; opacity:.15; }
+.hormone{ stroke:#00000033; stroke-width:.6; }
+#s-pins .mk{ cursor:pointer; outline:none; }
+#s-pins .mk circle{ fill:var(--pc, var(--ink)); stroke:var(--bg); stroke-width:2.4; }
+#s-pins .mk text{ fill:#fff; font:600 12px var(--sans); text-anchor:middle; pointer-events:none; }
+#s-pins .mk:hover circle, #s-pins .mk.on circle, #s-pins .mk:focus-visible circle{ stroke:var(--ink); stroke-width:3; }
+.pin-tip{ max-width:260px; z-index:4; }
+.mk-tip b{ display:block; font-weight:600; margin-bottom:2px; }
+
+/* system switches (bottom right of the scene) */
+.systems{ position:absolute; right:18px; bottom:14px; z-index:3; display:flex; flex-direction:column; gap:5px; align-items:stretch; }
+.systems-label{ margin:0 0 1px; font-size:11px; font-weight:500; color:var(--muted); text-align:right; }
+.sw{ display:flex; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px 4px 3px 5px; transition:border-color .2s, box-shadow .2s; }
+.sw.live{ border-color:var(--sc); box-shadow:0 0 0 1px var(--sc); }
+.sw-tog{ flex:none; width:30px; height:18px; border-radius:999px; border:0; padding:0; cursor:pointer; background:var(--surface-2); box-shadow:0 0 0 1px var(--line-strong) inset; position:relative; transition:background .2s; }
+.sw-tog i{ position:absolute; left:3px; top:3px; width:12px; height:12px; border-radius:50%; background:var(--surface); box-shadow:0 0 0 1px var(--line-strong); transition:transform .2s; }
+.sw.on .sw-tog{ background:var(--sc); box-shadow:none; }
+.sw.on .sw-tog i{ transform:translateX(12px); box-shadow:none; }
+.sw-name{ flex:1; border:0; background:none; cursor:pointer; font-size:12.5px; font-weight:500; padding:3px 6px 3px 8px; display:flex; align-items:center; gap:6px; justify-content:space-between; color:var(--muted); border-radius:999px; }
+.sw.on .sw-name{ color:var(--ink); }
+.sw-name .short{ display:none; }
+.sw-live{ font-style:normal; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--sc); opacity:0; display:flex; align-items:center; gap:4px; }
+.sw-live::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--sc); animation:livePulse 1.4s ease-in-out infinite; }
+.sw.live .sw-live{ opacity:1; }
+@keyframes livePulse{ 50%{ opacity:.3; } }
 .face{ fill:none; stroke:var(--ink); stroke-width:2.6; stroke-linecap:round; }
 .zz{ fill:var(--muted); font:italic 500 22px var(--serif); }
 .puff{ fill:none; stroke:var(--muted); stroke-width:1.5; }
@@ -279,6 +356,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   .brand-sub{ display:none; }
   .seg .long{ display:none; } .seg .short{ display:inline; }
   .seg button{ padding:6px 11px; }
+  .systems{ right:10px; bottom:10px; }
   .moment{ left:18px; top:14px; }
   .moment-note{ font-size:13px; }
   .hs-label{ font-size:12px; }
@@ -287,6 +365,9 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   .vitals{ grid-template-columns:repeat(2, minmax(0,1fr)); }
   .vt-wide{ grid-template-columns:auto 1fr; }
   .moment-note{ display:none; }
+  .sw-name .long{ display:none; } .sw-name .short{ display:inline; }
+  .sw-name{ font-size:12px; }
+  .systems-label{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){
   *{ animation:none !important; transition:none !important; }
@@ -319,6 +400,8 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         <p class="moment-note" id="mNote"></p>
       </div>
       <div class="hotspots" id="hotspots"></div>
+      <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
+      <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
       <button class="back" id="backBtn" type="button">
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Whole body
@@ -339,6 +422,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         <span class="vt-label">Glucagon</span><div class="hbar"><i id="hGcg"></i></div>
         <span class="vt-label">Cortisol</span><div class="hbar"><i id="hCort"></i></div>
         <span class="vt-label">Melatonin</span><div class="hbar"><i id="hMel"></i></div>
+        <span class="vt-label">Adrenaline</span><div class="hbar"><i id="hAdr"></i></div>
       </div>
     </div>
     <div class="timeline">
@@ -607,12 +691,241 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         }
       }
     }
+  },
+  "systems": {
+    "circulatory": {
+      "name": "Circulatory system",
+      "blurb": "Heart, vessels and blood: the body’s delivery network",
+      "phases": {
+        "sleep": {
+          "ms": "At night your heart slows to around 55 beats a minute and your blood pressure drops a little. Your body needs less oxygen while you rest, so blood can move more gently. It still makes a full trip around your body about once a minute, delivering oxygen and carrying away waste.",
+          "hs": "During sleep the parasympathetic nervous system takes charge. The vagus nerve slows the heart, blood vessels relax and blood pressure falls by 10–20%. Cardiac output drops to about 4.5 L/min. Lying down helps too: blood no longer has to be pushed up against gravity, so more of it returns to the heart and stroke volume rises slightly.",
+          "college": "The nocturnal ‘dip’ in blood pressure reflects lower sympathetic outflow and a lower cardiac output. Lying flat shifts roughly 500 mL of blood from the legs to the chest. This raises central venous pressure and stretches the atria, which release atrial natriuretic peptide and add to night-time urine. Baroreflex sensitivity is high in NREM sleep, while REM sleep brings bursts of sympathetic activity with surges in heart rate and pressure.",
+          "phd": "Non-dipping, a nocturnal fall in systolic pressure of less than 10%, predicts cardiovascular events independently of daytime pressure in ambulatory-monitoring cohorts such as Ohasama and IDACO. The early-morning surge in pressure coincides with a peak in myocardial infarction and stroke onset, linked to rising sympathetic tone and cortisol, greater platelet aggregability and lower fibrinolytic activity. Whether taking antihypertensives at bedtime improves outcomes remains contested: the Hygia trial reported benefit, but the TIME trial found none."
+        },
+        "rest": {
+          "ms": "Your heart is a pump about the size of your fist. Each beat pushes blood out through arteries to every part of your body. The blood drops off oxygen and food, picks up waste, and comes back through veins. Then it goes to the lungs to collect fresh oxygen before the heart pumps it out again.",
+          "hs": "The circulation is two loops joined at the heart. The right side pumps oxygen-poor blood through the lungs (the pulmonary circuit); the left side pumps oxygen-rich blood to the body (the systemic circuit). Arteries carry blood away from the heart, capillaries are where exchange happens, and veins bring it back. At rest the heart pumps about 5 litres a minute: roughly all of your blood.",
+          "college": "Flow through each organ follows the fluid version of Ohm’s law: flow = pressure difference ÷ resistance. The baroreflex holds mean arterial pressure close to 90 mmHg, so organs control their own blood supply by changing the diameter of their arterioles. Resistance varies with the fourth power of the radius (Poiseuille’s law), so a small change in radius makes a large change in flow. The veins hold about 65% of the blood volume and act as a reservoir.",
+          "phd": "In Guyton’s framework, cardiac output sits where the cardiac function curve meets the venous return curve. Venous return is driven by mean systemic filling pressure (about 7 mmHg) minus right atrial pressure. The endothelial glycocalyx and the revised Starling principle (Levick and Michel, 2010) changed the picture of capillary exchange: most capillaries show little sustained reabsorption, and filtered fluid returns mainly through the lymph."
+        },
+        "meal": {
+          "ms": "After you eat, extra blood rushes to your stomach and intestines. It picks up the sugars, fats and building blocks from your food. This blood then flows through your liver, which sorts and stores the nutrients before they travel on to the rest of your body.",
+          "hs": "Blood flow to the gut can double after a meal. Nutrient-rich blood from the intestines drains into the portal vein, which takes it to the liver first instead of straight back to the heart. To feed the gut without letting blood pressure drop, the heart pumps a little more and vessels elsewhere tighten slightly.",
+          "college": "Postprandial hyperaemia in the superior mesenteric artery is driven by local metabolites, gut hormones and enteric reflexes. Cardiac output rises by around 10–20%, mostly through stroke volume. The portal circulation is a second capillary bed in series: gut capillaries drain into the portal vein, which perfuses the hepatic sinusoids. Absorbed nutrients and drugs therefore reach the liver before the rest of the body (first-pass metabolism).",
+          "phd": "The splanchnic bed holds about 20–25% of total blood volume and is the main capacitance reservoir under sympathetic control, so splanchnic venoconstriction can move several hundred millilitres into the central circulation. Postprandial hypotension, a fall in systolic pressure of at least 20 mmHg within two hours of a meal, is common in older adults and in autonomic failure. Slowing gastric emptying, for example with acarbose, blunts it."
+        },
+        "exercise": {
+          "ms": "When you run, your heart beats much faster and harder. It can pump four times as much blood as at rest. Most of that extra blood goes to your leg muscles, which need lots of oxygen. Blood vessels in your skin open up too, to get rid of heat.",
+          "hs": "Cardiac output can rise from 5 to over 20 L/min in exercise. Heart rate and stroke volume both increase, and the muscle pump squeezes blood in the leg veins back towards the heart. Blood is redirected: arterioles in working muscle widen, while those in the gut and kidneys narrow. Muscles also take more oxygen from each litre of blood, so blood returning from the legs is very dark.",
+          "college": "Muscle blood flow can rise up to 100-fold. In active muscle, local metabolites such as K⁺, adenosine, H⁺, nitric oxide and ATP released from red cells override sympathetic vasoconstriction, which persists elsewhere (functional sympatholysis). Systolic pressure rises, but diastolic pressure stays similar or falls because total peripheral resistance drops. The arteriovenous O₂ difference widens from about 50 to about 150 mL/L, as the Fick principle predicts.",
+          "phd": "In whole-body exercise, VO₂max is limited mainly by oxygen delivery rather than by muscle mitochondrial capacity. Saltin’s one-legged knee-extension studies showed that a small muscle mass can receive far more flow per kilogram than during whole-body exercise. Muscle can accept more flow than the heart can supply, so the sympathetic system must restrain vasodilation to protect arterial pressure. Red cells also act as O₂ sensors, releasing ATP and nitric oxide bioactivity as they desaturate."
+        }
+      },
+      "pins": [
+        { "id": "aorta", "title": "Aorta", "x": 630, "y": 298,
+          "ms": "The aorta is your biggest artery, about as wide as a garden hose. All the blood leaving the left side of the heart goes through it.",
+          "hs": "The aorta is about 2.5 cm wide. Its elastic walls stretch with each beat and recoil between beats, which keeps blood flowing while the heart refills.",
+          "college": "The aorta works as a Windkessel. It stores about half of each stroke volume during systole and releases it in diastole, smoothing pulsatile ejection into near-continuous capillary flow.",
+          "phd": "With age the aorta stiffens and pulse-wave velocity rises, so reflected waves return in late systole and raise systolic pressure and afterload. Carotid–femoral pulse-wave velocity independently predicts cardiovascular events." },
+        { "id": "carotid", "title": "Carotid arteries", "x": 616, "y": 238,
+          "ms": "Two big arteries in your neck carry blood up to your brain. You can feel their pulse just under your jaw.",
+          "hs": "The brain is only about 2% of body weight but takes about 15% of the heart’s output. If its blood supply stops, you lose consciousness within seconds.",
+          "college": "Baroreceptors in the carotid sinus sense stretch on every beat and signal the brainstem. A rise in pressure slows the heart and widens vessels: the baroreflex.",
+          "phd": "Cerebral autoregulation keeps brain blood flow fairly constant over a wide range of pressures, though the plateau is narrower than the classic diagrams suggest. Flow is far more sensitive to PaCO₂, changing by about 3–4% per mmHg." },
+        { "id": "cava", "title": "Vena cava", "x": 584, "y": 410,
+          "ms": "The vena cava is the big vein that brings used blood back into the heart from your whole body.",
+          "hs": "Veins have thin walls and low pressure, under 10 mmHg near the heart. One-way valves in the limb veins stop blood from sliding backwards.",
+          "college": "Each in-breath lowers the pressure in the chest and draws blood into the vena cava. This thoracic pump is why the blue cells in the picture speed up as the body breathes in.",
+          "phd": "Venous return depends on the gradient between mean systemic filling pressure and right atrial pressure. Below about 0 mmHg the great veins collapse where they enter the chest, so lowering atrial pressure further adds no more flow." },
+        { "id": "pulm", "title": "Lung circuit", "x": 678, "y": 408,
+          "ms": "Before every trip around the body, blood goes from the heart to the lungs and back. In the lungs it drops off carbon dioxide and picks up oxygen.",
+          "hs": "The lung circuit runs at low pressure, about 15 mmHg on average compared with about 90 mmHg in the body, yet it carries the same amount of blood each minute.",
+          "college": "Low oxygen constricts lung arterioles (hypoxic pulmonary vasoconstriction), the opposite of most body vessels. This steers blood away from poorly ventilated alveoli.",
+          "phd": "Pulmonary vascular resistance falls as cardiac output rises, through recruitment and distension of capillaries, so pulmonary pressure rises only modestly in exercise." },
+        { "id": "portal", "title": "Portal vein", "x": 566, "y": 488,
+          "ms": "Blood from your stomach and intestines goes to your liver first. The liver checks and sorts the food before it reaches the rest of the body.",
+          "hs": "The portal vein carries about 1 L of blood a minute from the gut to the liver. It is unusual because it links two capillary beds instead of returning to the heart.",
+          "college": "About 75% of the liver’s blood comes through the portal vein and the rest through the hepatic artery. When portal flow falls, the hepatic artery widens to compensate.",
+          "phd": "This hepatic arterial buffer response is thought to work by adenosine washout: when portal flow falls, adenosine builds up around the hepatic arterioles and dilates them." },
+        { "id": "skin", "title": "Skin vessels", "x": 772, "y": 420,
+          "ms": "When you are hot, blood vessels in your skin open up so heat can escape. That’s why your face goes red when you run.",
+          "hs": "Skin blood flow can rise from about 0.3 to several litres a minute in the heat. Warm blood near the surface loses heat to the air, and sweat cools it further.",
+          "college": "Sympathetic nerves control skin vessels. Noradrenaline constricts them in the cold, and a separate active vasodilator system opens them in the heat.",
+          "phd": "Active cutaneous vasodilation depends on sympathetic cholinergic co-transmission involving nitric oxide and other mediators. In the heat, skin and muscle compete for cardiac output, which contributes to cardiovascular drift." },
+        { "id": "caps", "title": "Capillaries", "x": 543, "y": 800,
+          "ms": "Capillaries are tiny tubes thinner than a hair. This is where blood hands oxygen to the muscles. In the picture, cells turn blue after passing through.",
+          "hs": "Capillaries are only about 5–10 µm wide, so red cells pass in single file. Their walls are one cell thick, so oxygen, glucose and waste cross easily.",
+          "college": "Many capillaries in resting muscle carry little flow. In exercise, far more are recruited, shortening the diffusion distance and enlarging the surface for O₂ exchange.",
+          "phd": "Endurance training increases capillary density per muscle fibre, driven by VEGF released in response to shear stress and hypoxia." }
+      ]
+    },
+    "nervous": {
+      "name": "Nervous system",
+      "blurb": "Brain, spinal cord and nerves: the body’s fast messages",
+      "phases": {
+        "sleep": {
+          "ms": "When you sleep, your brain doesn’t switch off. Big, slow waves of activity sweep across it, which help store memories. Your body stays still because the brain blocks most movement signals. Meanwhile the ‘rest and digest’ nerves slow your heart and breathing.",
+          "hs": "In deep sleep, millions of neurons fire together in slow waves about once a second, which show up on an EEG. In REM sleep the brain is almost as active as when awake, but the brainstem blocks signals to most muscles so you don’t act out your dreams. The parasympathetic system, mainly the vagus nerve, dominates and keeps the heart slow.",
+          "college": "NREM slow oscillations (below 1 Hz) alternate between depolarised ‘up states’ and silent ‘down states’ across the thalamocortical network, with sleep spindles (11–16 Hz) from the thalamic reticular nucleus nested within them. REM atonia comes from glycinergic and GABAergic inhibition of spinal motor neurons. Sympathetic nerve activity falls in NREM sleep and rises again in REM sleep.",
+          "phd": "Hippocampal sharp-wave ripples coupled with spindles and slow oscillations are thought to drive systems consolidation of memory. Closed-loop sounds timed to slow-oscillation up states can strengthen the oscillations and improve recall (Ngo et al., 2013). The synaptic homeostasis hypothesis (Tononi and Cirelli) proposes that sleep scales down synapses strengthened during waking, supported by electron-microscopy evidence of smaller synapses after sleep in mice."
+        },
+        "rest": {
+          "ms": "Your nervous system is your body’s messaging network. The brain and spinal cord are the control centre. Nerves run out to every part of your body and carry messages very fast. Some messages go out to tell muscles to move; others come back to tell the brain what you feel.",
+          "hs": "Neurons send electrical signals called action potentials. Motor nerves carry commands out from the brain and spinal cord; sensory nerves carry information in. The autonomic nervous system runs the organs automatically: its sympathetic branch prepares you for action, and its parasympathetic branch, mostly the vagus nerve, handles rest and digestion. At rest the vagus holds the heart well below its built-in rate of about 100 beats a minute.",
+          "college": "Conduction velocity depends on axon diameter and myelin: from about 1 m/s in unmyelinated C fibres to 70–120 m/s in large myelinated motor axons, which use saltatory conduction between nodes of Ranvier. Autonomic pathways use two neurons. Preganglionic fibres release acetylcholine onto nicotinic receptors in a ganglion; postganglionic fibres release noradrenaline (sympathetic) or acetylcholine (parasympathetic) onto the target organ.",
+          "phd": "After full autonomic blockade, intrinsic heart rate is about 118 − 0.57 × age beats per minute (Jose and Collison, 1970), so resting rates of 60–70 reflect dominant vagal tone. Cardiac vagal motor neurons in the nucleus ambiguus fire in phase with breathing, gated by respiratory neurons, which produces respiratory sinus arrhythmia. Vagal effects act within a single beat, whereas sympathetic effects build up over several seconds."
+        },
+        "meal": {
+          "ms": "When you eat, nerves tell your brain about the taste, the smell and how full your stomach is. Your gut also has its own network of nerves, sometimes called the second brain. It squeezes food along all by itself.",
+          "hs": "Even the sight and smell of food make the vagus nerve start saliva, stomach acid and insulin release: the ‘cephalic phase’ of digestion. As the stomach stretches, sensory fibres in the vagus tell the brainstem it is filling up. The enteric nervous system in the gut wall coordinates peristalsis and secretion, and can do so without the brain.",
+          "college": "About 80% of vagal fibres are afferent, carrying mechanical and chemical signals from the gut to the nucleus of the solitary tract. Vagal efferents from the dorsal motor nucleus drive gastric relaxation, acid secretion and pancreatic secretion. The enteric nervous system holds roughly 200–600 million neurons in two layers: the myenteric plexus (movement) and the submucosal plexus (secretion and blood flow).",
+          "phd": "Gut–brain signalling is faster and more specific than once thought. Enteroendocrine ‘neuropod’ cells form synapses with vagal afferents and pass on nutrient signals with glutamate within milliseconds (Kaelberer et al., 2018). Genetically defined vagal afferents separate stretch signals (GLP1R-expressing) from nutrient signals (GPR65-expressing) (Williams et al., 2016), and activating stretch-sensing afferents is enough to suppress feeding in mice."
+        },
+        "exercise": {
+          "ms": "When you run, your brain sends a stream of signals down your spinal cord to your leg muscles. Each signal makes muscle fibres squeeze. At the same time, the ‘fight or flight’ nerves speed up your heart and send more blood to your muscles.",
+          "hs": "Motor neurons in the spinal cord carry commands from the brain to the muscles. A motor neuron and the fibres it controls form a motor unit, and to run harder the brain recruits more units and fires them faster. Sensory nerves in the muscles report stretch and effort back. The sympathetic system takes over from the vagus, raising heart rate and blood pressure and telling the adrenal glands to release adrenaline.",
+          "college": "Rhythmic stepping depends on spinal central pattern generators, shaped by descending commands and sensory feedback. Muscle spindles signal length and Golgi tendon organs signal force. The cardiovascular response combines central command (feedforward from motor areas) with the exercise pressor reflex from group III (mechanosensitive) and group IV (metabosensitive) muscle afferents. The adrenal medulla is supplied directly by preganglionic sympathetic fibres.",
+          "phd": "Blocking group III/IV muscle afferents with intrathecal fentanyl blunts the ventilatory and pressor responses to exercise. Cyclists then choose a higher power early but develop more peripheral fatigue (Amann et al., 2009), which suggests these afferents limit central motor drive to protect the muscle. In mice, genetically defined spinal interneuron classes (V0, V1, V2a and others) have been mapped to left–right and flexor–extensor coordination (Kiehn)."
+        }
+      },
+      "pins": [
+        { "id": "cortex", "title": "Motor cortex", "x": 624, "y": 97,
+          "ms": "A strip across the top of your brain sends ‘move!’ messages. Each part of the strip controls a different part of the body.",
+          "hs": "The left side of the brain controls the right side of the body, and vice versa, because the main movement pathway crosses over in the brainstem.",
+          "college": "Upper motor neurons in layer V of the primary motor cortex project down the corticospinal tract. Most of the fibres cross at the pyramidal decussation in the medulla.",
+          "phd": "Motor cortex is now seen less as a map of muscles and more as a dynamical system whose population activity follows rotational trajectories during reaching (Churchland et al., 2012)." },
+        { "id": "brainstem", "title": "Brainstem", "x": 600, "y": 177,
+          "ms": "The brainstem runs the things you never think about, such as breathing and your heartbeat.",
+          "hs": "Centres in the medulla set the breathing rhythm, heart rate and blood pressure. Damage here is life-threatening.",
+          "college": "The nucleus of the solitary tract receives signals from baroreceptors, chemoreceptors and the gut. The nucleus ambiguus and the dorsal motor nucleus send fibres out in the vagus nerve.",
+          "phd": "The pre-Bötzinger complex generates the inspiratory rhythm. A small subset of its neurons projects to the locus coeruleus and links breathing to arousal (Yackle et al., 2017)." },
+        { "id": "vagus", "title": "Vagus nerve", "x": 576, "y": 262,
+          "ms": "The vagus nerve is a long ‘calm down’ nerve. It runs from the brain to the heart, lungs and gut.",
+          "hs": "The vagus slows the heart and helps digestion. Most of its fibres actually carry messages up from the organs to the brain.",
+          "college": "Vagal efferents release acetylcholine onto M2 receptors at the SA node. About 80% of the fibres are afferent, reporting stretch, chemistry and inflammation from the organs.",
+          "phd": "The vagus also restrains inflammation. The ‘inflammatory reflex’ (Tracey) works through α7 nicotinic receptors on splenic macrophages, and vagus nerve stimulation has been tested in rheumatoid arthritis." },
+        { "id": "cord", "title": "Spinal cord", "x": 600, "y": 420,
+          "ms": "Your spinal cord is a thick bundle of nerves inside your backbone. It carries messages between your brain and your body.",
+          "hs": "Reflexes, such as pulling your hand off a hot pan, are handled by the spinal cord before the brain even knows about it.",
+          "college": "In adults the cord ends at about L1–L2; below that the nerve roots continue as the cauda equina. The grey matter holds motor neurons in the ventral horn and sensory relay neurons in the dorsal horn.",
+          "phd": "After spinal cord injury, targeted epidural electrical stimulation combined with rehabilitation has restored stepping in some people with paralysis by re-engaging surviving spinal circuits (Wagner et al., 2018)." },
+        { "id": "symp", "title": "Sympathetic chain", "x": 626, "y": 438,
+          "ms": "A chain of nerve knots beside your spine gets your body ready for action: a faster heart and more energy.",
+          "hs": "The sympathetic chain is a row of ganglia beside the spine. Its nerves raise heart rate, widen the airways and make the liver release sugar.",
+          "college": "Preganglionic neurons sit in the thoracic and upper lumbar cord (T1–L2). Postganglionic fibres release noradrenaline onto α- and β-adrenergic receptors; sweat glands are the exception and use acetylcholine.",
+          "phd": "Sympathetic outflow is organ-specific, not all-or-none. Microneurography shows that muscle sympathetic activity follows blood pressure through the baroreflex, while skin sympathetic activity follows temperature and emotion." },
+        { "id": "ens", "title": "Enteric nervous system", "x": 638, "y": 592,
+          "ms": "Your gut has its own nerve network, the ‘second brain’. It moves food along without you having to think.",
+          "hs": "The enteric nervous system has hundreds of millions of neurons, as many as the spinal cord. It controls the squeezing and the juices of the gut.",
+          "college": "The myenteric plexus drives peristalsis: stretch triggers contraction above the food and relaxation below it. Serotonin from enterochromaffin cells helps start the reflex.",
+          "phd": "Most of the body’s serotonin is made by gut enterochromaffin cells, and spore-forming gut bacteria promote its synthesis (Yano et al., 2015): one route linking the microbiome to gut function." },
+        { "id": "sensory", "title": "Sensory nerves", "x": 410, "y": 420,
+          "ms": "Nerves in your skin tell your brain about touch, heat, cold and pain.",
+          "hs": "Different sensors in the skin respond to light touch, pressure, vibration, heat, cold and damage. Their signals travel in the same nerve.",
+          "college": "Large myelinated Aβ fibres carry touch, thin Aδ fibres carry sharp pain and cold, and unmyelinated C fibres carry burning pain and warmth. That is why a stubbed toe hurts sharply first and aches later.",
+          "phd": "PIEZO2 is the main mechanically gated channel for touch and proprioception; people lacking it have little sense of limb position. Patapoutian shared the 2021 Nobel Prize for discovering the PIEZO channels." },
+        { "id": "sciatic", "title": "Sciatic nerve", "x": 568, "y": 760,
+          "ms": "The sciatic nerve is the longest and thickest nerve in your body. It runs down the back of each leg.",
+          "hs": "Motor nerves carry ‘contract!’ signals at up to about 120 m/s, so a message reaches your foot in about a hundredth of a second.",
+          "college": "Each action potential reaching the neuromuscular junction releases acetylcholine and almost always triggers a muscle action potential, because the safety factor is high.",
+          "phd": "Motor units are recruited in order of size (Henneman’s principle). As muscles tire, larger and more fatigable units are recruited to keep force up." }
+      ]
+    },
+    "endocrine": {
+      "name": "Endocrine system",
+      "blurb": "Glands and hormones: slow messages carried in the blood",
+      "phases": {
+        "sleep": {
+          "ms": "At night, glands release hormones that look after your body while you sleep. Melatonin tells your body it is night-time. Growth hormone helps you grow and repairs muscles and bones. That’s one reason sleep matters so much.",
+          "hs": "Melatonin from the pineal gland rises in the dark and signals night to the whole body. The biggest pulse of growth hormone comes in the first deep sleep of the night. Overnight, glucagon keeps the liver releasing sugar so blood sugar stays steady, and in the early morning cortisol starts rising to get you ready to wake up.",
+          "college": "The SCN drives melatonin synthesis through a sympathetic pathway to the pineal gland, and light at night suppresses it within minutes. Growth hormone is released in pulses controlled by hypothalamic GHRH (which stimulates it) and somatostatin (which inhibits it), and its largest pulse is tied to slow-wave sleep. The hypothalamic–pituitary–adrenal axis is circadian: ACTH and cortisol are lowest around midnight and rise from the early hours.",
+          "phd": "Cortisol is secreted in roughly hourly ultradian pulses, and the pattern itself carries information: pulsatile exposure produces cycles of glucocorticoid-receptor binding and transcription that constant exposure does not (Stavreva et al., 2009). In healthy young men, six nights of restricted sleep raised evening cortisol and impaired glucose tolerance (Spiegel et al., 1999), linking sleep loss with metabolic risk."
+        },
+        "rest": {
+          "ms": "Hormones are chemical messages. Glands release them into the blood, which carries them all over the body. Only cells with the right ‘lock’, called a receptor, respond to each hormone. Hormone messages are slower than nerve messages, but they last longer.",
+          "hs": "The endocrine system includes the hypothalamus, pituitary, thyroid, adrenal glands, pancreas and more. The hypothalamus and pituitary are the control centre. Most hormones are controlled by negative feedback, like a thermostat: when a level rises too high, the gland that makes it is turned down. Thyroid hormone sets the pace of metabolism in almost every cell.",
+          "college": "Peptide hormones and catecholamines are water-soluble. They bind cell-surface receptors and act through second messengers such as cAMP within seconds to minutes. Steroid and thyroid hormones are lipid-soluble: they enter cells, bind nuclear receptors and change gene expression over hours. The hypothalamus releases its hormones into the hypophyseal portal veins, which carry them to the anterior pituitary in high concentration.",
+          "phd": "Feedback works on several timescales. Cortisol inhibits CRH and ACTH within minutes (fast feedback, partly through non-genomic membrane signalling) and over hours (genomic feedback). Many hormones travel bound to carrier proteins such as thyroxine-binding and corticosteroid-binding globulin. Only the free fraction is active (the free hormone hypothesis), though carriers can also deliver hormone to particular tissues."
+        },
+        "meal": {
+          "ms": "When you eat, the pancreas releases insulin. Insulin is like a key that lets sugar from your food get into your cells. Your gut also sends out hormones that tell your brain you’re full.",
+          "hs": "As blood sugar rises after a meal, β-cells in the pancreatic islets release insulin, which helps muscle, liver and fat cells take in glucose. Glucagon release falls. Gut hormones join in: GLP-1 boosts insulin release and slows the stomach, while CCK and PYY signal fullness. Ghrelin, the hunger hormone, drops after eating.",
+          "college": "β-cells sense glucose through glucokinase. Glucose metabolism raises ATP, which closes K-ATP channels, depolarises the cell and opens voltage-gated Ca²⁺ channels, triggering insulin release. The incretins GLP-1 and GIP amplify this through cAMP, which is why glucose by mouth produces more insulin than the same glucose given into a vein. Insulin reaches the liver first, through the portal vein.",
+          "phd": "Islets coordinate through gap-junction coupling, and a small set of ‘hub’ β-cells may lead the Ca²⁺ waves (Johnston et al., 2016). Paracrine signals add control: somatostatin from δ-cells restrains both insulin and glucagon release. GLP-1 receptor agonists such as semaglutide, and dual GIP/GLP-1 agonists such as tirzepatide, lower glucose and cause substantial weight loss, acting largely on appetite circuits in the brain."
+        },
+        "exercise": {
+          "ms": "When you run, the adrenal glands on top of your kidneys pump out adrenaline. It makes your heart race and frees up sugar for energy. Your body also releases less insulin while you run, so the sugar stays available for your muscles.",
+          "hs": "Adrenaline and noradrenaline from the adrenal glands raise heart rate and break down glycogen. Glucagon rises and insulin falls, so the liver releases glucose to match what the muscles take up. Cortisol and growth hormone also rise in longer or harder exercise and help release fat as fuel.",
+          "college": "Exercise lowers the insulin:glucagon ratio in the portal vein, which drives glucose output from the liver. Catecholamines stimulate fat breakdown through β-adrenergic receptors and hormone-sensitive lipase. Working muscle is also an endocrine organ: it releases myokines such as IL-6, which rises steeply in prolonged exercise and stimulates hepatic glucose output and lipolysis.",
+          "phd": "Muscle IL-6 behaves as an energy sensor: its release is greater when muscle glycogen is low (Steensberg et al., 2001). Other exercise factors under study include FGF21 from the liver, lactate and irisin, though irisin’s role in humans is still debated. A single bout of exercise raises insulin sensitivity for up to 48 hours, largely through GLUT4 pathways that do not need insulin."
+        }
+      },
+      "pins": [
+        { "id": "pituitary", "title": "Hypothalamus and pituitary", "x": 638, "y": 164,
+          "ms": "The pituitary is a pea-sized gland under your brain. It’s the ‘master gland’ that tells other glands what to do.",
+          "hs": "The hypothalamus signals to the pituitary, which releases hormones that control the thyroid, the adrenal glands, growth and reproduction.",
+          "college": "The anterior pituitary secretes ACTH, TSH, GH, prolactin, LH and FSH under hypothalamic control. The posterior pituitary releases ADH and oxytocin, which are made by hypothalamic neurons.",
+          "phd": "Pituitary cells form large networks linked by gap junctions, which may coordinate pulsatile hormone output and remodel when demand changes (Mollard and colleagues)." },
+        { "id": "pineal", "title": "Pineal gland", "x": 626, "y": 96,
+          "ms": "The pineal gland makes melatonin when it’s dark. Melatonin helps you feel sleepy.",
+          "hs": "Bright light, including screens late at night, can hold back melatonin and shift your body clock later.",
+          "college": "Melatonin is made from serotonin. At night, noradrenaline from sympathetic fibres of the superior cervical ganglion switches on its synthesis.",
+          "phd": "Melanopsin-containing retinal ganglion cells, most sensitive to blue light near 480 nm, drive melatonin suppression. Ordinary room light before bed shortens and delays the melatonin signal (Gooley et al., 2011)." },
+        { "id": "thyroid", "title": "Thyroid", "x": 628, "y": 256,
+          "ms": "The thyroid in your neck sets how fast your body uses energy, like a car’s idling speed.",
+          "hs": "The thyroid makes T4 and T3 from iodine in food. Too much makes people hot and jittery; too little makes them tired and cold.",
+          "college": "TSH makes the thyroid release mostly T4, which deiodinase enzymes in the tissues convert to the more active T3. T3 binds nuclear receptors and raises metabolic rate.",
+          "phd": "Tissue deiodinases let each organ set its own thyroid status, largely independently of blood levels. Type 2 deiodinase in brown fat, for example, raises local T3 in the cold." },
+        { "id": "adrenals", "title": "Adrenal glands", "x": 530, "y": 494,
+          "ms": "The adrenal glands sit on top of the kidneys. They make adrenaline for emergencies and cortisol for busy days.",
+          "hs": "The outer cortex makes cortisol and aldosterone; the inner medulla makes adrenaline. Cortisol peaks soon after you wake up.",
+          "college": "The cortex has three zones: glomerulosa (aldosterone), fasciculata (cortisol) and reticularis (androgens). Cortisol-rich blood from the cortex flows through the medulla and switches on the enzyme that turns noradrenaline into adrenaline.",
+          "phd": "The cortisol awakening response, a rise of about 50% in the 30–45 minutes after waking, sits on top of the circadian rise and depends partly on light and on the act of waking itself." },
+        { "id": "islets", "title": "Pancreatic islets", "x": 580, "y": 542,
+          "ms": "Tiny groups of cells in the pancreas make insulin and glucagon. Together they keep your blood sugar just right.",
+          "hs": "β-cells make insulin to lower blood sugar; α-cells make glucagon to raise it. In type 1 diabetes the immune system destroys the β-cells.",
+          "college": "Islets are only 1–2% of the pancreas but receive about 10% of its blood flow. Their blood drains to the portal vein, so the liver sees two to three times the insulin level of the rest of the body.",
+          "phd": "An adult pancreas holds roughly a million islets. β-cell mass changes little in adulthood, and loss of β-cell function and identity (dedifferentiation) contributes to type 2 diabetes." },
+        { "id": "lcells", "title": "Gut hormone cells", "x": 606, "y": 608,
+          "ms": "Special cells in your gut sense food and send hormone messages, such as ‘I’m full’ or ‘get ready for sugar’.",
+          "hs": "L-cells in the intestine release GLP-1 after a meal. GLP-1 boosts insulin release, slows the stomach and reduces appetite.",
+          "college": "Enteroendocrine cells are only about 1% of the gut lining, yet together they make the gut the body’s largest endocrine organ, releasing more than 20 hormones.",
+          "phd": "Native GLP-1 is cut by the enzyme DPP-4 within about two minutes, so drugs either block DPP-4 or are modified GLP-1 analogues that last from hours to a week." },
+        { "id": "kidney", "title": "Kidney hormones", "x": 676, "y": 548,
+          "ms": "Your kidneys make hormones too. One of them tells your bones to make more red blood cells.",
+          "hs": "When oxygen delivery falls, the kidneys release erythropoietin (EPO), which tells the bone marrow to make red blood cells. They release renin when blood pressure falls.",
+          "college": "EPO comes from interstitial cells in the renal cortex in response to low oxygen. Renin from the juxtaglomerular cells starts the renin–angiotensin–aldosterone cascade, which raises blood pressure and keeps sodium.",
+          "phd": "Hypoxia-inducible factors (HIF-2α in the kidney) control EPO; Kaelin, Ratcliffe and Semenza shared the 2019 Nobel Prize for this oxygen-sensing pathway. HIF prolyl-hydroxylase inhibitors now treat the anaemia of kidney disease." },
+        { "id": "fat", "title": "Fat tissue", "x": 714, "y": 600,
+          "ms": "Body fat isn’t just a store. It sends out a hormone that tells your brain how much energy you have saved.",
+          "hs": "Fat cells release leptin. More fat means more leptin, which tells the brain that energy stores are full.",
+          "college": "Leptin acts in the arcuate nucleus of the hypothalamus, stimulating POMC neurons and inhibiting AgRP/NPY neurons. Fat also releases adiponectin, which improves insulin sensitivity.",
+          "phd": "Most people with obesity have high leptin but respond poorly to it, so leptin treatment helps mainly in rare congenital leptin deficiency. Falling leptin during dieting strongly drives hunger and lowers energy expenditure." }
+      ]
+    }
   }
 }
 </script>
 
 <script type="application/json" id="body-glossary">
 {
+  "aorta": { "def": "The body’s main artery. It carries oxygen-rich blood from the left side of the heart.", "match": ["aorta", "aortic"] },
+  "baroreflex": { "def": "A fast reflex that steadies blood pressure: stretch sensors in big arteries tell the brainstem to slow or speed the heart.", "match": ["baroreflex", "baroreceptors", "baroreceptor"] },
+  "capillaries": { "def": "The smallest blood vessels, one cell thick, where oxygen and nutrients pass into the tissues.", "match": ["capillaries", "capillary"] },
+  "EEG": { "def": "Electroencephalogram: a recording of the brain’s electrical activity from the scalp.", "match": ["EEG"] },
+  "enteric nervous system": { "def": "The network of neurons in the gut wall that runs gut movement and secretion.", "match": ["enteric nervous system"] },
+  "erythropoietin": { "def": "EPO: a kidney hormone that tells the bone marrow to make more red blood cells.", "match": ["erythropoietin", "EPO"] },
+  "ganglia": { "def": "Clusters of nerve cell bodies outside the brain and spinal cord.", "match": ["ganglia", "ganglion"] },
+  "growth hormone": { "def": "A pituitary hormone, released mostly in deep sleep, that drives growth and repair.", "match": ["growth hormone"] },
+  "leptin": { "def": "A hormone from fat cells that tells the brain how much energy is stored.", "match": ["leptin"] },
+  "motor neurons": { "def": "Nerve cells that carry commands to muscles.", "match": ["motor neurons", "motor neuron"] },
+  "myelin": { "def": "A fatty insulating sheath around many nerve fibres that makes signals travel much faster.", "match": ["myelin", "myelinated"] },
+  "negative feedback": { "def": "Control in which a rise in something switches off its own production, like a thermostat.", "match": ["negative feedback"] },
+  "pineal gland": { "def": "A tiny gland deep in the brain that releases melatonin at night.", "match": ["pineal gland", "pineal"] },
+  "pituitary": { "def": "A pea-sized gland under the brain that controls many other glands.", "match": ["pituitary"] },
+  "thyroid": { "def": "A butterfly-shaped gland in the neck whose hormones set the body’s metabolic rate.", "match": ["thyroid"] },
+  "adrenal glands": { "def": "Small glands on top of the kidneys that make adrenaline, cortisol and aldosterone.", "match": ["adrenal glands", "adrenal medulla", "adrenal"] },
   "action potential": { "def": "A brief electrical pulse that travels along a nerve or muscle cell.", "match": ["action potentials", "action potential"] },
   "adenosine": { "def": "A molecule that builds up in the brain while you are awake and makes you feel sleepy.", "match": ["adenosine"] },
   "ADH": { "def": "Antidiuretic hormone (vasopressin). It makes the kidneys keep water, so urine becomes more concentrated.", "match": ["ADH", "antidiuretic hormone", "vasopressin"] },
@@ -758,6 +1071,26 @@ const PHASES = [
 ];
 const PHASE_BY_ID = Object.fromEntries(PHASES.map(p => [p.id, p]));
 
+/* Body systems drawn as layers over the body. Any number can be shown, but
+   only one is "live" (animated) at a time. Text and fact pins live in
+   CONTENT.systems; here are the colours and what the moving dots mean. */
+const SYSTEMS = [
+  { id: "circulatory", short: "Blood", color: "#c2414b",
+    legend: [["#d63340", "Oxygen-rich blood"], ["#5a68bd", "Oxygen-poor blood"]] },
+  { id: "nervous", short: "Nerves", color: "#d9a21b",
+    legend: [["#f2c230", "Motor: commands out to muscles"], ["#4fb8d0", "Sensory: signals back to the brain"],
+             ["#5fb37a", "Vagus: rest and digest"], ["#ef7d3c", "Sympathetic: fight or flight"], ["#d97bb6", "Gut nerves"]] },
+  { id: "endocrine", short: "Hormones", color: "#8a5cc4",
+    legend: [] /* filled from HORMONES below */ }
+];
+const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
+/* which systems each organ topic belongs to (shown as "Part of" chips) */
+const ORGAN_SYSTEMS = {
+  brain: ["nervous", "endocrine"], heart: ["circulatory", "nervous"], lungs: ["circulatory"],
+  gut: ["nervous", "endocrine", "circulatory"], liver: ["circulatory", "endocrine"],
+  pancreas: ["endocrine"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory"]
+};
+
 /* The day plan. Anything not listed is "rest". */
 const SCHEDULE = [
   { label: "Sleep", phase: "sleep", from: 23, to: 6.5, at: 3 },
@@ -771,7 +1104,7 @@ function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.fr
 
 const STRINGS = {
   introTitle: "A day in the life of your body",
-  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Then pick an organ to look closer. Each one is explained at four depths, from first curiosity to current research.",
+  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves and hormones. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
   schedule: "Today’s plan: tap to jump",
   explore: "Look closer",
   hint: "Tip: dotted words have short definitions. Hover or tap them. Values are typical for a healthy adult.",
@@ -780,7 +1113,13 @@ const STRINGS = {
   deeper: lvl => `Go deeper: ${lvl}`,
   simpler: lvl => `Simpler: ${lvl}`,
   seeAlso: "Connected organs",
-  missing: "There’s no text for this part of the day yet."
+  missing: "There’s no text for this part of the day yet.",
+  systems: "Body systems",
+  noSystem: "Switch on a body system with the buttons beside the body to see it at work.",
+  legend: "What the moving dots show",
+  pinHint: "Numbered pins on the body point out its key parts. Hover over or tap them.",
+  partOf: "Part of these systems: tap to watch one",
+  live: "live"
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -817,7 +1156,14 @@ const PHYSIO = {
      (thermic effect), ~2.1 L/min in a brisk run */
   vo2:        [[0,215],[4.5,205],[6.5,235],[7,255],[8.5,290],[10,265],[13.5,290],[15,265],[16.8,265],[17.15,1900],[17.5,2000],[17.95,1980],[18.3,620],[18.8,330],[20.25,300],[22,250],[23,225]],
   /* arterial O₂ saturation, %: a small dip in sleep as breathing slows */
-  spo2:       [[0,96],[3,95.6],[6,96],[6.6,97.5],[16.8,97.5],[17.5,97],[18.3,97.5],[22.8,97.2],[23.3,96.2]]
+  spo2:       [[0,96],[3,95.6],[6,96],[6.6,97.5],[16.8,97.5],[17.5,97],[18.3,97.5],[22.8,97.2],[23.3,96.2]],
+  /* adrenaline, 0–1: lowest asleep, a small rise on waking, ~10× in a brisk run */
+  adrenaline: [[0,.04],[4,.04],[6.5,.12],[7.5,.16],[10,.12],[16.8,.12],[17.15,.7],[17.5,.9],[17.95,.95],[18.3,.3],[19,.14],[22,.08],[23,.05]],
+  /* growth hormone, 0–1: the big pulse comes with the first slow-wave sleep,
+     smaller pulses later in the night and after exercise */
+  growthHormone: [[0,.95],[.75,.7],[1.5,.3],[2.5,.15],[3.25,.35],[4,.12],[6.5,.05],[16.8,.05],[17.6,.25],[18.2,.45],[19,.15],[20,.05],[22.9,.06],[23.5,.6]],
+  /* thyroid hormone: steady through the day */
+  thyroid:    [[0,.35],[12,.35]]
 };
 /* Oxygen content: 1.34 mL O₂ per g of haemoglobin × ~14.5 g/dL ≈ 194 mL O₂ per L of blood when fully saturated */
 const O2_CAP = 194;
@@ -862,6 +1208,12 @@ const Physio = {
     for (const k in rel) out.flow[k] = rel[k] * Math.max(0, out.co - brain) / sum;
     /* O₂ extraction per bed (fraction of arterial content removed) */
     out.extract = { brain: .34, kidneys: .08, gut: .2, arms: .3 - .12 * out.sweat, legs: .32 + .5 * out.muscle };
+    /* autonomic tone, 0–1. Vagal tone is high asleep and at rest, a little
+       higher after meals and withdrawn as the heart speeds up in exercise
+       (the same idea as the RSA amplitude in Rhythm); sympathetic tone
+       follows effort, adrenaline and, a little, the morning cortisol rise. */
+    out.vagal = clamp(1.1 - (out.heartRate - 50) / 70) * (1 + .15 * pp);
+    out.sympathetic = clamp(.12 + .8 * out.muscle + .15 * out.cortisol + .2 * out.adrenaline);
     return out;
   }
 };
@@ -879,12 +1231,38 @@ function createStore(initial){
 }
 const now = new Date();
 const savedLevel = storage.get("bodyday.level");
+function loadSystems(){
+  const shown = { circulatory: true, nervous: false, endocrine: false };
+  let live = "circulatory";
+  try {
+    const s = JSON.parse(storage.get("bodyday.shown") || "null");
+    if (s) SYSTEMS.forEach(({ id }) => { if (typeof s[id] === "boolean") shown[id] = s[id]; });
+    const l = storage.get("bodyday.live");
+    if (l === "none") live = null; else if (SYSTEM_BY_ID[l]) live = l;
+  } catch(e){}
+  if (live && !shown[live]) live = SYSTEMS.map(s => s.id).find(id => shown[id]) || null;
+  return { shown, live };
+}
 const store = createStore({
   hour: now.getHours() + now.getMinutes() / 60,
   level: LEVEL_INDEX[savedLevel] !== undefined ? savedLevel : "hs",
   topic: null,
-  playing: false
+  playing: false,
+  ...loadSystems()
 });
+/* System switches. Switching a system on makes it live; switching off the
+   live one hands "live" to another shown system (or to none). */
+function setSystem(id, on){
+  const s = store.get(), shown = { ...s.shown, [id]: on };
+  let live = s.live;
+  if (on) live = id;
+  else if (live === id) live = SYSTEMS.map(x => x.id).find(k => shown[k]) || null;
+  store.set({ shown, live });
+}
+function setLive(id){
+  const s = store.get();
+  if (!s.shown[id]) setSystem(id, true); else if (s.live !== id) store.set({ live: id });
+}
 
 /* =========================================================================
    SHARED GEOMETRY (world coordinates, 1200 × 900)
@@ -924,6 +1302,55 @@ const CIRC = [
   { bed: "lungs", sys: 0, a: "M604 352 C600 334 588 326 576 326 C558 326 546 340 540 356", v: "M540 380 C560 390 592 382 612 368 L620 360" },
   { bed: "lungs", sys: 0, a: "M604 352 C606 332 620 322 634 322 C652 322 662 338 664 354", v: "M664 378 C652 388 636 380 626 368 L620 360" }
 ];
+/* Nervous system. Like CIRC, each route is one path that pulses run along,
+   and shared trunks repeat the same path text: motor and sensory routes all
+   start in the cortex and run down the brainstem and spinal cord, which sits
+   on the midline between the vena cava and the aorta. "dir" is the main
+   direction of traffic: 1 = out from the brain, -1 = back towards it. */
+const CNS = "M600 118 L600 236";                                          /* cortex → brainstem → top of the cord */
+const NERV = [
+  { id: "legL", kind: "motor", d: CNS + " L600 586 C592 606 576 616 572 650 C566 720 560 790 556 846" },
+  { id: "legR", kind: "motor", d: CNS + " L600 586 C608 606 624 616 628 650 C634 720 640 790 644 846" },
+  { id: "armL", kind: "motor", d: CNS + " L600 282 C560 280 500 280 476 296 C440 322 420 380 414 450 L410 584" },
+  { id: "armR", kind: "motor", d: CNS + " L600 282 C640 280 700 280 724 296 C760 322 780 380 786 450 L790 584" },
+  { id: "vagH", kind: "vagus", d: "M592 170 C586 200 582 240 582 290 C582 322 592 344 610 362" },
+  { id: "vagG", kind: "vagus", d: "M592 170 C586 200 582 240 582 290 C580 360 584 410 604 440 C620 462 640 472 656 478" },
+  { id: "symH", kind: "symp", d: CNS + " L600 322 L612 328 L612 340 C618 346 620 352 620 360" },
+  { id: "symG", kind: "symp", d: CNS + " L600 440 L612 446 L612 462 C626 468 640 474 654 478" },
+  { id: "symAL", kind: "symp", d: CNS + " L600 470 L588 476 L588 488 C578 494 566 496 556 498" },
+  { id: "symAR", kind: "symp", d: CNS + " L600 470 L612 476 L612 488 C622 494 634 496 644 498" },
+  { id: "ens", kind: "ens", d: ORG.smallInt }
+];
+/* sympathetic chain: a row of ganglia either side of the cord */
+const SYMP_CHAIN = [588, 612].map(x => `M${x} 300 L${x} 560`).join(" ");
+/* Endocrine glands (world coordinates) and the hormones they release. Each
+   hormone particle is secreted into the nearest vein, rides the CIRC routes
+   through the heart and lungs and is used up in its target organ's capillaries.
+   Islet and gut hormones drain into the portal vein, so part of them (firstPass)
+   is taken up by the liver before reaching the heart.
+   rate = particles per second at a channel value of 1. */
+const GLANDS = [
+  { id: "hypo", x: 600, y: 164, name: "Pituitary" },
+  { id: "pineal", x: 600, y: 124, name: "Pineal gland" },
+  { id: "thyroid", x: 600, y: 252, name: "Thyroid" },
+  { id: "adrL", x: 556, y: 499, name: "Adrenal gland" },
+  { id: "adrR", x: 644, y: 499, name: "Adrenal gland" },
+  { id: "islets", x: 618, y: 516, name: "Islets", vein: "gut" },
+  { id: "lcells", x: 600, y: 584, name: "L-cells", vein: "gut" }
+];
+const HORMONES = [
+  { id: "melatonin", label: "Melatonin", gland: ["pineal"], ch: "melatonin", color: "#6c6fc4", rate: 2.2, target: null },
+  { id: "gh", label: "Growth hormone", gland: ["hypo"], ch: "growthHormone", color: "#c45fa8", rate: 2.4, target: "legs" },
+  { id: "thyroid", label: "Thyroid hormone", gland: ["thyroid"], ch: "thyroid", color: "#b98258", rate: 1.2, target: null },
+  { id: "cortisol", label: "Cortisol", gland: ["adrL", "adrR"], ch: "cortisol", color: "#e0a43a", rate: 1.4, target: null },
+  { id: "adrenaline", label: "Adrenaline", gland: ["adrL", "adrR"], ch: "adrenaline", color: "#e0533d", rate: 2.6, target: "legs" },
+  { id: "insulin", label: "Insulin", gland: ["islets"], ch: "insulin", color: "#3f9a5a", rate: 3, target: "legs", firstPass: .5 },
+  { id: "glucagon", label: "Glucagon", gland: ["islets"], ch: "glucagon", color: "#8a5cc4", rate: 2, target: null, firstPass: .8 },
+  { id: "glp1", label: "GLP-1", gland: ["lcells"], ch: "gut", color: "#2f9fc4", rate: 2.2, target: "gut", gate: ph => clamp((ph.gut - .35) / .5) }
+];
+SYSTEM_BY_ID.endocrine.legend = HORMONES.map(h => [h.color, h.label]);
+const NERVE_COLOR = Object.fromEntries(["motor", "sensory", "vagus", "symp", "ens"].map((k, i) => [k, SYSTEM_BY_ID.nervous.legend[i][0]]));
+
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
   let out = `<path d="M${f1(x)} ${f1(y)}L${f1(x2)} ${f1(y2)}" stroke-width="${f1(w)}"/>`;
@@ -1031,6 +1458,17 @@ const Scene = (() => {
   /* each route: artery (oxygen-rich = red in the body, blue to the lungs) and vein */
   const vessels = sys => CIRC.map((c, i) => c.sys !== sys ? "" :
     `<path id="s-va${i}" d="${c.a}" class="vessel ${sys ? "ox" : "dx"}"/><path id="s-vv${i}" d="${c.v}" class="vessel ${sys ? "dx" : "ox"}"/>`).join("");
+  /* small gland shapes; the halos behind them swell as they secrete */
+  function glands(){
+    const G = Object.fromEntries(GLANDS.map(g => [g.id, g]));
+    const cap = g => `<path d="M${g.x - 10} ${g.y + 4} Q${g.x - 6} ${g.y - 8} ${g.x} ${g.y - 7} Q${g.x + 6} ${g.y - 8} ${g.x + 10} ${g.y + 4} Q${g.x} ${g.y} ${g.x - 10} ${g.y + 4}Z" class="gland"/>`;
+    return `<path d="M600 150 L600 162" class="gland-stalk"/><ellipse cx="600" cy="150" rx="8" ry="4" class="gland soft"/><circle cx="600" cy="${G.hypo.y}" r="4.6" class="gland"/>`
+      + `<ellipse cx="600" cy="${G.pineal.y}" rx="3.4" ry="4.4" class="gland"/>`
+      + `<path d="M600 ${G.thyroid.y + 2} C596 ${G.thyroid.y - 4} 584 ${G.thyroid.y - 12} 584 ${G.thyroid.y} C584 ${G.thyroid.y + 10} 596 ${G.thyroid.y + 8} 600 ${G.thyroid.y + 4} C604 ${G.thyroid.y + 8} 616 ${G.thyroid.y + 10} 616 ${G.thyroid.y} C616 ${G.thyroid.y - 12} 604 ${G.thyroid.y - 4} 600 ${G.thyroid.y + 2}Z" class="gland"/>`
+      + cap(G.adrL) + cap(G.adrR)
+      + [[590, 519], [606, 517], [624, 514], [642, 511], [656, 508]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" class="gland"/>`).join("")
+      + [[584, 558], [616, 570], [586, 582], [614, 594]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.3" class="gland"/>`).join("");
+  }
   function build(){
     const limb = (d, w) => `<path d="${d}" class="limb-o" stroke-width="${w + 4}"/><path d="${d}" class="limb" stroke-width="${w}"/>`;
     let stars = "";
@@ -1069,14 +1507,14 @@ const Scene = (() => {
       <path class="skin" d="M452 300 C452 270 478 256 512 252 L688 252 C722 256 748 270 748 300 L736 450 C730 486 724 520 732 560 C736 590 724 612 700 614 L500 614 C476 612 464 590 468 560 C476 520 470 486 464 450 Z"/>
       <ellipse cx="541" cy="170" rx="10" ry="16" class="skin"/><ellipse cx="659" cy="170" rx="10" ry="16" class="skin"/>
       <ellipse cx="600" cy="160" rx="60" ry="70" class="skin"/>
-      <g id="s-vessels">${vessels(1)}</g>
+      <g id="s-vessels" class="sys sys-circulatory">${vessels(1)}</g>
       <path id="s-eso" d="${ORG.eso}" stroke="#dba08e" stroke-width="7" fill="none" stroke-linecap="round"/>
       <g id="s-lungs">
         <path d="${ORG.lungL}" fill="#e9a3a7" stroke="#c9777d" stroke-width="1.5"/><path d="${ORG.lungR}" fill="#e9a3a7" stroke="#c9777d" stroke-width="1.5"/>
         <g clip-path="url(#s-lungClip)" stroke="#f6d8cc" stroke-linecap="round" fill="none" opacity=".9">${bronchi(R)}</g>
       </g>
       <path d="${ORG.trachea}" stroke="#ecd3c5" stroke-width="8" fill="none" stroke-linecap="round"/>
-      <g id="s-pulm">${vessels(0)}</g>
+      <g id="s-pulm" class="sys sys-circulatory">${vessels(0)}</g>
       <g transform="translate(552 524) scale(.3)"><path d="${KIDNEY_D}" fill="#a5483f"/></g>
       <g transform="translate(648 524) scale(-.3 .3)"><path d="${KIDNEY_D}" fill="#a5483f"/></g>
       <path d="${ORG.liver}" fill="#8e3b33" stroke="#6e2a24" stroke-width="1.5"/>
@@ -1085,10 +1523,24 @@ const Scene = (() => {
       <path d="${ORG.pancreas}" fill="#e8bd6e" stroke="#c99a4a" stroke-width="1.2"/>
       <ellipse id="s-gutGlow" cx="650" cy="480" rx="64" ry="50" fill="url(#s-gutGrad)"/>
       <path d="${ORG.stomach}" fill="#e6a07a" stroke="#c07a58" stroke-width="1.5"/>
-      <g id="s-blood"></g>
+      <g id="s-blood" class="sys sys-circulatory"></g>
       <g transform="translate(620 366) rotate(-28)"><g id="s-heart"><path d="${HEART_D}" transform="scale(.82)" fill="#c8343f" stroke="#9c2530" stroke-width="1.5"/><ellipse cx="-16" cy="-16" rx="7" ry="5" fill="#e8737b" opacity=".6"/></g></g>
       <ellipse cx="600" cy="132" rx="48" ry="40" fill="#e9a8ae" stroke="#c97a84" stroke-width="1.5"/>
       <g clip-path="url(#s-brainClip)"><path d="${gy}" stroke="#c97a84" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M600 92 V172" stroke="#b5636e" stroke-width="2"/></g>
+      <g id="s-nervous" class="sys sys-nervous">
+        <ellipse id="s-brainGlow" cx="600" cy="132" rx="48" ry="40" class="brain-glow"/>
+        <g id="s-sparks" clip-path="url(#s-brainClip)"></g>
+        ${NERV.map(n => `<path d="${n.d}" class="nerve ${n.kind}"/>`).join("")}
+        <path d="M600 150 L600 530" class="nerve cord"/><path d="M600 530 L600 586" class="nerve cauda"/>
+        <path d="${SYMP_CHAIN}" class="nerve chain"/>
+        ${[588, 612].map(x => Array.from({ length: 10 }, (_, i) => `<circle cx="${x}" cy="${306 + i * 27}" r="2.4" class="ganglion"/>`).join("")).join("")}
+        <g id="s-npulse"></g>
+      </g>
+      <g id="s-endocrine" class="sys sys-endocrine">
+        ${GLANDS.map(g => `<circle id="s-halo-${g.id}" cx="${g.x}" cy="${g.y}" r="9" class="gland-halo"/>`).join("")}
+        ${glands()}
+        <g id="s-hormones"></g>
+      </g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
       <g id="s-eyesShut" class="face"><path d="M571 189 Q578 194 585 189"/><path d="M615 189 Q622 194 629 189"/></g>
@@ -1096,9 +1548,11 @@ const Scene = (() => {
       <ellipse id="s-mouthO" cx="600" cy="212" rx="7" ry="5.5" fill="var(--ink)"/>
     </g>
     <g id="s-fx"></g>
-    <circle id="s-ring" r="40" class="focus-ring"/>`;
+    <circle id="s-ring" r="40" class="focus-ring"/>
+    <g id="s-pins"></g>`;
     svg.innerHTML = s;
-    ["sky", "stars", "sun", "moon", "moonShade", "hills", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso"]
+    ["sky", "stars", "sun", "moon", "moonShade", "hills", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
+     "brainGlow", "sparks", "npulse", "hormones", "pins"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -1161,14 +1615,23 @@ const Scene = (() => {
     }
     r.ring.classList.toggle("on", !!p);
   }
-  return { build, update, animate, focus, svg, focusPoints, refs: r, get bbox(){ return CONFIG.bbox; } };
+  /* shown systems are drawn; the live one at full strength, the others dimmed */
+  function setSystems(shown, live){
+    SYSTEMS.forEach(({ id }) => svg.querySelectorAll(".sys-" + id).forEach(g => {
+      g.classList.toggle("off", !shown[id]);
+      g.classList.toggle("dim", !!shown[id] && live !== id);
+    }));
+    /* hormones travel in the blood: keep a faint trace of the vessels while they are live */
+    svg.querySelectorAll("#s-vessels, #s-pulm").forEach(g => g.classList.toggle("ghost", !shown.circulatory && live === "endocrine"));
+  }
+  return { build, update, animate, focus, setSystems, svg, focusPoints, refs: r, get bbox(){ return CONFIG.bbox; } };
 })();
 
 /* =========================================================================
    PARTICLES — blood, food, breath, sweat, Zzz (respects reduced motion)
    ========================================================================= */
 const Particles = (() => {
-  const list = []; let ph = null, accF = 0, accZ = 0, accS = 0, wasIn = false;
+  const list = []; let ph = null, accF = 0, accZ = 0, accS = 0, wasIn = false, live = true;
   let esoL = 0;
   /* ---- blood: red cells that each do the full figure-of-eight ---- */
   const NCELL = 96, routes = [], cells = [];
@@ -1211,21 +1674,29 @@ const Particles = (() => {
     const col = satCol(sat);
     if (col !== k.col){ k.col = col; k.c.setAttribute("fill", col); }
   }
-  function moveBlood(dt){
-    /* mean speed scales with cardiac output; arterial flow surges in systole
-       (ejection follows the R wave), venous return speeds up on each in-breath
-       (the thoracic pump), and cells crawl through the capillaries */
+  /* mean speed scales with cardiac output; arterial flow surges in systole
+     (ejection follows the R wave), venous return speeds up on each in-breath
+     (the thoracic pump), and cells crawl through the capillaries.
+     Shared with the hormones, which ride the same blood. */
+  function flow(){
     const base = 62 * Math.pow(ph.co / 4.9, .75);
     const RR = 60 / Rhythm.hrNow;
     let u = ((Rhythm.beat % 1) + 1) % 1 * RR - .19; if (u < 0) u += RR;
     const ej = .3 * Math.sqrt(RR);
     const surge = u < ej ? 1 + 1.6 * Math.sin(Math.PI * u / ej) : 1;
-    const art = surge / (1 + 1.6 * (2 / Math.PI) * ej / RR);
-    const ven = 1 + .3 * Rhythm.insp;
+    return { base, art: surge / (1 + 1.6 * (2 / Math.PI) * ej / RR), ven: 1 + .3 * Rhythm.insp };
+  }
+  const speedAt = (r, s, f) => f.base * (s < r.La ? f.art : s < r.La + r.Lc ? .3 : f.ven);
+  function pointAt(r, s){
+    if (s < r.La) return r.A.getPointAtLength(s);
+    if (s < r.La + r.Lc){ const t = (s - r.La) / r.Lc; return { x: lerp(r.pa.x, r.pv.x, t), y: lerp(r.pa.y, r.pv.y, t) }; }
+    return r.V.getPointAtLength(Math.min(r.Lv, s - r.La - r.Lc));
+  }
+  function moveBlood(dt){
+    const f = flow();
     for (const k of cells){
       const r = routes[k.ri];
-      const v = k.s < r.La ? art : k.s < r.La + r.Lc ? .3 : ven;
-      k.s += dt * base * v;
+      k.s += dt * speedAt(r, k.s, f);
       if (k.s >= r.L){
         k.s -= r.L;
         if (r.sys){ k.satIn = venSat(r.bed); k.ri = PUL[Math.random() < .5 ? 0 : 1]; }
@@ -1240,7 +1711,7 @@ const Particles = (() => {
   function tick(dt){
     if (reducedMotion || !ph) return;
     const g = Scene.refs.fx;
-    moveBlood(dt);
+    if (live) moveBlood(dt); /* frozen in place while another system is live */
     if (ph.eating > .5){ accF += dt / .9; while (accF >= 1){ accF--; add("food", el("ellipse", { rx: 6, ry: 4.5, fill: "#b98a5a" }, g), { life: 1.9 }); } } else accF = 0;
     if (ph.awake < .5){ accZ += dt / 1.3; while (accZ >= 1){ accZ--; const t = el("text", { class: "zz", x: 660, y: 104 }, g); t.textContent = "z"; add("z", t, { life: 2.4 }); } } else accZ = 0;
     if (ph.sweat > .15){ accS += dt * ph.sweat * 2.4; while (accS >= 1){ accS--; add("sweat", el("path", { d: "M0 -5 C2 -1 3.5 2 0 4 C-3.5 2 -2 -1 0 -5Z", fill: "#7fc3e8" }, g), { life: .9, x: 556 + Math.random() * 88, y: 112 + Math.random() * 20 }); } }
@@ -1266,7 +1737,167 @@ const Particles = (() => {
       }
     }
   }
-  return { init, setRates, tick };
+  return { init, setRates, tick, flow, speedAt, pointAt, pickSys, routes, SYS, PUL,
+           setLive(v){ live = v; }, get ph(){ return ph; } };
+})();
+
+/* =========================================================================
+   NERVES — action potentials along the NERV routes, plus brain activity.
+   Rates follow the hour's physiology: motor and sympathetic traffic in the
+   run, vagal volleys on each out-breath at rest and asleep, gut sensory and
+   enteric traffic after meals. Runs only while the nervous system is live.
+   ========================================================================= */
+const Nerves = (() => {
+  const NP = 90, SPEED = { motor: 260, sensory: 220, vagus: 140, symp: 110, ens: 34 };
+  const routes = [], pool = [], sparks = [], acc = {};
+  let ph = null, t = 0, wave = 0;
+  function init(){
+    const svg = Scene.svg, R = Scene.refs;
+    NERV.forEach(n => routes.push({ ...n, S: sampler(svg, n.d, 160) }));
+    for (let i = 0; i < NP; i++) pool.push({ c: el("circle", { r: 2.9, class: "pulse", opacity: 0 }, R.npulse), on: false });
+    const rng = mulberry32(5);
+    for (let i = 0; i < 14; i++){
+      const a = rng() * Math.PI * 2, d = Math.sqrt(rng());
+      sparks.push({ c: el("circle", { cx: f1(600 + Math.cos(a) * d * 42), cy: f1(130 + Math.sin(a) * d * 34), r: 2.6, class: "spark", opacity: 0 }, R.sparks), v: 0 });
+    }
+  }
+  function fire(ri, dir, kind){
+    const p = pool.find(q => !q.on); if (!p) return;
+    const r = routes[ri];
+    Object.assign(p, { on: true, r, dir, u: dir > 0 ? 0 : 1, v: SPEED[kind] / r.S.L });
+    p.c.setAttribute("fill", NERVE_COLOR[kind]);
+  }
+  /* expected rates (impulses drawn per second) for each route and direction */
+  function rates(p){
+    const awake = p.awake > .5 ? 1 : .08, run = Math.max(0, p.muscle - .1), exp = Rhythm.insp < 0 ? 1.7 : .3;
+    const sy = 2.4 * Math.pow(p.sympathetic, 1.5);
+    return {
+      legL: [[1, "motor", .3 * awake + 9 * run], [-1, "sensory", .25 * awake + 4 * run]],
+      armL: [[1, "motor", .35 * awake + 2.5 * run], [-1, "sensory", .4 * awake + 1.2 * run]],
+      vagH: [[1, "vagus", 3 * p.vagal * exp], [-1, "sensory", .5 * p.vagal]],
+      vagG: [[1, "vagus", 1.4 * p.vagal * (.4 + p.gut)], [-1, "sensory", .3 + 3 * p.gut]],
+      symH: [[1, "symp", sy]], symG: [[1, "symp", sy * .7]], symAL: [[1, "symp", sy]],
+      ens: [[1, "ens", .25 + 3 * p.gut * (1 - .7 * p.muscle)]]
+    };
+  }
+  function tick(dt, p){
+    ph = p; t += dt;
+    const R = rates(p);
+    R.legR = R.legL; R.armR = R.armL; R.symAR = R.symAL;
+    routes.forEach((r, ri) => (R[r.id] || []).forEach(([dir, kind, rate], j) => {
+      const k = r.id + j; acc[k] = (acc[k] || 0) + dt * rate * (.6 + .8 * Math.random());
+      while (acc[k] >= 1){ acc[k]--; fire(ri, dir, kind); }
+    }));
+    for (const q of pool){
+      if (!q.on) continue;
+      q.u += q.dir * q.v * dt;
+      if (q.u < 0 || q.u > 1){ q.on = false; q.c.setAttribute("opacity", 0); continue; }
+      const [x, y] = q.r.S.at(q.u), end = q.dir > 0 ? 1 - q.u : q.u;
+      q.c.setAttribute("cx", f1(x)); q.c.setAttribute("cy", f1(y));
+      q.c.setAttribute("opacity", f1(clamp(end * 25) * .95));
+    }
+    /* brain: big synchronous slow waves in sleep, scattered flicker when awake */
+    const asleep = clamp(1 - p.awake);
+    wave += dt * .8;
+    const slow = .5 + .5 * Math.sin(2 * Math.PI * wave);
+    Scene.refs.brainGlow.setAttribute("opacity", f1(asleep * (.08 + .32 * slow * slow) + (1 - asleep) * (.1 + .12 * p.muscle)));
+    const flick = (1 - asleep) * (2.5 + 5 * p.muscle);
+    for (const s of sparks){
+      if (Math.random() < dt * flick / sparks.length * 4) s.v = 1;
+      s.v = Math.max(0, s.v - dt * 4);
+      s.c.setAttribute("opacity", f1(s.v * .9 + asleep * slow * .35));
+    }
+  }
+  return { init, tick };
+})();
+
+/* =========================================================================
+   HORMONES — particles secreted by the glands into the nearest vein. They
+   ride the blood (CIRC routes, same speeds as the red cells) through the
+   heart and lungs and are used up in the capillaries of a target organ.
+   Runs only while the endocrine system is live.
+   ========================================================================= */
+const Hormones = (() => {
+  const MAX = 130, list = [], acc = {}, entry = {}, halo = {}, bump = {};
+  const SHAPE = "M0 -4.4 L4.4 0 L0 4.4 L-4.4 0Z";
+  function init(){
+    const P = Particles;
+    GLANDS.forEach(g => {
+      let best = null;
+      P.SYS.forEach(ri => {
+        const r = P.routes[ri];
+        if (g.vein && r.bed !== g.vein) return;
+        for (let sv = 0; sv < r.Lv * .8; sv += 5){
+          const q = r.V.getPointAtLength(sv), d = Math.hypot(q.x - g.x, q.y - g.y);
+          if (!best || d < best.d) best = { d, ri, s: r.La + r.Lc + sv, x: q.x, y: q.y };
+        }
+      });
+      entry[g.id] = best;
+      halo[g.id] = Scene.svg.querySelector("#s-halo-" + g.id); bump[g.id] = 0;
+    });
+  }
+  function release(h, ph){
+    if (list.length >= MAX) return;
+    const gid = h.gland[Math.floor(Math.random() * h.gland.length)], g = GLANDS.find(x => x.id === gid), e = entry[gid];
+    const r = Particles.routes[e.ri];
+    const fp = h.firstPass && Math.random() < h.firstPass ? r.La + r.Lc + r.Lv * .62 : Infinity; /* liver uptake point on the portal leg */
+    const node = el("path", { d: SHAPE, fill: h.color, class: "hormone" }, Scene.refs.hormones);
+    list.push({ h, e: node, x0: g.x + (Math.random() - .5) * 6, y0: g.y + (Math.random() - .5) * 6, ri: e.ri, s: e.s, ex: e.x, ey: e.y,
+                stage: 0, age: 0, fp, home: false, fade: 1 });
+    bump[gid] = 1;
+  }
+  /* after the lungs, head for the hormone's target organ (or wherever the blood goes) */
+  function nextSystemic(h){
+    const P = Particles;
+    if (!h.target) return P.pickSys();
+    const opts = P.SYS.filter(i => P.routes[i].bed === h.target);
+    return opts[Math.floor(Math.random() * opts.length)];
+  }
+  function glands(ph, dt){
+    GLANDS.forEach(g => {
+      let lvl = 0; HORMONES.forEach(h => { if (h.gland.includes(g.id)) lvl = Math.max(lvl, ph[h.ch] * (h.gate ? h.gate(ph) : 1)); });
+      bump[g.id] = Math.max(0, bump[g.id] - dt * 3);
+      const hl = halo[g.id]; if (!hl) return;
+      hl.setAttribute("r", f1(7 + 6 * lvl + 3 * bump[g.id]));
+      hl.setAttribute("opacity", f1(.12 + .45 * lvl + .25 * bump[g.id]));
+    });
+  }
+  function tick(dt, ph){
+    glands(ph, dt);
+    HORMONES.forEach(h => {
+      const lvl = ph[h.ch] * (h.gate ? h.gate(ph) : 1);
+      acc[h.id] = (acc[h.id] || 0) + dt * 1.5 * h.rate * lvl * lvl * (.6 + .8 * Math.random());
+      while (acc[h.id] >= 1){ acc[h.id]--; release(h, ph); }
+    });
+    const P = Particles, f = P.flow();
+    for (let i = list.length - 1; i >= 0; i--){
+      const k = list[i]; k.age += dt;
+      let x, y, op = 1;
+      if (k.stage === 0){ /* seeping from the gland into the vein */
+        const u = clamp(k.age / .6); x = lerp(k.x0, k.ex, smooth(u)); y = lerp(k.y0, k.ey, smooth(u)); op = u;
+        if (u >= 1) k.stage = 1;
+      } else {
+        let r = P.routes[k.ri];
+        k.s += dt * P.speedAt(r, k.s, f) * (k.stage === 2 ? .6 : 1);
+        if (k.stage === 1 && k.s >= k.fp) k.stage = 2;                      /* taken up by the liver */
+        if (k.stage === 1 && k.home && k.s >= r.La) k.stage = 2;            /* reached its target organ */
+        if (k.s >= r.L){
+          k.s -= r.L;
+          if (r.sys){ k.ri = P.PUL[Math.random() < .5 ? 0 : 1]; }
+          else { k.ri = nextSystemic(k.h); k.home = true; }
+          k.fp = Infinity; r = P.routes[k.ri]; k.s = Math.min(k.s, r.L - 1);
+        }
+        if (k.stage === 2){ k.fade -= dt * 1.6; op = k.fade; }
+        const q = P.pointAt(r, k.s); x = q.x; y = q.y;
+      }
+      if (op <= 0 || k.age > 40){ k.e.remove(); list.splice(i, 1); continue; }
+      k.e.setAttribute("transform", `translate(${f1(x)} ${f1(y)})`);
+      k.e.setAttribute("opacity", f1(op));
+    }
+  }
+  /* a still picture: halos sized for the hour (reduced motion, or not live) */
+  function setRates(ph){ glands(ph, 0); }
+  return { init, tick, setRates };
 })();
 
 /* =========================================================================
@@ -2268,6 +2899,70 @@ const GLYPHS = {
 };
 
 /* =========================================================================
+   MARKS — numbered markers (.mk) with one shared tooltip. Hover or focus
+   shows a label; a click or tap keeps it open (state.i, kept across
+   re-renders). Used by the organ close-ups and by the fact pins on the body.
+   Returns restore(), which re-shows the pinned label after a layout change.
+   ========================================================================= */
+function bindMarks(box, tip, html, state){
+  const marks = [...box.querySelectorAll(".mk")];
+  if (state.i > marks.length) state.i = 0;
+  const show = mk => {
+    marks.forEach(m => m.classList.toggle("on", m === mk));
+    if (!mk){ tip.classList.remove("on"); return; }
+    const fr = box.getBoundingClientRect(), r = mk.getBoundingClientRect();
+    const x = r.left + r.width / 2 - fr.left, y = r.top + r.height / 2 - fr.top;
+    tip.innerHTML = html(+mk.dataset.i);
+    const below = y < tip.offsetHeight + 24;
+    tip.classList.toggle("below", below);
+    tip.style.top = (below ? y + r.height / 2 : y - r.height / 2) + "px";
+    tip.style.left = x + "px";
+    const half = tip.offsetWidth / 2 + 4;
+    tip.style.left = Math.min(Math.max(x, half), fr.width - half) + "px";
+    tip.classList.add("on");
+  };
+  const restore = () => show(marks[state.i - 1] || null);
+  marks.forEach(mk => {
+    const i = +mk.dataset.i;
+    mk.addEventListener("mouseenter", () => show(mk));
+    mk.addEventListener("mouseleave", restore);
+    mk.addEventListener("focus", () => show(mk));
+    mk.addEventListener("blur", restore);
+    mk.addEventListener("click", e => { e.stopPropagation(); state.i = state.i === i ? 0 : i; restore(); });
+    mk.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); mk.dispatchEvent(new MouseEvent("click")); } });
+  });
+  box.onclick = () => { if (state.i){ state.i = 0; restore(); } };
+  return restore;
+}
+
+/* =========================================================================
+   PINS — numbered fact pins for the live system on the whole-body view.
+   Text comes from CONTENT.systems[id].pins at the reading level (falling
+   back to the nearest lower level).
+   ========================================================================= */
+const Pins = (() => {
+  const g = () => Scene.refs.pins, box = $("#sceneWrap"), tip = $("#pinTip");
+  const state = { i: 0 };
+  let key = "", restore = () => {};
+  const atLevel = (o, level) => { for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = o[LEVELS[i].id]; if (t) return t; } return ""; };
+  function render(s){
+    const k = `${s.live}|${s.level}|${!!s.topic}`;
+    if (k === key) return;
+    if (key.split("|")[0] !== String(s.live)) state.i = 0;
+    key = k;
+    const pins = !s.topic && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
+    g().innerHTML = pins.map((p, n) => {
+      const i = n + 1;
+      return `<g class="mk" data-i="${i}" tabindex="0" role="button" aria-label="${i}: ${esc(p.title)}"><circle cx="${p.x}" cy="${p.y}" r="10.5"/><text x="${p.x}" y="${p.y + 4.2}">${i}</text></g>`;
+    }).join("");
+    g().style.setProperty("--pc", s.live ? SYSTEM_BY_ID[s.live].color : "");
+    restore = bindMarks(box, tip, i => { const p = pins[i - 1]; return `<b>${esc(p.title)}</b>${esc(atLevel(p, s.level))}`; }, state);
+    requestAnimationFrame(restore);
+  }
+  return { render, refresh: () => restore() };
+})();
+
+/* =========================================================================
    HOTSPOTS — HTML overlay mapped from world coordinates
    ========================================================================= */
 const Hotspots = (() => {
@@ -2382,6 +3077,7 @@ const Vitals = (() => {
     $("#hMel").style.width = (p.melatonin * 100).toFixed(0) + "%";
     $("#hIns").style.width = (p.insulin * 100).toFixed(0) + "%";
     $("#hGcg").style.width = (p.glucagon * 100).toFixed(0) + "%";
+    $("#hAdr").style.width = (p.adrenaline * 100).toFixed(0) + "%";
     if (reducedMotion) staticFill();
   }
   function tick(dt){
@@ -2416,8 +3112,39 @@ const Panel = (() => {
     return null;
   }
   function pips(li){ return `<span class="pips" aria-hidden="true">${LEVELS.map((_, i) => `<i class="${i <= li ? "on" : ""}"></i>`).join("")}</span>`; }
+  function systemTextFor(id, phase, level){
+    const ph = CONTENT.systems[id]?.phases?.[phase];
+    if (!ph) return null;
+    for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = ph[LEVELS[i].id]; if (t) return t; }
+    return null;
+  }
+  function depthChips(li){
+    const deeper = li < LEVELS.length - 1 ? `<button type="button" class="chip primary" data-level="${LEVELS[li + 1].id}">${esc(STRINGS.deeper(LEVELS[li + 1].label))}</button>` : "";
+    const simpler = li > 0 ? `<button type="button" class="chip" data-level="${LEVELS[li - 1].id}">${esc(STRINGS.simpler(LEVELS[li - 1].label))}</button>` : "";
+    return deeper + simpler;
+  }
+  /* the live system, explained for this part of the day at the reading level */
+  function systemCard(s){
+    const id = s.live;
+    if (!id) return `<section class="sys-card"><p class="follow-label">${esc(STRINGS.systems)}</p><p class="sys-empty">${esc(STRINGS.noSystem)}</p></section>`;
+    const meta = SYSTEM_BY_ID[id], data = CONTENT.systems[id], li = LEVEL_INDEX[s.level], phase = phaseAt(s.hour);
+    const text = systemTextFor(id, phase, s.level);
+    const legend = meta.legend.map(([c, l]) => `<li><i style="--c:${c}"></i>${esc(l)}</li>`).join("");
+    return `
+      <section class="sys-card" style="--sc:${meta.color}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(data.name)}</h3><span class="when">${esc(PHASE_BY_ID[phase].label)}</span></div>
+        <p class="sys-blurb">${esc(data.blurb)}</p>
+        <ul class="sys-legend" aria-label="${esc(STRINGS.legend)}">${legend}</ul>
+        <div class="reading">
+          <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+          <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+          <div class="depth">${depthChips(li)}</div>
+        </div>
+        <p class="hint">${esc(STRINGS.pinHint)}</p>
+      </section>`;
+  }
 
-  function renderIntro(){
+  function renderIntro(s){
     const sched = SCHEDULE.map(e => `<button type="button" style="--c:${PHASE_BY_ID[e.phase].color}" data-at="${e.at}"><b>${esc(e.label)}</b><span>${fmtTime(e.from)}–${fmtTime(e.to)}</span></button>`).join("");
     const items = [...Topics.keys()].map(id => {
       const t = CONTENT.topics[id], g = GLYPHS[Topics.get(id).glyph] || "";
@@ -2428,6 +3155,7 @@ const Panel = (() => {
     root.innerHTML = `
       <h2>${esc(STRINGS.introTitle)}</h2>
       <p class="lede">${esc(STRINGS.introLede)}</p>
+      ${systemCard(s)}
       <p class="follow-label">${esc(STRINGS.schedule)}</p>
       <div class="sched">${sched}</div>
       <p class="follow-label">${esc(STRINGS.explore)}</p>
@@ -2435,17 +3163,17 @@ const Panel = (() => {
       <p class="hint">${esc(STRINGS.hint)}</p>`;
     root.querySelectorAll("[data-topic]").forEach(b => b.addEventListener("click", () => store.set({ topic: b.dataset.topic })));
     root.querySelectorAll("[data-at]").forEach(b => b.addEventListener("click", () => store.set({ hour: +b.dataset.at, playing: false })));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
-  let pinnedMark = 0; /* marker whose label stays open after a click/tap, kept across re-renders */
+  const pinned = { i: 0 }; /* marker whose label stays open after a click/tap, kept across re-renders */
   function renderTopic(s){
     const id = s.topic, topic = Topics.get(id), data = CONTENT.topics[id];
     const ctx = makeCtx(s), phase = ctx.phase, li = ctx.li;
     const svgBody = topic.illustrate(ctx) + ctx.marks;
     const text = textFor(id, phase, s.level);
     const tabs = PHASES.map(p => `<button type="button" data-phase="${p.id}" aria-pressed="${p.id === phase}">${p.label}</button>`).join("");
-    const deeper = li < LEVELS.length - 1 ? `<button type="button" class="chip primary" data-level="${LEVELS[li + 1].id}">${esc(STRINGS.deeper(LEVELS[li + 1].label))}</button>` : "";
-    const simpler = li > 0 ? `<button type="button" class="chip" data-level="${LEVELS[li - 1].id}">${esc(STRINGS.simpler(LEVELS[li - 1].label))}</button>` : "";
+    const partOf = (ORGAN_SYSTEMS[id] || []).map(k => `<button type="button" class="chip sys-chip" style="--sc:${SYSTEM_BY_ID[k].color}" data-sys="${k}" aria-pressed="${s.live === k}">${esc(CONTENT.systems[k].name)}</button>`).join("");
     const related = (data.related || []).filter(r => Topics.has(r)).map(r => `<button type="button" class="chip" data-topic="${r}">${esc(CONTENT.topics[r].name)}</button>`).join("");
     root.className = "panel-inner enter";
     root.innerHTML = `
@@ -2468,37 +3196,13 @@ const Panel = (() => {
       <div class="reading">
         <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
         <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
-        <div class="depth">${deeper}${simpler}</div>
+        <div class="depth">${depthChips(li)}</div>
       </div>
-      ${related ? `<div class="related"><p>${esc(STRINGS.seeAlso)}</p><div class="depth">${related}</div></div>` : ""}`;
+      ${related ? `<div class="related"><p>${esc(STRINGS.seeAlso)}</p><div class="depth">${related}</div></div>` : ""}
+      ${partOf ? `<div class="related"><p>${esc(STRINGS.partOf)}</p><div class="depth">${partOf}</div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
-    const tip = fig.querySelector(".mk-tip"), marks = [...fig.querySelectorAll(".mk")];
-    const showTip = mk => {
-      marks.forEach(m => m.classList.toggle("on", m === mk));
-      if (!mk){ tip.classList.remove("on"); return; }
-      const fr = fig.getBoundingClientRect(), r = mk.getBoundingClientRect();
-      const x = r.left + r.width / 2 - fr.left, y = r.top + r.height / 2 - fr.top;
-      tip.textContent = ctx.labels[mk.dataset.i - 1];
-      tip.classList.toggle("below", y < 60);
-      tip.style.top = (y < 60 ? y + r.height / 2 : y - r.height / 2) + "px";
-      tip.style.left = x + "px";
-      const half = tip.offsetWidth / 2 + 4;
-      tip.style.left = Math.min(Math.max(x, half), fr.width - half) + "px";
-      tip.classList.add("on");
-    };
-    const restore = () => showTip(marks[pinnedMark - 1] || null);
-    marks.forEach(mk => {
-      const i = +mk.dataset.i;
-      mk.addEventListener("mouseenter", () => showTip(mk));
-      mk.addEventListener("mouseleave", restore);
-      mk.addEventListener("focus", () => showTip(mk));
-      mk.addEventListener("blur", restore);
-      mk.addEventListener("click", e => { e.stopPropagation(); pinnedMark = pinnedMark === i ? 0 : i; restore(); });
-      mk.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); mk.dispatchEvent(new MouseEvent("click")); } });
-    });
-    fig.addEventListener("click", () => { pinnedMark = 0; restore(); });
-    if (pinnedMark > marks.length) pinnedMark = 0;
+    const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
     const sk = id + "|" + phase;
     if (sk !== simKey){ simKey = sk; simMem = {}; }
     sim = startSim(topic, fig.querySelector("svg"), ctx, simMem);
@@ -2506,10 +3210,11 @@ const Panel = (() => {
     root.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () => store.set({ hour: PHASE_BY_ID[b.dataset.phase].rep, playing: false })));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
     root.querySelectorAll(".related [data-topic]").forEach(b => b.addEventListener("click", () => store.set({ topic: b.dataset.topic })));
+    root.querySelectorAll("[data-sys]").forEach(b => b.addEventListener("click", () => setLive(b.dataset.sys)));
   }
 
   function render(s, force){
-    const key = `${s.topic}|${s.level}|${s.topic ? phaseAt(s.hour) + Math.floor(s.hour * 2) : ""}`;
+    const key = `${s.topic}|${s.level}|${s.live}|${phaseAt(s.hour)}${s.topic ? Math.floor(s.hour * 2) : ""}`;
     if (key === lastKey && !force) return;
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
@@ -2526,10 +3231,24 @@ const Panel = (() => {
    CONTROLS — level switch, timeline, play
    ========================================================================= */
 const Controls = (() => {
-  const seg = $("#levelSeg"), range = $("#hourRange"), hourBtns = $("#hourBtns"), dayBar = $("#dayBar"), play = $("#playBtn"), back = $("#backBtn");
+  const sw = $("#sysSwitch"), seg = $("#levelSeg"), range = $("#hourRange"), hourBtns = $("#hourBtns"), dayBar = $("#dayBar"), play = $("#playBtn"), back = $("#backBtn");
   const icons = { play: `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9.5-5.5z"/></svg>`, pause: `<svg viewBox="0 0 14 14" aria-hidden="true"><rect x="2.5" y="1.5" width="3.2" height="11" rx="1"/><rect x="8.3" y="1.5" width="3.2" height="11" rx="1"/></svg>` };
   const TICKS = [0, 3, 6, 9, 12, 15, 18, 21];
   function build(){
+    /* system switches: the switch shows or hides a layer; the name makes it the live one */
+    sw.insertAdjacentHTML("beforeend", SYSTEMS.map(m => {
+      const name = CONTENT.systems[m.id].name.replace(" system", "");
+      return `<div class="sw" data-sys="${m.id}" style="--sc:${m.color}">
+        <button type="button" class="sw-tog" role="switch" aria-label="Show the ${esc(CONTENT.systems[m.id].name.toLowerCase())}"><i></i></button>
+        <button type="button" class="sw-name" aria-label="Animate the ${esc(CONTENT.systems[m.id].name.toLowerCase())}"><span class="long">${esc(name)}</span><span class="short">${esc(m.short)}</span><em class="sw-live">${esc(STRINGS.live)}</em></button>
+      </div>`;
+    }).join(""));
+    sw.addEventListener("click", e => {
+      const row = e.target.closest("[data-sys]"); if (!row) return;
+      e.stopPropagation();
+      const id = row.dataset.sys;
+      if (e.target.closest(".sw-tog")) setSystem(id, !store.get().shown[id]); else setLive(id);
+    });
     seg.innerHTML = LEVELS.map(l => `<button type="button" role="radio" data-level="${l.id}"><span class="long">${l.label}</span><span class="short">${l.short}</span></button>`).join("");
     seg.addEventListener("click", e => { const b = e.target.closest("[data-level]"); if (b) store.set({ level: b.dataset.level }); });
     seg.addEventListener("keydown", e => {
@@ -2552,6 +3271,12 @@ const Controls = (() => {
     document.addEventListener("keydown", e => { if (e.key === "Escape" && store.get().topic) store.set({ topic: null }); });
   }
   function sync(s){
+    sw.querySelectorAll("[data-sys]").forEach(row => {
+      const id = row.dataset.sys, on = !!s.shown[id], live = s.live === id;
+      row.classList.toggle("on", on); row.classList.toggle("live", live);
+      row.querySelector(".sw-tog").setAttribute("aria-checked", on);
+      row.querySelector(".sw-name").setAttribute("aria-pressed", live);
+    });
     seg.querySelectorAll("[data-level]").forEach(b => { const on = b.dataset.level === s.level; b.setAttribute("aria-checked", on); b.tabIndex = on ? 0 : -1; });
     if (document.activeElement !== range) range.value = wrapH(s.hour).toFixed(2);
     const hh = wrapH(s.hour), tick = (Math.round(hh / 3) * 3) % 24, phase = PHASE_BY_ID[phaseAt(hh)];
@@ -2582,6 +3307,11 @@ function cameraFor(s){
 store.subscribe((s, prev) => {
   if (s.hour !== prev.hour){ Scene.update(s.hour); Vitals.update(Physio.at(s.hour), s.hour); }
   if (s.level !== prev.level) storage.set("bodyday.level", s.level);
+  if (s.shown !== prev.shown || s.live !== prev.live){
+    storage.set("bodyday.shown", JSON.stringify(s.shown)); storage.set("bodyday.live", s.live || "none");
+    applySystems(s);
+  }
+  Pins.render(s);
   if (s.topic !== prev.topic){
     Camera.go(cameraFor(s)); Hotspots.setVisible(!s.topic); Scene.focus(s.topic);
     if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
@@ -2595,20 +3325,29 @@ store.subscribe((s, prev) => {
   Panel.render(s);
 });
 
+function applySystems(s){
+  Scene.setSystems(s.shown, s.live);
+  Particles.setLive(s.live === "circulatory");
+}
+
 function init(){
   Scene.build();
   Particles.init();
+  Nerves.init();
+  Hormones.init();
   Hotspots.build();
   Controls.build();
   const s = store.get();
   Scene.update(s.hour);
   Vitals.update(Physio.at(s.hour), s.hour);
+  applySystems(s);
   Controls.sync(s);
   Panel.render(s, true);
+  Pins.render(s);
   requestAnimationFrame(() => { Camera.go(cameraFor(s), true); Hotspots.place(); });
 
   let resizeT;
-  new ResizeObserver(() => { clearTimeout(resizeT); resizeT = setTimeout(() => { Camera.go(cameraFor(store.get()), true); }, 60); }).observe($("#sceneWrap"));
+  new ResizeObserver(() => { clearTimeout(resizeT); resizeT = setTimeout(() => { Camera.go(cameraFor(store.get()), true); Pins.refresh(); }, 60); }).observe($("#sceneWrap"));
 
   let last = performance.now();
   function frame(t){
@@ -2622,6 +3361,9 @@ function init(){
       Scene.animate();
       Vitals.tick(dt);
       Particles.tick(dt);
+      const live = store.get().live;
+      if (!reducedMotion && live === "nervous") Nerves.tick(dt, ph);
+      if (!reducedMotion && live === "endocrine") Hormones.tick(dt, ph); else Hormones.setRates(ph);
       Panel.tick(dt, ph);
     }
     requestAnimationFrame(frame);

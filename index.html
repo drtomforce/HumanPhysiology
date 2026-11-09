@@ -23,21 +23,24 @@
  2. CONFIG          LEVELS, PHASES, SCHEDULE (the day plan) and PHYSIO keyframes:
                    sparse [hour, value] pairs per channel, smoothly interpolated
                    and wrapping around midnight. Add a channel: add keyframes,
-                   read it in Scene / Vitals. Missing text falls back to the
+                   read it in Scene / Vitals. Physio.at() also derives cardiac
+                   output, ventilation, venous O₂ (Fick) and the organ flow split. Missing text falls back to the
                    nearest lower level.
 
  3. STORE           Single source of truth {hour, level, topic, playing}.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
                    Renders physiology → SVG attributes. RHYTHM keeps the beat and
-                   breath phases, and PARTICLES animates blood, food, breath,
-                   sweat and Zzz.
+                   breath phases (breath waveform, RSA, ventricular volume), and
+                   PARTICLES animates blood, food, breath, sweat and Zzz. Blood
+                   cells run the CIRC network: lungs ↔ heart ↔ each organ.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate}).
                    Illustrations are pure functions ctx → SVG string;
                    ctx.mark() adds a numbered, level-aware legend entry.
 
- 6. VITALS          Live readout: ECG, breathing, glucose trace, temperature, hormones.
+ 6. VITALS          Live readout: ECG, breathing, glucose trace, temperature,
+                   blood pressure, cardiac output, blood O₂, hormones.
 
  7. UI              Panel, timeline, level switch, glossary tooltips.
 
@@ -49,7 +52,7 @@
 :root{
   --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
   --line:#DCD2C9; --line-strong:#A99B91;
-  --skin:#EBCDB6; --skin-line:#C9A186; --vessel:#C2414B;
+  --skin:#EBCDB6; --skin-line:#C9A186; --vessel:#C2414B; --vein:#4F5FB0;
   --accent:#2f8f83;
   --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans:"Schibsted Grotesk", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -60,14 +63,14 @@
   :root:not([data-theme="light"]){
     --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
     --line:#342B26; --line-strong:#5A4B42;
-    --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A;
+    --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
   --line:#342B26; --line-strong:#5A4B42;
-  --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A;
+  --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0;
   color-scheme: dark;
 }
 :root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
@@ -150,8 +153,10 @@ button{ font:inherit; color:inherit; }
 .hbar{ height:5px; border-radius:3px; background:var(--surface-2); overflow:hidden; }
 .hbar i{ display:block; height:100%; border-radius:3px; transition:width .2s; }
 #hCort{ background:#e0a43a; } #hMel{ background:#6c6fc4; } #hIns{ background:#3f9a5a; } #hGcg{ background:#8a5cc4; }
-.vt-bp{ grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:5px 9px 6px; }
-.vt-bp .vt-val b{ font-size:20px; }
+.vt-circ{ gap:1px 8px; padding:5px 9px 6px; }
+.vt-circ .vt-val{ justify-content:flex-end; }
+.vt-circ .vt-val b{ font-size:16px; }
+#vSat{ background:linear-gradient(90deg,#d63340,#5a68bd); -webkit-background-clip:text; background-clip:text; color:transparent; }
 
 /* ---------- Timeline ---------- */
 .timeline{ grid-row:2; grid-column:1; display:grid; grid-template-columns:auto 1fr; gap:2px 16px; align-items:center; padding:12px 28px 16px; border-top:1px solid var(--line); }
@@ -243,8 +248,9 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .shadow{ fill:var(--line); }
 .win-frame{ fill:none; stroke:var(--line-strong); stroke-width:8; }
 .win-bar{ stroke:var(--line-strong); stroke-width:4; opacity:.8; }
-.vessel{ fill:none; stroke:var(--vessel); stroke-width:3; opacity:.3; }
-.rbc{ fill:var(--vessel); }
+.vessel{ fill:none; stroke:var(--vessel); stroke-width:3; opacity:.28; stroke-linecap:round; stroke-linejoin:round; }
+.vessel.dx{ stroke:var(--vein); }
+.rbc{ stroke:#00000022; stroke-width:.6; }
 .face{ fill:none; stroke:var(--ink); stroke-width:2.6; stroke-linecap:round; }
 .zz{ fill:var(--muted); font:italic 500 22px var(--serif); }
 .puff{ fill:none; stroke:var(--muted); stroke-width:1.5; }
@@ -312,11 +318,15 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       </button>
     </div>
     <div class="vitals" id="vitals" aria-label="Vital signs">
-      <div class="vt"><div class="vt-top"><span class="vt-label">Heart</span><canvas id="ecg" aria-hidden="true"></canvas></div><div class="vt-val"><b id="vHr">70</b><span>bpm</span></div></div>
-      <div class="vt"><div class="vt-top"><span class="vt-label">Breathing</span><span class="breath" aria-hidden="true"><i id="vBrDot"></i></span></div><div class="vt-val"><b id="vBr">14</b><span>/min</span></div></div>
+      <div class="vt"><div class="vt-top"><span class="vt-label">Heart</span><canvas id="ecg" aria-hidden="true"></canvas></div><div class="vt-val"><b id="vHr">70</b><span>bpm</span></div><div class="vt-sub" id="vSv" title="Stroke volume: blood pumped per beat">70 mL/beat</div></div>
+      <div class="vt"><div class="vt-top"><span class="vt-label">Breathing</span><span class="breath" aria-hidden="true"><i id="vBrDot"></i></span></div><div class="vt-val"><b id="vBr">14</b><span>/min</span></div><div class="vt-sub" id="vVt" title="Tidal volume: air per breath">500 mL/breath</div></div>
       <div class="vt"><div class="vt-top"><span class="vt-label">Glucose</span><svg class="gtrace" viewBox="0 0 96 22" preserveAspectRatio="none" aria-hidden="true" id="vGluSvg"></svg></div><div class="vt-val"><b id="vGlu">90</b><span>mg/dL</span></div><div class="vt-sub" id="vGluMm">5.0 mmol/L</div></div>
       <div class="vt"><div class="vt-top"><span class="vt-label">Core temp</span></div><div class="vt-val"><b id="vTemp">36.8</b><span>°C</span></div><div class="tbar" aria-hidden="true"><i id="vTempMk"></i></div></div>
-      <div class="vt vt-bp"><span class="vt-label">Blood pressure</span><div class="vt-val"><b id="vBp">118/76</b><span>mmHg</span></div></div>
+      <div class="vt vt-wide vt-circ">
+        <span class="vt-label">Blood pressure</span><div class="vt-val"><b id="vBp">118/76</b><span>mmHg</span></div>
+        <span class="vt-label" title="Cardiac output: heart rate × stroke volume">Cardiac output</span><div class="vt-val"><b id="vCo">4.9</b><span>L/min</span></div>
+        <span class="vt-label" title="Haemoglobin O₂ saturation leaving the lungs (arterial) → coming back to the heart (mixed venous)">Blood O₂</span><div class="vt-val"><b id="vSat">97 → 71</b><span>%</span></div>
+      </div>
       <div class="vt vt-wide">
         <span class="vt-label">Insulin</span><div class="hbar"><i id="hIns"></i></div>
         <span class="vt-label">Glucagon</span><div class="hbar"><i id="hGcg"></i></div>
@@ -638,6 +648,10 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "sarcomere": { "def": "The smallest contracting unit of a muscle fibre, bounded by Z-lines.", "match": ["sarcomere"] },
   "SCN": { "def": "Suprachiasmatic nucleus: the master body clock in the hypothalamus.", "match": ["suprachiasmatic", "SCN"] },
   "stroke volume": { "def": "The amount of blood pumped out of a ventricle with each beat.", "match": ["stroke volume"] },
+  "tidal volume": { "def": "The amount of air moved in or out in one normal breath: about 0.5 L at rest, up to 2 L or more in hard exercise.", "match": ["tidal volume"] },
+  "minute ventilation": { "def": "How much air you breathe each minute: breathing rate × tidal volume.", "match": ["minute ventilation"] },
+  "venous return": { "def": "The flow of blood back to the heart through the veins. The heart can only pump out what comes back in.", "match": ["venous return"] },
+  "portal vein": { "def": "The vein that carries blood from the gut to the liver, so absorbed nutrients pass through the liver before reaching the rest of the body.", "match": ["portal vein"] },
   "surfactant": { "def": "A soapy lining in the alveoli that lowers surface tension so they don’t collapse.", "match": ["surfactant"] },
   "sympathetic": { "def": "The ‘fight or flight’ branch of the autonomic nervous system.", "match": ["sympathetic"] },
   "synapse": { "def": "The junction where one neuron passes a signal to another cell.", "match": ["synapse", "synaptic"] },
@@ -786,8 +800,20 @@ const PHYSIO = {
   insulin:    [[0,.1],[5,.09],[6.5,.12],[7.25,.14],[7.6,.45],[8.2,1],[8.75,.8],[9.75,.35],[10.75,.17],[12.25,.15],[12.6,.45],[13.2,.95],[13.75,.75],[14.75,.32],[15.75,.17],[16.8,.15],[17.3,.05],[17.95,.03],[18.4,.08],[19,.12],[19.35,.45],[19.95,1],[20.5,.8],[21.5,.38],[22.5,.18],[23.5,.12]],
   glucagon:   [[0,.48],[3,.52],[6.5,.5],[7.25,.42],[8,.18],[9,.2],[10.5,.33],[12.25,.36],[13,.18],[14,.2],[15.5,.33],[16.8,.35],[17.3,.75],[17.9,.9],[18.3,.6],[18.8,.42],[19.5,.2],[20.5,.18],[22,.3],[23.5,.42]],
   /* liver glycogen, 0–1: filled by meals, drained overnight and by the run */
-  glycogen:   [[0,.65],[3,.5],[6,.38],[7.25,.35],[8.5,.6],[10,.75],[12,.68],[13.5,.78],[15.5,.85],[16.9,.8],[17.5,.55],[18.25,.27],[19,.25],[20.25,.5],[22,.72],[23.5,.68]]
+  glycogen:   [[0,.65],[3,.5],[6,.38],[7.25,.35],[8.5,.6],[10,.75],[12,.68],[13.5,.78],[15.5,.85],[16.9,.8],[17.5,.55],[18.25,.27],[19,.25],[20.25,.5],[22,.72],[23.5,.68]],
+  /* heart and lungs. Stroke volume, mL: a little higher lying down at night,
+     up ~50% in the run (stronger contraction + more venous return) */
+  strokeVol:  [[0,74],[5,73],[6.5,70],[7.5,68],[16.8,69],[17.15,98],[17.5,106],[17.95,105],[18.3,84],[18.8,76],[20,72],[23,73]],
+  /* tidal volume, mL: ~450 asleep, ~500 at rest, ~1.9 L in the run */
+  tidalVol:   [[0,450],[5,450],[6.5,480],[7,500],[16.8,500],[17.15,1650],[17.5,1900],[17.95,1850],[18.3,800],[18.8,560],[22,510],[23,470]],
+  /* whole-body O₂ uptake, mL/min: basal ~220 asleep, +10–15% after meals
+     (thermic effect), ~2.1 L/min in a brisk run */
+  vo2:        [[0,215],[4.5,205],[6.5,235],[7,255],[8.5,290],[10,265],[13.5,290],[15,265],[16.8,265],[17.15,1900],[17.5,2000],[17.95,1980],[18.3,620],[18.8,330],[20.25,300],[22,250],[23,225]],
+  /* arterial O₂ saturation, %: a small dip in sleep as breathing slows */
+  spo2:       [[0,96],[3,95.6],[6,96],[6.6,97.5],[16.8,97.5],[17.5,97],[18.3,97.5],[22.8,97.2],[23.3,96.2]]
 };
+/* Oxygen content: 1.34 mL O₂ per g of haemoglobin × ~14.5 g/dL ≈ 194 mL O₂ per L of blood when fully saturated */
+const O2_CAP = 194;
 function sampleKF(kf, h){
   h = wrapH(h);
   const n = kf.length;
@@ -806,6 +832,21 @@ const Physio = {
     for (const k in PHYSIO) out[k] = sampleKF(PHYSIO[k], h);
     out.phase = phaseAt(h);
     out.accent = PHASE_BY_ID[out.phase].color;
+    /* derived heart–lung numbers */
+    out.co = out.heartRate * out.strokeVol / 1000;              /* cardiac output, L/min */
+    out.ve = out.breathRate * out.tidalVol / 1000;              /* minute ventilation, L/min */
+    out.avDiff = out.vo2 / out.co;                              /* Fick: a–v O₂ difference, mL O₂ per L */
+    out.svo2 = clamp(out.spo2 - 100 * out.avDiff / O2_CAP, 15, 99); /* mixed venous saturation, % */
+    /* where the cardiac output goes, L/min. Brain flow is held steady; gut flow
+       rises after meals and is cut in exercise; kidney flow falls in exercise;
+       working legs take most of the rise; skin opens up to dump heat. */
+    const brain = .75, kidneys = 1.15 - .55 * out.muscle, gut = 1.05 + .7 * out.gut - .7 * out.muscle;
+    const arms = .45 + .9 * out.sweat, legs = .55 + 11.5 * Math.max(0, out.muscle - .12);
+    const sum = brain + kidneys + gut + arms + legs;
+    out.flow = { brain, kidneys, gut, arms, legs };
+    for (const k in out.flow) out.flow[k] *= out.co / sum;
+    /* O₂ extraction per bed (fraction of arterial content removed) */
+    out.extract = { brain: .34, kidneys: .08, gut: .2, arms: .3 - .12 * out.sweat, legs: .32 + .5 * out.muscle };
     return out;
   }
 };
@@ -844,9 +885,30 @@ const ORG = {
   pancreas: "M574 514 C590 506 622 508 652 503 C668 500 674 510 662 516 C640 524 606 527 584 527 C568 527 564 519 574 514 Z",
   eso: "M600 214 L600 300 C600 370 612 410 630 444",
   colon: "M566 612 L566 548 Q566 536 578 536 L622 536 Q634 536 634 548 L634 612",
-  smallInt: "M580 552 H620 Q627 552 627 558 Q627 564 620 564 H580 Q573 564 573 570 Q573 576 580 576 H620 Q627 576 627 582 Q627 588 620 588 H580 Q573 588 573 594 Q573 600 580 600 H620",
-  loop: "M612 352 C616 300 614 250 612 200 C611 176 589 176 588 200 C586 250 586 300 590 352 C588 430 596 520 572 600 C556 650 548 760 542 830 C541 842 556 842 557 830 C562 760 570 680 590 625 C596 612 604 612 610 625 C630 680 638 760 643 830 C644 842 659 842 658 830 C652 760 644 650 628 600 C604 520 612 430 612 352 Z"
+  smallInt: "M580 552 H620 Q627 552 627 558 Q627 564 620 564 H580 Q573 564 573 570 Q573 576 580 576 H620 Q627 576 627 582 Q627 588 620 588 H580 Q573 588 573 594 Q573 600 580 600 H620"
 };
+/* Circulation: two circuits in series. Each route is an artery out to a
+   capillary bed and a vein back. Systemic routes leave the left heart through
+   the aorta and come back to the right atrium; pulmonary routes leave the right
+   ventricle and return to the left atrium. Gut blood goes through the liver
+   (portal vein) before it gets home. Shared trunks repeat the same path text,
+   so cells on different routes run down the same aorta and vena cava. */
+const AO = "M616 346 C615 326 614 310 610 300";                         /* ascending aorta to the arch */
+const AO_D = AO + " C618 312 610 332 607 360 L606 470";                  /* descending aorta */
+const SVC = " L590 300 C590 324 590 346 594 362";                        /* superior vena cava → right atrium */
+const IVC = " L594 380 C594 372 594 366 594 362";                        /* inferior vena cava → right atrium */
+const CIRC = [
+  { bed: "brain", sys: 1, a: AO + " L610 222 C610 196 612 178 607 160", v: "M593 160 C588 178 590 198 590 222" + SVC },
+  { bed: "arms", sys: 1, a: AO + " C584 288 520 280 494 292 C464 306 450 360 444 440 L436 572", v: "M422 576 L428 440 C434 360 450 304 486 286 C520 274 576 284 590 300 C590 324 590 346 594 362" },
+  { bed: "arms", sys: 1, a: AO + " C636 288 680 280 706 292 C736 306 750 360 756 440 L764 572", v: "M778 576 L772 440 C766 360 750 304 714 286 C680 274 624 284 590 300 C590 324 590 346 594 362" },
+  { bed: "gut", sys: 1, a: AO_D + " C606 500 616 534 616 562", v: "M586 566 C576 540 562 506 550 474 C562 456 584 448 594 440" + IVC },
+  { bed: "kidneys", sys: 1, a: AO_D + " L606 512 C592 515 574 519 562 521", v: "M562 530 C574 533 590 528 594 510 L594 440" + IVC },
+  { bed: "kidneys", sys: 1, a: AO_D + " L606 512 C618 515 628 519 638 521", v: "M638 530 C626 533 600 528 594 510 L594 440" + IVC },
+  { bed: "legs", sys: 1, a: AO_D + " L606 598 C600 612 566 618 560 650 C554 720 548 790 543 846", v: "M527 848 C532 790 538 720 544 650 C548 620 588 612 594 598 L594 440" + IVC },
+  { bed: "legs", sys: 1, a: AO_D + " L606 598 C612 612 634 618 640 650 C646 720 652 790 657 846", v: "M673 848 C668 790 662 720 656 650 C652 620 600 612 594 598 L594 440" + IVC },
+  { bed: "lungs", sys: 0, a: "M604 352 C600 334 588 326 576 326 C558 326 546 340 540 356", v: "M540 380 C560 390 592 382 612 368 L620 360" },
+  { bed: "lungs", sys: 0, a: "M604 352 C606 332 620 322 634 322 C652 322 662 338 664 354", v: "M664 378 C652 388 636 380 626 368 L620 360" }
+];
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
   let out = `<path d="M${f1(x)} ${f1(y)}L${f1(x2)} ${f1(y2)}" stroke-width="${f1(w)}"/>`;
@@ -864,21 +926,54 @@ function bronchi(rng, scale = 1){
    in-breath and slows it on the out-breath. Strong at rest and in sleep, it all
    but vanishes as vagal tone is withdrawn during exercise. A slow random walk
    adds the remaining beat-to-beat variability. hrNow is the instantaneous rate. */
+/* Breathing is not a sine wave. Breathing in is active (diaphragm) and takes
+   ~40% of the cycle at rest; breathing out is passive elastic recoil, fast at
+   first and then levelling into a pause. In hard exercise the out-breath is
+   pushed by the abdominal muscles and the cycle nears 1:1. */
+function breathShape(f, ti){ /* f = breath phase → {vol 0–1, psi} */
+  f = ((f % 1) + 1) % 1;
+  if (f < ti){ const x = f / ti; return { vol: (1 - Math.cos(Math.PI * x)) / 2, psi: x / 2 }; }
+  const x = (f - ti) / (1 - ti), k = 4.5;
+  return { vol: (Math.exp(-k * x) - Math.exp(-k)) / (1 - Math.exp(-k)), psi: .5 + x / 2 };
+}
 const Rhythm = {
-  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0,
+  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0, lung: 0, insp: 0, ti: .4,
+  /* lung = volume 0–1; insp > 0 while air flows in (drives the thoracic pump) */
   tick(dt, ph){
+    this.ti = .4 + .09 * clamp((ph.breathRate - 14) / 22);
     this.breath += dt * ph.breathRate / 60;
+    const b = breathShape(this.breath, this.ti);
+    this.lung = b.vol; this.insp = Math.sin(2 * Math.PI * b.psi);
     this.jitT += (Math.random() - .5) * .012 - this.jitT * dt * .5;
     this.jitT = clamp(this.jitT, -.015, .015);
     this.jit += (this.jitT - this.jit) * clamp(dt * 1.5);
     const rsa = .07 * clamp(1 - (ph.heartRate - 55) / 70) + .005;
-    /* in-breath (rising lung volume) → faster: sin is positive while v rises */
-    this.hrNow = ph.heartRate * (1 + rsa * Math.sin(2 * Math.PI * this.breath) + this.jit);
+    /* in-breath → vagal brake eases → faster, peaking as it ends; out-breath → slower */
+    this.hrNow = ph.heartRate * (1 - rsa * Math.cos(2 * Math.PI * b.psi) + this.jit);
     this.beat += dt * this.hrNow / 60;
   }
 };
-/* systolic swell of the heart for beat phase f ∈ [0, 1) */
-const beatScale = f => 1 + .085 * Math.exp(-(((f - .1) / .07) ** 2));
+/* Ventricular volume through one beat, 0 = end-systolic, 1 = end-diastolic,
+   in real time and locked to the ECG (R peak at t = 0): isovolumic contraction,
+   ejection (fast then slow) ending with the T wave, isovolumic relaxation,
+   rapid passive filling, slow filling, then the atrial kick after the P wave.
+   As the rate rises, it is the filling time that gets squeezed. */
+function ventVolume(beat, bpm){
+  const RR = 60 / Math.max(30, bpm), PR = Math.min(.2, Math.max(.12, .16 - .0005 * (bpm - 70)));
+  let u = (((beat % 1) + 1) % 1) * RR - (PR + .03); /* seconds since R */
+  if (u < 0) u += RR;
+  const ej0 = .045, ej1 = .3 * Math.sqrt(RR) + .02, fill0 = ej1 + .06;
+  const kick0 = RR - PR + .07, kickW = Math.max(.05, PR - .08);
+  if (u < ej0) return 1;
+  if (u < ej1){ const x = (u - ej0) / (ej1 - ej0); return (1 - x) * (1 - x); }
+  if (u < fill0) return 0;
+  const passive = .78 * (1 - Math.exp(-(u - fill0) / .07)) + .06 * clamp((u - fill0 - .2) / .4);
+  if (u < kick0) return passive;
+  const atK = clamp((u - kick0) / kickW);
+  return passive + (1 - passive) * atK * atK * (3 - 2 * atK);
+}
+/* heart size: smaller as the ventricles empty, fuller as they fill */
+const beatScale = (beat, bpm) => .955 + .075 * ventVolume(beat, bpm);
 /* ECG in real time, not as a fixed fraction of the cycle: QRS width stays
    ~80 ms at any rate, PR shortens a little, QT follows Bazett (~0.4·√RR) and
    it is the diastolic gap (TP segment) that shrinks as the heart speeds up. */
@@ -918,6 +1013,9 @@ const Scene = (() => {
   const r = {};
   let cur = null;
 
+  /* each route: artery (oxygen-rich = red in the body, blue to the lungs) and vein */
+  const vessels = sys => CIRC.map((c, i) => c.sys !== sys ? "" :
+    `<path id="s-va${i}" d="${c.a}" class="vessel ${sys ? "ox" : "dx"}"/><path id="s-vv${i}" d="${c.v}" class="vessel ${sys ? "dx" : "ox"}"/>`).join("");
   function build(){
     const limb = (d, w) => `<path d="${d}" class="limb-o" stroke-width="${w + 4}"/><path d="${d}" class="limb" stroke-width="${w}"/>`;
     let stars = "";
@@ -956,13 +1054,14 @@ const Scene = (() => {
       <path class="skin" d="M452 300 C452 270 478 256 512 252 L688 252 C722 256 748 270 748 300 L736 450 C730 486 724 520 732 560 C736 590 724 612 700 614 L500 614 C476 612 464 590 468 560 C476 520 470 486 464 450 Z"/>
       <ellipse cx="541" cy="170" rx="10" ry="16" class="skin"/><ellipse cx="659" cy="170" rx="10" ry="16" class="skin"/>
       <ellipse cx="600" cy="160" rx="60" ry="70" class="skin"/>
-      <path id="s-loop" d="${ORG.loop}" class="vessel"/>
+      <g id="s-vessels">${vessels(1)}</g>
       <path id="s-eso" d="${ORG.eso}" stroke="#dba08e" stroke-width="7" fill="none" stroke-linecap="round"/>
       <g id="s-lungs">
         <path d="${ORG.lungL}" fill="#e9a3a7" stroke="#c9777d" stroke-width="1.5"/><path d="${ORG.lungR}" fill="#e9a3a7" stroke="#c9777d" stroke-width="1.5"/>
         <g clip-path="url(#s-lungClip)" stroke="#f6d8cc" stroke-linecap="round" fill="none" opacity=".9">${bronchi(R)}</g>
       </g>
       <path d="${ORG.trachea}" stroke="#ecd3c5" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <g id="s-pulm">${vessels(0)}</g>
       <g transform="translate(552 524) scale(.3)"><path d="${KIDNEY_D}" fill="#a5483f"/></g>
       <g transform="translate(648 524) scale(-.3 .3)"><path d="${KIDNEY_D}" fill="#a5483f"/></g>
       <path d="${ORG.liver}" fill="#8e3b33" stroke="#6e2a24" stroke-width="1.5"/>
@@ -971,6 +1070,7 @@ const Scene = (() => {
       <path d="${ORG.pancreas}" fill="#e8bd6e" stroke="#c99a4a" stroke-width="1.2"/>
       <ellipse id="s-gutGlow" cx="650" cy="480" rx="64" ry="50" fill="url(#s-gutGrad)"/>
       <path d="${ORG.stomach}" fill="#e6a07a" stroke="#c07a58" stroke-width="1.5"/>
+      <g id="s-blood"></g>
       <g transform="translate(620 366) rotate(-28)"><g id="s-heart"><path d="${HEART_D}" transform="scale(.82)" fill="#c8343f" stroke="#9c2530" stroke-width="1.5"/><ellipse cx="-16" cy="-16" rx="7" ry="5" fill="#e8737b" opacity=".6"/></g></g>
       <ellipse cx="600" cy="132" rx="48" ry="40" fill="#e9a8ae" stroke="#c97a84" stroke-width="1.5"/>
       <g clip-path="url(#s-brainClip)"><path d="${gy}" stroke="#c97a84" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M600 92 V172" stroke="#b5636e" stroke-width="2"/></g>
@@ -980,11 +1080,10 @@ const Scene = (() => {
       <path id="s-mouth" class="face" d="M588 210 Q600 218 612 210"/>
       <ellipse id="s-mouthO" cx="600" cy="212" rx="7" ry="5.5" fill="var(--ink)"/>
     </g>
-    <g id="s-blood"></g>
     <g id="s-fx"></g>
     <circle id="s-ring" r="40" class="focus-ring"/>`;
     svg.innerHTML = s;
-    ["sky", "stars", "sun", "moon", "moonShade", "hills", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "loop", "eso"]
+    ["sky", "stars", "sun", "moon", "moonShade", "hills", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -1031,13 +1130,13 @@ const Scene = (() => {
 
   function animate(){
     if (reducedMotion || !cur) return;
-    const f = ((Rhythm.beat % 1) + 1) % 1;
-    const s = beatScale(f);
+    const s = beatScale(Rhythm.beat, Rhythm.hrNow);
     r.heart.setAttribute("transform", `scale(${s.toFixed(3)})`);
     const ill = document.getElementById("ill-heartBeat");
     if (ill) ill.setAttribute("transform", `translate(0 1) scale(${(1 + (s - 1) * .8).toFixed(3)}) translate(0 -1)`);
-    const v = (1 - Math.cos(2 * Math.PI * Rhythm.breath)) / 2;
-    const depth = .025 + .05 * clamp((cur.breathRate - 12) / 26);
+    /* lung size follows the breath waveform; amplitude follows tidal volume */
+    const v = Rhythm.lung;
+    const depth = .022 + .058 * clamp((cur.tidalVol - 420) / 1500);
     r.lungs.setAttribute("transform", `translate(600 300) scale(${(1 + depth * .6 * v).toFixed(3)} ${(1 + depth * v).toFixed(3)}) translate(-600 -300)`);
   }
 
@@ -1056,30 +1155,86 @@ const Scene = (() => {
    PARTICLES — blood, food, breath, sweat, Zzz (respects reduced motion)
    ========================================================================= */
 const Particles = (() => {
-  const list = []; let ph = null, accF = 0, accZ = 0, accS = 0, lastBreath = 0, bloodT = 0;
-  let cells = [], loopL = 0, esoL = 0;
+  const list = []; let ph = null, accF = 0, accZ = 0, accS = 0, wasIn = false;
+  let esoL = 0;
+  /* ---- blood: red cells that each do the full figure-of-eight ---- */
+  const NCELL = 96, routes = [], cells = [];
+  const SYS = [], PUL = [];
+  const RED = hex2rgb("#d63340"), BLUE = hex2rgb("#5a68bd");
+  const satCol = sat => { const t = clamp((sat - 40) / 56); return rgb2hex(BLUE.map((v, i) => lerp(v, RED[i], t * t * (3 - 2 * t)))); };
   function init(){
-    const R = Scene.refs;
-    loopL = R.loop.getTotalLength(); esoL = R.eso.getTotalLength();
-    for (let i = 0; i < 34; i++) cells.push({ c: el("circle", { r: 3.4, class: "rbc" }, R.blood), o: i / 34 * loopL });
-    placeCells();
+    const R = Scene.refs, svg = Scene.svg;
+    esoL = R.eso.getTotalLength();
+    CIRC.forEach((c, i) => {
+      const a = svg.querySelector("#s-va" + i), v = svg.querySelector("#s-vv" + i);
+      const La = a.getTotalLength(), Lv = v.getTotalLength();
+      const pa = a.getPointAtLength(La), pv = v.getPointAtLength(0);
+      const Lc = Math.max(8, Math.hypot(pv.x - pa.x, pv.y - pa.y));
+      routes.push({ ...c, A: a, V: v, La, Lc, Lv, pa, pv, L: La + Lc + Lv });
+      (c.sys ? SYS : PUL).push(i);
+    });
+    const rng = mulberry32(11);
+    for (let i = 0; i < NCELL; i++){
+      const ri = rng() < .3 ? PUL[i % 2] : SYS[Math.floor(rng() * SYS.length)];
+      cells.push({ c: el("circle", { r: 2.8, class: "rbc" }, R.blood), ri, s: rng() * routes[ri].L, satIn: 70, col: "" });
+    }
   }
-  function placeCells(){
-    const loop = Scene.refs.loop;
-    for (const k of cells){ const p = loop.getPointAtLength((k.o + bloodT) % loopL); k.c.setAttribute("cx", f1(p.x)); k.c.setAttribute("cy", f1(p.y)); }
+  /* pick the next organ in proportion to its share of the cardiac output */
+  function pickSys(){
+    const f = ph.flow, w = SYS.map(i => f[routes[i].bed] / (routes[i].bed === "brain" || routes[i].bed === "gut" ? 1 : 2));
+    let u = Math.random() * w.reduce((a, b) => a + b, 0);
+    for (let k = 0; k < w.length; k++){ u -= w[k]; if (u <= 0) return SYS[k]; }
+    return SYS[0];
   }
-  function setRates(p){ ph = p; }
+  function venSat(bed){ return ph.spo2 * (1 - ph.extract[bed]); }
+  function place(k){
+    const r = routes[k.ri], s = k.s;
+    let x, y, sat;
+    const sa = ph ? ph.spo2 : 97, sv = r.sys ? (ph ? venSat(r.bed) : 70) : sa;
+    if (s < r.La){ const p = r.A.getPointAtLength(s); x = p.x; y = p.y; sat = r.sys ? sa : k.satIn; }
+    else if (s < r.La + r.Lc){ const t = (s - r.La) / r.Lc; x = lerp(r.pa.x, r.pv.x, t); y = lerp(r.pa.y, r.pv.y, t); sat = lerp(r.sys ? sa : k.satIn, sv, smooth(t)); }
+    else { const p = r.V.getPointAtLength(s - r.La - r.Lc); x = p.x; y = p.y; sat = sv; }
+    k.c.setAttribute("cx", f1(x)); k.c.setAttribute("cy", f1(y));
+    const col = satCol(sat);
+    if (col !== k.col){ k.col = col; k.c.setAttribute("fill", col); }
+  }
+  function moveBlood(dt){
+    /* mean speed scales with cardiac output; arterial flow surges in systole
+       (ejection follows the R wave), venous return speeds up on each in-breath
+       (the thoracic pump), and cells crawl through the capillaries */
+    const base = 62 * Math.pow(ph.co / 4.9, .75);
+    const RR = 60 / Rhythm.hrNow;
+    let u = ((Rhythm.beat % 1) + 1) % 1 * RR - .19; if (u < 0) u += RR;
+    const ej = .3 * Math.sqrt(RR);
+    const surge = u < ej ? 1 + 1.6 * Math.sin(Math.PI * u / ej) : 1;
+    const art = surge / (1 + 1.6 * (2 / Math.PI) * ej / RR);
+    const ven = 1 + .3 * Rhythm.insp;
+    for (const k of cells){
+      const r = routes[k.ri];
+      const v = k.s < r.La ? art : k.s < r.La + r.Lc ? .3 : ven;
+      k.s += dt * base * v;
+      if (k.s >= r.L){
+        k.s -= r.L;
+        if (r.sys){ k.satIn = venSat(r.bed); k.ri = PUL[Math.random() < .5 ? 0 : 1]; }
+        else k.ri = pickSys();
+        k.s = Math.min(k.s, routes[k.ri].L - 1);
+      }
+      place(k);
+    }
+  }
+  function setRates(p){ ph = p; if (reducedMotion) cells.forEach(place); }
   function add(kind, e, extra = {}){ list.push({ kind, e, age: 0, life: 1, ...extra }); }
   function tick(dt){
     if (reducedMotion || !ph) return;
     const g = Scene.refs.fx;
-    bloodT = (bloodT + dt * 60 * ph.heartRate / 70) % loopL;
-    placeCells();
+    moveBlood(dt);
     if (ph.eating > .5){ accF += dt / .9; while (accF >= 1){ accF--; add("food", el("ellipse", { rx: 6, ry: 4.5, fill: "#b98a5a" }, g), { life: 1.9 }); } } else accF = 0;
     if (ph.awake < .5){ accZ += dt / 1.3; while (accZ >= 1){ accZ--; const t = el("text", { class: "zz", x: 660, y: 104 }, g); t.textContent = "z"; add("z", t, { life: 2.4 }); } } else accZ = 0;
     if (ph.sweat > .15){ accS += dt * ph.sweat * 2.4; while (accS >= 1){ accS--; add("sweat", el("path", { d: "M0 -5 C2 -1 3.5 2 0 4 C-3.5 2 -2 -1 0 -5Z", fill: "#7fc3e8" }, g), { life: .9, x: 556 + Math.random() * 88, y: 112 + Math.random() * 20 }); } }
-    const bh = Math.floor(Rhythm.breath + .5);
-    if (bh !== lastBreath){ lastBreath = bh; if (ph.awake > .5 && list.length < 80) add("puff", el("circle", { cx: 600, cy: 214, r: 3, class: "puff" }, g), { life: .9 }); }
+    /* a puff of breath as each out-breath starts, bigger with deeper breaths */
+    const inNow = Rhythm.insp > 0;
+    if (wasIn && !inNow && ph.awake > .5 && list.length < 80) add("puff", el("circle", { cx: 600, cy: 214, r: 3, class: "puff" }, g), { life: .9, size: .7 + .6 * clamp((ph.tidalVol - 450) / 1400) });
+    wasIn = inNow;
 
     const eso = Scene.refs.eso;
     for (let i = list.length - 1; i >= 0; i--){
@@ -1094,7 +1249,7 @@ const Particles = (() => {
       } else if (p.kind === "sweat"){
         p.y += 48 * dt; p.e.setAttribute("transform", `translate(${f1(p.x)} ${f1(p.y)})`); p.e.setAttribute("opacity", f1(1 - t));
       } else {
-        p.e.setAttribute("r", f1(3 + t * 16)); p.e.setAttribute("opacity", f1(.5 * (1 - t)));
+        p.e.setAttribute("r", f1((3 + t * 16) * p.size)); p.e.setAttribute("opacity", f1(.5 * (1 - t)));
       }
     }
   }
@@ -1308,7 +1463,8 @@ App.registerTopic({
     h += `<circle cx="-26" cy="-22" r="2.8" fill="#f2c94c" stroke="#fff" stroke-width=".8"/>`;
     const hr = ctx.ph.heartRate;
     let b = `<g transform="translate(84 100) scale(${s})"><g id="ill-heartBeat">${h}</g></g>`;
-    b += T(14, 176, `${Math.round(hr)} bpm`, "start") + ecgStrip(14, 206, 140, 22, hr, 3);
+    const sv = ctx.ph.strokeVol, co = ctx.ph.co;
+    b += T(14, 176, ctx.li < 1 ? `${Math.round(hr)} beats a minute` : `${Math.round(hr)} bpm × ${Math.round(sv)} mL = ${co.toFixed(1)} L/min`, "start") + ecgStrip(14, 206, 140, 22, hr, 3);
     b += loupe(...P(20, 14), MX, MY, MR);
 
     let x = `<rect x="160" y="10" width="210" height="200" fill="#f2d8d5"/>`;
@@ -1388,7 +1544,9 @@ App.registerTopic({
       ctx.mark(124, 210, ["", "Food pipe (oesophagus)", "Oesophagus", "Oesophagus (peristalsis)"], 1);
     }
     const gid = "g" + (++UID);
-    let x = `<defs><linearGradient id="${gid}" x1="0" x2="1"><stop offset="0" stop-color="#6f7fc6"/><stop offset="1" stop-color="#d63a46"/></linearGradient></defs><rect x="160" y="10" width="210" height="200" fill="#f5e2de"/>`;
+    /* blood arrives at the mixed-venous saturation (darker in the run) and leaves loaded */
+    const vin = mix("#5a68bd", "#9a7fb8", clamp((ctx.ph.svo2 - 30) / 45));
+    let x = `<defs><linearGradient id="${gid}" x1="0" x2="1"><stop offset="0" stop-color="${vin}"/><stop offset=".55" stop-color="#d63a46"/><stop offset="1" stop-color="#d63a46"/></linearGradient></defs><rect x="160" y="10" width="210" height="200" fill="#f5e2de"/>`;
     x += `<path d="M166 18 L226 80" stroke="#efc5b8" stroke-width="18" stroke-linecap="round"/>`;
     const al = [[244, 96, 24], [286, 86, 26], [322, 112, 24], [300, 146, 25], [256, 142, 26], [220, 122, 22], [338, 70, 22], [268, 182, 24], [318, 184, 22], [212, 168, 20]];
     al.forEach(([cx, cy, rr]) => { x += `<circle cx="${cx}" cy="${cy}" r="${rr}" fill="#fbefeb" stroke="#d99a9a" stroke-width="1.6"/>`; });
@@ -1399,7 +1557,8 @@ App.registerTopic({
     x += arrow(236, 176, 226, 150, "#5d6a86", aw) + T(218, 146, "CO₂", "end");
     b += magnifier(MX, MY, MR, x);
     ctx.mark(252, 104, ["Tiny air sacs", "Alveoli", "Alveoli", "Alveolar sacs"]);
-    ctx.mark(194, 186, ["Blood vessel", "Capillary", "Pulmonary capillary", "Pulmonary capillary bed"]);
+    const sa = Math.round(ctx.ph.spo2), svv = Math.round(ctx.ph.svo2);
+    ctx.mark(194, 186, ["Blood vessel", `Capillary: blood arrives ${svv}% full of O₂, leaves ${sa}%`, `Pulmonary capillary: SO₂ ${svv}% → ${sa}%`, `Pulmonary capillary: SvO₂ ${svv}% → SaO₂ ${sa}% (Q̇ ${ctx.ph.co.toFixed(1)} L/min, V̇E ${ctx.ph.ve.toFixed(0)} L/min)`]);
     ctx.mark(316, 120, ["Oxygen in", "Oxygen diffuses in", "O₂ moves down its partial-pressure gradient", "O₂ diffusion (Fick’s law)"]);
     ctx.mark(244, 160, ["Carbon dioxide out", "CO₂ diffuses out", "CO₂ unloading", "CO₂ unloading (Haldane effect)"]);
     ctx.mark(196, 50, ["", "Smallest airway", "Respiratory bronchiole", "Respiratory bronchiole"], 1);
@@ -1825,6 +1984,10 @@ const Vitals = (() => {
     setText("vGluMm", (p.glucose / 18).toFixed(1) + " mmol/L");
     setText("vTemp", p.coreTemp.toFixed(1));
     setText("vBp", Math.round(p.sbp) + "/" + Math.round(p.dbp));
+    setText("vSv", Math.round(p.strokeVol) + " mL/beat");
+    setText("vVt", (p.tidalVol < 950 ? Math.round(p.tidalVol / 10) * 10 + " mL" : (p.tidalVol / 1000).toFixed(1) + " L") + "/breath");
+    setText("vCo", p.co.toFixed(1));
+    setText("vSat", Math.round(p.spo2) + " → " + Math.round(p.svo2));
     gNow.setAttribute("cx", f1(wrapH(h) * 4)); gNow.setAttribute("cy", f1(gy(p.glucose)));
     $("#vTempMk").style.left = (clamp((p.coreTemp - 36) / 2.5) * 100).toFixed(1) + "%";
     $("#hCort").style.width = (p.cortisol * 100).toFixed(0) + "%";
@@ -1845,7 +2008,7 @@ const Vitals = (() => {
       lastBeat = b;
       draw();
     }
-    const v = (1 - Math.cos(2 * Math.PI * Rhythm.breath)) / 2;
+    const v = Rhythm.lung;
     $("#vBrDot").style.transform = `scale(${(.5 + .5 * v).toFixed(3)})`;
   }
   return { update, tick };

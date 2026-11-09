@@ -149,7 +149,9 @@ button{ font:inherit; color:inherit; }
 .vt-wide{ grid-column:1 / -1; display:grid; grid-template-columns:auto 1fr; gap:3px 8px; align-items:center; padding:7px 9px; }
 .hbar{ height:5px; border-radius:3px; background:var(--surface-2); overflow:hidden; }
 .hbar i{ display:block; height:100%; border-radius:3px; transition:width .2s; }
-#hCort{ background:#e0a43a; } #hMel{ background:#6c6fc4; }
+#hCort{ background:#e0a43a; } #hMel{ background:#6c6fc4; } #hIns{ background:#3f9a5a; } #hGcg{ background:#8a5cc4; }
+.vt-bp{ grid-column:1 / -1; display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:5px 9px 6px; }
+.vt-bp .vt-val b{ font-size:20px; }
 
 /* ---------- Timeline ---------- */
 .timeline{ grid-row:2; grid-column:1; display:grid; grid-template-columns:auto 1fr; gap:2px 16px; align-items:center; padding:12px 28px 16px; border-top:1px solid var(--line); }
@@ -233,8 +235,6 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .ill .mk circle{ fill:var(--ink); stroke:var(--bg); stroke-width:2; }
 .ill .mk text{ fill:var(--bg); font:600 9.5px var(--sans); text-anchor:middle; }
 .ill .ill-t{ fill:var(--ink); font:600 10px var(--sans); }
-.ill .beat{ transform-box:fill-box; transform-origin:50% 55%; animation:beat 1s ease-in-out infinite; }
-@keyframes beat{ 0%,100%{ transform:scale(1); } 10%{ transform:scale(1.06); } 22%{ transform:scale(.97); } 34%{ transform:scale(1.015); } 50%{ transform:scale(1); } }
 
 /* ---------- Scene styling ---------- */
 .limb-o{ fill:none; stroke:var(--skin-line); stroke-linecap:round; }
@@ -316,7 +316,10 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="vt"><div class="vt-top"><span class="vt-label">Breathing</span><span class="breath" aria-hidden="true"><i id="vBrDot"></i></span></div><div class="vt-val"><b id="vBr">14</b><span>/min</span></div></div>
       <div class="vt"><div class="vt-top"><span class="vt-label">Glucose</span><svg class="gtrace" viewBox="0 0 96 22" preserveAspectRatio="none" aria-hidden="true" id="vGluSvg"></svg></div><div class="vt-val"><b id="vGlu">90</b><span>mg/dL</span></div><div class="vt-sub" id="vGluMm">5.0 mmol/L</div></div>
       <div class="vt"><div class="vt-top"><span class="vt-label">Core temp</span></div><div class="vt-val"><b id="vTemp">36.8</b><span>°C</span></div><div class="tbar" aria-hidden="true"><i id="vTempMk"></i></div></div>
+      <div class="vt vt-bp"><span class="vt-label">Blood pressure</span><div class="vt-val"><b id="vBp">118/76</b><span>mmHg</span></div></div>
       <div class="vt vt-wide">
+        <span class="vt-label">Insulin</span><div class="hbar"><i id="hIns"></i></div>
+        <span class="vt-label">Glucagon</span><div class="hbar"><i id="hGcg"></i></div>
         <span class="vt-label">Cortisol</span><div class="hbar"><i id="hCort"></i></div>
         <span class="vt-label">Melatonin</span><div class="hbar"><i id="hMel"></i></div>
       </div>
@@ -628,6 +631,8 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "neurotransmitters": { "def": "Chemical messengers released by neurons at synapses.", "match": ["neurotransmitters", "neurotransmitter"] },
   "parasympathetic": { "def": "The ‘rest and digest’ branch of the autonomic nervous system.", "match": ["parasympathetic"] },
   "peristalsis": { "def": "Rings of muscle contraction that push food through the gut.", "match": ["peristalsis"] },
+  "respiratory sinus arrhythmia": { "def": "The normal speeding of the heart on each in-breath and slowing on each out-breath, set by the vagus nerve.", "match": ["respiratory sinus arrhythmia"] },
+  "heart rate variability": { "def": "The beat-to-beat change in time between heartbeats. Higher at rest usually means strong vagal (parasympathetic) tone.", "match": ["heart-rate variability", "heart rate variability"] },
   "REM sleep": { "def": "Rapid-eye-movement sleep, when vivid dreams happen and most muscles are switched off.", "match": ["REM"] },
   "SA node": { "def": "Sinoatrial node: the heart’s natural pacemaker, in the wall of the right atrium.", "match": ["SA node", "sinoatrial"] },
   "sarcomere": { "def": "The smallest contracting unit of a muscle fibre, bounded by Z-lines.", "match": ["sarcomere"] },
@@ -762,7 +767,7 @@ const STRINGS = {
 const PHYSIO = {
   heartRate:  [[0,55],[3,52],[5,53],[6.5,58],[7,68],[7.5,74],[8.5,70],[10,68],[12.5,74],[13.5,71],[15,67],[16.8,70],[17.15,138],[17.5,152],[17.95,150],[18.3,96],[18.8,80],[19.3,77],[20.3,73],[22,64],[23,58]],
   breathRate: [[0,12],[3,11.5],[6.5,13],[7,15],[10,14],[16.8,14],[17.15,32],[17.5,38],[17.95,36],[18.3,20],[18.8,15],[22,13],[23,12.5]],
-  glucose:    [[0,88],[4,84],[6.5,92],[7.25,90],[8,138],[8.5,128],[9.5,105],[10.5,90],[12.25,87],[13,140],[13.5,130],[14.5,102],[15.5,90],[17,88],[17.6,82],[18.1,80],[18.6,86],[19,88],[19.75,142],[20.25,132],[21.25,108],[22.25,94],[23,90]],
+  glucose:    [[0,88],[4,84],[6.5,92],[7.25,90],[8,128],[8.5,120],[9.5,102],[10.5,90],[12.25,87],[13,125],[13.5,118],[14.5,100],[15.5,90],[17,88],[17.5,92],[17.95,91],[18.3,86],[18.65,82],[19,85],[19.75,130],[20.25,123],[21.25,105],[22.25,94],[23,90]],
   coreTemp:   [[0,36.7],[4.5,36.35],[7,36.6],[10,36.85],[14,37.0],[16.8,37.1],[17.5,37.9],[18,38.2],[18.5,37.5],[19.5,37.2],[21,37.05],[23,36.85]],
   cortisol:   [[0,.1],[3,.25],[6,.6],[7,1],[7.5,.95],[9,.7],[12,.5],[16,.35],[17.5,.55],[18.5,.35],[21,.15],[23,.08]],
   melatonin:  [[0,.85],[3,1],[5,.7],[6.5,.25],[7.5,0],[20,0],[21,.25],[22,.55],[23,.75]],
@@ -771,7 +776,17 @@ const PHYSIO = {
   muscle:     [[0,0],[6.5,0],[7,.15],[16.8,.12],[17.1,1],[17.95,1],[18.3,.2],[19,.1],[22.5,.05],[23,0]],
   sweat:      [[16.9,0],[17.3,.6],[17.9,1],[18.4,.2],[18.8,0]],
   awake:      [[6.4,0],[6.6,1],[22.9,1],[23.1,0]],
-  daylight:   [[0,0],[5.6,0],[7,1],[19,1],[20.5,0]]
+  daylight:   [[0,0],[5.6,0],[7,1],[19,1],[20.5,0]],
+  /* blood pressure, mmHg: ~12% nocturnal dip, morning surge, systolic up and
+     diastolic flat in exercise, then post-exercise hypotension */
+  sbp:        [[0,106],[2,104],[4,105],[5.5,108],[6.5,114],[7.5,122],[8.5,121],[10,118],[13,117],[15,118],[16.8,119],[17.15,152],[17.5,165],[17.95,162],[18.3,128],[18.8,110],[19.5,111],[20.5,116],[22,112],[23,108]],
+  dbp:        [[0,64],[3,63],[5.5,66],[6.5,71],[7.5,78],[10,76],[16.8,76],[17.15,77],[17.5,76],[17.95,75],[18.3,72],[18.8,68],[19.5,69],[20.5,73],[22,70],[23,66]],
+  /* islet hormones, 0–1. Insulin lags glucose by ~20–30 min and is suppressed
+     in exercise; glucagon is high when fasting or running, low after meals */
+  insulin:    [[0,.1],[5,.09],[6.5,.12],[7.25,.14],[7.6,.45],[8.2,1],[8.75,.8],[9.75,.35],[10.75,.17],[12.25,.15],[12.6,.45],[13.2,.95],[13.75,.75],[14.75,.32],[15.75,.17],[16.8,.15],[17.3,.05],[17.95,.03],[18.4,.08],[19,.12],[19.35,.45],[19.95,1],[20.5,.8],[21.5,.38],[22.5,.18],[23.5,.12]],
+  glucagon:   [[0,.48],[3,.52],[6.5,.5],[7.25,.42],[8,.18],[9,.2],[10.5,.33],[12.25,.36],[13,.18],[14,.2],[15.5,.33],[16.8,.35],[17.3,.75],[17.9,.9],[18.3,.6],[18.8,.42],[19.5,.2],[20.5,.18],[22,.3],[23.5,.42]],
+  /* liver glycogen, 0–1: filled by meals, drained overnight and by the run */
+  glycogen:   [[0,.65],[3,.5],[6,.38],[7.25,.35],[8.5,.6],[10,.75],[12,.68],[13.5,.78],[15.5,.85],[16.9,.8],[17.5,.55],[18.25,.27],[19,.25],[20.25,.5],[22,.72],[23.5,.68]]
 };
 function sampleKF(kf, h){
   h = wrapH(h);
@@ -845,10 +860,25 @@ function bronchi(rng, scale = 1){
 /* =========================================================================
    RHYTHM — beat and breath phases shared by scene and vitals
    ========================================================================= */
+/* Respiratory sinus arrhythmia: the vagus speeds the heart a little on each
+   in-breath and slows it on the out-breath. Strong at rest and in sleep, it all
+   but vanishes as vagal tone is withdrawn during exercise. A slow random walk
+   adds the remaining beat-to-beat variability. hrNow is the instantaneous rate. */
 const Rhythm = {
-  beat: 0, breath: 0,
-  tick(dt, ph){ this.beat += dt * ph.heartRate / 60; this.breath += dt * ph.breathRate / 60; }
+  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0,
+  tick(dt, ph){
+    this.breath += dt * ph.breathRate / 60;
+    this.jitT += (Math.random() - .5) * .012 - this.jitT * dt * .5;
+    this.jitT = clamp(this.jitT, -.015, .015);
+    this.jit += (this.jitT - this.jit) * clamp(dt * 1.5);
+    const rsa = .07 * clamp(1 - (ph.heartRate - 55) / 70) + .005;
+    /* in-breath (rising lung volume) → faster: sin is positive while v rises */
+    this.hrNow = ph.heartRate * (1 + rsa * Math.sin(2 * Math.PI * this.breath) + this.jit);
+    this.beat += dt * this.hrNow / 60;
+  }
 };
+/* systolic swell of the heart for beat phase f ∈ [0, 1) */
+const beatScale = f => 1 + .085 * Math.exp(-(((f - .1) / .07) ** 2));
 /* ECG in real time, not as a fixed fraction of the cycle: QRS width stays
    ~80 ms at any rate, PR shortens a little, QT follows Bazett (~0.4·√RR) and
    it is the diastolic gap (TP segment) that shrinks as the heart speeds up. */
@@ -1002,8 +1032,10 @@ const Scene = (() => {
   function animate(){
     if (reducedMotion || !cur) return;
     const f = ((Rhythm.beat % 1) + 1) % 1;
-    const s = 1 + .085 * Math.exp(-(((f - .1) / .07) ** 2));
+    const s = beatScale(f);
     r.heart.setAttribute("transform", `scale(${s.toFixed(3)})`);
+    const ill = document.getElementById("ill-heartBeat");
+    if (ill) ill.setAttribute("transform", `translate(0 1) scale(${(1 + (s - 1) * .8).toFixed(3)}) translate(0 -1)`);
     const v = (1 - Math.cos(2 * Math.PI * Rhythm.breath)) / 2;
     const depth = .025 + .05 * clamp((cur.breathRate - 12) / 26);
     r.lungs.setAttribute("transform", `translate(600 300) scale(${(1 + depth * .6 * v).toFixed(3)} ${(1 + depth * v).toFixed(3)}) translate(-600 -300)`);
@@ -1117,7 +1149,7 @@ const Camera = (() => {
 const Topics = new Map();
 const App = {
   registerTopic(def){ Topics.set(def.id, def); return def; },
-  store, Physio, CONFIG, LEVELS, PHASES, SCHEDULE
+  store, Physio, Rhythm, CONFIG, LEVELS, PHASES, SCHEDULE
 };
 window.BodyDay = App; /* handy for console exploration */
 
@@ -1275,7 +1307,7 @@ App.registerTopic({
     if (ctx.li >= 1) h += `<path d="M-26 -22 L-4 -4 L0 22 M0 22 C-10 18 -22 8 -26 2 M0 22 C10 18 22 8 26 2" stroke="#f2c94c" stroke-width="1.1" fill="none" stroke-dasharray="2 2"/>`;
     h += `<circle cx="-26" cy="-22" r="2.8" fill="#f2c94c" stroke="#fff" stroke-width=".8"/>`;
     const hr = ctx.ph.heartRate;
-    let b = `<g transform="translate(84 100) scale(${s})"><g class="beat" style="animation-duration:${(60 / hr).toFixed(2)}s">${h}</g></g>`;
+    let b = `<g transform="translate(84 100) scale(${s})"><g id="ill-heartBeat">${h}</g></g>`;
     b += T(14, 176, `${Math.round(hr)} bpm`, "start") + ecgStrip(14, 206, 140, 22, hr, 3);
     b += loupe(...P(20, 14), MX, MY, MR);
 
@@ -1463,12 +1495,14 @@ App.registerTopic({
     g += `<path d="M594 496 C596 520 594 540 594 562" stroke="#78a35a" stroke-width="${p === "meal" ? 4 : 2.5}" fill="none"${p === "meal" ? ' stroke-dasharray="4 2"' : ""}/>`;
     g += `<ellipse cx="594" cy="486" rx="8" ry="${gbRy}" fill="#78a35a" stroke="#557a3c" stroke-width="1.2"/>`;
     let b = `<g ${W.attr}>${g}</g>`;
-    const store = pick(p, { meal: .85, rest: .65, sleep: .35, exercise: .25 });
+    const store = ctx.ph.glycogen;
     b += T(16, 196, "Glycogen store", "start") + `<rect x="16" y="202" width="134" height="7" rx="3.5" fill="var(--line)"/><rect x="16" y="202" width="${f1(134 * store)}" height="7" rx="3.5" fill="var(--accent)"/>`;
     b += loupe(...P(530, 455), MX, MY, MR);
 
     let x = `<rect x="160" y="10" width="210" height="200" fill="#b8584e"/>`;
-    const gly = pick(p, { meal: 4, rest: 2, sleep: 1, exercise: 0 });
+    const gly = Math.round(clamp((ctx.ph.glycogen - .25) / .6) * 4);
+    /* storing when insulin dominates, releasing when glucagon does, idle when balanced */
+    const flux = ctx.ph.insulin - ctx.ph.glucagon;
     const cellAt = (a, rr) => {
       const cx = 262 + Math.cos(a) * rr, cy = 110 + Math.sin(a) * rr;
       let o = `<rect x="${f1(cx - 5)}" y="${f1(cy - 5)}" width="10" height="10" rx="2.5" fill="#e8a491" stroke="#b46c5c" stroke-width=".7" transform="rotate(${f1(a * 180 / Math.PI)} ${f1(cx)} ${f1(cy)})"/>`;
@@ -1489,7 +1523,7 @@ App.registerTopic({
     let gp = [262, 110];
     for (const rr of [44, 66]){
       const S = [262 + Math.cos(as) * rr, 110 + Math.sin(as) * rr], C = [262 + Math.cos(a0) * rr, 110 + Math.sin(a0) * rr];
-      x += p === "meal" ? arrow(S[0] + 6, S[1] - 4, C[0], C[1], "#f2c14e", 1.8) : p === "rest" ? "" : arrow(C[0], C[1], S[0] + 6, S[1] - 4, "#f2c14e", 1.8);
+      x += flux > .15 ? arrow(S[0] + 6, S[1] - 4, C[0], C[1], "#f2c14e", 1.8) : flux > -.15 ? "" : arrow(C[0], C[1], S[0] + 6, S[1] - 4, "#f2c14e", 1.8);
       gp = C;
     }
     if (p === "exercise") x += scatter(rng, 10, 300, 140, 40, 30, 1.8, "#9b6bd6");
@@ -1499,7 +1533,7 @@ App.registerTopic({
     ctx.mark(...P(606, 486), ["Bile bag", "Gallbladder", "Gallbladder", "Gallbladder (CCK makes it contract)"]);
     ctx.mark(...P(572, 530), ["", "Portal vein (from the gut)", "Hepatic portal vein", "Portal vein (~75% of hepatic flow)"], 1);
     ctx.mark(262, 110, ["Exit vein", "Central vein", "Central vein", "Central vein (zone 3)"]);
-    ctx.mark(...gp.map((v, i) => v + (i ? 10 : -4)), pick(p, {
+    ctx.mark(...gp.map((v, i) => v + (i ? 10 : -4)), pick(flux > .15 ? "meal" : flux > -.15 ? "rest" : p === "exercise" ? "exercise" : "sleep", {
       meal: ["Sugar being stored", "Glycogen being built", "Glycogenesis (insulin)", "Glycogen synthase active"],
       sleep: ["Sugar being released", "Glycogen broken down", "Glycogenolysis + gluconeogenesis", "Glycogenolysis + GNG (glucagon/cAMP)"],
       exercise: ["Sugar sent to the muscles", "Fast glycogen breakdown", "Glycogenolysis ↑ (glucagon, adrenaline)", "HGP ↑ via glucagon/catecholamines"],
@@ -1537,7 +1571,7 @@ App.registerTopic({
       x += `<circle cx="${f1(xx)}" cy="${yy}" r="5.2" fill="${col}" stroke="#ffffff" stroke-width=".6" opacity=".9"/>`;
     }
     x += `<path d="M196 58 C236 90 284 84 330 158" stroke="#d6404c" stroke-width="8" fill="none" opacity=".8" stroke-linecap="round"/>`;
-    const nI = pick(p, { meal: 16, rest: 4, sleep: 2, exercise: 1 }), nG = pick(p, { meal: 2, rest: 4, sleep: 8, exercise: 12 });
+    const nI = Math.round(1 + 15 * ctx.ph.insulin), nG = Math.round(1 + 11 * ctx.ph.glucagon);
     const along = () => { const t = rng(); return [lerp(200, 326, t) + (rng() - .5) * 14, 64 + 92 * t * t + (rng() - .5) * 14]; };
     for (let i = 0; i < nI; i++){ const [px, py] = along(); x += `<circle cx="${f1(px)}" cy="${f1(py)}" r="2.3" fill="#2f7d2c" stroke="#fff" stroke-width=".5"/>`; }
     for (let i = 0; i < nG; i++){ const [px, py] = along(); x += `<rect x="${f1(px - 2)}" y="${f1(py - 2)}" width="4" height="4" fill="#5a3a9a" stroke="#fff" stroke-width=".5"/>`; }
@@ -1790,10 +1824,13 @@ const Vitals = (() => {
     setText("vGlu", String(Math.round(p.glucose)));
     setText("vGluMm", (p.glucose / 18).toFixed(1) + " mmol/L");
     setText("vTemp", p.coreTemp.toFixed(1));
+    setText("vBp", Math.round(p.sbp) + "/" + Math.round(p.dbp));
     gNow.setAttribute("cx", f1(wrapH(h) * 4)); gNow.setAttribute("cy", f1(gy(p.glucose)));
     $("#vTempMk").style.left = (clamp((p.coreTemp - 36) / 2.5) * 100).toFixed(1) + "%";
     $("#hCort").style.width = (p.cortisol * 100).toFixed(0) + "%";
     $("#hMel").style.width = (p.melatonin * 100).toFixed(0) + "%";
+    $("#hIns").style.width = (p.insulin * 100).toFixed(0) + "%";
+    $("#hGcg").style.width = (p.glucagon * 100).toFixed(0) + "%";
     if (reducedMotion) staticFill();
   }
   function tick(dt){
@@ -1804,7 +1841,7 @@ const Vitals = (() => {
       acc -= n;
       const b = Rhythm.beat;
       const bAt = k => lastBeat + (b - lastBeat) * k / n;
-      for (let k = Math.max(1, n - W + 1); k <= n; k++){ buf.shift(); buf.push(ecgSpan(bAt(k - 1), bAt(k), ph.heartRate)); }
+      for (let k = Math.max(1, n - W + 1); k <= n; k++){ buf.shift(); buf.push(ecgSpan(bAt(k - 1), bAt(k), Rhythm.hrNow)); }
       lastBeat = b;
       draw();
     }
@@ -1888,7 +1925,7 @@ const Panel = (() => {
   }
 
   function render(s, force){
-    const key = `${s.topic}|${s.level}|${s.topic ? phaseAt(s.hour) + Math.floor(s.hour) : ""}`;
+    const key = `${s.topic}|${s.level}|${s.topic ? phaseAt(s.hour) + Math.floor(s.hour * 2) : ""}`;
     if (key === lastKey && !force) return;
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;

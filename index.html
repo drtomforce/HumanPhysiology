@@ -35,9 +35,12 @@
                    PARTICLES animates blood, food, breath, sweat and Zzz. Blood
                    cells run the CIRC network: lungs ↔ heart ↔ each organ.
 
- 5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate}).
+ 5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
                    ctx.mark() adds a numbered, level-aware marker (label shown on hover/click).
+                   simulate(k, ctx) brings the picture to life: it returns
+                   tick(dt, ph, Rhythm), driven by the beat/breath clock and the
+                   physiology of the hour (see "simulation helpers").
 
  6. VITALS          Live readout: ECG, breathing, glucose trace, temperature,
                    blood pressure, cardiac output, blood O₂, hormones.
@@ -243,6 +246,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .ill .mk circle{ fill:var(--ink); stroke:var(--bg); stroke-width:2; }
 .ill .mk text{ fill:var(--bg); font:600 9.5px var(--sans); text-anchor:middle; }
 .ill .ill-t{ fill:var(--ink); font:600 10px var(--sans); }
+.ill .sim{ pointer-events:none; }
 
 /* ---------- Scene styling ---------- */
 .limb-o{ fill:none; stroke:var(--skin-line); stroke-linecap:round; }
@@ -1143,8 +1147,6 @@ const Scene = (() => {
     if (reducedMotion || !cur) return;
     const s = beatScale(Rhythm.beat, Rhythm.hrNow);
     r.heart.setAttribute("transform", `scale(${s.toFixed(3)})`);
-    const ill = document.getElementById("ill-heartBeat");
-    if (ill) ill.setAttribute("transform", `translate(0 1) scale(${(1 + (s - 1) * .8).toFixed(3)}) translate(0 -1)`);
     /* lung size follows the breath waveform; amplitude follows tidal volume */
     const v = Rhythm.lung;
     const depth = .022 + .058 * clamp((cur.tidalVol - 420) / 1500);
@@ -1334,6 +1336,122 @@ function makeCtx(s){
     }
   };
 }
+/* ---------- simulation helpers ----------
+   A topic's simulate(k, ctx) runs once the illustration is in the DOM and
+   returns tick(dt, ph, R) (R = Rhythm). It adds moving parts in <g class="sim">
+   layers and moves them by setting attributes. It never rebuilds markup per frame.
+   Moving parts keep their state in k.mem, which survives the panel's
+   half-hourly re-renders of the same organ and phase, so nothing jumps.
+   Markup can opt in to generic motion as well:
+     class="sim-dash" data-v="px/s"  dashes flow along the path (negative = backwards)
+     class="sim-glow" data-f="Hz"    opacity pulses gently */
+const PATHS = new Map();
+function sampler(svg, d, n = 96){
+  let s = PATHS.get(d);
+  if (s) return s;
+  const p = el("path", { d }, svg), L = p.getTotalLength();
+  const xs = new Float32Array(n + 1), ys = new Float32Array(n + 1);
+  for (let i = 0; i <= n; i++){ const q = p.getPointAtLength(L * i / n); xs[i] = q.x; ys[i] = q.y; }
+  p.remove();
+  const seg = t => { const f = clamp(t) * n, i = Math.min(n - 1, Math.floor(f)); return [i, f - i]; };
+  s = {
+    L,
+    at(t){ const [i, u] = seg(t); return [lerp(xs[i], xs[i + 1], u), lerp(ys[i], ys[i + 1], u)]; },
+    angle(t){ const [i] = seg(t); return Math.atan2(ys[i + 1] - ys[i], xs[i + 1] - xs[i]); }
+  };
+  PATHS.set(d, s);
+  return s;
+}
+const ease = { lin: u => u, out: u => 1 - (1 - u) * (1 - u), io: u => u * u * (3 - 2 * u) };
+function simKit(svg, mem){
+  const before = svg.querySelector(".mk");
+  const dashes = [...svg.querySelectorAll(".sim-dash")], glows = [...svg.querySelectorAll(".sim-glow")];
+  const glowBase = glows.map(g => +(g.getAttribute("opacity") || 1));
+  const k = {
+    svg, mem, t: mem.t || 0, warm: false,
+    q: sel => svg.querySelector(sel),
+    qa: sel => [...svg.querySelectorAll(sel)],
+    sampler: d => sampler(svg, d),
+    /* a layer above the picture and below the markers; clip = inside the magnifier */
+    layer(clip){
+      const g = el("g", { class: "sim" });
+      if (clip){
+        const id = "clip" + (++UID), cp = el("clipPath", { id });
+        el("circle", { cx: MX, cy: MY, r: MR - .8 }, cp);
+        svg.insertBefore(cp, before);
+        g.setAttribute("clip-path", `url(#${id})`);
+      }
+      svg.insertBefore(g, before);
+      return g;
+    },
+    /* short-lived particles that travel A → B and fade in and out.
+       Particle: {x0, y0, x1, y1, life, age (< 0 = delayed), e: ease name, fill, wob} */
+    spray(key, parent, n, make){
+      const st = mem[key] || (mem[key] = { ps: [], acc: 0 });
+      const nodes = Array.from({ length: n }, () => { const e = make(); e.setAttribute("opacity", 0); parent.appendChild(e); return e; });
+      const fills = new Array(n).fill(null);
+      return {
+        add(p){ if (st.ps.length < n) st.ps.push({ age: 0, e: "io", ...p }); },
+        emit(rate, dt, spawn){
+          st.acc = Math.min(st.acc + rate * dt, 3);
+          while (st.acc >= 1){ st.acc--; if (st.ps.length < n) this.add(spawn()); }
+        },
+        tick(dt){
+          st.ps = st.ps.filter(p => (p.age += dt) < p.life);
+          nodes.forEach((node, i) => {
+            const p = st.ps[i];
+            if (!p || p.age < 0){ node.setAttribute("opacity", 0); return; }
+            const u = p.age / p.life, w = ease[p.e](u), wob = p.wob ? p.wob * Math.sin(u * 9 + i) : 0;
+            node.setAttribute("transform", `translate(${f1(lerp(p.x0, p.x1, w) + wob)} ${f1(lerp(p.y0, p.y1, w))})`);
+            node.setAttribute("opacity", f1(Math.min(1, u / .15, (1 - u) / .25)));
+            if (p.fill && fills[i] !== p.fill){ fills[i] = p.fill; node.setAttribute("fill", p.fill); }
+          });
+        }
+      };
+    },
+    /* a steady stream of n items moving along a path at a speed in px/s.
+       opts: {jit (px across the path), rotate, colorAt(t), count (visible items)} */
+    stream(key, parent, d, n, make){
+      const S = sampler(svg, d);
+      const st = mem[key] || (mem[key] = { s: 0, off: Array.from({ length: n }, (_, i) => [(i + Math.random() * .6) / n, Math.random() - .5]), op: new Array(n).fill(1) });
+      const nodes = Array.from({ length: n }, () => parent.appendChild(make()));
+      return {
+        tick(dt, speed, o = {}){
+          st.s = (st.s + speed * dt / S.L) % 1;
+          const count = o.count === undefined ? n : o.count;
+          nodes.forEach((node, i) => {
+            const t = (st.off[i][0] + st.s) % 1, a = S.angle(t);
+            let [x, y] = S.at(t);
+            if (o.jit){ x -= Math.sin(a) * o.jit * st.off[i][1]; y += Math.cos(a) * o.jit * st.off[i][1]; }
+            st.op[i] += ((i < count ? 1 : 0) - st.op[i]) * clamp(dt * 2.5);
+            node.setAttribute("transform", `translate(${f1(x)} ${f1(y)})` + (o.rotate ? ` rotate(${f1(a * 180 / Math.PI)})` : ""));
+            node.setAttribute("opacity", f1(st.op[i] * Math.min(1, t / .05, (1 - t) / .05)));
+            if (o.colorAt) node.setAttribute("fill", o.colorAt(t));
+          });
+        }
+      };
+    },
+    /* generic motion for .sim-dash and .sim-glow */
+    auto(dt){
+      mem.dash = (mem.dash || 0) + dt;
+      dashes.forEach(p => p.setAttribute("stroke-dashoffset", f1(-mem.dash * p.dataset.v % 1000)));
+      glows.forEach((g, i) => g.setAttribute("opacity", (glowBase[i] * (.62 + .38 * Math.sin(2 * Math.PI * k.t * (+g.dataset.f || .3)))).toFixed(2)));
+    }
+  };
+  return k;
+}
+/* start a topic's simulation. Returns run(dt, ph) or null. A new state is
+   pre-warmed for a few seconds so it opens already in motion. */
+function startSim(topic, svg, ctx, mem){
+  if (!topic.simulate) return null;
+  const fresh = mem.t === undefined;
+  const k = simKit(svg, mem), tick = topic.simulate(k, ctx);
+  if (!tick) return null;
+  const run = (dt, ph) => { mem.t = (mem.t || 0) + dt; k.t = mem.t; k.auto(dt); tick(dt, ph, Rhythm); };
+  if (fresh || reducedMotion){ k.warm = true; for (let i = 0; i < 90; i++) run(1 / 30, ctx.ph); k.warm = false; }
+  else run(0, ctx.ph);
+  return run;
+}
 function magnifier(cx, cy, r, inner){
   const id = "clip" + (++UID);
   return `<clipPath id="${id}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
@@ -1395,9 +1513,9 @@ App.registerTopic({
     let hi = "", extra = "";
     if (p === "sleep") hi = `<circle cx="-4" cy="28" r="9" fill="#7b74d6" opacity=".6"/><circle cx="18" cy="8" r="5" fill="#9b8cd6"/>`;
     else if (p === "rest") hi = `<ellipse cx="-50" cy="-14" rx="24" ry="28" fill="${acc}" opacity=".32"/>`;
-    else if (p === "meal"){ hi = `<circle cx="-4" cy="28" r="9" fill="#e0a43a" opacity=".65"/>`; extra = `<path d="M26 64 C42 80 30 96 50 124" stroke="#d9b13e" stroke-width="2.4" fill="none" stroke-dasharray="5 3"/>`; }
+    else if (p === "meal"){ hi = `<circle cx="-4" cy="28" r="9" fill="#e0a43a" opacity=".65"/>`; extra = `<path d="M26 64 C42 80 30 96 50 124" stroke="#d9b13e" stroke-width="2.4" fill="none" stroke-dasharray="5 3" class="sim-dash" data-v="-9"/>`; }
     else hi = `<path d="M0 -64 C-4 -40 -10 -18 -16 6" stroke="${acc}" stroke-width="12" fill="none" opacity=".5"/>`;
-    let b = `<g transform="translate(88 100)">${g}<clipPath id="${cid}"><path d="${BR}"/></clipPath><path d="${BR}" fill="#eaabb1"/><g clip-path="url(#${cid})">${gy}${hi}</g><path d="${BR}" fill="none" stroke="#b5636e" stroke-width="1.4"/>${extra}</g>`;
+    let b = `<g transform="translate(88 100)">${g}<clipPath id="${cid}"><path d="${BR}"/></clipPath><path d="${BR}" fill="#eaabb1"/><g clip-path="url(#${cid})">${gy}<g class="sim-glow" data-f="${p === "exercise" ? 1.1 : .25}">${hi}</g></g><path d="${BR}" fill="none" stroke="#b5636e" stroke-width="1.4"/>${extra}</g>`;
 
     let x = "";
     if (p === "sleep"){
@@ -1406,9 +1524,7 @@ App.registerTopic({
       const cell = (cx, cy, r) => `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="#e6c3cc" stroke="#c497a3" stroke-width="1"/><circle cx="${f1(cx + r * .2)}" cy="${f1(cy - r * .1)}" r="${f1(r * .32)}" fill="#a9708a"/>`;
       for (const row of [44, 78, 146, 180]) for (let i = 0; i < 6; i++) x += cell(184 + i * 34 + (row % 4) * 3 + (rng() - .5) * 6, row + (rng() - .5) * 6, 10 + rng() * 3);
       x += `<rect x="160" y="96" width="210" height="32" fill="#bfe1f1"/><rect x="160" y="102" width="210" height="20" fill="#c8505a"/>`;
-      for (let i = 0; i < 8; i++) x += `<ellipse cx="${172 + i * 28}" cy="112" rx="7" ry="4.5" fill="#e27a82"/>`;
       for (let i = 0; i < 5; i++){ const xx = 198 + i * 34; x += carrow(xx, 94, xx + 9, 78, xx + 1, 60, "#3b8fc4") + carrow(xx + 14, 130, xx + 23, 146, xx + 15, 164, "#3b8fc4"); }
-      x += scatter(rng, 14, 180, 50, 170, 34, 1.8, "#8d7b55") + scatter(rng, 14, 180, 136, 170, 34, 1.8, "#8d7b55");
       b += magnifier(MX, MY, MR, x);
       ctx.mark(84, 128, ["Body clock", "Body clock (SCN in the hypothalamus)", "Suprachiasmatic nucleus", "SCN: master circadian pacemaker"]);
       ctx.mark(110, 104, ["", "Pineal gland (makes melatonin)", "Pineal gland", "Pineal gland (melatonin, via SCN→PVN→SCG)"], 1);
@@ -1430,7 +1546,6 @@ App.registerTopic({
         x += `<circle cx="${f1(vx)}" cy="${f1(vy)}" r="6.5" fill="#fff6ec" stroke="#c48f77"/>` + scatter(rng, 3, vx - 3, vy - 3, 6, 6, 1.1, ntc);
       }
       x += `<path d="M254 113 a8 8 0 0 1 16 0" fill="#fff6ec" stroke="#c48f77"/>`;
-      x += scatter(rng, pick(p, { exercise: 28, rest: 12, meal: 14 }), 214, 116, 96, 11, 1.5, ntc);
       b += magnifier(MX, MY, MR, x);
       if (p === "rest"){
         ctx.mark(38, 86, ["Thinking part", "Prefrontal cortex", "Prefrontal cortex", "Prefrontal cortex (executive control)"]);
@@ -1452,6 +1567,39 @@ App.registerTopic({
       ctx.mark(272, 34, ["", "", "Mitochondrion (ATP supply)", "Mitochondrion"], 2);
     }
     return b;
+  },
+  simulate(k, ctx){
+    const L = k.layer(true), R = Math.random;
+    if (ctx.phase === "sleep"){
+      /* glymphatic flow: blood in the arteriole, CSF along its sleeve, waste washed out of the widened spaces */
+      const rbc = k.stream("rbc", L, "M150 112 L380 112", 8, () => el("ellipse", { rx: 7, ry: 4.5, fill: "#e27a82" }));
+      const csf = ["M150 99 L380 99", "M150 125 L380 125"].map((d, i) => k.stream("csf" + i, L, d, 9, () => el("circle", { r: 1.7, fill: "#3b8fc4" })));
+      const waste = k.spray("waste", L, 26, () => el("circle", { r: 1.8, fill: "#8d7b55" }));
+      return dt => {
+        rbc.tick(dt, 34); csf.forEach(c => c.tick(dt, 15, { jit: 2 }));
+        waste.emit(5, dt, () => {
+          const x = 176 + R() * 170, top = R() < .5;
+          return { x0: x, y0: top ? 48 + R() * 36 : 138 + R() * 36, x1: x + 10 + R() * 14, y1: top ? 97 : 127, life: 2.6 + R(), e: "lin", wob: 1.5 };
+        });
+        waste.tick(dt);
+      };
+    }
+    /* synapse: a spike runs down the axon, a vesicle fuses, transmitter crosses the cleft and lights up receptors */
+    const ap = k.spray("ap", L, 5, () => el("circle", { r: 4.5, fill: "#ffd166", stroke: "#f2a93b", "stroke-width": 1 }));
+    const nt = k.spray("nt", L, 70, () => el("circle", { r: 1.6, fill: "#e0663a" }));
+    const fl = k.spray("fl", L, 24, () => el("ellipse", { rx: 4.5, ry: 2.6, fill: "#ffe27a" }));
+    const rate = pick(ctx.phase, { exercise: 4.5, meal: 1.5, rest: 1.2 });
+    return dt => {
+      ap.emit(rate, dt, () => {
+        for (let i = 0; i < 6; i++){
+          const tx = 214 + R() * 96, rx = 214.5 + Math.round((tx - 214.5) / 11) * 11, life = .45 + R() * .3;
+          nt.add({ x0: 262 + (R() - .5) * 10, y0: 114, x1: tx, y1: 126, life, age: -.32, e: "out" });
+          fl.add({ x0: rx, y0: 131, x1: rx, y1: 131, life: .4, age: -.32 - life * .8 });
+        }
+        return { x0: 262, y0: 0, x1: 262, y1: 44, life: .32, e: "lin" };
+      });
+      ap.tick(dt); nt.tick(dt); fl.tick(dt);
+    };
   }
 });
 
@@ -1475,10 +1623,10 @@ App.registerTopic({
     const hr = ctx.ph.heartRate;
     let b = `<g transform="translate(84 100) scale(${s})"><g id="ill-heartBeat">${h}</g></g>`;
     const sv = ctx.ph.strokeVol, co = ctx.ph.co;
-    b += T(14, 176, ctx.li < 1 ? `${Math.round(hr)} beats a minute` : `${Math.round(hr)} bpm × ${Math.round(sv)} mL = ${co.toFixed(1)} L/min`, "start") + ecgStrip(14, 206, 140, 22, hr, 3);
+    b += T(14, 176, ctx.li < 1 ? `${Math.round(hr)} beats a minute` : `${Math.round(hr)} bpm × ${Math.round(sv)} mL = ${co.toFixed(1)} L/min`, "start") + ecgStrip(14, 206, 140, 22, hr, 3).replace("<path", `<path class="sim-ecg"`);
     b += loupe(...P(20, 14), MX, MY, MR);
 
-    let x = `<rect x="160" y="10" width="210" height="200" fill="#f2d8d5"/>`;
+    let x = `<rect x="160" y="10" width="210" height="200" fill="#f2d8d5"/><g class="sim-myo">`;
     let discPt = [300, 157];
     for (let r = 0; r < 5; r++){
       const y = 22 + r * 40; let cx0 = 160 - (r % 2) * 30;
@@ -1494,9 +1642,10 @@ App.registerTopic({
         cx0 += w;
       }
     }
+    x += `</g>`;
     const nc = p === "exercise" ? "#e8862a" : p === "sleep" ? "#3b7fc4" : "#8a7bb0";
     x += `<path d="M168 12 C200 30 214 54 236 58 C258 62 270 50 290 56" stroke="#e6cf7a" stroke-width="3.2" fill="none"/>`;
-    for (const [vx, vy] of [[214, 48], [236, 58], [262, 56]]) x += `<circle cx="${vx}" cy="${vy}" r="4.2" fill="#e6cf7a"/>` + scatter(rng, p === "rest" || p === "meal" ? 3 : 7, vx - 7, vy + 3, 14, 10, 1.5, nc);
+    for (const [vx, vy] of [[214, 48], [236, 58], [262, 56]]) x += `<circle cx="${vx}" cy="${vy}" r="4.2" fill="#e6cf7a"/>`;
     b += magnifier(MX, MY, MR, x);
 
     ctx.mark(...P(-26, -22), ["Pacemaker", "SA node (pacemaker)", "Sinoatrial node", "Sinoatrial node (HCN4⁺ cells)"]);
@@ -1514,6 +1663,54 @@ App.registerTopic({
       rest: ["Nerve ending", "Nerves balance the pace", "Mixed autonomic input", "Tonic vagal restraint at rest"]
     }));
     return b;
+  },
+  simulate(k, ctx){
+    const beat = k.q("#ill-heartBeat"), myo = k.q(".sim-myo"), ecg = k.q(".sim-ecg"), m = k.mem, R = Math.random;
+    const L = k.layer(true), p = ctx.phase;
+    /* a Ca²⁺ wave crosses the cells at each R peak; the nerve keeps releasing transmitter */
+    const wave = el("rect", { x: -14, y: 10, width: 28, height: 200, rx: 14, fill: "#fff3a8", opacity: 0 }, L);
+    const nc = p === "exercise" ? "#e8862a" : p === "sleep" ? "#3b7fc4" : "#8a7bb0";
+    const tx = k.spray("tx", L, 30, () => el("circle", { r: 1.6, fill: nc }));
+    const txRate = pick(p, { sleep: 4, exercise: 7, rest: 1.6, meal: 1.6 });
+    const vs = [[214, 48], [236, 58], [262, 56]];
+    /* ECG: a sweeping monitor trace, 140 px for 3 s */
+    const W = 140, X0 = 14, Y0 = 206, AMP = 22, SPD = W / 3;
+    if (!m.buf){
+      const hr = ctx.ph.heartRate, bAt = i => i / SPD * hr / 60 + .6;
+      m.buf = Array.from({ length: W }, (_, i) => ecgSpan(bAt(i), bAt(i + 1), hr));
+      m.cur = 0; m.acc = 0; m.lastBeat = null; m.wave = 9;
+    }
+    return (dt, ph, Rh) => {
+      const s = beatScale(Rh.beat, Rh.hrNow);
+      if (beat) beat.setAttribute("transform", `translate(0 1) scale(${(1 + (s - 1) * .8).toFixed(3)}) translate(0 -1)`);
+      if (myo) myo.setAttribute("transform", `translate(262 0) scale(${(1 - .07 * (1 - ventVolume(Rh.beat, Rh.hrNow))).toFixed(3)} 1) translate(-262 0)`);
+      const rIdx = Math.floor(Rh.beat - .19 * Rh.hrNow / 60);
+      if (m.rIdx !== undefined && rIdx !== m.rIdx) m.wave = 0;
+      m.rIdx = rIdx; m.wave += dt;
+      const u = m.wave / .22;
+      wave.setAttribute("opacity", u < 1 ? f1(.45 * Math.sin(Math.PI * u)) : 0);
+      wave.setAttribute("x", f1(150 + 230 * Math.min(u, 1) - 14));
+      tx.emit(txRate, dt, () => { const [vx, vy] = vs[Math.floor(R() * 3)]; return { x0: vx, y0: vy + 3, x1: vx + (R() - .5) * 22, y1: vy + 16 + R() * 12, life: 1 + R() * .4, e: "out" }; });
+      tx.tick(dt);
+      if (!ecg || k.warm) return;
+      if (m.lastBeat === null) m.lastBeat = Rh.beat;
+      m.acc += dt * SPD;
+      const n = Math.floor(m.acc);
+      if (n > 0){
+        m.acc -= n;
+        const b0 = m.lastBeat, b1 = Rh.beat;
+        for (let j = 1; j <= n; j++){ m.buf[m.cur] = ecgSpan(b0 + (b1 - b0) * (j - 1) / n, b0 + (b1 - b0) * j / n, Rh.hrNow); m.cur = (m.cur + 1) % W; }
+        m.lastBeat = b1;
+        let d = "", pen = false;
+        for (let i = 0; i < W; i++){
+          if (((i - m.cur + W) % W) < 7){ pen = false; continue; } /* gap ahead of the sweep */
+          const [a, c] = m.buf[i];
+          d += (pen ? "L" : "M") + f1(X0 + i + .25) + " " + f1(Y0 - a * AMP) + "L" + f1(X0 + i + .75) + " " + f1(Y0 - c * AMP);
+          pen = true;
+        }
+        ecg.setAttribute("d", d);
+      }
+    };
   }
 });
 
@@ -1528,10 +1725,10 @@ App.registerTopic({
       const dia = pick(p, { sleep: 404, rest: 410, exercise: 434 });
       const k = p === "exercise" ? 1.06 : 1;
       let rings = ""; for (let y = 236; y < 292; y += 9) rings += `M593 ${y}h14`;
-      let g = `<g transform="translate(600 300) scale(${k}) translate(-600 -300)"><path d="${ORG.lungL}" fill="#eaa5a8" stroke="#c9777d" stroke-width="1.5"/><path d="${ORG.lungR}" fill="#eaa5a8" stroke="#c9777d" stroke-width="1.5"/>`;
-      g += `<g stroke="#f7ddd1" stroke-linecap="round" fill="none">${bronchi(mulberry32(5), 1.2)}</g></g>`;
+      let g = `<g transform="translate(600 300) scale(${k}) translate(-600 -300)"><g class="sim-lung"><path d="${ORG.lungL}" fill="#eaa5a8" stroke="#c9777d" stroke-width="1.5"/><path d="${ORG.lungR}" fill="#eaa5a8" stroke="#c9777d" stroke-width="1.5"/>`;
+      g += `<g stroke="#f7ddd1" stroke-linecap="round" fill="none">${bronchi(mulberry32(5), 1.2)}</g></g></g>`;
       g += `<path d="${ORG.trachea}" stroke="#ead2c4" stroke-width="10" fill="none" stroke-linecap="round"/><path d="${rings}" stroke="#d2b2a2" stroke-width="2"/>`;
-      g += `<path d="M490 452 Q600 ${dia} 710 452" stroke="#b45a5a" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+      g += `<path class="sim-dia" data-y="${dia}" d="M490 452 Q600 ${dia} 710 452" stroke="#b45a5a" stroke-width="7" fill="none" stroke-linecap="round"/>`;
       b += `<g ${W.attr}>${g}</g>`;
       b += loupe(...P(530, 410), MX, MY, MR);
       ctx.mark(...P(600, 246), ["Windpipe", "Trachea", "Trachea", "Trachea"]);
@@ -1545,8 +1742,8 @@ App.registerTopic({
       let rg = ""; for (let y = 128; y < 220; y += 10) rg += `M60 ${y}h22`;
       g += `<rect x="58" y="116" width="26" height="110" rx="6" fill="#efd2c4"/><path d="${rg}" stroke="#d6b6a6" stroke-width="2"/>`;
       g += `<rect x="90" y="110" width="22" height="116" rx="6" fill="#dba08e"/>`;
-      g += `<path d="M56 117 C62 104 80 99 93 109 C86 114 70 119 56 117Z" fill="#f2b7a6" stroke="#cf8f7f"/>`;
-      g += `<ellipse cx="101" cy="146" rx="8" ry="12" fill="#b98a5a"/>` + arrow(101, 164, 101, 196, "#8a6a4a");
+      g += `<path class="sim-epi" d="M56 117 C62 104 80 99 93 109 C86 114 70 119 56 117Z" fill="#f2b7a6" stroke="#cf8f7f"/>`;
+      g += `<ellipse class="sim-bolus" cx="101" cy="146" rx="8" ry="12" fill="#b98a5a"/>` + arrow(118, 150, 118, 190, "#8a6a4a");
       b += g;
       ctx.mark(46, 80, ["Tongue", "Tongue", "Tongue", "Tongue (oral phase)"]);
       ctx.mark(70, 102, ["Lid over the windpipe", "Epiglottis", "Epiglottis", "Epiglottis + laryngeal closure"]);
@@ -1560,10 +1757,9 @@ App.registerTopic({
     let x = `<defs><linearGradient id="${gid}" x1="0" x2="1"><stop offset="0" stop-color="${vin}"/><stop offset=".55" stop-color="#d63a46"/><stop offset="1" stop-color="#d63a46"/></linearGradient></defs><rect x="160" y="10" width="210" height="200" fill="#f5e2de"/>`;
     x += `<path d="M166 18 L226 80" stroke="#efc5b8" stroke-width="18" stroke-linecap="round"/>`;
     const al = [[244, 96, 24], [286, 86, 26], [322, 112, 24], [300, 146, 25], [256, 142, 26], [220, 122, 22], [338, 70, 22], [268, 182, 24], [318, 184, 22], [212, 168, 20]];
-    al.forEach(([cx, cy, rr]) => { x += `<circle cx="${cx}" cy="${cy}" r="${rr}" fill="#fbefeb" stroke="#d99a9a" stroke-width="1.6"/>`; });
+    al.forEach(([cx, cy, rr]) => { x += `<circle class="sim-alv" data-r="${rr}" cx="${cx}" cy="${cy}" r="${rr}" fill="#fbefeb" stroke="#d99a9a" stroke-width="1.6"/>`; });
     x += `<path d="M168 204 C200 164 216 198 240 166 C262 134 282 170 306 136 C326 108 338 140 372 100" stroke="url(#${gid})" stroke-width="9" fill="none" stroke-linecap="round" opacity=".9"/>`;
-    const n = pick(p, { sleep: 4, rest: 6, meal: 7, exercise: 14 }), aw = p === "exercise" ? 2.6 : 1.6;
-    for (let i = 0; i < n; i++){ const [cx, cy, rr] = al[i % al.length]; x += `<circle cx="${f1(cx + (rng() - .5) * rr)}" cy="${f1(cy + (rng() - .5) * rr)}" r="2" fill="#e04a4a"/><circle cx="${f1(cx + (rng() - .5) * rr)}" cy="${f1(cy + (rng() - .5) * rr)}" r="2" fill="#7c8aa0"/>`; }
+    const aw = p === "exercise" ? 2.6 : 1.6;
     x += arrow(288, 98, 298, 128, "#d63a46", aw) + T(300, 96, "O₂");
     x += arrow(236, 176, 226, 150, "#5d6a86", aw) + T(218, 146, "CO₂", "end");
     b += magnifier(MX, MY, MR, x);
@@ -1575,6 +1771,40 @@ App.registerTopic({
     ctx.mark(196, 50, ["", "Smallest airway", "Respiratory bronchiole", "Respiratory bronchiole"], 1);
     ctx.mark(338, 70, ["", "", "Surfactant lining (type II cells)", "Surfactant (DPPC) from type II pneumocytes"], 2);
     return b;
+  },
+  simulate(k){
+    const lung = k.q(".sim-lung"), dia = k.q(".sim-dia"), epi = k.q(".sim-epi"), bolus = k.q(".sim-bolus"), R = Math.random;
+    const alv = k.qa(".sim-alv"), al = alv.map(c => [+c.getAttribute("cx"), +c.getAttribute("cy"), +c.dataset.r]);
+    const CAP = "M168 204 C200 164 216 198 240 166 C262 134 282 170 306 136 C326 108 338 140 372 100", S = k.sampler(CAP);
+    const L = k.layer(true);
+    const gas = k.spray("gas", L, 44, () => el("circle", { r: 2 }));
+    const rbc = k.stream("rbc", L, CAP, 13, () => el("ellipse", { rx: 3.8, ry: 2.5 }));
+    return (dt, ph, Rh) => {
+      /* the lungs fill with the breath waveform; the diaphragm flattens as it contracts */
+      const v = Rh.lung, depth = .022 + .058 * clamp((ph.tidalVol - 420) / 1500);
+      if (lung) lung.setAttribute("transform", `translate(600 300) scale(${(1 + depth * .6 * v).toFixed(3)} ${(1 + depth * v).toFixed(3)}) translate(-600 -300)`);
+      if (dia) dia.setAttribute("d", `M490 452 Q600 ${f1(Math.min(404, +dia.dataset.y - 6) + 16 * v * clamp(depth / .04, .6, 2.2))} 710 452`);
+      alv.forEach((c, i) => c.setAttribute("r", f1(al[i][2] * (1 + .1 * v))));
+      /* red cells arrive at the mixed-venous colour, load up in the first third and leave red */
+      const vin = mix("#5a68bd", "#9a7fb8", clamp((ph.svo2 - 30) / 45));
+      rbc.tick(dt, 9 * ph.co, { jit: 1.5, rotate: true, colorAt: t => mix(vin, "#d63a46", clamp(t / .4)) });
+      gas.emit(2 + ph.ve * .14, dt, () => {
+        const t = .05 + R() * .6, [x, y] = S.at(t);
+        let best = al[0], bd = 1e9;
+        for (const a of al){ const d = Math.hypot(a[0] - x, a[1] - y); if (d < bd){ bd = d; best = a; } }
+        const ax = best[0] + (R() - .5) * best[2] * .8, ay = best[1] + (R() - .5) * best[2] * .8;
+        const o2 = (k.mem.flip = !k.mem.flip);
+        return o2 ? { x0: ax, y0: ay, x1: x, y1: y, life: 1.1, fill: "#e04a4a" } : { x0: x, y0: y, x1: ax, y1: ay, life: 1.1, fill: "#7c8aa0" };
+      });
+      gas.tick(dt);
+      if (bolus){
+        /* a swallow: the epiglottis folds over the windpipe while the bolus is squeezed down */
+        const u = k.t % 4.5 / 4.5;
+        epi.setAttribute("transform", `rotate(${f1(32 * Math.sin(Math.PI * clamp(u / .28)))} 56 117)`);
+        bolus.setAttribute("cy", f1(lerp(108, 214, ease.io(clamp((u - .08) / .62)))));
+        bolus.setAttribute("opacity", f1(Math.min(1, u / .05, (1 - u) / .25)));
+      }
+    };
   }
 });
 
@@ -1595,9 +1825,9 @@ App.registerTopic({
     if (p === "meal"){
       inner += `<rect x="600" y="486" width="100" height="40" fill="#e9c46a" opacity=".5"/>`;
       const cols = ["#c98b4b", "#e2b35c", "#9cb35a", "#d97a5a"];
-      for (let i = 0; i < 22; i++) inner += `<ellipse cx="${f1(614 + rng() * 70)}" cy="${f1(472 + rng() * 44)}" rx="${f1(2 + rng() * 3)}" ry="${f1(1.5 + rng() * 2)}" fill="${cols[i % 4]}"/>`;
+      for (let i = 0; i < 22; i++) inner += `<ellipse class="sim-chyme" cx="${f1(614 + rng() * 70)}" cy="${f1(472 + rng() * 44)}" rx="${f1(2 + rng() * 3)}" ry="${f1(1.5 + rng() * 2)}" fill="${cols[i % 4]}"/>`;
     } else if (p === "rest") inner += `<rect x="600" y="506" width="100" height="20" fill="#e9c46a" opacity=".35"/>`;
-    g += `<g clip-path="url(#${cid})">${inner}</g>`;
+    g += `<g clip-path="url(#${cid})">${inner}<g class="sim-stomach"></g></g>`;
     if (p === "meal" || p === "sleep") g += carrow(692, 462, 696, 494, 676, 514, "#8a5a40", 1);
     let b = `<g ${W.attr}>${g}</g>`;
     b += loupe(...P(668, 500), MX, MY, MR);
@@ -1614,7 +1844,6 @@ App.registerTopic({
           x += `<rect x="${gx - 31}" y="${yy}" width="19" height="14" rx="4" fill="${col}" stroke="#b46c6c" stroke-width=".6"/><rect x="${gx + 12}" y="${yy}" width="19" height="14" rx="4" fill="${col}" stroke="#b46c6c" stroke-width=".6"/>`;
         }
       }
-      for (let k = 0; k < 8; k++) x += `<circle cx="${f1(262 + (rng() - .5) * 12)}" cy="${f1(64 + k * 14)}" r="2" fill="#d93b3b"/>`;
       x += arrow(262, 150, 262, 40, "#d93b3b", 1.4);
       b += magnifier(MX, MY, MR, x);
       ctx.mark(...P(650, 500), ["Mashed food", "Chyme", "Chyme", "Chyme (gastric phase)"]);
@@ -1633,9 +1862,6 @@ App.registerTopic({
         x += `<path d="M${cx - 6} 186 L${cx - 6} ${top + 14} Q${cx} ${top + 6} ${cx + 6} ${top + 14} L${cx + 6} 186" stroke="${capC}" stroke-width="${capW}" fill="none"/>`;
         x += `<path d="M${cx} 186 L${cx} ${top + 16}" stroke="#fbf3d6" stroke-width="2.4"/>`;
       }
-      const nN = pick(p, { rest: 18, sleep: 5, exercise: 8 });
-      for (let i = 0; i < nN; i++) x += `<circle cx="${f1(172 + rng() * 190)}" cy="${f1(22 + rng() * 34)}" r="2" fill="${i % 2 ? "#e2a93b" : "#7fa35a"}"/>`;
-      if (p === "sleep") for (let i = 0; i < 9; i++){ const bx = 178 + rng() * 170, by = 20 + rng() * 34; x += `<rect x="${f1(bx)}" y="${f1(by)}" width="11" height="5" rx="2.5" fill="#6fa86a" transform="rotate(${f1(rng() * 180)} ${f1(bx + 5)} ${f1(by + 2)})"/>`; }
       b += magnifier(MX, MY, MR, x);
       ctx.mark(...P(660, 466), ["Stomach", "Stomach", "Stomach (body)", "Gastric corpus"]);
       ctx.mark(...P(606, 506), ["", "Exit valve (pylorus)", "Pyloric sphincter", "Pylorus"], 1);
@@ -1649,6 +1875,60 @@ App.registerTopic({
     }
     ctx.mark(...P(625, 430), ["Food pipe", "Oesophagus", "Oesophagus", "Lower oesophageal sphincter"]);
     return b;
+  },
+  simulate(k, ctx){
+    const p = ctx.phase, R = Math.random;
+    /* stomach: a ring of contraction sweeps from the body to the pylorus (~3 a minute, sped up here) */
+    const st = k.q(".sim-stomach"), chyme = k.qa(".sim-chyme");
+    const RING = k.sampler("M654 446 C676 456 680 488 666 502 C652 514 628 512 610 502");
+    const ring = el("path", { stroke: "#a4522f", "stroke-width": 4, "stroke-linecap": "round", fill: "none", opacity: 0 }, st);
+    const power = pick(p, { meal: .7, rest: .4, sleep: .6, exercise: .15 }), period = pick(p, { meal: 4.5, rest: 6, sleep: 3.5, exercise: 9 });
+    const L = k.layer(true);
+    let micro;
+    if (p === "meal"){
+      /* acid: H⁺ pumped out by parietal cells, up the gastric pits into the lumen */
+      const acid = k.spray("acid", L, 40, () => el("circle", { r: 1.8, fill: "#d93b3b" }));
+      micro = dt => {
+        acid.emit(9, dt, () => { const gx = [200, 262, 324][Math.floor(R() * 3)]; return { x0: gx + (R() < .5 ? -16 : 16), y0: 78 + R() * 56, x1: gx + (R() - .5) * 10, y1: 22 + R() * 18, life: 1.8, e: "lin", wob: 1.5 }; });
+        acid.tick(dt);
+      };
+    } else {
+      /* small intestine: nutrients are absorbed at the villus tips and carried off in the capillary loops */
+      const capC = p === "exercise" ? "#e49a9f" : "#d6404c";
+      const vil = Array.from({ length: 6 }, (_, i) => [182 + i * 32, 52 + (i % 2) * 14]);
+      const loops = vil.map(([cx, top], i) => k.stream("cap" + i, L, `M${cx - 6} 186 L${cx - 6} ${top + 14} Q${cx} ${top + 6} ${cx + 6} ${top + 14} L${cx + 6} 186`, 3, () => el("circle", { r: 1.7, fill: capC })));
+      const lac = vil.map(([cx, top], i) => k.stream("lac" + i, L, `M${cx} ${top + 16} L${cx} 186`, 2, () => el("circle", { r: 1.4, fill: "#ffffff" })));
+      const nut = k.spray("nut", L, 30, () => el("circle", { r: 2 }));
+      const nRate = pick(p, { rest: 5, sleep: 1.2, exercise: 1.6 });
+      let bugs = null;
+      if (p === "sleep"){
+        const m = k.mem;
+        m.bugs = m.bugs || Array.from({ length: 9 }, () => ({ x: 178 + R() * 170, y: 22 + R() * 30, a: R() * 180, w: R() * 6 }));
+        bugs = m.bugs.map(() => el("rect", { x: -5.5, y: -2.5, width: 11, height: 5, rx: 2.5, fill: "#6fa86a" }, L));
+      }
+      micro = (dt, ph) => {
+        const v = 9 * ph.flow.gut;
+        loops.forEach(l => l.tick(dt, v)); lac.forEach(l => l.tick(dt, 5));
+        nut.emit(nRate, dt, () => { const [cx, top] = vil[Math.floor(R() * 6)]; return { x0: cx + (R() - .5) * 40, y0: 20 + R() * 20, x1: cx + (R() - .5) * 8, y1: top + 2, life: 2.4, fill: R() < .5 ? "#e2a93b" : "#7fa35a", wob: 2 }; });
+        nut.tick(dt);
+        if (bugs){
+          /* the migrating motor complex sweeps bacteria along in bursts */
+          const sweep = 5 + 40 * Math.pow(Math.max(0, Math.sin(2 * Math.PI * k.t / 7)), 6);
+          k.mem.bugs.forEach((b, i) => {
+            b.x += sweep * dt; if (b.x > 360) b.x -= 190;
+            b.a += (20 + sweep) * dt * (i % 2 ? 1 : -1);
+            bugs[i].setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y + 2 * Math.sin(k.t * 1.3 + b.w))}) rotate(${f1(b.a)})`);
+          });
+        }
+      };
+    }
+    return (dt, ph) => {
+      const u = k.t % period / period, [x, y] = RING.at(u), a = RING.angle(u) + Math.PI / 2, h = 15;
+      ring.setAttribute("d", `M${f1(x - Math.cos(a) * h)} ${f1(y - Math.sin(a) * h)} L${f1(x + Math.cos(a) * h)} ${f1(y + Math.sin(a) * h)}`);
+      ring.setAttribute("opacity", f1(power * Math.sin(Math.PI * u)));
+      chyme.forEach((c, i) => c.setAttribute("transform", `translate(${f1(2.2 * Math.sin(k.t * 1.6 + i * 1.3) - 3 * power * Math.sin(Math.PI * u))} ${f1(1.6 * Math.cos(k.t * 1.9 + i))})`));
+      micro(dt, ph);
+    };
   }
 });
 
@@ -1660,9 +1940,10 @@ App.registerTopic({
     const W = worldTf(90, 92, 1.05, 566, 458), P = W.P;
     const gbRy = p === "meal" ? 8 : 12;
     let g = `<path d="M576 562 C574 530 572 500 570 476" stroke="#7a5aa0" stroke-width="8" fill="none" stroke-linecap="round"/>`;
+    g += `<path d="M576 562 C574 530 572 500 570 476" stroke="#b39bd2" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-dasharray="2 8" class="sim-dash" data-v="${f1(10 * ctx.ph.flow.gut)}"/>`;
     g += `<path d="M586 562 C586 530 582 500 580 478" stroke="#d63a46" stroke-width="3" fill="none"/>`;
     g += `<path d="${ORG.liver}" fill="#8e3b33" stroke="#6e2a24" stroke-width="1.5"/><path d="M566 432 C568 450 570 470 574 486" stroke="#a8524a" stroke-width="1.6" fill="none"/>`;
-    g += `<path d="M594 496 C596 520 594 540 594 562" stroke="#78a35a" stroke-width="${p === "meal" ? 4 : 2.5}" fill="none"${p === "meal" ? ' stroke-dasharray="4 2"' : ""}/>`;
+    g += `<path d="M594 496 C596 520 594 540 594 562" stroke="#78a35a" stroke-width="${p === "meal" ? 4 : 2.5}" fill="none"${p === "meal" ? ' stroke-dasharray="4 2" class="sim-dash" data-v="8"' : ""}/>`;
     g += `<ellipse cx="594" cy="486" rx="8" ry="${gbRy}" fill="#78a35a" stroke="#557a3c" stroke-width="1.2"/>`;
     let b = `<g ${W.attr}>${g}</g>`;
     const store = ctx.ph.glycogen;
@@ -1696,7 +1977,6 @@ App.registerTopic({
       x += flux > .15 ? arrow(S[0] + 6, S[1] - 4, C[0], C[1], "#f2c14e", 1.8) : flux > -.15 ? "" : arrow(C[0], C[1], S[0] + 6, S[1] - 4, "#f2c14e", 1.8);
       gp = C;
     }
-    if (p === "exercise") x += scatter(rng, 10, 300, 140, 40, 30, 1.8, "#9b6bd6");
     b += magnifier(MX, MY, MR, x);
 
     ctx.mark(...P(612, 446), ["Liver", "Liver", "Liver (right and left lobes)", "Liver"]);
@@ -1713,6 +1993,29 @@ App.registerTopic({
     ctx.mark(262 + Math.cos(Math.PI / 6) * 76, 110 + Math.sin(Math.PI / 6) * 76 - 12, ["", "Blood in from the gut, bile out", "Portal triad", "Portal triad (zone 1)"], 1);
     if (p === "exercise") ctx.mark(330, 160, ["", "Lactate from muscles", "Lactate → glucose (Cori cycle)", "Cori cycle substrate"], 1);
     return b;
+  },
+  simulate(k, ctx){
+    const L = k.layer(true), R = Math.random, ex = ctx.phase === "exercise";
+    /* blood seeps along the sinusoids from the portal triads to the central vein */
+    const blood = k.spray("bl", L, 60, () => el("circle", { r: 2.3, stroke: "#fbe3dc", "stroke-width": .5 }));
+    const glu = k.spray("glu", L, 26, () => el("circle", { r: 1.6, fill: "#f2c14e", stroke: "#a8742a", "stroke-width": .4 }));
+    const lane = () => Math.floor(R() * 12) / 12 * Math.PI * 2 + .13 + Math.PI / 24;
+    const at = (a, r) => [262 + Math.cos(a) * r, 110 + Math.sin(a) * r];
+    return (dt, ph) => {
+      blood.emit(5 + 5 * ph.flow.gut, dt, () => {
+        const a = lane(), [x0, y0] = at(a, 98), [x1, y1] = at(a, 13);
+        const lac = ex && R() < .35;
+        return { x0, y0, x1, y1, life: 3.2 / Math.sqrt(ph.flow.gut / 1.2 + .3), e: "lin", fill: lac ? "#9b6bd6" : R() < .6 ? "#8a4f86" : "#e04a54" };
+      });
+      blood.tick(dt);
+      /* glucose moves into the cells when insulin dominates and out of them when glucagon does */
+      const flux = ph.insulin - ph.glucagon;
+      glu.emit(Math.abs(flux) > .15 ? 10 * Math.abs(flux) : 0, dt, () => {
+        const a = lane(), r = 30 + R() * 60, [lx, ly] = at(a, r), [cx, cy] = at(a - Math.PI / 24, r);
+        return flux > 0 ? { x0: lx, y0: ly, x1: cx, y1: cy, life: 1 } : { x0: cx, y0: cy, x1: lx, y1: ly, life: 1 };
+      });
+      glu.tick(dt);
+    };
   }
 });
 
@@ -1724,7 +2027,7 @@ App.registerTopic({
     let b = `<path d="M44 40 C14 70 14 150 44 172 C64 186 92 178 98 160" stroke="#e0a090" stroke-width="16" fill="none" stroke-linecap="round"/>`;
     b += `<path d="M44 96 C40 120 52 148 72 146 C88 144 92 128 104 118 C124 102 150 86 168 74 C174 70 170 62 162 64 C140 70 110 82 92 90 C80 82 54 80 44 96Z" fill="#ecc07a" stroke="#c99a4a" stroke-width="1.2"/>`;
     for (let i = 0; i < 26; i++) b += `<circle cx="${f1(52 + rng() * 110)}" cy="${f1(84 + rng() * 50)}" r="2.2" fill="#e2ad5e" opacity=".7"/>`;
-    b += `<path d="M160 70 C130 82 104 96 86 112 C72 124 58 132 34 132" stroke="#c98a3a" stroke-width="2.2" fill="none"${p === "meal" ? ' stroke-dasharray="4 2"' : ""}/>`;
+    b += `<path d="M160 70 C130 82 104 96 86 112 C72 124 58 132 34 132" stroke="#c98a3a" stroke-width="2.2" fill="none"${p === "meal" ? ' stroke-dasharray="4 2" class="sim-dash" data-v="9"' : ""}/>`;
     b += `<path d="M44 96 C40 120 52 148 72 146 C88 144 92 128 104 118 C124 102 150 86 168 74 C174 70 170 62 162 64 C140 70 110 82 92 90 C80 82 54 80 44 96Z" fill="none" stroke="#c99a4a" stroke-width="1.2"/>`;
     b += loupe(124, 96, MX, MY, MR);
 
@@ -1741,10 +2044,7 @@ App.registerTopic({
       x += `<circle cx="${f1(xx)}" cy="${yy}" r="5.2" fill="${col}" stroke="#ffffff" stroke-width=".6" opacity=".9"/>`;
     }
     x += `<path d="M196 58 C236 90 284 84 330 158" stroke="#d6404c" stroke-width="8" fill="none" opacity=".8" stroke-linecap="round"/>`;
-    const nI = Math.round(1 + 15 * ctx.ph.insulin), nG = Math.round(1 + 11 * ctx.ph.glucagon);
     const along = () => { const t = rng(); return [lerp(200, 326, t) + (rng() - .5) * 14, 64 + 92 * t * t + (rng() - .5) * 14]; };
-    for (let i = 0; i < nI; i++){ const [px, py] = along(); x += `<circle cx="${f1(px)}" cy="${f1(py)}" r="2.3" fill="#2f7d2c" stroke="#fff" stroke-width=".5"/>`; }
-    for (let i = 0; i < nG; i++){ const [px, py] = along(); x += `<rect x="${f1(px - 2)}" y="${f1(py - 2)}" width="4" height="4" fill="#5a3a9a" stroke="#fff" stroke-width=".5"/>`; }
     b += magnifier(MX, MY, MR, x);
 
     ctx.mark(140, 74, ["Pancreas", "Pancreas", "Pancreas (head, body, tail)", "Pancreas"]);
@@ -1762,6 +2062,25 @@ App.registerTopic({
     ctx.mark(196, 170, ["", "Enzyme-making cells", "Acinar cells (zymogens)", "Acinar cells (trypsinogen etc.)"], 1);
     ctx.mark(330, 150, ["", "", "Islet capillary", "Fenestrated islet capillary"], 2);
     return b;
+  },
+  simulate(k){
+    const L = k.layer(true), R = Math.random;
+    const CAP = "M196 58 C236 90 284 84 330 158", S = k.sampler(CAP);
+    const ins = () => el("circle", { r: 2.3, fill: "#2f7d2c", stroke: "#fff", "stroke-width": .5 });
+    const gcg = () => el("rect", { x: -2, y: -2, width: 4, height: 4, fill: "#5a3a9a", stroke: "#fff", "stroke-width": .5 });
+    const rbc = k.stream("rbc", L, CAP, 6, () => el("ellipse", { rx: 3.4, ry: 2.2, fill: "#f08a90" }));
+    const fI = k.stream("ins", L, CAP, 18, ins), fG = k.stream("gcg", L, CAP, 14, gcg);
+    const sI = k.spray("sI", L, 16, ins), sG = k.spray("sG", L, 12, gcg);
+    /* hormones bud from the islet cells (β in the core, α at the rim) and are washed away in its capillary */
+    const bud = (r0, r1) => () => { const a = R() * Math.PI * 2, r = lerp(r0, r1, R()), [x1, y1] = S.at(.25 + R() * .45); return { x0: 262 + Math.cos(a) * r, y0: 110 + Math.sin(a) * r, x1, y1, life: 1.3 }; };
+    return (dt, ph) => {
+      const pulse = 1 + .3 * Math.sin(2 * Math.PI * k.t / 6); /* insulin comes in pulses */
+      rbc.tick(dt, 26, { rotate: true });
+      fI.tick(dt, 22, { jit: 9, count: Math.round(Math.min(18, 1 + 15 * ph.insulin * pulse)) });
+      fG.tick(dt, 22, { jit: 9, count: Math.round(1 + 11 * ph.glucagon) });
+      sI.emit(.4 + 4 * ph.insulin * pulse, dt, bud(4, 30)); sG.emit(.3 + 3 * ph.glucagon, dt, bud(34, 46));
+      sI.tick(dt); sG.tick(dt);
+    };
   }
 });
 
@@ -1774,6 +2093,7 @@ App.registerTopic({
     const urine = pick(p, { sleep: "#e0aa34", rest: "#f0d36a", meal: "#f2da7a", exercise: "#d79a26" });
     let g = `<path d="M24 -10 C40 -14 52 -16 74 -18" stroke="#d63a46" stroke-width="5" fill="none"/><path d="M24 -2 C40 -4 52 -2 74 -4" stroke="#5f73b8" stroke-width="6" fill="none"/>`;
     g += `<path d="M22 4 C36 20 40 60 42 100" stroke="${urine}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+    g += `<path d="M22 4 C36 20 40 60 42 100" stroke="${mix(urine, "#7a5410", .3)}" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-dasharray="2 7" class="sim-dash" data-v="${pick(p, { sleep: 3, exercise: 3, rest: 8, meal: 9 })}"/>`;
     g += `<path d="${KIDNEY_D}" fill="#b2544c" stroke="#7d332e" stroke-width="1.5"/>`;
     for (let i = 0; i < 6; i++){
       const th = (112 + i * 27) * Math.PI / 180, d = .16;
@@ -1813,6 +2133,28 @@ App.registerTopic({
     }));
     ctx.mark(192, 64, ["", "", "Afferent arteriole", "Afferent arteriole"], 2);
     return b;
+  },
+  simulate(k, ctx){
+    const p = ctx.phase, L = k.layer(true), R = Math.random;
+    const urine = pick(p, { sleep: "#e0aa34", rest: "#f0d36a", meal: "#f2da7a", exercise: "#d79a26" });
+    const TUB = "M230 72 C244 60 254 76 246 86 C238 98 258 104 260 92 C262 78 276 80 274 94 L274 190 Q282 200 290 190 L290 104 C290 92 304 90 306 102 C308 114 320 108 320 96 L320 60 C320 50 330 48 330 58";
+    const cell = () => el("ellipse", { rx: 3, ry: 2, fill: "#e2646c" });
+    /* blood in through the afferent arteriole, out through the efferent; filtrate runs down the tubule */
+    const aff = k.stream("aff", L, "M166 44 C180 56 194 66 202 72", 4, cell);
+    const eff = k.stream("eff", L, "M202 92 C192 102 184 112 176 122", 3, cell);
+    const filt = k.stream("filt", L, TUB, 18, () => el("circle", { r: 1.5, fill: "#d9a63c" }));
+    const duct = k.stream("duct", L, "M330 4 L330 218", 8, () => el("circle", { r: 2, fill: mix(urine, "#7a5410", .35) }));
+    /* water pulled back out of the collecting duct: more when ADH is high (sleep, sweating) */
+    const nW = pick(p, { sleep: 5, exercise: 5, rest: 2, meal: 3 });
+    const water = k.spray("w", L, 24, () => el("path", { d: "M0 -3 c2 3 3 5 0 7 c-3 -2 -2 -4 0 -7Z", fill: "#5aa9e0" }));
+    const uV = pick(p, { sleep: 6, exercise: 6, rest: 16, meal: 18 });
+    return (dt, ph) => {
+      const q = 10 * ph.flow.kidneys;
+      aff.tick(dt, q, { rotate: true }); eff.tick(dt, q * .8, { rotate: true });
+      filt.tick(dt, p === "exercise" ? 14 : 18); duct.tick(dt, uV);
+      water.emit(nW * .9, dt, () => { const y = 112 + R() * Math.max(1, nW - 1) * 18; return { x0: 326, y0: y, x1: 296 - R() * 8, y1: y + 6, life: 1.3 }; });
+      water.tick(dt);
+    };
   }
 });
 
@@ -1822,40 +2164,51 @@ App.registerTopic({
   illustrate(ctx){
     const p = ctx.phase, rng = ctx.rng;
     const mc = pick(p, { exercise: "#d4473f", meal: "#c66a62", sleep: "#b9857c", rest: "#c07a70" });
-    let b = `<path d="M50 0 C40 60 44 140 56 200 L56 220 L126 220 L126 200 C138 140 140 60 128 0Z" fill="var(--skin)" stroke="var(--skin-line)" stroke-width="1.5"/>`;
+    let b = `<path d="M50 0 C40 60 44 140 56 200 L56 220 L126 220 L126 200 C138 140 140 60 128 0Z" fill="var(--skin)" stroke="var(--skin-line)" stroke-width="1.5"/><g class="sim-thigh">`;
     b += `<path d="M100 14 C124 50 128 120 108 182 C102 130 100 70 96 20Z" fill="${mix(mc, "#000000", .12)}"/>`;
     b += `<path d="M78 70 C62 110 64 160 84 186 C84 150 82 110 82 74Z" fill="${mix(mc, "#000000", .08)}"/>`;
     b += `<path d="M88 8 C76 60 78 130 90 178 C102 130 104 60 92 8Z" fill="${mc}"/>`;
     let fib = ""; for (let i = 0; i < 6; i++){ const xx = 84 + i * 3; fib += `M${xx} ${30 + i * 4} C${xx - 2} 80 ${xx - 1} 130 ${xx + 2} ${160 - i * 3}`; }
-    b += `<path d="${fib}" stroke="${mix(mc, "#ffffff", .3)}" stroke-width=".8" fill="none"/>`;
+    b += `<path d="${fib}" stroke="${mix(mc, "#ffffff", .3)}" stroke-width=".8" fill="none"/></g>`;
     b += `<path d="M80 176 C84 194 96 194 100 176 L98 210 L82 210Z" fill="#efe6d6"/><ellipse cx="90" cy="198" rx="10" ry="9" fill="#f3ecdf" stroke="#cdbfa8"/>`;
     b += loupe(96, 92, MX, MY, MR);
 
     let x = `<rect x="160" y="10" width="210" height="200" fill="#f6e6e0"/><rect x="160" y="26" width="210" height="72" fill="#f0c9c2"/>`;
-    const half = p === "exercise" ? 32 : 44;
-    const zs = [262 - 3 * half, 262 - half, 262 + half, 262 + 3 * half];
-    for (const z of zs) for (const yy of [34, 50, 66, 82]){
-      x += `<path d="M${z - 28} ${yy} H${z + 28}" stroke="#4f7ab0" stroke-width="1.5"/>`;
+    /* filaments are drawn at the relaxed length (half = 44) in groups the simulation slides:
+       a group at multiple m of half sits at 262 + m·half */
+    const half = p === "exercise" ? 34 : 44, H0 = 44;
+    const zs = [-3, -1, 1, 3].map(m => 262 + m * half);
+    let zg = "";
+    for (const m of [-3, -1, 1, 3]){
+      const z = 262 + m * H0;
+      let g = "";
+      for (const yy of [34, 50, 66, 82]) g += `<path d="M${z - 28} ${yy} H${z + 28}" stroke="#4f7ab0" stroke-width="1.5"/>`;
+      g += `<path d="M${z} 28 l-3 8 l3 8 l-3 8 l3 8 l-3 8 l3 8 l-3 8 l3 8" stroke="#6e2a33" stroke-width="2.4" fill="none"/>`;
+      zg += `<g class="sim-z" data-m="${m}" transform="translate(${m * (half - H0)} 0)">${g}</g>`;
     }
-    for (const c of [262 - 2 * half, 262, 262 + 2 * half]) for (const yy of [42, 58, 74]){
-      x += `<path d="M${c - 26} ${yy} H${c + 26}" stroke="#8a5a9a" stroke-width="4" stroke-linecap="round"/>`;
-      let hd = ""; for (let k = 6; k <= 24; k += 4) hd += `M${c - k} ${yy - 2}l-3 -4M${c + k} ${yy - 2}l3 -4M${c - k} ${yy + 2}l-3 4M${c + k} ${yy + 2}l3 4`;
-      x += `<path d="${hd}" stroke="#8a5a9a" stroke-width="1.2"/>`;
+    for (const m of [-2, 0, 2]){
+      const c = 262 + m * H0;
+      let g = "";
+      for (const yy of [42, 58, 74]){
+        g += `<path d="M${c - 26} ${yy} H${c + 26}" stroke="#8a5a9a" stroke-width="4" stroke-linecap="round"/>`;
+        let hd = ""; for (let k = 6; k <= 24; k += 4) hd += `M${c - k} ${yy - 2}l-3 -4M${c + k} ${yy - 2}l3 -4M${c - k} ${yy + 2}l-3 4M${c + k} ${yy + 2}l3 4`;
+        g += `<path d="${hd}" stroke="#8a5a9a" stroke-width="1.2"/>`;
+      }
+      x += `<g class="sim-z" data-m="${m}" transform="translate(${m * (half - H0)} 0)">${g}</g>`;
     }
-    for (const z of zs) x += `<path d="M${z} 28 l-3 8 l3 8 l-3 8 l3 8 l-3 8 l3 8 l-3 8 l3 8" stroke="#6e2a33" stroke-width="2.4" fill="none"/>`;
+    x += zg;
     for (const [mx2, my2] of [[196, 126], [300, 122], [244, 150]]){
       x += `<ellipse cx="${mx2}" cy="${my2}" rx="18" ry="8" fill="#e59a6b" stroke="#b9653a"/><path d="M${mx2 - 12} ${my2} q3 -5 6 0 q3 5 6 0 q3 -5 6 0 q3 5 6 0" stroke="#b9653a" stroke-width="1" fill="none"/>`;
     }
     x += scatter(rng, pick(p, { meal: 28, rest: 18, sleep: 14, exercise: 5 }), 176, 108, 170, 58, 1.9, "#e8b84a");
     const cw = p === "exercise" ? 28 : 18;
     x += `<rect x="160" y="${196 - cw}" width="210" height="${cw}" fill="#d6404c"/>`;
-    for (let i = 0; i < 7; i++) x += `<ellipse cx="${174 + i * 30}" cy="${196 - cw / 2}" rx="7" ry="4" fill="#e8737b"/>`;
     const capTop = 196 - cw;
     if (p === "meal" || p === "exercise"){
       for (const gx of [214, 262, 310]) x += `<rect x="${gx - 4}" y="${capTop - 4}" width="8" height="4" rx="1" fill="#3f8f3a"/>` + arrow(gx, capTop + 6, gx, capTop - 16, "#3f8f3a", 1.4);
     }
     if (p === "exercise") for (const lx of [236, 288, 334]) x += `<circle cx="${lx}" cy="${capTop - 18}" r="2.2" fill="#7a4fb0"/>` + arrow(lx, capTop - 14, lx, capTop + 6, "#7a4fb0", 1.3);
-    if (p === "sleep"){ let ch = ""; for (let i = 0; i < 9; i++) ch += `<circle cx="${f1(282 + i * 6)}" cy="${f1(150 + Math.sin(i) * 4)}" r="2.4" fill="#5d8fc9"/>`; x += ch + `<ellipse cx="274" cy="150" rx="6" ry="4.5" fill="#8f7a5f"/>`; }
+    if (p === "sleep"){ let ch = ""; for (let i = 0; i < 9; i++) ch += `<circle class="sim-aa" cx="${f1(282 + i * 6)}" cy="${f1(150 + Math.sin(i) * 4)}" r="2.4" fill="#5d8fc9"/>`; x += ch + `<ellipse cx="274" cy="150" rx="6" ry="4.5" fill="#8f7a5f"/>`; }
     if (p === "rest") x += `<circle cx="330" cy="140" r="6" fill="#f2dc8c" stroke="#d6b85a"/><circle cx="216" cy="152" r="5" fill="#f2dc8c" stroke="#d6b85a"/>`;
     b += magnifier(MX, MY, MR, x);
 
@@ -1875,6 +2228,30 @@ App.registerTopic({
     if (p === "sleep") ctx.mark(300, 162, ["Repair work", "Building new protein", "Muscle protein synthesis", "MPS (mTORC1-dependent)"]);
     if (p === "rest") ctx.mark(216, 152, ["", "Fat droplet (fuel)", "Intramyocellular lipid", "IMCL droplet"], 1);
     return b;
+  },
+  simulate(k, ctx){
+    const p = ctx.phase, R = Math.random, H0 = 44;
+    const zg = k.qa(".sim-z"), thigh = k.q(".sim-thigh"), aa = k.qa(".sim-aa");
+    const cw = p === "exercise" ? 28 : 18, capTop = 196 - cw;
+    const L = k.layer(true);
+    const rbc = k.stream("rbc", L, `M150 ${196 - cw / 2} L380 ${196 - cw / 2}`, 8, () => el("ellipse", { rx: 7, ry: 4, fill: "#e8737b" }));
+    const glu = k.spray("glu", L, 16, () => el("rect", { x: -2, y: -2, width: 4, height: 4, rx: 1, fill: "#3f8f3a" }));
+    const lac = k.spray("lac", L, 12, () => el("circle", { r: 2.2, fill: "#7a4fb0" }));
+    const gRate = pick(p, { meal: 3, exercise: 5, rest: 0, sleep: 0 });
+    return (dt, ph) => {
+      /* sarcomeres: in the run each stride shortens them as thin filaments slide over the myosin heads */
+      let half = H0;
+      if (p === "exercise") half = 36 - 6 * Math.sin(2 * Math.PI * 1.4 * k.t);
+      zg.forEach(g => g.setAttribute("transform", `translate(${f1(g.dataset.m * (half - H0))} 0)`));
+      const c = clamp((42 - half) / 12);
+      if (thigh) thigh.setAttribute("transform", `translate(90 100) scale(${(1 + .05 * c).toFixed(3)} ${(1 - .025 * c).toFixed(3)}) translate(-90 -100)`);
+      rbc.tick(dt, 10 + 5 * ph.flow.legs, { jit: 4 });
+      glu.emit(gRate, dt, () => { const gx = [214, 262, 310][Math.floor(R() * 3)]; return { x0: gx, y0: capTop + 6, x1: gx + (R() - .5) * 14, y1: capTop - 26, life: 1.4 }; });
+      if (p === "exercise") lac.emit(3, dt, () => { const lx = [236, 288, 334][Math.floor(R() * 3)]; return { x0: lx + (R() - .5) * 10, y0: capTop - 26, x1: lx, y1: capTop + 8, life: 1.4 }; });
+      glu.tick(dt); lac.tick(dt);
+      /* overnight: amino acids are added to a growing protein chain */
+      if (aa.length){ const n = 1 + Math.floor(k.t * 1.6) % (aa.length + 3); aa.forEach((a, i) => a.setAttribute("opacity", i < n ? 1 : 0)); }
+    };
   }
 });
 
@@ -2031,6 +2408,7 @@ const Vitals = (() => {
 const Panel = (() => {
   const root = $("#panelInner");
   let lastKey = "";
+  let sim = null, simKey = "", simMem = {}; /* live illustration and its state (kept per organ + phase) */
   function textFor(topicId, phase, level){
     const ph = CONTENT.topics[topicId]?.phases?.[phase];
     if (!ph) return null;
@@ -2045,6 +2423,7 @@ const Panel = (() => {
       const t = CONTENT.topics[id], g = GLYPHS[Topics.get(id).glyph] || "";
       return `<li><button type="button" data-topic="${id}"><span class="tl-glyph"><svg viewBox="0 0 20 20" aria-hidden="true">${g}</svg></span><span class="tl-name">${esc(t.name)}</span><span class="tl-blurb">${esc(t.blurb)}</span><span class="tl-arrow" aria-hidden="true">›</span></button></li>`;
     }).join("");
+    sim = null;
     root.className = "panel-inner intro enter";
     root.innerHTML = `
       <h2>${esc(STRINGS.introTitle)}</h2>
@@ -2120,6 +2499,9 @@ const Panel = (() => {
     });
     fig.addEventListener("click", () => { pinnedMark = 0; restore(); });
     if (pinnedMark > marks.length) pinnedMark = 0;
+    const sk = id + "|" + phase;
+    if (sk !== simKey){ simKey = sk; simMem = {}; }
+    sim = startSim(topic, fig.querySelector("svg"), ctx, simMem);
     requestAnimationFrame(restore);
     root.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () => store.set({ hour: PHASE_BY_ID[b.dataset.phase].rep, playing: false })));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
@@ -2136,7 +2518,8 @@ const Panel = (() => {
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
-  return { render };
+  function tick(dt, ph){ if (sim && !reducedMotion) sim(dt, ph); }
+  return { render, tick };
 })();
 
 /* =========================================================================
@@ -2239,6 +2622,7 @@ function init(){
       Scene.animate();
       Vitals.tick(dt);
       Particles.tick(dt);
+      Panel.tick(dt, ph);
     }
     requestAnimationFrame(frame);
   }

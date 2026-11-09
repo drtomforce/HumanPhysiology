@@ -67,7 +67,7 @@
 :root{
   --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
   --line:#DCD2C9; --line-strong:#A99B91;
-  --skin:#EBCDB6; --skin-line:#C9A186; --vessel:#C2414B; --vein:#4F5FB0;
+  --skin:#EBCDB6; --skin-line:#C9A186; --bone:#F7F0E2; --bone-line:#CDBFA8; --vessel:#C2414B; --vein:#4F5FB0;
   --nerve:#C99318; --gland:#D9A43E; --gland-line:#9C7020;
   --accent:#2f8f83;
   --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
@@ -79,7 +79,7 @@
   :root:not([data-theme="light"]){
     --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
     --line:#342B26; --line-strong:#5A4B42;
-    --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0;
+    --skin:#5E4A3F; --skin-line:#86695A; --bone:#B9AD98; --bone-line:#8C806C; --vessel:#E0606A; --vein:#8090E0;
     --nerve:#E8BC45; --gland:#E6B656; --gland-line:#F3D58E;
     color-scheme: dark;
   }
@@ -87,7 +87,7 @@
 :root[data-theme="dark"]{
   --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
   --line:#342B26; --line-strong:#5A4B42;
-  --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0;
+  --skin:#5E4A3F; --skin-line:#86695A; --bone:#B9AD98; --bone-line:#8C806C; --vessel:#E0606A; --vein:#8090E0;
   --nerve:#E8BC45; --gland:#E6B656; --gland-line:#F3D58E;
   color-scheme: dark;
 }
@@ -285,6 +285,9 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .limb-o{ fill:none; stroke:var(--skin-line); stroke-linecap:round; }
 .limb{ fill:none; stroke:var(--skin); stroke-linecap:round; }
 .skin{ fill:var(--skin); stroke:var(--skin-line); stroke-width:2; }
+.bones{ fill:var(--bone); stroke:var(--bone); stroke-linecap:round; opacity:.85; filter:drop-shadow(0 0 1px var(--bone-line)); }
+.bones .patella{ stroke:var(--bone-line); stroke-width:1; }
+#s-flush{ fill:#e2707a; stroke:#e2707a; }
 .shadow{ fill:var(--line); }
 .win-frame{ fill:none; stroke:var(--line-strong); stroke-width:8; }
 .win-bar{ stroke:var(--line-strong); stroke-width:4; opacity:.8; }
@@ -690,7 +693,77 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "phd": "Brooks’ lactate shuttle theory recast lactate as a central metabolic intermediate. It is oxidised by the heart, oxidative muscle and the brain, and used for gluconeogenesis. Fatigue during high-intensity work has many causes. Pi accumulation reduces cross-bridge force and Ca²⁺ sensitivity, while acidosis inhibits less at physiological temperatures than was once thought. Exercise signalling through AMPK, CaMKII and p38 MAPK converges on PGC-1α to drive mitochondrial biogenesis."
         }
       }
-    }
+    },
+      "skin": {
+        "name": "Skin",
+        "blurb": "Waterproof wrapper, radiator and sense organ",
+        "related": [
+          "heart",
+          "kidneys",
+          "brain"
+        ],
+        "phases": {
+          "sleep": {
+            "ms": "While you sleep, your skin does its repairs. Cells in the bottom layer of your skin divide most at night, making new cells to replace the ones that flake off the top. As you fall asleep, your hands and feet get warmer. Their blood vessels open to let heat out, which cools the rest of your body down for sleep.",
+            "hs": "The epidermis is renewed from stem cells in its bottom layer. These cells divide most in the evening and at night. Each new cell takes about a month to move up to the surface, flatten, fill with keratin and flake off. As you fall asleep, blood vessels in your hands and feet widen. Heat leaks out through the skin, and your core temperature drops by about half a degree, which helps you fall asleep.",
+            "college": "In human skin biopsies, DNA synthesis in basal keratinocytes peaks around midnight, so cells divide away from the hours of UV exposure. Transepidermal water loss and skin temperature are higher in the evening, and cortisol is low; this is one reason itch is often worse at night. At sleep onset, sympathetic vasoconstrictor tone falls and arteriovenous anastomoses in the hands and feet open. The distal–proximal skin temperature gradient rises, and a larger gradient predicts faster sleep onset (Kräuchi et al. 1999).",
+            "phd": "Epidermal stem cells carry their own circadian clock (Janich et al. 2011). In mice, S-phase in the epidermis peaks at night, and UVB given at night, when more cells are replicating DNA, causes more DNA damage and more skin cancers than the same dose in the morning (Geyfman et al. 2012). Distal vasodilation at sleep onset is a heat-loss mechanism: warming the feet shortens sleep latency, which ties thermoregulation to the circadian gating of sleep."
+          },
+          "rest": {
+            "ms": "Your skin is your biggest organ. Spread out, it would cover about 2 square metres, and it weighs around 4 kilograms. It keeps water in and germs out. It feels touch, heat, cold and pain. When sunlight shines on it, it even makes vitamin D.",
+            "hs": "Skin has three layers. The epidermis on top is a waterproof barrier made of tough, flat, dead cells filled with keratin. Below it, the dermis holds blood vessels, nerve endings, hair follicles, oil glands and sweat glands. The deepest layer is fat that insulates and cushions you. Melanocytes make melanin, a pigment that blocks UV light. UVB light turns a cholesterol-like molecule in the skin into vitamin D.",
+            "college": "The stratum corneum is only about 10–20 µm thick but forms the main barrier: flattened corneocytes (the ‘bricks’) set in lipid layers of ceramides, cholesterol and free fatty acids (the ‘mortar’). Even so, a few hundred millilitres of water a day diffuse through it. At rest, skin blood flow is roughly 250 mL a minute, far more than skin cells need, because its job is heat exchange. Different mechanoreceptors sense light touch (Meissner), pressure (Merkel), vibration (Pacinian) and stretch (Ruffini). UVB converts 7-dehydrocholesterol to previtamin D₃.",
+            "phd": "Loss-of-function variants in filaggrin, carried by about 10% of Europeans, weaken the barrier and are the strongest genetic risk factor for atopic dermatitis (Palmer et al. 2006). Skin is also a major immune organ: it holds Langerhans cells, dermal dendritic cells and an estimated 2 × 10¹⁰ resident memory T cells, about twice as many as circulate in the blood (Clark et al. 2006)."
+          },
+          "meal": {
+            "ms": "Eating doesn’t change your skin much, but a big hot meal can make you feel warm, and spicy food can make your face sweat. Your skin also needs good food. Protein, vitamins and healthy fats are the building blocks for new skin cells.",
+            "hs": "Digesting food uses energy and makes a little extra heat, so skin blood vessels may open slightly. Chilli contains capsaicin, which switches on the same heat-sensing nerve endings that respond to real heat. Your brain reacts as if you were hot, so your face flushes and sweats. Skin needs vitamin C to build collagen: without it, as in scurvy, skin bruises easily and wounds heal badly.",
+            "college": "Capsaicin activates TRPV1 channels on trigeminal sensory nerves, which triggers reflex gustatory sweating and facial vasodilation. The thermic effect of food raises heat production by about 10% of the energy eaten, but skin blood flow changes little, while splanchnic flow roughly doubles. Vitamin C is a cofactor for the prolyl and lysyl hydroxylases that stabilise the collagen triple helix. High-glycaemic meals raise insulin and IGF-1, which stimulate oil production in sebaceous glands; low-glycaemic diets modestly reduce acne in trials.",
+            "phd": "Chronically high glucose glycates long-lived dermal collagen, forming advanced glycation end-products that cross-link and stiffen it. Skin autofluorescence from these AGEs predicts complications in diabetes. In Frey syndrome, parasympathetic fibres to the parotid regrow after surgery into the skin’s sweat glands and vessels, so eating makes the cheek sweat and flush. Insulin and IGF-1 signal through mTORC1 to drive sebocyte lipogenesis, a proposed link between diet and acne."
+          },
+          "exercise": {
+            "ms": "When you run, your body heats up fast. Your skin is your radiator. Blood vessels in it open wide so warm blood can lose heat, which is why you go red. Sweat glands pour out sweat, and as the sweat dries it cools you down.",
+            "hs": "Working muscles turn about three-quarters of their energy into heat. The hypothalamus, your body’s thermostat, opens skin blood vessels and switches on your 2–4 million sweat glands. When a litre of sweat evaporates it carries away about 2,400 kJ of heat. In hot weather you can sweat 1–2 litres an hour, so you need to drink.",
+            "college": "Running is only about 20–25% mechanically efficient, so most of the metabolic energy becomes heat. In severe heat stress, skin blood flow can reach 6–8 L/min. Sympathetic cholinergic nerves release acetylcholine onto M3 receptors on eccrine glands. The gland coil secretes a plasma-like fluid, and the duct reabsorbs Na⁺ and Cl⁻, so sweat is dilute. At high sweat rates there is less time for reabsorption, so sweat gets saltier.",
+            "phd": "Chloride reabsorption in the sweat duct depends on CFTR, so sweat chloride above 60 mmol/L is the diagnostic test for cystic fibrosis. Heat acclimatisation over 7–14 days brings earlier and heavier sweating, more dilute sweat (via aldosterone) and a larger plasma volume. Evaporation fails as ambient vapour pressure approaches that of the skin; the theoretical wet-bulb limit of 35 °C (Sherwood & Huber 2010) may be nearer 31 °C in practice (Vecellio et al. 2022)."
+          }
+        }
+      },
+      "bones": {
+        "name": "Bones",
+        "blurb": "Living scaffold, calcium bank and blood factory",
+        "related": [
+          "muscles",
+          "kidneys",
+          "gut"
+        ],
+        "phases": {
+          "sleep": {
+            "ms": "While you sleep, your bones are being rebuilt. Some cells break down old bone and others lay down new bone, so your skeleton is always being renewed. In children and teenagers, growth hormone released in deep sleep helps bones grow longer. All night, the marrow inside your bones keeps making new blood cells.",
+            "hs": "Bone is living tissue that is always being remodelled. Osteoclasts dissolve old bone and osteoblasts build new bone. Bone breakdown is highest at night and in the early morning, partly because you aren’t eating, so the body draws calcium from your bones. In young people, the pulses of growth hormone in deep sleep make the growth plates add length to the bones.",
+            "college": "Markers of bone resorption, such as serum CTX, follow a strong daily rhythm. They peak in the early morning and fall by about half to an afternoon low. Much of this rhythm comes from meals, because it is blunted when people fast. Parathyroid hormone also rises overnight. Growth hormone, acting directly and through IGF-1, drives chondrocyte proliferation in the epiphyseal plate.",
+            "phd": "Osteoblasts and osteoclasts carry their own circadian clocks, and deleting Bmal1 changes bone mass in mice. In humans, three weeks of sleep restriction with circadian disruption lowered the formation marker P1NP while CTX was unchanged, uncoupling formation from resorption (Swanson et al. 2017). This may help explain the link between shift work and lower bone density."
+          },
+          "rest": {
+            "ms": "You have 206 bones. They hold you up, protect soft organs like your brain and heart, and work with your muscles to move you. Bones are alive: they have blood vessels and nerves, they store calcium, and the soft marrow inside them makes your blood cells.",
+            "hs": "Bones have a hard outer shell of compact bone and a light, spongy inside, like a honeycomb. They are made of collagen fibres, which make them slightly bendy, hardened with calcium phosphate crystals. Red marrow in the hips, ribs, spine and breastbone makes about 2 million new red blood cells every second. Bones are also a calcium bank: about 99% of the body’s calcium is in the skeleton.",
+            "college": "About 10% of the adult skeleton is replaced each year by remodelling units. Osteoclasts resorb a pit over 2–3 weeks, then osteoblasts refill it over about 3 months. Osteocytes are former osteoblasts buried in the matrix and make up more than 90% of bone cells. Linked through tiny channels (canaliculi), they steer remodelling with RANKL and sclerostin. Parathyroid hormone and calcitriol keep blood calcium within about 2.2–2.6 mmol/L.",
+            "phd": "Osteoblast-lineage cells and osteocytes express RANKL, which drives osteoclast formation through RANK; osteoprotegerin is a decoy receptor that blocks it. Denosumab (anti-RANKL) and romosozumab (anti-sclerostin) target this system. Bone is also an endocrine organ: osteocyte FGF23 controls renal phosphate excretion and calcitriol synthesis. Mouse studies suggest a role for osteocalcin in glucose metabolism (Lee et al. 2007), but the evidence in humans is disputed."
+          },
+          "meal": {
+            "ms": "When you eat, calcium from foods like milk, cheese, yogurt and green vegetables goes into your blood, and your bones store it. Eating also tells the bone-dissolving cells to slow down, so less bone is broken down after a meal.",
+            "hs": "Calcium is absorbed in the small intestine with the help of vitamin D. Within a few hours of a meal, bone breakdown drops by up to half. Gut hormones released when you eat, such as GLP-2, seem to tell osteoclasts to slow down. The body stops borrowing calcium from bone, and some can be deposited back.",
+            "college": "After a meal, serum CTX falls by about 50%. Active calcium uptake in the duodenum depends on calcitriol (TRPV6, calbindin and the basolateral Ca²⁺ pump); further down the gut it is mostly passive, between cells. Typically only 25–35% of dietary calcium is absorbed. Rising blood calcium is sensed by the calcium-sensing receptor on the parathyroid glands, which lowers PTH.",
+            "phd": "Henriksen et al. (2003) showed that the night-time rise and post-meal fall in resorption depend largely on eating, and that injected GLP-2 lowers night-time resorption in a dose-dependent way. This ‘gut–bone axis’ also includes GIP. Mouse work proposed that gut-derived serotonin inhibits bone formation through LRP5 (Yadav et al. 2008), but later genetic studies did not reproduce this (Cui et al. 2011)."
+          },
+          "exercise": {
+            "ms": "Running is great for your bones. Every time your foot hits the ground, your bones bend a tiny bit. Cells inside the bone feel this and tell the bone to get stronger. That’s why running and jumping build strong bones.",
+            "hs": "Each running stride sends a force of 2–3 times your body weight through your leg bones. Osteocytes, cells buried inside the bone, sense the tiny bending as fluid is squeezed through the channels around them. They signal osteoblasts to add bone where the load is greatest. Astronauts without this loading lose about 1–1.5% of the bone in their hips and spine each month. Bone you build as a child and teenager lasts for life.",
+            "college": "In Frost’s mechanostat theory, bone adapts to keep strain within a set range. Tibial strains in running are around 1,000–2,000 microstrain. Osteocytes sense fluid shear in the lacunar–canalicular network, and loading lowers their output of sclerostin, which releases Wnt/β-catenin signalling to drive bone formation. Fast, varied, high-impact loads build more bone than slow or static ones. Bone also becomes less responsive after a few dozen cycles, so short bouts with rest in between work best.",
+            "phd": "Rubin & Lanyon (1984) showed that only 36 loading cycles a day maintained bone mass in the turkey ulna, and more cycles added little. Loading lowers osteocyte sclerostin (Robling et al. 2008), and Piezo1 is one of the osteocyte’s mechanosensors. Repeated loading without enough recovery lets microdamage build up, causing stress fractures. Low energy availability (RED-S) adds to this by lowering oestrogen and impairing bone formation."
+          }
+        }
+      }
   },
   "systems": {
     "circulatory": {
@@ -910,6 +983,18 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 
 <script type="application/json" id="body-glossary">
 {
+  "epidermis": { "def": "The thin outer layer of the skin. It renews itself about once a month.", "match": ["epidermis", "epidermal"] },
+  "dermis": { "def": "The thick layer of skin below the epidermis, with blood vessels, nerves, hair follicles and glands.", "match": ["dermis", "dermal"] },
+  "keratin": { "def": "A tough protein that fills skin cells, hair and nails.", "match": ["keratin", "keratinocytes", "keratinocyte"] },
+  "melanin": { "def": "The dark pigment in skin and hair that absorbs UV light.", "match": ["melanin", "melanocytes"] },
+  "sweat glands": { "def": "Coiled glands in the skin that make sweat. Its evaporation cools you.", "match": ["sweat glands", "eccrine glands", "eccrine"] },
+  "collagen": { "def": "A strong, rope-like protein that gives skin, tendons and bone their toughness.", "match": ["collagen"] },
+  "osteoclasts": { "def": "Large bone cells that dissolve old bone and release its calcium.", "match": ["osteoclasts", "osteoclast"] },
+  "osteoblasts": { "def": "Bone cells that build new bone.", "match": ["osteoblasts", "osteoblast"] },
+  "osteocytes": { "def": "Bone-building cells that got buried in the bone they made. They sense loading and steer remodelling.", "match": ["osteocytes", "osteocyte"] },
+  "bone marrow": { "def": "The soft tissue inside bones. Red marrow makes blood cells; yellow marrow is mostly fat.", "match": ["marrow"] },
+  "growth plate": { "def": "A layer of cartilage near the end of a child’s bone where new length is added.", "match": ["growth plates", "growth plate", "epiphyseal plate"] },
+  "parathyroid hormone": { "def": "A hormone from the parathyroid glands that raises blood calcium.", "match": ["parathyroid hormone", "PTH"] },
   "aorta": { "def": "The body’s main artery. It carries oxygen-rich blood from the left side of the heart.", "match": ["aorta", "aortic"] },
   "baroreflex": { "def": "A fast reflex that steadies blood pressure: stretch sensors in big arteries tell the brainstem to slow or speed the heart.", "match": ["baroreflex", "baroreceptors", "baroreceptor"] },
   "capillaries": { "def": "The smallest blood vessels, one cell thick, where oxygen and nutrients pass into the tissues.", "match": ["capillaries", "capillary"] },
@@ -1088,7 +1173,8 @@ const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
 const ORGAN_SYSTEMS = {
   brain: ["nervous", "endocrine"], heart: ["circulatory", "nervous"], lungs: ["circulatory"],
   gut: ["nervous", "endocrine", "circulatory"], liver: ["circulatory", "endocrine"],
-  pancreas: ["endocrine"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory"]
+  pancreas: ["endocrine"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory"],
+  skin: ["circulatory", "nervous"], bones: ["circulatory", "endocrine"]
 };
 
 /* The day plan. Anything not listed is "rest". */
@@ -1450,7 +1536,8 @@ const Scene = (() => {
   const R = mulberry32(CONFIG.seed);
   const focusPoints = {
     brain: { x: 600, y: 132 }, heart: { x: 620, y: 366 }, lungs: { x: 540, y: 350 }, liver: { x: 528, y: 458 },
-    gut: { x: 662, y: 468 }, pancreas: { x: 612, y: 518 }, kidneys: { x: 552, y: 524 }, muscles: { x: 656, y: 690 }
+    gut: { x: 662, y: 468 }, pancreas: { x: 612, y: 518 }, kidneys: { x: 552, y: 524 }, muscles: { x: 656, y: 690 },
+    skin: { x: 774, y: 492 }, bones: { x: 541, y: 772 }
   };
   const r = {};
   let cur = null;
@@ -1469,6 +1556,20 @@ const Scene = (() => {
       + [[590, 519], [606, 517], [624, 514], [642, 511], [656, 508]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" class="gland"/>`).join("")
       + [[584, 558], [616, 570], [586, 582], [614, 594]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.3" class="gland"/>`).join("");
   }
+  /* faint limb bones under the skin: femur, kneecap and shin; upper arm and forearm.
+     side = 1 for the body's right (viewer's left), -1 for the left */
+  const TORSO_D = "M452 300 C452 270 478 256 512 252 L688 252 C722 256 748 270 748 300 L736 450 C730 486 724 520 732 560 C736 590 724 612 700 614 L500 614 C476 612 464 590 468 560 C476 520 470 486 464 450 Z";
+  const LIMBS = [["M550 600 C546 690 540 770 536 846", 80], ["M650 600 C654 690 660 770 664 846", 80], ["M470 285 C432 330 424 450 420 588", 50], ["M730 285 C768 330 776 450 780 588", 50]];
+  const flushLimbs = LIMBS.map(([d, w]) => `<path d="${d}" fill="none" stroke-width="${w}" stroke-linecap="round"/>`).join("");
+  function bone(x1, y1, x2, y2, w){
+    const a = Math.atan2(y2 - y1, x2 - x1), nx = -Math.sin(a) * w * .45, ny = Math.cos(a) * w * .45;
+    const knobs = [[x1, y1], [x2, y2]].map(([x, y]) => `<circle cx="${f1(x + nx)}" cy="${f1(y + ny)}" r="${f1(w * .62)}"/><circle cx="${f1(x - nx)}" cy="${f1(y - ny)}" r="${f1(w * .62)}"/>`).join("");
+    return knobs + `<path d="M${f1(x1)} ${f1(y1)} L${f1(x2)} ${f1(y2)}" stroke-width="${w}"/>`;
+  }
+  const mx = (x, side) => side > 0 ? x : 1200 - x;
+  const legBones = side => bone(mx(551, side), 622, mx(543, side), 758, 13) + bone(mx(542, side), 784, mx(537, side), 838, 11)
+    + `<ellipse cx="${mx(543, side)}" cy="771" rx="7" ry="8" class="patella"/>`;
+  const armBones = side => bone(mx(464, side), 304, mx(441, side), 438, 9) + bone(mx(437, side), 456, mx(424, side), 570, 6) + bone(mx(447, side), 458, mx(434, side), 570, 5);
   function build(){
     const limb = (d, w) => `<path d="${d}" class="limb-o" stroke-width="${w + 4}"/><path d="${d}" class="limb" stroke-width="${w}"/>`;
     let stars = "";
@@ -1499,14 +1600,17 @@ const Scene = (() => {
     <ellipse cx="600" cy="874" rx="190" ry="14" class="shadow"/>
     <g id="s-body">
       ${limb("M550 600 C546 690 540 770 536 846", 80)}${limb("M650 600 C654 690 660 770 664 846", 80)}
+      <g class="bones">${legBones(1)}${legBones(-1)}</g>
       <ellipse cx="522" cy="866" rx="44" ry="16" class="skin"/><ellipse cx="678" cy="866" rx="44" ry="16" class="skin"/>
       <ellipse id="s-quadL" cx="545" cy="690" rx="27" ry="72"/><ellipse id="s-quadR" cx="655" cy="690" rx="27" ry="72"/>
       ${limb("M470 285 C432 330 424 450 420 588", 50)}${limb("M730 285 C768 330 776 450 780 588", 50)}
       <circle cx="420" cy="600" r="24" class="skin"/><circle cx="780" cy="600" r="24" class="skin"/>
+      <g class="bones">${armBones(1)}${armBones(-1)}</g>
       <rect x="574" y="208" width="52" height="56" rx="14" class="skin"/>
-      <path class="skin" d="M452 300 C452 270 478 256 512 252 L688 252 C722 256 748 270 748 300 L736 450 C730 486 724 520 732 560 C736 590 724 612 700 614 L500 614 C476 612 464 590 468 560 C476 520 470 486 464 450 Z"/>
+      <path class="skin" d="${TORSO_D}"/>
       <ellipse cx="541" cy="170" rx="10" ry="16" class="skin"/><ellipse cx="659" cy="170" rx="10" ry="16" class="skin"/>
       <ellipse cx="600" cy="160" rx="60" ry="70" class="skin"/>
+      <g id="s-flush" opacity="0">${flushLimbs}<path d="${TORSO_D}"/><ellipse cx="600" cy="160" rx="60" ry="70"/></g>
       <g id="s-vessels" class="sys sys-circulatory">${vessels(1)}</g>
       <path id="s-eso" d="${ORG.eso}" stroke="#dba08e" stroke-width="7" fill="none" stroke-linecap="round"/>
       <g id="s-lungs">
@@ -1551,7 +1655,7 @@ const Scene = (() => {
     <circle id="s-ring" r="40" class="focus-ring"/>
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
-    ["sky", "stars", "sun", "moon", "moonShade", "hills", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
+    ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
      "brainGlow", "sparks", "npulse", "hormones", "pins"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
@@ -1592,6 +1696,8 @@ const Scene = (() => {
     [r.quadL, r.quadR].forEach(q => { q.setAttribute("fill", qc); q.setAttribute("opacity", f1(.35 + .5 * ph.muscle)); });
     const flush = clamp(ph.muscle * .8 + (ph.coreTemp - 36.8) * .4);
     r.cheekL.setAttribute("opacity", f1(flush * .7)); r.cheekR.setAttribute("opacity", f1(flush * .7));
+    /* skin blood flow: the arms bed stands in for the skin, which opens up to dump heat */
+    r.flush.setAttribute("opacity", f1(clamp((ph.flow.arms - .55) / 1.1) * .35));
     r.gutGlow.setAttribute("opacity", f1(ph.gut * .9));
     if (reducedMotion){ r.heart.removeAttribute("transform"); r.lungs.removeAttribute("transform"); }
     Particles.setRates(ph);
@@ -2886,6 +2992,198 @@ App.registerTopic({
   }
 });
 
+/* ---------- SKIN ---------- */
+const SKIN_RBC = "M150 100 L178 100 L178 70 Q184 60 190 70 L190 100 L226 100 L226 70 Q232 60 238 70 L238 100 L322 100 L322 70 Q328 60 334 70 L334 100 L380 100";
+const SKIN_DUCT = "M258 168 C252 150 264 130 258 112 C252 94 264 78 258 64 C253 54 263 42 258 31";
+const SKIN_NERVE = "M282 64 C284 92 276 128 286 160 C292 182 300 196 312 214";
+/* the cross-section is drawn on a 210 × 200 grid and shrunk to fit inside the round lens */
+const SKIN_K = .78, SKIN_TF = `translate(${MX} ${MY}) scale(${SKIN_K}) translate(${-MX} ${-MY})`;
+const skinP = (x, y) => [MX + (x - MX) * SKIN_K, MY + (y - MY) * SKIN_K];
+App.registerTopic({
+  id: "skin", glyph: "skin", zoom: 260, pull: .1, side: "right", ring: 34,
+  illustrate(ctx){
+    const p = ctx.phase, rng = ctx.rng;
+    /* skin blood flow: wide open in the run, open at sleep onset (heat loss from the limbs), modest otherwise */
+    const vw = pick(p, { exercise: 5.5, sleep: 4, meal: 3.4, rest: 3 }), vc = pick(p, { exercise: "#e0404c", sleep: "#d65560", rest: "#cf6870" });
+    const sun = p === "rest" && ctx.ph.daylight > .5;
+    let b = `<path d="M44 0 C38 70 40 150 48 220 L124 220 C132 150 134 70 128 0Z" fill="var(--skin)" stroke="var(--skin-line)" stroke-width="1.5"/>`;
+    b += `<path d="M44 0 C38 70 40 150 48 220 L124 220 C132 150 134 70 128 0Z" fill="#e2707a" opacity="${pick(p, { exercise: .32, sleep: .1, meal: .08, rest: 0 })}"/>`;
+    let hair = ""; for (let i = 0; i < 26; i++){ const x = 52 + rng() * 68, y = 10 + rng() * 200; hair += `M${f1(x)} ${f1(y)}q2 4 1 8`; }
+    b += `<path d="${hair}" stroke="#8a6a52" stroke-width=".9" fill="none" stroke-linecap="round" opacity=".7"/>`;
+    if (p === "exercise") for (let i = 0; i < 9; i++){ const x = 54 + rng() * 64, y = 20 + rng() * 180; b += `<path d="M${f1(x)} ${f1(y - 4)} c2 3 3 5 0 7 c-3 -2 -2 -4 0 -7Z" fill="#7fc3e8" stroke="#4f9fcf" stroke-width=".5"/>`; }
+    if (sun) for (let i = 0; i < 4; i++) b += arrow(10 + i * 8, 20 + i * 18, 40 + i * 6, 50 + i * 18, "#e8a91f", 1.4);
+    b += loupe(88, 96, MX, MY, MR);
+
+    /* the magnified cross-section: air, epidermis, dermis, fat */
+    let wave = "M160 30 L380 30 L380 62"; for (let x = 376; x >= 160; x -= 12) wave += ` Q${x + 6} ${f1(62 + 7 * Math.cos((x + 6 - 160) / 24 * Math.PI))} ${x} ${f1(62 + 7 * Math.cos((x - 160) / 24 * Math.PI))}`;
+    wave += "Z";
+    let x = `<rect x="160" y="10" width="210" height="22" fill="${sun ? "#f6ecd0" : "#e8f1f7"}"/><rect x="160" y="30" width="210" height="146" fill="#f3d6cc"/>`;
+    x += `<rect x="160" y="172" width="210" height="40" fill="#f8ead0"/>`;
+    for (let i = 0; i < 16; i++){ const cx = 164 + (i % 8) * 28 + (i > 7 ? 14 : 0), cy = 184 + (i > 7 ? 18 : 0); x += `<circle cx="${cx}" cy="${cy}" r="12" fill="#f6e3a6" stroke="#e0c37a" stroke-width="1"/>`; }
+    x += `<path d="${wave}" fill="#efcfb4"/>`;
+    /* keratinocytes: plump below, flat above; the basal layer is darker */
+    let cells = "";
+    for (let row = 0; row < 4; row++){
+      const y = 52 - row * 6.5, ry = 2.8 - row * .55, rx = 4.2 + row * 1.2;
+      for (let cx = 164 + (row % 2) * 5; cx < 372; cx += rx * 2 + 2) cells += `<ellipse cx="${f1(cx)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}"/>`;
+    }
+    x += `<g fill="#f3dcc6" stroke="#d9b496" stroke-width=".6">${cells}</g>`;
+    let basal = "";
+    for (let cx = 162; cx < 376; cx += 7){ const y = 62 + 7 * Math.cos((cx - 160) / 24 * Math.PI) - 3.5; basal += `<circle cx="${f1(cx)}" cy="${f1(y)}" r="3"/>`; }
+    x += `<g fill="#d9a888" stroke="#b9845f" stroke-width=".5">${basal}</g>`;
+    x += `<rect x="160" y="28" width="210" height="6" fill="#ead8bd"/><path d="M160 31 H370" stroke="#d6bf9c" stroke-width=".8" stroke-dasharray="9 3"/>`;
+    /* melanocyte with its dendrites */
+    x += `<path d="M300 66 l-8 -8 M300 66 l9 -9 M300 66 l-2 -12" stroke="#5b3a26" stroke-width="1.2"/><circle cx="300" cy="67" r="3.4" fill="#5b3a26"/>`;
+    if (p === "sleep") x += `<g class="sim-glow" data-f=".5"><circle cx="208" cy="65" r="6" fill="#ffe27a" opacity=".7"/></g><circle cx="206" cy="65" r="2.3" fill="#8a4a32"/><circle cx="211" cy="65" r="2.3" fill="#8a4a32"/>`;
+    /* capillary loops into the dermal papillae */
+    x += `<path d="${SKIN_RBC}" stroke="${mix(vc, "#ffffff", .45)}" stroke-width="${vw + 2.5}" fill="none" stroke-linejoin="round"/><path d="${SKIN_RBC}" stroke="${vc}" stroke-width="${vw}" fill="none" stroke-linejoin="round"/>`;
+    /* sweat gland: a coil deep in the dermis and a duct spiralling up to a pore */
+    let coil = ""; for (let i = 0; i < 5; i++){ const a = i * 1.3; coil += `<ellipse cx="${f1(258 + Math.cos(a) * 7)}" cy="${f1(172 + Math.sin(a) * 4)}" rx="9" ry="5" fill="none" transform="rotate(${i * 36} ${f1(258 + Math.cos(a) * 7)} ${f1(172 + Math.sin(a) * 4)})"/>`; }
+    x += `<g stroke="#5f9fcf" stroke-width="3.2">${coil}</g><path d="${SKIN_DUCT}" stroke="#5f9fcf" stroke-width="3.2" fill="none"/><path d="${SKIN_DUCT}" stroke="#d7ecf8" stroke-width="1.4" fill="none"/>`;
+    x += `<path d="M252 30 Q258 36 264 30" fill="#d7ecf8" stroke="#5f9fcf" stroke-width="1"/>`;
+    /* hair follicle with its oil gland and the tiny muscle that raises the hair */
+    x += `<path d="M314 31 L340 156 L352 156 L326 31Z" fill="#e8c2a6" stroke="#c99a78" stroke-width="1"/><ellipse cx="346" cy="160" rx="9" ry="8" fill="#c48a62"/>`;
+    x += `<path d="M346 160 L320 30 L304 4" stroke="#4a3528" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+    x += `<path d="M336 92 c8 -6 18 -2 16 8 c6 6 0 16 -10 12 c-6 -2 -8 -12 -6 -20Z" fill="#f2df9a" stroke="#d1b55a" stroke-width="1"/>`;
+    x += `<path d="M344 130 C352 112 360 92 364 70" stroke="#c2645c" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    /* touch: a Meissner corpuscle in a papilla, a Pacinian corpuscle deep down, both on sensory nerves */
+    x += `<path d="${SKIN_NERVE}" stroke="#4fb8d0" stroke-width="2" fill="none"/><path d="M202 198 C214 204 228 206 250 214" stroke="#4fb8d0" stroke-width="2" fill="none"/>`;
+    x += `<ellipse cx="282" cy="62" rx="3.4" ry="6" fill="#bfe6ef" stroke="#4fb8d0" stroke-width="1"/>`;
+    for (const r of [10, 7.5, 5, 2.5]) x += `<ellipse cx="196" cy="194" rx="${r}" ry="${r * .7}" fill="#e9f5f8" stroke="#8ccbdb" stroke-width=".9"/>`;
+    if (p === "exercise") for (let i = 0; i < 4; i++){ const hx = 182 + i * 44; x += `<path d="M${hx} 26 q-4 -5 0 -9 q4 -4 0 -9" stroke="#e8862a" stroke-width="1.6" fill="none" stroke-linecap="round"/>`; }
+    if (sun) for (let i = 0; i < 3; i++) x += arrow(196 + i * 54, 12, 206 + i * 54, 44, "#e8a91f", 1.5);
+    b += magnifier(MX, MY, MR, `<g transform="${SKIN_TF}">${x}</g>`);
+
+    const Z = skinP;
+    ctx.mark(54, 150, ["Skin", "Skin of the forearm", "Skin (with fine hairs)", "Hair-bearing skin"]);
+    ctx.mark(...Z(184, 42), ["Outer layer", "Epidermis", "Epidermis (keratinocytes)", "Stratified squamous epidermis"]);
+    ctx.mark(...Z(230, 30), ["", "Dead, tough cells on top", "Stratum corneum", "Stratum corneum (bricks and mortar)"], 1);
+    ctx.mark(...Z(300, 76), ["", "Pigment cell", "Melanocyte", "Melanocyte (eumelanin → keratinocytes)"], 1);
+    ctx.mark(...Z(172, 120), ["Inner layer", "Dermis", "Dermis (collagen, elastin)", "Reticular dermis"]);
+    ctx.mark(...Z(196, 84), ["Tiny blood vessels", "Capillary loops", "Papillary capillary loops", "Papillary loops off the superficial plexus"]);
+    ctx.mark(...Z(240, 160), p === "exercise" ? ["Sweat gland (busy!)", "Sweat gland at full power", "Eccrine gland (cholinergic)", "Eccrine gland: ACh → M3"] : ["Sweat gland", "Sweat gland", "Eccrine sweat gland", "Eccrine gland (coil + duct)"]);
+    ctx.mark(...Z(266, 120), ["", "Sweat duct", "Sweat duct (reabsorbs salt)", "Duct: Na⁺/Cl⁻ reabsorption via ENaC/CFTR"], 2);
+    ctx.mark(...Z(330, 130), ["Hair root", "Hair follicle", "Hair follicle", "Hair follicle (bulge stem cells)"]);
+    ctx.mark(...Z(348, 100), ["", "Oil gland", "Sebaceous gland", "Sebaceous gland (holocrine)"], 1);
+    ctx.mark(...Z(362, 80), ["", "", "Arrector pili muscle", "Arrector pili (α₁-adrenergic)"], 2);
+    ctx.mark(...Z(282, 50), p === "meal" ? ["Feels touch and heat", "Touch and heat sensors", "Meissner corpuscle; TRPV1 heat fibres", "Meissner corpuscle; TRPV1 (capsaicin)"] : ["Feels touch", "Touch sensor", "Meissner corpuscle (light touch)", "Meissner corpuscle (RA1 afferent)"]);
+    ctx.mark(...Z(196, 180), ["", "Pressure sensor", "Pacinian corpuscle (vibration)", "Pacinian corpuscle (RA2, ~250 Hz)"], 1);
+    ctx.mark(...Z(300, 192), ["Fat layer", "Fat (keeps you warm)", "Hypodermis (subcutaneous fat)", "Hypodermis"]);
+    if (p === "sleep") ctx.mark(...Z(208, 74), ["New cells made at night", "Cells dividing", "Basal cell mitosis (peaks at night)", "Basal S-phase peaks near midnight"]);
+    if (p === "exercise") ctx.mark(...Z(226, 18), ["Heat escapes", "Heat lost from the skin", "Heat loss: evaporation + radiation", "Evaporative heat loss (~2.4 MJ/L)"]);
+    if (sun) ctx.mark(...Z(254, 18), ["Sunlight makes vitamin D", "UVB makes vitamin D", "UVB: 7-DHC → previtamin D₃", "UVB photolysis of 7-DHC"]);
+    return b;
+  },
+  simulate(k, ctx){
+    const p = ctx.phase, R = Math.random, L = el("g", { transform: SKIN_TF }, k.layer(true));
+    const rbc = k.stream("rbc", L, SKIN_RBC, 16, () => el("ellipse", { rx: 3.2, ry: 2.2, fill: "#b8232f" }));
+    /* new cells climb from the basal layer and flake off the top (sped up a lot) */
+    const climb = [208, 304].map((cx, i) => k.stream("ker" + i, L, `M${cx} 64 L${cx} 26`, 4, () => el("ellipse", { rx: 4, ry: 2.4, stroke: "#b9845f", "stroke-width": .5 })));
+    const kerCol = t => mix("#d9a888", "#ead8bd", t);
+    const sweat = k.stream("sweat", L, SKIN_DUCT, 12, () => el("circle", { r: 1.7, fill: "#3b8fc4" }));
+    const beads = k.spray("bead", L, 10, () => el("path", { d: "M0 -3 c2 3 3 5 0 7 c-3 -2 -2 -4 0 -7Z", fill: "#5aa9e0" }));
+    const heat = k.spray("heat", L, 10, () => el("path", { d: "M0 0 q-3 -4 0 -7 q3 -3 0 -7", stroke: "#e8862a", "stroke-width": 1.4, fill: "none" }));
+    const touch = k.spray("touch", L, 6, () => el("circle", { r: 2.6, fill: "#4fb8d0" }));
+    const N = k.sampler(SKIN_NERVE);
+    const tRate = pick(p, { exercise: 2.2, meal: 1.4, rest: .8, sleep: .25 });
+    return (dt, ph) => {
+      rbc.tick(dt, 14 + 22 * ph.flow.arms);
+      climb.forEach(c => c.tick(dt, 2.2, { colorAt: kerCol }));
+      const sw = clamp(ph.sweat + (p === "meal" ? .08 : 0));
+      sweat.tick(dt, 10 + 30 * sw, { count: Math.round(12 * sw) });
+      beads.emit(sw * 3, dt, () => ({ x0: 258, y0: 29, x1: 258 + (R() - .5) * 26, y1: 20 - R() * 6, life: 1.4, e: "out" }));
+      const hot = clamp((ph.flow.arms - .55) / 1.1);
+      heat.emit(hot * 4, dt, () => { const x = 170 + R() * 190; return { x0: x, y0: 30, x1: x + (R() - .5) * 6, y1: 14, life: 1.2 }; });
+      touch.emit(tRate, dt, () => { const t0 = 0; const [x0, y0] = N.at(t0), [x1, y1] = N.at(.85); return { x0, y0, x1, y1, life: .7, e: "lin" }; });
+      beads.tick(dt); heat.tick(dt); touch.tick(dt);
+    };
+  }
+});
+
+/* ---------- BONES ---------- */
+const FEMUR_D = "M62 14 C46 14 40 34 52 46 L70 60 L72 166 C62 170 56 182 58 194 C60 206 78 210 86 200 C94 210 112 206 112 194 C114 182 106 170 98 166 L96 62 C106 60 114 50 110 38 C106 28 96 28 90 34 L80 40 C76 24 72 14 62 14Z";
+App.registerTopic({
+  id: "bones", glyph: "bone", zoom: 320, pull: .1, side: "left", ring: 44,
+  illustrate(ctx){
+    const p = ctx.phase, rng = ctx.rng;
+    const cid = "clip" + (++UID);
+    /* the femur, cut open to show spongy ends and the marrow cavity */
+    let f = `<clipPath id="${cid}"><path d="${FEMUR_D}"/></clipPath><path d="${FEMUR_D}" fill="#f3ecdf" stroke="#b9a98c" stroke-width="1.5"/>`;
+    let sp = `<rect x="40" y="10" width="80" height="44" fill="#eab0a6"/><rect x="50" y="172" width="70" height="40" fill="#eab0a6"/>`;
+    let tr = ""; for (let i = 0; i < 40; i++){ const x = 44 + rng() * 72, y = rng() < .55 ? 12 + rng() * 42 : 172 + rng() * 38, a = rng() * Math.PI, L = 5 + rng() * 6; tr += `M${f1(x)} ${f1(y)}l${f1(Math.cos(a) * L)} ${f1(Math.sin(a) * L)}`; }
+    sp += `<path d="${tr}" stroke="#f6efe2" stroke-width="2.4" stroke-linecap="round"/>`;
+    sp += `<rect x="78" y="62" width="12" height="104" rx="5" fill="#f2d58a"/><path d="M40 178 H120" stroke="#d8c8aa" stroke-width="1.4" stroke-dasharray="3 2"/>`;
+    f += `<g clip-path="url(#${cid})">${sp}</g><path d="M104 108 L92 112" stroke="#d6404c" stroke-width="2.2" stroke-linecap="round"/>`;
+    let b = `<g class="sim-femur">${f}</g>`;
+    if (p === "exercise") b += `<path d="M84 214 v-10 M78 214 l6 -8 l6 8" stroke="#e8862a" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    b += loupe(62, 30, MX, MY, MR);
+
+    const oc = pick(p, { sleep: 1.15, meal: .72, exercise: .9, rest: 1 }), pit = pick(p, { sleep: 18, meal: 9, exercise: 12, rest: 14 });
+    let x = `<rect x="160" y="10" width="210" height="104" fill="#eaa3a3"/>`;
+    x += `<path d="M150 24 L222 60 L250 10 M286 12 L318 74 L380 48 M250 60 L240 112" stroke="#e0cfb4" stroke-width="13" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M150 24 L222 60 L250 10 M286 12 L318 74 L380 48 M250 60 L240 112" stroke="#f3ecdf" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    for (const [cx, cy] of [[196, 90], [282, 44], [340, 92], [196, 32]]){
+      for (let i = 0; i < 7; i++){ const a = rng() * Math.PI * 2, d = rng() * 11; x += `<circle cx="${f1(cx + Math.cos(a) * d)}" cy="${f1(cy + Math.sin(a) * d)}" r="${f1(3 + rng() * 1.5)}" fill="${rng() < .5 ? "#a8628f" : "#d9505c"}" stroke="#ffffff" stroke-width=".5" opacity=".9"/>`; }
+    }
+    for (const [cx, cy] of [[270, 92], [352, 26]]) x += `<circle cx="${cx}" cy="${cy}" r="9" fill="#fbf3e2" stroke="#e2cfa9"/>`;
+    x += `<path d="M150 117 L380 117" stroke="#e9b8b6" stroke-width="22"/><path d="M150 117 L380 117" stroke="#e46c74" stroke-width="16"/>`;
+    x += `<rect x="160" y="128" width="210" height="24" fill="#f5e6dc"/>`;
+    x += `<path d="M150 150 L192 150 C196 ${150 + pit} 232 ${150 + pit} 236 150 L380 150 L380 214 L150 214Z" fill="#efe3cc" stroke="#d1bf9c" stroke-width="1"/>`;
+    for (let y = 162; y < 214; y += 10) x += `<path d="M160 ${y} C220 ${y - 3} 300 ${y + 3} 370 ${y}" stroke="#e2d2b2" stroke-width="1" fill="none"/>`;
+    const ocy = [[214, 186], [264, 172], [300, 194], [340, 176], [182, 200]];
+    let can = ""; ocy.forEach(([cx, cy], i) => { const [nx, ny] = ocy[(i + 1) % ocy.length]; can += `M${cx} ${cy}L${nx} ${ny}`; for (let j = 0; j < 3; j++){ const a = rng() * Math.PI * 2; can += `M${cx} ${cy}l${f1(Math.cos(a) * 12)} ${f1(Math.sin(a) * 9)}`; } });
+    x += `<path d="${can}" stroke="#bda57c" stroke-width=".8" fill="none"/>`;
+    x += ocy.map(([cx, cy]) => `<ellipse class="sim-ocy" cx="${cx}" cy="${cy}" rx="6" ry="3.4" fill="#a68c6a"/>`).join("");
+    /* osteoblasts lay unmineralised osteoid on the surface; the osteoclast digs a pit */
+    const nOb = pick(p, { meal: 6, exercise: 6, rest: 5, sleep: 4 });
+    x += `<rect x="${268 - 2}" y="146" width="${nOb * 14 + 2}" height="6" fill="#e5c3b2"/>`;
+    for (let i = 0; i < nOb; i++) x += `<rect x="${268 + i * 14}" y="135" width="12" height="11" rx="3" fill="#7aa6d6" stroke="#4f7ab0" stroke-width=".8"/><circle cx="${274 + i * 14}" cy="${139}" r="2.2" fill="#3c5d8c"/>`;
+    x += `<g class="sim-glow" data-f="${p === "sleep" ? .6 : .3}"><ellipse cx="214" cy="${148 + pit * .35}" rx="${f1(28 * oc)}" ry="${f1(15 * oc)}" fill="#c9a2e0" opacity=".35"/></g>`;
+    x += `<ellipse cx="214" cy="${f1(146 + pit * .3)}" rx="${f1(21 * oc)}" ry="${f1(11 * oc)}" fill="${p === "meal" ? "#b598c7" : "#9d6bb8"}" stroke="#6e4589" stroke-width="1"/>`;
+    for (let i = 0; i < 4; i++) x += `<circle cx="${f1(214 + (i - 1.5) * 8 * oc)}" cy="${f1(143 + pit * .3)}" r="${f1(2.6 * oc)}" fill="#5d3a78"/>`;
+    b += magnifier(MX, MY, MR, x);
+
+    ctx.mark(54, 18, ["Ball of the hip joint", "Head of the femur", "Femoral head", "Femoral head"]);
+    ctx.mark(64, 196, ["Spongy bone", "Spongy bone", "Trabecular bone", "Trabecular (cancellous) bone"]);
+    ctx.mark(98, 140, ["Hard outer bone", "Compact bone", "Cortical bone", "Cortical bone (osteons)"]);
+    ctx.mark(84, 96, ["", "Marrow cavity (fat)", "Medullary cavity: yellow marrow", "Medullary cavity (marrow adipose tissue)"], 1);
+    ctx.mark(118, 176, ["", "", "Epiphyseal line", "Epiphyseal line (fused growth plate)"], 2);
+    ctx.mark(104, 98, ["", "", "Nutrient artery", "Nutrient artery"], 2);
+    ctx.mark(202, 52, ["Blood cell factory", "Red marrow", "Red bone marrow", "Haematopoietic marrow"]);
+    ctx.mark(240, 92, ["", "Bony strut", "Trabecula", "Trabecula"], 1);
+    ctx.mark(340, 117, ["New blood cells leave", "Blood vessel", "Marrow sinusoid", "Sinusoid (~2 × 10⁶ RBC/s)"]);
+    ctx.mark(214, 128, p === "sleep" ? ["Bone eater (busy at night)", "Osteoclast (dissolves bone)", "Osteoclast: resorption peaks overnight", "Osteoclast (CTX peaks early morning)"]
+      : p === "meal" ? ["Bone eater (resting)", "Osteoclast slows after meals", "Osteoclast: resorption falls after meals", "Osteoclast (post-meal CTX ↓, GLP-2)"]
+      : ["Bone eater", "Osteoclast (dissolves bone)", "Osteoclast in resorption pit", "Osteoclast (RANKL; H⁺ + cathepsin K)"]);
+    ctx.mark(310, 128, ["Bone builders", "Osteoblasts (build bone)", "Osteoblasts laying osteoid", "Osteoblasts (type I collagen → osteoid)"]);
+    ctx.mark(272, 180, p === "exercise" ? ["Feels each footstep", "Osteocyte senses the bending", "Osteocyte: strain sensing via fluid flow", "Osteocyte: sclerostin ↓ → Wnt ↑"] : ["Bone sensor cell", "Osteocyte", "Osteocyte in its lacuna", "Osteocyte (sclerostin, RANKL)"]);
+    ctx.mark(236, 196, ["", "", "Canaliculi", "Lacunar–canalicular network"], 2);
+    ctx.mark(184, 134, ["Calcium", "Calcium", "Ca²⁺ released and deposited", "Ca²⁺ exchange (PTH, calcitriol)"]);
+    return b;
+  },
+  simulate(k, ctx){
+    const p = ctx.phase, R = Math.random, L = k.layer(true);
+    const femur = k.q(".sim-femur"), ocy = k.qa(".sim-ocy");
+    const pit = pick(p, { sleep: 18, meal: 9, exercise: 12, rest: 14 }), nOb = pick(p, { meal: 6, exercise: 6, rest: 5, sleep: 4 });
+    const rbc = k.stream("rbc", L, "M150 117 L380 117", 10, () => el("ellipse", { rx: 5, ry: 3.2, fill: "#b8232f" }));
+    const born = k.spray("born", L, 8, () => el("ellipse", { rx: 3.6, ry: 2.4, fill: "#d9505c" }));
+    const caOut = k.spray("caOut", L, 16, () => el("circle", { r: 2, fill: "#2f9f97" }));
+    const caIn = k.spray("caIn", L, 16, () => el("circle", { r: 2, fill: "#2f9f97" }));
+    const out = pick(p, { sleep: 3.2, rest: 1.8, exercise: 1.6, meal: .6 }), dep = pick(p, { sleep: 1, rest: 1.4, exercise: 2, meal: 2.6 });
+    const clusters = [[196, 90], [282, 44], [340, 92], [196, 32]];
+    return (dt, ph) => {
+      rbc.tick(dt, 22 + 4 * ph.co, { jit: 5 });
+      born.emit(1.2, dt, () => { const [cx, cy] = clusters[Math.floor(R() * clusters.length)]; return { x0: cx, y0: cy, x1: cx + (R() - .5) * 16, y1: 114, life: 1.6 }; });
+      caOut.emit(out, dt, () => { const cx = 200 + R() * 28; return { x0: cx, y0: 150 + pit * .6, x1: cx + (R() - .5) * 20, y1: 122, life: 1.3, wob: 2 }; });
+      caIn.emit(dep, dt, () => { const cx = 270 + R() * nOb * 14; return { x0: cx + (R() - .5) * 20, y0: 122, x1: cx, y1: 149, life: 1.4, wob: 2 }; });
+      born.tick(dt); caOut.tick(dt); caIn.tick(dt);
+      /* each running stride bends the femur a little; osteocytes light up as fluid is squeezed past them */
+      const stride = p === "exercise" ? Math.max(0, Math.sin(2 * Math.PI * 1.4 * k.t)) ** 3 : 0;
+      if (femur) femur.setAttribute("transform", `translate(84 110) scale(${(1 + .02 * stride).toFixed(3)} ${(1 - .015 * stride).toFixed(3)}) translate(-84 -110)`);
+      ocy.forEach(o => o.setAttribute("fill", stride > .05 ? mix("#a68c6a", "#ffd166", stride) : "#a68c6a"));
+    };
+  }
+});
+
 /* glyphs for the topic list (20 × 20) */
 const GLYPHS = {
   brain: `<path d="M10 3.5C7 3 4.2 5 4.3 7.6 2.6 8.6 2.6 11.6 4.4 12.8 4.4 15 6.6 16.4 8.6 15.6 9.2 16.4 10.8 16.4 11.4 15.6 13.4 16.4 15.6 15 15.6 12.8 17.4 11.6 17.4 8.6 15.7 7.6 15.8 5 13 3 10 3.5Z" fill="#e9a8ae"/><path d="M10 4v11.5M6.2 8.5c1.5 0 2 1 3.8 1M13.8 8.5c-1.5 0-2 1-3.8 1" stroke="#b5636e" stroke-width="1" fill="none"/>`,
@@ -2895,7 +3193,9 @@ const GLYPHS = {
   liver: `<g transform="translate(10 10.5) scale(.125) translate(-566 -458)"><path d="${ORG.liver}" fill="#8e3b33"/><ellipse cx="594" cy="486" rx="8" ry="12" fill="#78a35a"/></g>`,
   pancreas: `<g transform="translate(10 10) scale(.16) translate(-620 -515)"><path d="${ORG.pancreas}" fill="#e8bd6e" transform="translate(620 515) scale(1 1.6) translate(-620 -515)"/></g>`,
   kidney: `<g transform="translate(11 10) scale(.12)"><path d="${KIDNEY_D}" fill="#a5483f"/></g>`,
-  muscle: `<path d="M3 16c.6-4.2 2.4-7.4 4.6-8.6l.8-3.4h3.2l-.6 3.2c2.4.2 4.6 1.6 5.4 3.8 1 3-1 5.6-4 5.6H4.6C3.6 16.6 3 16.4 3 16Z" fill="#d07a6e"/><path d="M8 12.5c1.6-1.6 4-1.8 6-.6" stroke="#a6544a" stroke-width="1" fill="none"/>`
+  muscle: `<path d="M3 16c.6-4.2 2.4-7.4 4.6-8.6l.8-3.4h3.2l-.6 3.2c2.4.2 4.6 1.6 5.4 3.8 1 3-1 5.6-4 5.6H4.6C3.6 16.6 3 16.4 3 16Z" fill="#d07a6e"/><path d="M8 12.5c1.6-1.6 4-1.8 6-.6" stroke="#a6544a" stroke-width="1" fill="none"/>`,
+  skin: `<rect x="3" y="5" width="14" height="12" rx="2" fill="#f3d6cc"/><path d="M3 7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3H3Z" fill="#e3b08f"/><rect x="3" y="14" width="14" height="3" rx="1.2" fill="#f6e3a6"/><path d="M11.5 13.5 10 9.5 8.6 2.5" stroke="#4a3528" stroke-width="1.1" fill="none" stroke-linecap="round"/><path d="M6 13c1-1-1-2 0-3" stroke="#5f9fcf" stroke-width="1" fill="none"/>`,
+  bone: `<g transform="rotate(-45 10 10)" fill="#f3ecdf" stroke="#b9a98c" stroke-width=".9"><circle cx="4.4" cy="8.3" r="2.3"/><circle cx="4.4" cy="11.7" r="2.3"/><circle cx="15.6" cy="8.3" r="2.3"/><circle cx="15.6" cy="11.7" r="2.3"/><rect x="4.4" y="8.2" width="11.2" height="3.6" stroke="none"/></g>`
 };
 
 /* =========================================================================

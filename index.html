@@ -237,6 +237,11 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .ill .mag-bg{ fill:var(--surface); }
 .ill .mag-ring{ fill:none; stroke:var(--ink); stroke-width:1.5; }
 .ill .loupe{ fill:none; stroke:var(--ink); stroke-width:1; stroke-dasharray:3 3; opacity:.6; }
+.ill .mk{ opacity:0; transition:opacity .15s; pointer-events:none; }
+figure.ill.marks-on .mk, .ill .mk.on, .ill .mk.pin{ opacity:1; }
+@media (hover:hover){ figure.ill:hover .mk{ opacity:1; } }
+figure.ill svg{ cursor:pointer; }
+.legend li{ cursor:pointer; }
 .ill .mk circle{ fill:var(--ink); stroke:var(--bg); stroke-width:2; }
 .ill .mk text{ fill:var(--bg); font:600 9.5px var(--sans); text-anchor:middle; }
 .ill .ill-t{ fill:var(--ink); font:600 10px var(--sans); }
@@ -1327,7 +1332,7 @@ function makeCtx(s){
       const t = Array.isArray(text) ? text[Math.min(this.li, text.length - 1)] : text;
       if (!t) return;
       this.labels.push(t);
-      this.marks += `<g class="mk"><circle cx="${f1(x)}" cy="${f1(y)}" r="7.5"/><text x="${f1(x)}" y="${f1(y + 3.3)}">${this.labels.length}</text></g>`;
+      this.marks += `<g class="mk" data-i="${this.labels.length}"><circle cx="${f1(x)}" cy="${f1(y)}" r="7.5"/><text x="${f1(x)}" y="${f1(y + 3.3)}">${this.labels.length}</text></g>`;
     }
   };
 }
@@ -2055,11 +2060,12 @@ const Panel = (() => {
     root.querySelectorAll("[data-at]").forEach(b => b.addEventListener("click", () => store.set({ hour: +b.dataset.at, playing: false })));
   }
 
+  let marksPinned = false; /* numbered markers stay visible after a click/tap, across re-renders */
   function renderTopic(s){
     const id = s.topic, topic = Topics.get(id), data = CONTENT.topics[id];
     const ctx = makeCtx(s), phase = ctx.phase, li = ctx.li;
     const svgBody = topic.illustrate(ctx) + ctx.marks;
-    const legend = ctx.labels.map(l => `<li>${esc(l)}</li>`).join("");
+    const legend = ctx.labels.map((l, i) => `<li data-i="${i + 1}">${esc(l)}</li>`).join("");
     const text = textFor(id, phase, s.level);
     const tabs = PHASES.map(p => `<button type="button" data-phase="${p.id}" aria-pressed="${p.id === phase}">${p.label}</button>`).join("");
     const deeper = li < LEVELS.length - 1 ? `<button type="button" class="chip primary" data-level="${LEVELS[li + 1].id}">${esc(STRINGS.deeper(LEVELS[li + 1].label))}</button>` : "";
@@ -2075,7 +2081,7 @@ const Panel = (() => {
       </div>
       <h2>${esc(data.name)}</h2>
       <p class="lede">${esc(data.blurb)}</p>
-      <figure class="ill">
+      <figure class="ill${marksPinned ? " marks-on" : ""}">
         <svg ${VB} role="img" aria-label="${esc(data.name)} during ${PHASE_BY_ID[phase].label.toLowerCase()}: ${esc(ctx.labels.join(", "))}">${svgBody}</svg>
         ${legend ? `<ol class="legend">${legend}</ol>` : ""}
       </figure>
@@ -2090,6 +2096,15 @@ const Panel = (() => {
       </div>
       ${related ? `<div class="related"><p>${esc(STRINGS.seeAlso)}</p><div class="depth">${related}</div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
+    const fig = root.querySelector("figure.ill");
+    fig.querySelector("svg").addEventListener("click", () => { marksPinned = !marksPinned; fig.classList.toggle("marks-on", marksPinned); });
+    fig.querySelectorAll(".legend li").forEach(li => {
+      const mk = fig.querySelector(`.mk[data-i="${li.dataset.i}"]`);
+      if (!mk) return;
+      li.addEventListener("mouseenter", () => mk.classList.add("on"));
+      li.addEventListener("mouseleave", () => mk.classList.remove("on"));
+      li.addEventListener("click", () => mk.classList.toggle("pin"));
+    });
     root.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () => store.set({ hour: PHASE_BY_ID[b.dataset.phase].rep, playing: false })));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
     root.querySelectorAll(".related [data-topic]").forEach(b => b.addEventListener("click", () => store.set({ topic: b.dataset.topic })));

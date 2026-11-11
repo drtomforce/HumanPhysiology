@@ -396,7 +396,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 <div class="main">
   <section class="stage" aria-label="The human body through the day">
     <div class="scene-wrap" id="sceneWrap">
-      <svg id="scene" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A see-through human body at the selected time of day"></svg>
+      <svg id="scene" viewBox="0 0 1200 1000" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A see-through human body at the selected time of day"></svg>
       <div class="moment" aria-live="polite">
         <p class="moment-time" id="mTime">07:30</p>
         <p class="moment-phase" id="mPhase">Rest</p>
@@ -1253,10 +1253,10 @@ const GLOSSARY = readJSON("body-glossary");
 const HOUR_NOTES = readJSON("body-hours");
 
 const CONFIG = {
-  world: { w: 1200, h: 900, cx: 600 },
+  world: { w: 1200, h: 1000, cx: 600 },
   seed: 7,
   hoursPerSecond: 0.8,          /* a whole day in 30 s */
-  bbox: { x0: 380, x1: 1075, y0: 70, y1: 895 },
+  bbox: { x0: 420, x1: 1075, y0: 70, y1: 1000 },
   focusCenter: { x: 600, y: 420 }
 };
 
@@ -1493,7 +1493,18 @@ const ORG = {
    ventricle and return to the left atrium. Gut blood goes through the liver
    (portal vein) before it gets home. Shared trunks repeat the same path text,
    so cells on different routes run down the same aorta and vena cava. */
-const AO = "M616 346 C615 326 614 310 610 300";                         /* ascending aorta to the arch */
+/* Body proportions. Geometry below is drawn in "design" coordinates and then
+   stretched: the legs (below the hips, y > HIP_Y) by LEG_K and the arms (|x−600|
+   ≥ ARM_DX, below the shoulders) by ARM_K, so the figure stands about seven heads
+   tall. bodyPt maps a design point to body coordinates; mapD does the same for
+   every "x y" pair of an absolute path. The whole body is then narrowed by BODY_SX
+   around the midline (see Scene.toView). */
+const HIP_Y = 600, LEG_K = 1.4, SHOULDER_Y = 300, ARM_K = 1.15, ARM_DX = 130, BODY_SX = .88;
+const legY = y => y <= HIP_Y ? y : HIP_Y + (y - HIP_Y) * LEG_K;
+const armY = y => y <= SHOULDER_Y ? y : SHOULDER_Y + (y - SHOULDER_Y) * ARM_K;
+const bodyPt = (x, y) => [x, Math.abs(x - 600) >= ARM_DX ? armY(y) : legY(y)];
+const mapD = d => d.replace(/(-?[\d.]+)[ ,]+(-?[\d.]+)/g, (_, x, y) => { const [X, Y] = bodyPt(+x, +y); return `${f1(X)} ${f1(Y)}`; });
+const AO = "M616 346 C615 326 614 310 610 300";                        /* ascending aorta to the arch */
 const AO_D = AO + " C618 312 610 332 607 360 L606 470";                  /* descending aorta */
 const SVC = " L590 300 C590 324 590 346 594 362";                        /* superior vena cava → right atrium */
 const IVC = " L594 380 C594 372 594 366 594 362";                        /* inferior vena cava → right atrium */
@@ -1528,6 +1539,8 @@ const NERV = [
   { id: "symAR", kind: "symp", d: CNS + " L600 470 L612 476 L612 488 C622 494 634 496 644 498" },
   { id: "ens", kind: "ens", d: ORG.smallInt }
 ];
+CIRC.forEach(c => { c.a = mapD(c.a); c.v = mapD(c.v); });
+NERV.forEach(n => { n.d = mapD(n.d); });
 /* sympathetic chain: a row of ganglia either side of the cord */
 const SYMP_CHAIN = [588, 612].map(x => `M${x} 300 L${x} 560`).join(" ");
 /* Endocrine glands (world coordinates) and the hormones they release. Each
@@ -1658,9 +1671,13 @@ const Scene = (() => {
   const focusPoints = {
     brain: { x: 600, y: 132 }, heart: { x: 620, y: 366 }, lungs: { x: 540, y: 350 }, liver: { x: 528, y: 458 },
     gut: { x: 662, y: 468 }, pancreas: { x: 612, y: 518 }, kidneys: { x: 552, y: 524 }, muscles: { x: 656, y: 690 },
-    skin: { x: 774, y: 492 }, bones: { x: 541, y: 772 },
+    skin: { x: 776, y: 548 }, bones: { x: 541, y: 772 },
     eyes: { x: 622, y: 188 }, ears: { x: 541, y: 170 }, throat: { x: 588, y: 236 }
   };
+  for (const k in focusPoints){ const [x, y] = bodyPt(focusPoints[k].x, focusPoints[k].y); focusPoints[k] = { x, y }; }
+  /* body coordinates → scene (view) coordinates: the body group is narrowed around the midline */
+  const toView = p => ({ x: 600 + (p.x - 600) * BODY_SX, y: p.y });
+  const FIGURE_TF = `translate(600 0) scale(${BODY_SX} 1) translate(-600 0)`;
   const r = {};
   let cur = null;
 
@@ -1680,8 +1697,9 @@ const Scene = (() => {
   }
   /* faint limb bones under the skin: femur, kneecap and shin; upper arm and forearm.
      side = 1 for the body's right (viewer's left), -1 for the left */
-  const TORSO_D = "M452 300 C452 270 478 256 512 252 L688 252 C722 256 748 270 748 300 L736 450 C730 486 724 520 732 560 C736 590 724 612 700 614 L500 614 C476 612 464 590 468 560 C476 520 470 486 464 450 Z";
-  const LIMBS = [["M550 600 C546 690 540 770 536 846", 80], ["M650 600 C654 690 660 770 664 846", 80], ["M470 285 C432 330 424 450 420 588", 50], ["M730 285 C768 330 776 450 780 588", 50]];
+  const TORSO_D = "M452 302 C452 276 470 264 500 259 C532 254 556 248 574 236 L626 236 C644 248 668 254 700 259 C730 264 748 276 748 302 L736 450 C730 486 724 520 732 560 C736 590 724 612 700 614 L500 614 C476 612 464 590 468 560 C476 520 470 486 464 450 Z";
+  const LIMBS = [["M550 600 C546 690 540 770 536 846", 80], ["M650 600 C654 690 660 770 664 846", 80], ["M470 285 C432 330 424 450 420 588", 50], ["M730 285 C768 330 776 450 780 588", 50]]
+    .map(([d, w]) => [mapD(d), w]);
   const flushLimbs = LIMBS.map(([d, w]) => `<path d="${d}" fill="none" stroke-width="${w}" stroke-linecap="round"/>`).join("");
   function bone(x1, y1, x2, y2, w){
     const a = Math.atan2(y2 - y1, x2 - x1), nx = -Math.sin(a) * w * .45, ny = Math.cos(a) * w * .45;
@@ -1689,9 +1707,9 @@ const Scene = (() => {
     return knobs + `<path d="M${f1(x1)} ${f1(y1)} L${f1(x2)} ${f1(y2)}" stroke-width="${w}"/>`;
   }
   const mx = (x, side) => side > 0 ? x : 1200 - x;
-  const legBones = side => bone(mx(551, side), 622, mx(543, side), 758, 13) + bone(mx(542, side), 784, mx(537, side), 838, 11)
-    + `<ellipse cx="${mx(543, side)}" cy="771" rx="7" ry="8" class="patella"/>`;
-  const armBones = side => bone(mx(464, side), 304, mx(441, side), 438, 9) + bone(mx(437, side), 456, mx(424, side), 570, 6) + bone(mx(447, side), 458, mx(434, side), 570, 5);
+  const legBones = side => bone(mx(551, side), legY(622), mx(543, side), legY(758), 13) + bone(mx(542, side), legY(784), mx(537, side), legY(838), 11)
+    + `<ellipse cx="${mx(543, side)}" cy="${legY(771)}" rx="7" ry="8.5" class="patella"/>`;
+  const armBones = side => bone(mx(464, side), armY(304), mx(441, side), armY(438), 9) + bone(mx(437, side), armY(456), mx(424, side), armY(570), 6) + bone(mx(447, side), armY(458), mx(434, side), armY(570), 5);
   function build(){
     const limb = (d, w) => `<path d="${d}" class="limb-o" stroke-width="${w + 4}"/><path d="${d}" class="limb" stroke-width="${w}"/>`;
     let stars = "";
@@ -1719,14 +1737,15 @@ const Scene = (() => {
       <path d="M960 135 V325 M865 230 H1055" class="win-bar"/>
     </g>
     <circle cx="960" cy="230" r="95" class="win-frame"/>
-    <ellipse cx="600" cy="874" rx="190" ry="14" class="shadow"/>
+    <ellipse cx="600" cy="${legY(874)}" rx="170" ry="14" class="shadow"/>
+    <g id="s-figure" transform="${FIGURE_TF}">
     <g id="s-body">
-      ${limb("M550 600 C546 690 540 770 536 846", 80)}${limb("M650 600 C654 690 660 770 664 846", 80)}
+      ${limb(...LIMBS[0])}${limb(...LIMBS[1])}
       <g class="bones">${legBones(1)}${legBones(-1)}</g>
-      <ellipse cx="522" cy="866" rx="44" ry="16" class="skin"/><ellipse cx="678" cy="866" rx="44" ry="16" class="skin"/>
-      <ellipse id="s-quadL" cx="545" cy="690" rx="27" ry="72"/><ellipse id="s-quadR" cx="655" cy="690" rx="27" ry="72"/>
-      ${limb("M470 285 C432 330 424 450 420 588", 50)}${limb("M730 285 C768 330 776 450 780 588", 50)}
-      <circle cx="420" cy="600" r="24" class="skin"/><circle cx="780" cy="600" r="24" class="skin"/>
+      <ellipse cx="522" cy="${legY(866)}" rx="44" ry="16" class="skin"/><ellipse cx="678" cy="${legY(866)}" rx="44" ry="16" class="skin"/>
+      <ellipse id="s-quadL" cx="545" cy="${legY(690)}" rx="27" ry="${72 * LEG_K}"/><ellipse id="s-quadR" cx="655" cy="${legY(690)}" rx="27" ry="${72 * LEG_K}"/>
+      ${limb(...LIMBS[2])}${limb(...LIMBS[3])}
+      <circle cx="420" cy="${armY(600)}" r="24" class="skin"/><circle cx="780" cy="${armY(600)}" r="24" class="skin"/>
       <g class="bones">${armBones(1)}${armBones(-1)}</g>
       <rect x="574" y="208" width="52" height="56" rx="14" class="skin"/>
       <path class="skin" d="${TORSO_D}"/>
@@ -1774,6 +1793,7 @@ const Scene = (() => {
       <ellipse id="s-mouthO" cx="600" cy="212" rx="7" ry="5.5" fill="var(--ink)"/>
     </g>
     <g id="s-fx"></g>
+    </g>
     <circle id="s-ring" r="40" class="focus-ring"/>
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
@@ -1838,7 +1858,8 @@ const Scene = (() => {
   function focus(id){
     const p = id && focusPoints[id];
     if (p){
-      r.ring.setAttribute("cx", f1(p.x)); r.ring.setAttribute("cy", f1(p.y));
+      const v = toView(p);
+      r.ring.setAttribute("cx", f1(v.x)); r.ring.setAttribute("cy", f1(v.y));
       r.ring.setAttribute("r", (Topics.get(id) && Topics.get(id).ring) || 40);
     }
     r.ring.classList.toggle("on", !!p);
@@ -1852,7 +1873,9 @@ const Scene = (() => {
     /* hormones travel in the blood: keep a faint trace of the vessels while they are live */
     svg.querySelectorAll("#s-vessels, #s-pulm").forEach(g => g.classList.toggle("ghost", !shown.circulatory && live === "endocrine"));
   }
-  return { build, update, animate, focus, setSystems, svg, focusPoints, refs: r, get bbox(){ return CONFIG.bbox; } };
+  /* a design-coordinate point (as in CONTENT pins) → scene coordinates */
+  const place = (x, y) => toView({ x, y: bodyPt(x, y)[1] });
+  return { build, update, animate, focus, setSystems, svg, focusPoints, toView, place, refs: r, get bbox(){ return CONFIG.bbox; } };
 })();
 
 /* =========================================================================
@@ -3748,8 +3771,8 @@ const Pins = (() => {
     key = k;
     const pins = !s.topic && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
     g().innerHTML = pins.map((p, n) => {
-      const i = n + 1;
-      return `<g class="mk" data-i="${i}" tabindex="0" role="button" aria-label="${i}: ${esc(p.title)}"><circle cx="${p.x}" cy="${p.y}" r="10.5"/><text x="${p.x}" y="${p.y + 4.2}">${i}</text></g>`;
+      const i = n + 1, { x, y } = Scene.place(p.x, p.y);
+      return `<g class="mk" data-i="${i}" tabindex="0" role="button" aria-label="${i}: ${esc(p.title)}"><circle cx="${f1(x)}" cy="${f1(y)}" r="10.5"/><text x="${f1(x)}" y="${f1(y + 4.2)}">${i}</text></g>`;
     }).join("");
     g().style.setProperty("--pc", s.live ? SYSTEM_BY_ID[s.live].color : "");
     restore = bindMarks(box, tip, i => { const p = pins[i - 1]; return `<b>${esc(p.title)}</b>${esc(atLevel(p, s.level))}`; }, state);
@@ -3780,7 +3803,7 @@ const Hotspots = (() => {
     const m = svg.getScreenCTM(); if (!m) return;
     const r = layer.getBoundingClientRect(), pt = svg.createSVGPoint();
     btns.forEach((b, id) => {
-      const p = Scene.focusPoints[id]; pt.x = p.x; pt.y = p.y;
+      const p = Scene.toView(Scene.focusPoints[id]); pt.x = p.x; pt.y = p.y;
       const s = pt.matrixTransform(m);
       b.style.left = (s.x - r.left) + "px"; b.style.top = (s.y - r.top) + "px";
     });
@@ -4096,7 +4119,7 @@ const Controls = (() => {
    ========================================================================= */
 function cameraFor(s){
   if (!s.topic) return Camera.homeView();
-  const t = Topics.get(s.topic), p = Scene.focusPoints[s.topic], k = t.pull || 0, c = CONFIG.focusCenter;
+  const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
 }
 

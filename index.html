@@ -33,14 +33,19 @@
                    IMPULSES lists the nerve impulse journeys: fibre legs (path, fibre
                    type, real speed and length) and synapse legs (real delay,
                    transmitter), with their text in CONTENT.impulse.
+                   CASCADES lists the hormone cascades: blood rides along CIRC routes,
+                   nerve and local hops, and steps where cells make or answer a
+                   hormone, each with its real duration and messenger (MESSENGERS);
+                   text in CONTENT.cascade.
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
-                   follow, followSeg, impulse, impulseSeg}. shown = which body systems
+                   follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg}. shown = which body systems
                    are drawn; live = the one that is animated (setSystem / setLive keep
                    the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
                    impulse / impulseSeg = the nerve impulse journey followed and its
-                   leg (startImpulse / stopImpulse); only one ride at a time.
+                   leg (startImpulse / stopImpulse); cascade / cascadeSeg the same for
+                   a hormone cascade (startCascade / stopCascade); one ride at a time.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
                    Renders physiology → SVG attributes. RHYTHM keeps the beat and
@@ -58,6 +63,10 @@
                    IMPULSE rides one action potential in bullet time: its
                    timeScale() slows the beat, breath, blood and clock in the frame
                    loop, and IMPULSE CARD shows the stop, fibre, speed and real ms.
+                   CASCADE is its mirror image, a hormone signal in time-lapse: its
+                   timeScale() moves the day clock on (capped by CLOCK_MAX) and
+                   speeds up the body (capped by BODY_MAX); CASCADE CARD shows the
+                   stop, the messenger, real time elapsed and the time-lapse.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -70,8 +79,8 @@
                    blood pressure, cardiac output, blood O₂, hormones.
 
  7. UI              Panel (intro with the live-system and sleep-stage cards, organ
-                   view with "Part of" chips, red-cell and nerve-impulse journey
-                   views), timeline with
+                   view with "Part of" chips, red-cell, nerve-impulse and
+                   hormone-cascade journey views), timeline with
                    the hypnogram strip, level switch, system switches, glossary tooltips.
 
  Values are typical for a healthy adult and simplified for teaching; this is
@@ -169,8 +178,9 @@ button{ font:inherit; color:inherit; }
 #s-blood .rbc-trail{ fill:none; stroke:var(--ink); stroke-opacity:.5; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 /* the followed nerve impulse, its trail and puffs of transmitter at synapses */
 #s-impulse .imp-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-#s-impulse .imp-halo{ opacity:.28; }
-#s-impulse .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+#s-impulse .imp-halo, #s-cascade .imp-halo{ opacity:.28; }
+#s-cascade .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-impulse .imp-trail, #s-cascade .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 .follow-label.imp-paths{ margin-top:22px; }
 .imp-group{ margin:10px 0 6px; font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.07em; }
 .journey-steps{ list-style:none; margin:0 0 18px; padding:0; display:grid; gap:2px; counter-reset:j; }
@@ -460,6 +470,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       </div>
       <div class="journey" id="journey" aria-live="polite"></div>
       <div class="journey" id="impulseCard" aria-live="polite"></div>
+      <div class="journey" id="cascadeCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
       <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
@@ -1499,6 +1510,348 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "phd": "In smooth muscle, force also depends on Ca²⁺ sensitisation through RhoA/ROCK. Gastroparesis, as in diabetes, often involves loss of interstitial cells of Cajal and damage to nitrergic neurons."
       }
     }
+  },
+  "cascade": {
+    "journeys": {
+      "adrenaline": { "name": "Adrenaline: adrenal gland → heart", "group": "Seconds",
+        "blurb": "A sympathetic nerve tells the adrenal gland to pour out adrenaline. In about 20 seconds it has been through the heart and lungs and is speeding up the heart.",
+        "effect": "The heart speeds up and beats harder" },
+      "insulin": { "name": "Insulin after breakfast", "group": "Minutes",
+        "blurb": "Food in the gut sets off GLP-1, which helps the pancreas release insulin. Insulin goes to the liver first, then to the muscles, where it opens the doors for glucose. The whole cascade takes about 45 minutes.",
+        "effect": "Muscles soak up glucose and blood sugar starts to fall" },
+      "glucagon": { "name": "Glucagon in the run", "group": "Minutes",
+        "blurb": "As the run starts, insulin falls and glucagon rises. Glucagon tells the liver to break down glycogen, and the glucose rides the blood to the working legs.",
+        "effect": "Glucose from the liver fuels the running legs" },
+      "stress": { "name": "Stress axis: CRH → ACTH → cortisol", "group": "Hours",
+        "blurb": "On waking, the hypothalamus starts a relay: CRH → ACTH → cortisol. Cortisol switches on genes in the liver for hours, then tells the brain to turn the relay down.",
+        "effect": "Cortisol turns down its own relay: negative feedback" },
+      "melatonin": { "name": "Melatonin at nightfall", "group": "Hours",
+        "blurb": "As the light fades, the body clock lets a nerve pathway (down the spinal cord and back up through the neck) switch on the pineal gland. Melatonin builds over a couple of hours and tells the brain it is night.",
+        "effect": "The brain gets the message: it’s night, time to sleep" },
+      "thyroid": { "name": "Thyroid hormone", "group": "Days & weeks",
+        "blurb": "TRH → TSH → thyroxine. Thyroxine lasts about a week in the blood. Cells turn it into active T3, which works slowly through genes, so its effects build over days.",
+        "effect": "Metabolism has edged up, and thyroid hormone turns down TSH" },
+      "epo": { "name": "EPO: kidney → bone marrow", "group": "Days & weeks",
+        "blurb": "Say you gave blood or went up a mountain. The kidney senses less oxygen and sends EPO to the bone marrow. About a week later, new red blood cells arrive.",
+        "effect": "New red cells carry more oxygen, and the kidney eases off EPO" }
+    },
+    "stops": {
+      "splanchnic": {
+        "name": "Sympathetic nerve to the adrenal",
+        "ms": "Something exciting is happening: the run is starting! The brain sends a fast nerve signal down the spinal cord to the adrenal gland, which sits on top of the kidney.",
+        "hs": "The sympathetic nervous system reaches the adrenal gland through the splanchnic nerves. Unlike other sympathetic nerves, this one runs straight to the gland with no relay on the way, so the signal arrives in a few hundredths of a second.",
+        "college": "Preganglionic sympathetic fibres from the lateral horn (about T5–T11) run in the greater splanchnic nerve directly to the adrenal medulla. The medulla is in effect a sympathetic ganglion whose postganglionic cells have no axons and release their transmitter into the blood.",
+        "phd": "Adrenaline output scales roughly with splanchnic firing rate. Besides acetylcholine, the terminals release PACAP, which sustains catecholamine secretion and synthesis during prolonged stress (Stroth and Eiden)."
+      },
+      "chromaffin": {
+        "name": "Adrenal medulla releases adrenaline",
+        "ms": "Special cells in the middle of the adrenal gland are packed with tiny bags of adrenaline. The nerve signal makes them empty the bags into the blood.",
+        "hs": "Acetylcholine from the nerve makes the chromaffin cells release adrenaline (about 80%) and noradrenaline (about 20%) straight into the blood. It takes about a second.",
+        "college": "Acetylcholine acts on nicotinic receptors and depolarises the chromaffin cell. Voltage-gated Ca²⁺ entry triggers exocytosis of dense-core granules, which hold catecholamines at very high concentration together with ATP and chromogranins.",
+        "phd": "Chromaffin cells are a classic model of exocytosis: amperometry resolves single-granule release, and fusion pores that flicker before full fusion. Cortisol from the surrounding cortex induces PNMT, the enzyme that turns noradrenaline into adrenaline."
+      },
+      "adrenalineRide": {
+        "name": "Through the heart and lungs",
+        "ms": "The adrenaline rides the blood up the big vein to the heart, round the lungs and back into the heart. Then it is pumped out to the whole body, including the heart’s own muscle.",
+        "hs": "From the adrenal vein it reaches the vena cava and the right heart in a few seconds, crosses the lungs and returns to the left heart. Some of the first blood pumped out goes into the coronary arteries, which feed the heart muscle itself. The trip takes about 15 seconds at rest, less in exercise.",
+        "college": "Circulation time from a vein to the systemic arteries is roughly 10–20 s and shortens as cardiac output rises. Plasma adrenaline has a half-life of only about 2 minutes, because tissues take it up quickly and COMT and MAO break it down, so blood levels follow release closely.",
+        "phd": "The lungs clear little adrenaline, unlike noradrenaline and serotonin, which the pulmonary endothelium takes up. Plasma adrenaline rises from about 0.2 nmol/L at rest to several nmol/L in intense exercise; the coronary circulation gets about 4–5% of the cardiac output."
+      },
+      "beta1": {
+        "name": "β1 receptors speed up the heart",
+        "ms": "Adrenaline reaches the heart’s pacemaker. It works like pressing the accelerator: the heart beats faster and harder.",
+        "hs": "Adrenaline fits into β1 receptors on heart cells. This sets off a chain of messages inside the cell that makes the pacemaker fire sooner and each beat stronger. The effect starts within seconds.",
+        "college": "β1 receptors couple to Gs, which raises cAMP and activates protein kinase A. In the SA node, cAMP speeds the funny current (HCN channels) and PKA boosts Ca²⁺ cycling, so diastolic depolarisation is steeper. In ventricular cells PKA phosphorylates L-type channels, phospholamban and troponin I, so beats are stronger and relax faster.",
+        "phd": "Phosphodiesterases and A-kinase anchoring proteins keep cAMP in separate compartments, so β1 and β2 receptors have different effects even though they share a second messenger. In heart failure, constant β-stimulation desensitises the receptors through GRKs and β-arrestin, which is part of why β-blockers help."
+      },
+      "lcell": {
+        "name": "L-cells sense the meal",
+        "ms": "Breakfast reaches the small intestine. Special cells in the gut lining taste the sugar and fat and send out a hormone called GLP-1.",
+        "hs": "L-cells in the lining of the intestine release GLP-1 when they sense nutrients. GLP-1 starts rising about 10–15 minutes after you start eating, before much food reaches the lower gut where most L-cells live, partly thanks to nerve and hormone signals from higher up.",
+        "college": "L-cells sense glucose through SGLT1 (sodium-coupled uptake depolarises the cell), fatty acids through FFAR1 and GPR120, and bile acids through TGR5. GLP-1 is cut from proglucagon by prohormone convertase 1/3. With GIP from K-cells it explains the incretin effect: glucose by mouth triggers about twice as much insulin as the same glucose given into a vein.",
+        "phd": "L-cells are not one type: many also make PYY, neurotensin or GIP, and their hormone mix changes along the gut. Some have basal processes (neuropods) that contact vagal sensory fibres, linking gut sensing to the brain within milliseconds (Bohórquez and colleagues)."
+      },
+      "glp1Ride": {
+        "name": "GLP-1 rides to the pancreas",
+        "ms": "GLP-1 is carried by the blood through the liver, the heart and the lungs, then to the pancreas. Most of it gets chopped up on the way!",
+        "hs": "GLP-1 is very short-lived. An enzyme called DPP-4 on the blood vessel walls starts chopping it up within a minute or two. Only a small share reaches the pancreas intact, but that is enough to give the insulin cells a strong push.",
+        "college": "DPP-4 on capillary endothelium cleaves active GLP-1 to an inactive form, and the liver removes more. Only about 10–15% of secreted GLP-1 reaches the systemic circulation intact, and its plasma half-life is under 2 minutes. That is why some of its effects probably act locally, on vagal nerves in the gut wall.",
+        "phd": "DPP-4 inhibitors (gliptins) and DPP-4-resistant GLP-1 receptor agonists such as semaglutide exploit this weakness. The agonists reach plasma levels far above natural GLP-1 and act on receptors in the hindbrain and hypothalamus, which explains their strong effects on appetite and weight."
+      },
+      "betaCell": {
+        "name": "β-cells release insulin",
+        "ms": "In the pancreas, tiny groups of cells notice the sugar in the blood and the GLP-1 message. They let out insulin.",
+        "hs": "β-cells in the islets sense rising blood glucose. GLP-1 makes them more sensitive, so they release more insulin for the same sugar. A quick first burst comes within a few minutes, followed by a slower, longer second phase.",
+        "college": "Glucose enters β-cells through GLUT transporters and is phosphorylated by glucokinase, the glucose sensor. Rising ATP/ADP closes K-ATP channels, the cell depolarises, Ca²⁺ enters and insulin granules fuse with the membrane. GLP-1 acts through Gs and cAMP (PKA and Epac2) to amplify this, but only when glucose is high.",
+        "phd": "Because GLP-1 only amplifies glucose-triggered secretion, GLP-1 drugs rarely cause hypoglycaemia, unlike sulfonylureas, which close K-ATP channels directly. First-phase secretion comes from a readily releasable pool of docked granules and is the first to be lost in type 2 diabetes."
+      },
+      "liverFirstPass": {
+        "name": "Into the liver first",
+        "ms": "Insulin goes to the liver before anywhere else. The liver keeps about half of it.",
+        "hs": "Blood from the pancreas drains into the portal vein, so insulin reaches the liver first. The liver takes up about half the insulin. It tells liver cells to stop making glucose and to store sugar as glycogen.",
+        "college": "Portal insulin is 2–3 times higher than in the rest of the circulation. In the liver, insulin inhibits glycogenolysis and gluconeogenesis and activates glycogen synthase. The liver removes about 50–80% of insulin in a single pass, which sets how much reaches muscle and fat.",
+        "phd": "Hepatic insulin clearance through CEACAM1-mediated receptor endocytosis falls in obesity, which contributes to high insulin levels. Injected insulin enters the systemic, not the portal, circulation, so treated patients have the portal–systemic gradient the wrong way round."
+      },
+      "insulinRide": {
+        "name": "Out to the muscles",
+        "ms": "The insulin that gets through the liver travels to the heart, round the lungs and out to the big muscles in the legs.",
+        "hs": "From the liver, insulin rides the blood through the heart and lungs and is pumped out to the whole body. Muscles take up most of the sugar after a meal, so they are insulin’s most important target.",
+        "college": "Insulin’s plasma half-life is only 4–6 minutes, so its level follows secretion closely. After a mixed meal, skeletal muscle takes up about a third of the glucose, the liver about a third and other tissues the rest. Insulin also widens muscle arterioles through endothelial NO, so more capillaries open.",
+        "phd": "Insulin-induced capillary recruitment (Barrett and colleagues) enlarges the endothelial surface available for insulin delivery. It is blunted in insulin resistance, so delivery itself becomes a bottleneck."
+      },
+      "capillaryWall": {
+        "name": "Crossing the capillary wall",
+        "ms": "Insulin has to get out of the blood vessel and into the muscle. This is slow, like squeezing through a crowded door.",
+        "hs": "Insulin is a big molecule. It has to cross the capillary wall to reach the muscle cells, and this is the slowest step of the whole trip. Insulin’s effect on muscle lags behind its blood level by 10–20 minutes.",
+        "college": "Insulin crosses muscle capillary endothelium mainly by transcytosis. Insulin in the fluid around muscle cells is about half the plasma level and lags it by 10–20 min. That delay, not signalling inside the cell, limits how fast glucose uptake rises.",
+        "phd": "Whether transport across the endothelium is saturable and receptor-mediated is still debated; mice lacking endothelial insulin receptors show delayed insulin action in muscle. Impaired transport is part of whole-body insulin resistance in obesity."
+      },
+      "glut4": {
+        "name": "GLUT4 opens the doors for glucose",
+        "ms": "Insulin knocks on the muscle cell. The cell moves sugar doors called GLUT4 to its surface, and sugar flows in.",
+        "hs": "Insulin binds receptors on the muscle cell. A chain of messages inside the cell moves GLUT4 glucose transporters from inside the cell to its surface, so glucose can flow in. Blood sugar then starts to fall.",
+        "college": "The insulin receptor is a tyrosine kinase. It phosphorylates IRS-1, which activates PI3K and Akt. Akt inhibits the Rab GAP TBC1D4 (AS160), which frees GLUT4 storage vesicles to fuse with the membrane. Glucose uptake rises up to tenfold, and much of the glucose is stored as muscle glycogen.",
+        "phd": "Exercise moves GLUT4 by a separate, insulin-independent route (AMPK, Ca²⁺/CaMKII, Rac1). That is why muscle contraction lowers glucose even in insulin-resistant people, and why exercise boosts insulin sensitivity for up to 48 h."
+      },
+      "alphaCell": {
+        "name": "α-cells release glucagon",
+        "ms": "The run starts. Cells in the pancreas notice that the muscles will need fuel and send out glucagon.",
+        "hs": "α-cells in the islets release glucagon when blood sugar falls or when you exercise. Falling insulin, the sympathetic nerves and the adrenaline of the run all push them to release more.",
+        "college": "Glucagon secretion rises when insulin, zinc and GABA from neighbouring β-cells fall (paracrine control), and with sympathetic nerves and adrenaline acting on β2 receptors. In exercise, the glucagon-to-insulin ratio in the portal vein can rise several-fold.",
+        "phd": "How α-cells sense glucose directly is still debated; K-ATP channels, SGLT2 and somatostatin from δ-cells have all been proposed. In type 1 diabetes, the glucagon response to hypoglycaemia is lost, a major cause of dangerous lows."
+      },
+      "glucagonPortal": {
+        "name": "Down the portal vein to the liver",
+        "ms": "Glucagon goes straight to the liver through a special vein.",
+        "hs": "Like insulin, glucagon goes from the pancreas into the portal vein, so the liver gets the strongest dose. Much of it is used up there, so blood tests elsewhere underestimate what the liver sees.",
+        "college": "The liver removes about a quarter to a half of portal glucagon in one pass. Glucagon’s plasma half-life is about 5 minutes.",
+        "phd": "Because portal levels are what count, peripheral glucagon measurements underestimate what the liver is exposed to. The portal glucagon-to-insulin ratio is the main regulator of glucose output from the liver in exercise."
+      },
+      "liverGlucagon": {
+        "name": "Liver breaks down glycogen",
+        "ms": "Glucagon tells the liver to unlock its sugar store. The liver lets glucose out into the blood.",
+        "hs": "Glucagon binds receptors on liver cells and sets off a chain of messages that breaks glycogen down into glucose. Glucose release from the liver rises within minutes and can double or triple during a run.",
+        "college": "The glucagon receptor couples to Gs, cAMP and PKA. PKA activates phosphorylase kinase, which activates glycogen phosphorylase, and it switches glycogen synthase off. This enzyme cascade amplifies the signal enormously: one hormone molecule can free millions of glucose molecules. Over longer times glucagon also drives gluconeogenesis.",
+        "phd": "This amplifying kinase cascade was worked out by Sutherland (Nobel 1971, the discovery of cAMP) and by Krebs and Fischer (Nobel 1992, reversible phosphorylation). In exercise the liver’s glucose output matches muscle uptake so closely that blood glucose barely changes for the first hour."
+      },
+      "glucoseRide": {
+        "name": "Glucose rides to the legs",
+        "ms": "Sugar from the liver travels through the heart and lungs and out to the running leg muscles.",
+        "hs": "Glucose leaves the liver in the hepatic vein, passes through the heart and lungs and is pumped out to the working legs, which get most of the blood during a run.",
+        "college": "During running, leg blood flow can rise more than tenfold, so most of the glucose the liver releases goes to working muscle. Muscle glucose uptake can rise 20-fold even as insulin falls, because contraction moves GLUT4 to the surface.",
+        "phd": "In moderate exercise, blood glucose is held almost constant by feedforward nerve signals (central command) and by feedback through glucagon and adrenaline. Only in long, hard exercise does the liver’s output fall behind, so that hypoglycaemia develops."
+      },
+      "muscleFuel": {
+        "name": "Muscles burn the glucose",
+        "ms": "The leg muscles take in the glucose and burn it to keep running.",
+        "hs": "Working muscles use both their own glycogen and glucose from the blood. Together with fat, this fuels the run.",
+        "college": "In moderate exercise, blood glucose supplies about 10–40% of the carbohydrate muscle burns, more as muscle glycogen runs low. Contraction moves GLUT4 to the membrane without needing insulin.",
+        "phd": "Fuel selection follows the crossover concept: the share of carbohydrate rises with intensity. Liver glycogen depletion limits endurance in events longer than about 90 minutes, which is why athletes take in carbohydrate during them."
+      },
+      "crh": {
+        "name": "Hypothalamus releases CRH",
+        "ms": "You wake up! A small part of the brain called the hypothalamus starts a relay race of hormones. It sends the first message, CRH.",
+        "hs": "Nerve cells in the hypothalamus release CRH (corticotropin-releasing hormone). Waking up, stress and the body clock all switch them on. This is the start of the stress axis.",
+        "college": "Parvocellular neurons of the paraventricular nucleus (PVN) release CRH, along with vasopressin, at the median eminence. The cortisol awakening response adds a rise of about 50% within 30–45 min of waking on top of the circadian rhythm. It is driven partly by the SCN and partly by the act of waking itself.",
+        "phd": "CRH neurons combine inputs from the SCN, from brainstem catecholamine neurons (physical stress) and from limbic regions (psychological stress). Cortisol comes in roughly hourly pulses, which arise from the delays in the feed-forward and feedback loop between the pituitary and the adrenal (Walker, Terry and Lightman)."
+      },
+      "portalHypophyseal": {
+        "name": "A private link to the pituitary",
+        "ms": "The message travels a tiny distance through special blood vessels to the pituitary, just below.",
+        "hs": "The hypothalamus and the pituitary are linked by tiny blood vessels, the hypophyseal portal system. Releasing hormones go straight to the pituitary without being diluted in all the body’s blood.",
+        "college": "Hypothalamic releasing hormones enter fenestrated capillaries at the median eminence and run down the pituitary stalk in portal veins to a second capillary bed in the anterior pituitary. Concentrations there are far higher than in the general circulation.",
+        "phd": "Because portal concentrations are so much higher, releasing hormones are barely measurable in ordinary blood samples. Cutting the pituitary stalk raises prolactin, because hypothalamic dopamine no longer reaches it, but lowers the other anterior pituitary hormones."
+      },
+      "corticotroph": {
+        "name": "Pituitary releases ACTH",
+        "ms": "The pituitary gets the message and sends out the next one, ACTH, into the blood.",
+        "hs": "Cells in the pituitary called corticotrophs answer CRH by releasing ACTH. ACTH in the blood rises within a few minutes.",
+        "college": "CRH binds CRHR1 (Gs, cAMP, PKA), which releases stored ACTH and switches on the gene for its precursor, POMC. Vasopressin, acting on V1b receptors, strongly amplifies the response. ACTH has a plasma half-life of about 10 minutes.",
+        "phd": "In corticotrophs, prohormone convertase 1/3 cuts POMC into ACTH, but other cells cut it further into α-MSH and β-endorphin. Pituitary tumours that make ACTH cause Cushing’s disease."
+      },
+      "acthRide": {
+        "name": "ACTH rides to the adrenal glands",
+        "ms": "ACTH travels down the veins to the heart, round the lungs and out to the adrenal glands on top of the kidneys.",
+        "hs": "ACTH leaves the pituitary in the veins of the head, reaches the heart, crosses the lungs and is pumped down the aorta to the adrenal glands. The trip takes about 20 seconds.",
+        "college": "For their size, the adrenal glands have one of the richest blood supplies in the body, with three arteries on each side. ACTH binds the melanocortin-2 receptor (MC2R), which needs the helper protein MRAP to reach the cell surface.",
+        "phd": "Mutations in MC2R or MRAP cause familial glucocorticoid deficiency: no cortisol despite very high ACTH. Adrenal blood flows from the cortex inwards to the medulla, so the medulla bathes in cortisol-rich blood."
+      },
+      "zonaFasciculata": {
+        "name": "Adrenal cortex makes cortisol",
+        "ms": "The outer part of the adrenal gland gets the ACTH message and starts making cortisol. This takes a while, because cortisol is made fresh, not stored.",
+        "hs": "Cortisol is a steroid, made from cholesterol. The adrenal cortex can’t store it, so it makes it when ACTH says so. Cortisol starts rising within 10–15 minutes and peaks 30–45 minutes after waking.",
+        "college": "ACTH acts through cAMP and PKA to activate StAR, which moves cholesterol into the mitochondria: the rate-limiting step. A chain of cytochrome P450 enzymes then turns cholesterol into cortisol in about five steps, and cortisol diffuses out as it is made. Over days, ACTH also makes the cortex grow.",
+        "phd": "Fast StAR-mediated cholesterol transport explains how output can rise within minutes. In congenital adrenal hyperplasia, most often 21-hydroxylase deficiency, the pathway is blocked. Low cortisol removes feedback, so ACTH and adrenal androgens surge."
+      },
+      "cortisolRide": {
+        "name": "Cortisol rides to the liver",
+        "ms": "Cortisol travels through the heart and lungs to the whole body, including the liver.",
+        "hs": "Most cortisol in the blood rides on a carrier protein, like a taxi, so it lasts longer. Only the free part can get into cells. Cortisol lasts about an hour in the blood.",
+        "college": "About 90% of cortisol is bound, mainly to cortisol-binding globulin (CBG) and some to albumin; only free cortisol is active. The plasma half-life is 60–90 minutes. As a steroid, cortisol passes through cell membranes and needs no receptor on the surface.",
+        "phd": "Inside cells, 11β-HSD2 in the kidney turns cortisol into inactive cortisone, so it doesn’t flood the mineralocorticoid receptor; 11β-HSD1 in the liver and fat regenerates cortisol locally. Liquorice blocks 11β-HSD2 and can cause high blood pressure."
+      },
+      "grGenes": {
+        "name": "Cortisol switches on liver genes",
+        "ms": "Inside liver cells, cortisol goes all the way into the control centre, the nucleus, and turns on genes for making sugar. This takes hours.",
+        "hs": "Cortisol binds a receptor inside the cell. Together they move into the nucleus and switch genes on or off. That is why cortisol’s effects take hours to build: the cell has to make new proteins. In the liver it boosts making glucose from other fuels.",
+        "college": "Cortisol binds the glucocorticoid receptor (GR), which sheds its chaperone proteins, pairs up and enters the nucleus. There it binds glucocorticoid response elements and induces enzymes such as PEPCK and glucose-6-phosphatase, raising gluconeogenesis over 1–3 h. Cortisol is also ‘permissive’: it lets glucagon and adrenaline work fully.",
+        "phd": "GR also represses genes by tethering to NF-κB and AP-1, the basis of glucocorticoid anti-inflammatory action. Some fast, non-genomic effects happen within minutes through membrane receptors. Clock proteins (CRY) dampen GR activity, which links cortisol and the circadian clock."
+      },
+      "toBrain": {
+        "name": "Round the body and back to the brain",
+        "ms": "The hormone rides the blood through the heart and lungs again, and some of it reaches the brain.",
+        "hs": "Hormones go round and round the body. From the veins they return to the heart, cross the lungs and are pumped out again, and some reach the brain through the arteries in the neck. Hormones that dissolve in fat can slip into the brain easily.",
+        "college": "One full circulation takes about a minute at rest. Lipid-soluble hormones such as steroids and melatonin, and thyroid hormones (with the help of transporters), cross the blood–brain barrier. Peptide hormones mostly act where the barrier is leaky, at the circumventricular organs, or on the pituitary, which lies outside it.",
+        "phd": "P-glycoprotein in the blood–brain barrier pumps out cortisol and synthetic dexamethasone, one reason the brain sees less glucocorticoid than the plasma level suggests. Thyroid hormone needs transporters such as MCT8 to get in; MCT8 mutations cause severe neurological disease (Allan–Herndon–Dudley syndrome)."
+      },
+      "feedbackCort": {
+        "name": "Negative feedback turns the relay down",
+        "ms": "Cortisol tells the brain and the pituitary: ‘That’s enough!’ They make less CRH and ACTH, so the cortisol level doesn’t keep climbing.",
+        "hs": "This is negative feedback, like a thermostat. Cortisol acts on the hypothalamus and the pituitary to slow down CRH and ACTH. That keeps cortisol in a healthy range and lets it fall again through the day.",
+        "college": "Fast feedback, within minutes, responds to how quickly cortisol is rising. Delayed feedback over hours works through GR repressing the POMC and CRH genes. Steroid drugs suppress the whole axis, so stopping them suddenly after weeks of use can cause adrenal insufficiency.",
+        "phd": "The dexamethasone suppression test relies on this loop. Feedback is weaker in chronic stress and depression, and it depends on the balance of MR and GR in the hippocampus (de Kloet). The delay in the loop is what turns steady drive into hourly cortisol pulses."
+      },
+      "ipRGC": {
+        "name": "Fading light at the retina",
+        "ms": "The sun is setting. Special light-sensing cells in your eyes notice it getting darker and send a message to the body clock.",
+        "hs": "A few cells in the retina, called ipRGCs, measure overall brightness instead of making pictures. They send their signal along a nerve straight to the body clock in the hypothalamus.",
+        "college": "Intrinsically photosensitive retinal ganglion cells contain melanopsin, which is most sensitive to blue light near 480 nm. Their axons form the retinohypothalamic tract to the SCN, where they release glutamate and PACAP. Rods and cones feed into them as well.",
+        "phd": "Melanopsin responses are slow and sustained and add up light over minutes, which suits a clock signal. Some blind people without working rods and cones still have their melatonin suppressed by light, because their ipRGCs survive (Czeisler et al., 1995)."
+      },
+      "scnGate": {
+        "name": "The body clock opens the gate",
+        "ms": "The body clock in your brain knows it’s evening. As darkness falls, it stops holding back the melatonin signal.",
+        "hs": "The SCN is the body’s master clock. During the day it blocks the pathway to the pineal gland. In the evening, in the dark, it lets the signal through.",
+        "college": "SCN neurons fire most in the biological day and release GABA onto PVN neurons, which holds back the pineal pathway. At night their firing falls. Light at night re-inhibits the pathway at once, which is why light suppresses melatonin.",
+        "phd": "The SCN clock runs on a transcription–translation feedback loop of CLOCK/BMAL1 and PER/CRY (Nobel Prize 2017: Hall, Rosbash and Young). Coupling between SCN neurons through VIP makes the network far more robust than any of its single cells."
+      },
+      "sympRoute": {
+        "name": "A detour down the cord and up the neck",
+        "ms": "Strangely, the message goes all the way down into the spinal cord and back up the neck to reach the pineal gland.",
+        "hs": "The path from the clock to the pineal gland is a detour: from the hypothalamus down the spinal cord to the chest, out to the chain of nerve-cell clusters beside the spine and back up to a ganglion in the neck.",
+        "college": "PVN neurons project to preganglionic sympathetic neurons in the intermediolateral column of the upper thoracic cord. Their axons climb the sympathetic chain to the superior cervical ganglion (SCG).",
+        "phd": "Because of this route, a high spinal cord injury abolishes the melatonin rhythm, and so does removing the SCGs. The detour probably reflects the pineal gland’s origin, in early vertebrates, as a light-sensing organ on top of the head."
+      },
+      "scgPost": {
+        "name": "Neck ganglion → pineal gland",
+        "ms": "From the neck, a thin nerve climbs up to the pineal gland, deep in the middle of the brain.",
+        "hs": "Nerve fibres from the ganglion in the neck travel along blood vessels up to the pineal gland and release noradrenaline there.",
+        "college": "Unmyelinated postganglionic fibres from the SCG reach the pineal gland along its blood vessels (the nervi conarii) and release noradrenaline at night.",
+        "phd": "Noradrenaline release from these terminals happens mostly at night, gated by the SCN. Pinealocytes also get peptide and central inputs, but in mammals the sympathetic input is needed for the rhythm."
+      },
+      "pinealocyte": {
+        "name": "The pineal gland makes melatonin",
+        "ms": "The pineal gland starts making melatonin from serotonin. The level rises slowly over a couple of hours.",
+        "hs": "Noradrenaline switches on the enzymes that turn serotonin into melatonin. Melatonin isn’t stored: it leaks out as soon as it is made. Levels start rising about two hours before your usual bedtime and peak in the middle of the night.",
+        "college": "Noradrenaline acts on β1 receptors (boosted by α1) to raise cAMP and activate PKA, which switches on and stabilises AANAT, the rate-limiting enzyme. Its activity rises tenfold or more at night. Dim-light melatonin onset (DLMO) is used to measure a person’s internal clock time.",
+        "phd": "After PKA phosphorylates AANAT, 14-3-3 proteins bind it and protect it from the proteasome. Light at night removes the phosphate and AANAT is destroyed within minutes, which explains how fast melatonin drops. Melatonin also enters the third ventricle, so levels in the CSF are higher than in plasma."
+      },
+      "mt1mt2": {
+        "name": "Melatonin tells the brain it’s night",
+        "ms": "Melatonin reaches the brain’s clock and tells your whole body that it’s night. You start to feel sleepy and your body cools a little.",
+        "hs": "Melatonin doesn’t knock you out like a sleeping pill. It is a signal of darkness. It acts on the body clock and on blood vessels in the skin, which open up to lose heat. A falling core temperature makes it easier to fall asleep.",
+        "college": "Melatonin acts on MT1 and MT2 receptors, which are Gi-coupled. In the SCN, MT1 lowers neuronal firing and MT2 shifts the clock. Blood vessels in the hands and feet widen and dump heat, and the fall in core temperature predicts sleep onset.",
+        "phd": "Melatonin taken in the evening moves the clock earlier and in the morning moves it later: the opposite of light’s phase-response curve. Its half-life is only about 30–50 minutes, so its direct sleep effect is modest. It is most useful for shifting the clock, as in jet lag and in blind people whose rhythms drift."
+      },
+      "trh": {
+        "name": "Hypothalamus releases TRH",
+        "ms": "The hypothalamus sends out TRH, the first message in the thyroid relay.",
+        "hs": "Nerve cells in the hypothalamus release TRH (thyrotropin-releasing hormone). It is a tiny hormone, only three amino acids long. It tells the pituitary to make TSH.",
+        "college": "PVN neurons make TRH and release it at the median eminence. Its output is set mainly by thyroid hormone feedback, and also by leptin and by cold. TRH is a tripeptide: pGlu-His-Pro-NH₂.",
+        "phd": "Tanycytes lining the third ventricle take up T4, convert it to T3 with type 2 deiodinase and also break down TRH with pyroglutamyl peptidase II. This gives the brain several local brakes on the axis."
+      },
+      "thyrotroph": {
+        "name": "Pituitary releases TSH",
+        "ms": "The pituitary answers by releasing TSH, which tells the thyroid gland to get to work.",
+        "hs": "Thyrotroph cells in the pituitary release TSH (thyroid-stimulating hormone). Doctors measure TSH to check the thyroid: a high TSH means the thyroid is underactive.",
+        "college": "TRH binds Gq-coupled receptors on thyrotrophs, which raises Ca²⁺ and releases TSH, a glycoprotein. TSH comes in pulses and peaks at night. The pituitary is so sensitive that a twofold change in free T4 shifts TSH about a hundredfold, which makes TSH the best single test of thyroid function.",
+        "phd": "The log-linear relation between TSH and free T4 is individual: each person has a narrow set-point inside the wide population range. TSH also carries different sugar chains in health and disease, which changes how active it is."
+      },
+      "tshRide": {
+        "name": "TSH rides to the thyroid",
+        "ms": "TSH goes down the veins to the heart, round the lungs and back up the neck arteries to the thyroid gland.",
+        "hs": "The thyroid sits in the neck, not far from the pituitary, but TSH still has to go all the way round through the heart and lungs to get there. That takes less than half a minute.",
+        "college": "The thyroid gets about 5 mL of blood per gram per minute, one of the highest flows in the body. TSH has a plasma half-life of about an hour.",
+        "phd": "Thyroid blood flow rises with TSH stimulation. In Graves’ disease, antibodies that mimic TSH make the gland so full of blood vessels that its flow can sometimes be heard as a bruit."
+      },
+      "follicle": {
+        "name": "Thyroid follicles release thyroxine",
+        "ms": "In the thyroid, tiny hollow balls of cells store thyroid hormone. TSH tells them to release some into the blood.",
+        "hs": "The thyroid is unusual: it stores weeks’ worth of hormone outside its cells, in a gel called colloid. TSH makes the cells swallow colloid and cut thyroxine (T4) out of a big storage protein. Iodine from food is built into the hormone.",
+        "college": "Thyroglobulin in the colloid carries iodinated tyrosines. TSH (through Gs and cAMP) drives endocytosis of colloid, its breakdown in lysosomes and release of T4 with a little T3. It also drives iodide uptake (NIS) and iodination by thyroid peroxidase. The gland makes about 100 µg of T4 a day.",
+        "phd": "The sodium–iodide symporter concentrates iodide about 30-fold, which radioactive iodine treatment exploits. The Wolff–Chaikoff effect, a short shutdown of iodination when iodide is in excess, protects against overproduction."
+      },
+      "t4Ride": {
+        "name": "Thyroxine rides the blood for days",
+        "ms": "Thyroxine travels slowly around the body for days, carried by special proteins in the blood.",
+        "hs": "Almost all the T4 in the blood rides on carrier proteins. It lasts about a week, so the blood holds a big, steady reserve. That’s why thyroid hormone levels barely change from hour to hour, and why thyroid treatment takes weeks to settle.",
+        "college": "Over 99.9% of T4 is bound to thyroxine-binding globulin (TBG), transthyretin and albumin; only about 0.03% is free. T4 has a half-life of about 7 days and T3 about 1 day. A change in levothyroxine dose takes about 6 weeks (5–6 half-lives) to reach a new steady state.",
+        "phd": "Binding proteins buffer the free hormone and spread it evenly through the tissues. In pregnancy, oestrogen raises TBG and total T4, but free T4 stays normal once the thyroid has adapted."
+      },
+      "deiodinase": {
+        "name": "Cells turn T4 into T3",
+        "ms": "Inside the cells, thyroxine has one iodine removed. That turns it into T3, the strong form of the hormone.",
+        "hs": "T4 is mostly a storage form. Cells remove one iodine atom with an enzyme called deiodinase, turning it into T3, which is about four times as powerful. Each tissue can decide how much to activate.",
+        "college": "Transporters (MCT8, MCT10, OATP1C1) carry T4 into cells. Type 1 and type 2 deiodinases remove an outer-ring iodine to make T3; type 3 removes an inner-ring iodine to make inactive reverse T3. About 80% of the T3 in the blood comes from this conversion outside the thyroid.",
+        "phd": "Deiodinases are selenoproteins. Serious illness raises D3 and lowers D1, which causes low T3 (non-thyroidal illness syndrome). Cold, and bile acids acting through TGR5 and cAMP, switch on D2 in brown fat and muscle."
+      },
+      "trGenes": {
+        "name": "T3 changes genes over days",
+        "ms": "T3 goes into the nucleus and turns on genes that make the cell burn more fuel. This is slow: it takes days.",
+        "hs": "T3 binds receptors in the cell nucleus and switches on genes, for example for the pumps that move sodium and potassium, and for more mitochondria. The cell slowly turns up its energy use, so the metabolic rate rises over days.",
+        "college": "T3 binds thyroid hormone receptors (TRα and TRβ) on thyroid response elements, which swaps corepressors for coactivators. Targets include Na⁺/K⁺-ATPase, SERCA, β1 receptors and genes for new mitochondria, raising basal metabolic rate and heat production. A dose of T3 raises metabolic rate after some hours, with the peak 2–3 days later; T4 is slower.",
+        "phd": "In resistance to thyroid hormone (TRβ mutations), T4 and T3 are high but TSH is not suppressed. TRα dominates in heart and bone and TRβ in liver and pituitary, which liver-selective TRβ agonists such as resmetirom now use to treat fatty liver disease."
+      },
+      "feedbackThy": {
+        "name": "Thyroid hormone turns down TSH",
+        "ms": "The thyroid hormone reaches the brain and the pituitary and says: ‘That’s enough!’ Less TSH is made, and the system stays balanced.",
+        "hs": "This is negative feedback again. T4 and T3 slow down TRH and TSH release. If the thyroid fails, the feedback is lost and TSH rises; if the thyroid is overactive, TSH falls almost to zero.",
+        "college": "In thyrotrophs, D2 converts T4 into T3, which represses the TSHβ and TRH genes through TRβ2. Because the pituitary senses mostly T3 it makes itself from T4, TSH tracks free T4 closely.",
+        "phd": "This feedback acts over days to weeks, not minutes, matching the slow kinetics of T4. After treatment for an overactive thyroid, TSH can stay suppressed for months while the thyrotrophs recover."
+      },
+      "hypoxiaSense": {
+        "name": "The kidney senses less oxygen",
+        "ms": "Imagine you gave blood, or went up a high mountain. Your blood carries less oxygen, and the kidneys notice.",
+        "hs": "Cells in the kidney act as the body’s oxygen sensor. When the blood brings less oxygen, they start making erythropoietin, or EPO.",
+        "college": "Fibroblast-like interstitial cells around the tubules of the renal cortex make EPO. Low O₂ stabilises the transcription factor HIF-2α, which switches on the EPO gene. Blood EPO rises within hours, and in severe anaemia it can go up a hundred- to a thousandfold.",
+        "phd": "With enough O₂, prolyl hydroxylases (PHD2) mark HIF-α for destruction by the von Hippel–Lindau protein; Kaelin, Ratcliffe and Semenza shared the 2019 Nobel Prize for this. The kidney makes a good sensor because its O₂ use rises with filtration, and so with blood flow, so its tissue PO₂ reflects the oxygen content of the blood rather than the flow."
+      },
+      "epoRide": {
+        "name": "EPO rides to the bone marrow",
+        "ms": "EPO travels in the blood through the heart and lungs and out to the bone marrow inside your big bones.",
+        "hs": "EPO leaves the kidney in the renal vein, goes through the heart and lungs and is pumped to the bone marrow, where red blood cells are made. In adults, that is mainly in flat bones such as the hips and in the ends of long bones such as the thigh bone.",
+        "college": "EPO is a glycoprotein hormone with a plasma half-life of about 5–8 hours. Its sugar chains protect it from removal; man-made versions with extra sugar chains (darbepoetin) last longer.",
+        "phd": "The marrow itself removes part of the EPO by receptor-mediated uptake, so removal rises as the marrow grows: built-in negative feedback. Doping with EPO can be detected because its sugar chains differ from those of natural EPO."
+      },
+      "marrowEpoR": {
+        "name": "EPO rescues young red cells",
+        "ms": "In the bone marrow, EPO tells young cells: ‘Keep going and become red blood cells!’",
+        "hs": "The marrow is always making red-cell precursors, but many of them die. EPO keeps them alive and makes them divide, so more grow into red blood cells. This takes several days.",
+        "college": "EPO binds its receptor on CFU-E cells and early erythroblasts. This activates JAK2 and STAT5, which block apoptosis and drive cell division and haemoglobin synthesis. Getting from CFU-E to reticulocyte takes about 5 days.",
+        "phd": "The JAK2 V617F mutation switches EPO signalling on permanently and causes polycythaemia vera. EPO also makes erythroblasts release erythroferrone, which suppresses hepcidin in the liver and frees iron for new haemoglobin."
+      },
+      "reticulocyte": {
+        "name": "New red cells leave the marrow",
+        "ms": "After a few days, the new red blood cells push out their nucleus and squeeze out of the bone marrow into the blood.",
+        "hs": "Developing red cells fill up with haemoglobin and then throw out their nucleus. These young cells, called reticulocytes, squeeze through the walls of the marrow’s blood vessels into the blood. More reticulocytes in a blood test shows the marrow is responding.",
+        "college": "Orthochromatic erythroblasts lose their nucleus and leave the marrow as reticulocytes, which still contain some RNA. Under EPO drive, extra reticulocytes appear in the blood after about 3–4 days, and the count peaks around days 7–10. About 2 million red cells are made every second.",
+        "phd": "Under strong EPO drive, larger ‘stress reticulocytes’ are released earlier and stay reticulocytes longer in the blood. After a blood donation, haemoglobin rises by roughly 10 g/L a week in someone with enough iron, so full recovery takes several weeks."
+      },
+      "reticToKidney": {
+        "name": "More oxygen reaches the kidney",
+        "ms": "The new red cells travel round the body, pick up oxygen in the lungs and deliver more of it everywhere, including to the kidneys.",
+        "hs": "Reticulocytes mature into ordinary red cells in about a day. With more red cells, the blood carries more oxygen, and the sensors in the kidney notice.",
+        "college": "In the blood and spleen, reticulocytes lose their last RNA and remodel their membrane within 1–2 days. Each red cell then lives about 120 days.",
+        "phd": "The haemoglobin level the kidney defends shifts with altitude acclimatisation and chronic lung disease. In kidney disease, EPO production fails and anaemia results."
+      },
+      "feedbackEpo": {
+        "name": "The kidney eases off EPO",
+        "ms": "The kidneys sense that there is enough oxygen again, so they make less EPO. The loop is closed.",
+        "hs": "This is negative feedback: as oxygen delivery recovers, EPO falls back to normal. The number of red blood cells stays just right.",
+        "college": "Once O₂ delivery recovers, the prolyl hydroxylases mark HIF-2α for destruction again, and EPO production falls within hours. Normal plasma EPO is about 10–20 mU/mL.",
+        "phd": "Drugs that block the prolyl hydroxylases (daprodustat, roxadustat) mimic low oxygen and raise the body’s own EPO in the anaemia of kidney disease. When EPO keeps overshooting, as with EPO-secreting tumours, the result is secondary polycythaemia."
+      }
+    }
   }
 }
 </script>
@@ -1609,7 +1962,23 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "chromaffin cells": { "def": "Hormone-releasing cells of the adrenal medulla. They are modified nerve cells that release adrenaline into the blood.", "match": ["chromaffin cells", "chromaffin"] },
   "conduction velocity": { "def": "How fast an action potential travels along a fibre: from about 1 m/s in bare fibres to over 100 m/s in thick myelinated ones.", "match": ["conduction velocity"] },
   "muscle spindles": { "def": "Stretch sensors inside muscles that report muscle length and drive stretch reflexes.", "match": ["muscle spindles", "muscle spindle"] },
-  "saltatory conduction": { "def": "The way a signal jumps from one gap in the myelin to the next (the nodes of Ranvier), which makes it much faster.", "match": ["saltatory conduction"] }
+  "saltatory conduction": { "def": "The way a signal jumps from one gap in the myelin to the next (the nodes of Ranvier), which makes it much faster.", "match": ["saltatory conduction"] },
+  "CRH": { "def": "Corticotropin-releasing hormone: the hypothalamus’s signal that starts the stress-hormone relay.", "match": ["CRH"] },
+  "ACTH": { "def": "Adrenocorticotropic hormone: a pituitary hormone that tells the adrenal cortex to make cortisol.", "match": ["ACTH"] },
+  "TRH": { "def": "Thyrotropin-releasing hormone: a tiny hypothalamic hormone that tells the pituitary to make TSH.", "match": ["TRH"] },
+  "TSH": { "def": "Thyroid-stimulating hormone: the pituitary hormone that drives the thyroid.", "match": ["TSH"] },
+  "thyroxine": { "def": "T4: the main hormone made by the thyroid. Cells turn it into the more active T3.", "match": ["thyroxine", "T4"] },
+  "T3": { "def": "Triiodothyronine: the active thyroid hormone, made mostly from T4 inside cells.", "match": ["T3"] },
+  "deiodinase": { "def": "An enzyme that removes iodine from thyroid hormone, activating T4 to T3 or switching it off.", "match": ["deiodinase", "deiodinases"] },
+  "half-life": { "def": "The time it takes for half of a substance to be removed from the blood.", "match": ["half-life"] },
+  "cAMP": { "def": "Cyclic AMP: a ‘second messenger’ made inside a cell when a hormone binds its receptor on the surface. It passes the message on.", "match": ["cAMP", "second messenger"] },
+  "hypophyseal portal system": { "def": "Tiny blood vessels that carry hormones straight from the hypothalamus to the pituitary.", "match": ["hypophyseal portal system", "hypophyseal portal"] },
+  "glucocorticoid receptor": { "def": "A receptor inside cells that cortisol binds. Together they switch genes on and off.", "match": ["glucocorticoid receptor"] },
+  "reticulocytes": { "def": "Young red blood cells, just out of the bone marrow.", "match": ["reticulocytes", "reticulocyte"] },
+  "DPP-4": { "def": "An enzyme on blood vessel walls that quickly breaks down GLP-1.", "match": ["DPP-4"] },
+  "CBG": { "def": "Cortisol-binding globulin: the blood protein that carries most of the cortisol.", "match": ["CBG", "cortisol-binding globulin"] },
+  "AANAT": { "def": "The enzyme that sets how fast the pineal gland turns serotonin into melatonin.", "match": ["AANAT"] },
+  "HIF": { "def": "Hypoxia-inducible factor: a protein that switches on genes, such as the one for EPO, when oxygen is low.", "match": ["HIF-2α", "HIF"] }
 }
 </script>
 
@@ -1671,6 +2040,11 @@ const wrapH = h => ((h % 24) + 24) % 24;
 const pad2 = n => String(n).padStart(2, "0");
 /* a real duration in ms: 0.6 ms, 27.4 ms, 286 ms, 1.13 s */
 const fmtMs = ms => ms < 100 ? `${ms.toFixed(1)} ms` : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
+/* a real duration in seconds, from milliseconds to weeks */
+const fmtDur = s => s <= 0 ? "0 s" : s < 1 ? fmtMs(s * 1000) : s < 60 ? `${s < 10 ? s.toFixed(1) : Math.round(s)} s`
+  : s < 3600 ? `${Math.floor(s / 60)} min ${pad2(Math.floor(s % 60))} s`
+  : s < 86400 ? `${Math.floor(s / 3600)} h ${pad2(Math.floor(s % 3600 / 60))} min`
+  : `${(s / 86400).toFixed(1)} days`;
 function fmtTime(h){ let m = Math.floor(wrapH(h) * 60 + 1e-6); m -= m % 5; return pad2(Math.floor(m / 60)) + ":" + pad2(m % 60); }
 
 /* =========================================================================
@@ -1783,7 +2157,19 @@ const STRINGS = {
   synapse: (tx, t) => `Synapse · ${tx} · ${t} delay`,
   slowed: f => `slowed ×${f >= 1000 ? Math.round(f / 100) * 100 : f >= 100 ? Math.round(f / 10) * 10 : Math.max(1, Math.round(f))}`.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
   arrived: t => `Arrived after ${t} of real time`,
-  fibre: { Aa: "Myelinated Aα fibre", Ab: "Myelinated Aβ fibre", Ia: "Ia fibre, the fastest", B: "Thinly myelinated B fibre", C: "Unmyelinated C fibre", tract: "Myelinated tract in the CNS", muscle: "Muscle fibre membrane" }
+  fibre: { Aa: "Myelinated Aα fibre", Ab: "Myelinated Aβ fibre", Ia: "Ia fibre, the fastest", B: "Thinly myelinated B fibre", C: "Unmyelinated C fibre", tract: "Myelinated tract in the CNS", muscle: "Muscle fibre membrane" },
+  followCascade: "Follow a hormone cascade",
+  followingCascade: "Hormone cascade · time-lapse",
+  cascadeTitle: "Journey of a hormone signal",
+  cascadeLede: "Hormones work on many clocks: seconds for adrenaline, minutes for insulin, hours for cortisol and melatonin, days to weeks for thyroid hormone and EPO. To follow one, time is sped up, and slowed down again for the quick nerve steps. The day clock really moves, so watch the body and the vitals change as you ride.",
+  cascadeHint: "Tip: tap a gland, a kidney or a moving hormone on the body to follow its cascade.",
+  timeFrames: "Pick a time frame",
+  anotherCascade: "Another cascade",
+  followAdrenaline: "Follow the adrenaline ›",
+  sped: f => `time-lapse ×${f >= 1000 ? Math.round(f / 100) * 100 : f >= 100 ? Math.round(f / 10) * 10 : f >= 10 ? Math.round(f) : f.toFixed(1)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
+  day: n => `day ${n}`,
+  cascadeDone: t => `Done after ${t} of real time`,
+  legKind: { blood: "riding the blood", nerve: "nerve signal", local: "short hop", step: "cells at work" }
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -1961,6 +2347,8 @@ const store = createStore({
   followSeg: null,  /* which leg of its journey that cell is on */
   impulse: null,    /* id of the nerve impulse journey being followed, or null */
   impulseSeg: null, /* which leg of that journey the impulse is on */
+  cascade: null,    /* id of the hormone cascade being followed, or null */
+  cascadeSeg: null, /* which leg of that cascade the signal is on */
   ...loadSystems()
 });
 /* System switches. Switching a system on makes it live; switching off the
@@ -2165,6 +2553,111 @@ const HORMONES = [
 ];
 SYSTEM_BY_ID.endocrine.legend = HORMONES.map(h => [h.color, h.label]);
 const NERVE_COLOR = Object.fromEntries(["motor", "sensory", "vagus", "symp", "ens"].map((k, i) => [k, SYSTEM_BY_ID.nervous.legend[i][0]]));
+
+/* Hormone cascades (CASCADE), followed in time-lapse. A cascade is a chain of
+   legs. Each leg has stop (its text in CONTENT.cascade.stops), h (the messenger
+   carrying the signal: colour and name in MESSENGERS) and t, its real duration
+   in seconds. A step leg waits in one place (at, world coordinates, or where the
+   last leg ended) while cells secrete, make or respond to a hormone. Other legs
+   move along pieces: cD(d) is a design path (mapped like NERV); cV / cA(route,
+   from, to) is part of a CIRC route's vein or artery, with from / to a 0–1
+   fraction or the point nearest to [x, y]. b marks a blood ride whose real time
+   is for a resting cardiac output of 5 L/min and shortens as output rises.
+   at is the hour the cascade naturally starts, used unless the clock is
+   already inside win. Real times line up with the PHYSIO keyframes (insulin
+   peaks ~45 min after the first bite, melatonin rises from dusk to bedtime). */
+const MESSENGERS = Object.assign(Object.fromEntries(HORMONES.map(h => [h.id, [h.color, h.label]])), {
+  nerve: [NERVE_COLOR.sensory, "Retina → body clock"], symp: [NERVE_COLOR.symp, "Sympathetic nerve"],
+  glucose: ["#b3a52e", "Glucose"], crh: ["#b866c9", "CRH"], acth: ["#d9779b", "ACTH"],
+  trh: ["#4fa894", "TRH"], tsh: ["#3f8f9e", "TSH"], t4: ["#b98258", "Thyroxine (T4)"], t3: ["#d6703a", "T3"],
+  epo: ["#cf6f9e", "EPO"], rbc: ["#d63340", "New red cells"]
+});
+const cD = d => ({ d }), cV = (r, from = 0, to = 1) => ({ r, p: "v", from, to }), cA = (r, from = 0, to = 1) => ({ r, p: "a", from, to });
+/* CIRC route indices */
+const RT = { brain: 0, gut: 3, kidL: 4, kidR: 5, legL: 6, lung: 8 };
+const LUNGS = [cA(RT.lung), cV(RT.lung)];
+const ADRENAL = [556, 499], ISLETS = [618, 516], LIVER = [550, 474], HYPO = [600, 152], PITUITARY = [600, 164], SCN = [598, 160], FEMUR = [556, 730];
+const PORTAL_HYPO = "M600 152 C603 156 603 160 600 164";
+const CASCADES = [
+  { id: "adrenaline", at: 17.05, win: [16.9, 18.3], effect: "fast", legs: [
+    { stop: "splanchnic", h: "symp", t: .055, path: [cD("M600 180 L600 470 L588 476 L588 488 C578 494 566 496 556 498")] },
+    { stop: "chromaffin", h: "adrenaline", t: 1.5, step: true, at: ADRENAL },
+    { stop: "adrenalineRide", h: "adrenaline", t: 14, b: 1, path: [cV(RT.kidL, ADRENAL), ...LUNGS, cD("M616 346 C626 352 622 364 610 366 C600 368 594 360 594 354")] },
+    { stop: "beta1", h: "adrenaline", t: 8, step: true }
+  ] },
+  { id: "insulin", at: 7.4, win: [7.25, 7.6], effect: "glucose", legs: [
+    { stop: "lcell", h: "glp1", t: 720, step: true, at: [600, 584] },
+    { stop: "glp1Ride", h: "glp1", t: 22, b: 1, path: [cV(RT.gut), ...LUNGS, cA(RT.gut, 0, ISLETS)] },
+    { stop: "betaCell", h: "insulin", t: 120, step: true, at: ISLETS },
+    { stop: "liverFirstPass", h: "insulin", t: 6, b: 1, path: [cV(RT.gut, ISLETS, LIVER)] },
+    { stop: "insulinRide", h: "insulin", t: 22, b: 1, path: [cV(RT.gut, LIVER), ...LUNGS, cA(RT.legL)] },
+    { stop: "capillaryWall", h: "insulin", t: 1200, step: true },
+    { stop: "glut4", h: "insulin", t: 600, step: true }
+  ] },
+  { id: "glucagon", at: 17.1, win: [16.9, 18.3], effect: "fuel", legs: [
+    { stop: "alphaCell", h: "glucagon", t: 90, step: true, at: ISLETS },
+    { stop: "glucagonPortal", h: "glucagon", t: 6, b: 1, path: [cV(RT.gut, ISLETS, LIVER)] },
+    { stop: "liverGlucagon", h: "glucose", t: 180, step: true },
+    { stop: "glucoseRide", h: "glucose", t: 22, b: 1, path: [cV(RT.gut, LIVER), ...LUNGS, cA(RT.legL)] },
+    { stop: "muscleFuel", h: "glucose", t: 60, step: true }
+  ] },
+  { id: "stress", at: 6.5, win: [6.4, 7], effect: "feedback", legs: [
+    { stop: "crh", h: "crh", t: 60, step: true, at: HYPO },
+    { stop: "portalHypophyseal", h: "crh", t: 5, path: [cD(PORTAL_HYPO)] },
+    { stop: "corticotroph", h: "acth", t: 300, step: true },
+    { stop: "acthRide", h: "acth", t: 20, b: 1, path: [cV(RT.brain, PITUITARY), ...LUNGS, cA(RT.kidL, 0, ADRENAL)] },
+    { stop: "zonaFasciculata", h: "cortisol", t: 900, step: true, at: ADRENAL },
+    { stop: "cortisolRide", h: "cortisol", t: 22, b: 1, path: [cV(RT.kidL, ADRENAL), ...LUNGS, cA(RT.gut, 0, [607, 440]), cD("M607 440 C592 446 572 458 556 468")] },
+    { stop: "grGenes", h: "cortisol", t: 5400, step: true },
+    { stop: "toBrain", h: "cortisol", t: 22, b: 1, path: [cV(RT.gut, LIVER), ...LUNGS, cA(RT.brain)] },
+    { stop: "feedbackCort", h: "cortisol", t: 600, step: true, at: HYPO }
+  ] },
+  { id: "melatonin", at: 20.5, win: [20.3, 21], effect: "sleepy", legs: [
+    { stop: "ipRGC", h: "nerve", t: .02, path: [cD("M578 188 C586 180 594 170 598 160")] },
+    { stop: "scnGate", h: "nerve", t: 600, step: true },
+    { stop: "sympRoute", h: "symp", t: .1, path: [cD("M598 160 C600 168 600 180 600 190 L600 300 L612 304 L612 214")] },
+    { stop: "scgPost", h: "symp", t: .15, path: [cD("M612 214 C612 190 608 150 602 128")] },
+    { stop: "pinealocyte", h: "melatonin", t: 5400, step: true, at: [600, 124] },
+    { stop: "toBrain", h: "melatonin", t: 22, b: 1, path: [cV(RT.brain, [600, 124]), ...LUNGS, cA(RT.brain)] },
+    { stop: "mt1mt2", h: "melatonin", t: 1800, step: true, at: SCN }
+  ] },
+  { id: "thyroid", effect: "metabolism", legs: [
+    { stop: "trh", h: "trh", t: 60, step: true, at: HYPO },
+    { stop: "portalHypophyseal", h: "trh", t: 5, path: [cD(PORTAL_HYPO)] },
+    { stop: "thyrotroph", h: "tsh", t: 600, step: true },
+    { stop: "tshRide", h: "tsh", t: 20, b: 1, path: [cV(RT.brain, PITUITARY), ...LUNGS, cA(RT.brain, 0, [604, 252])] },
+    { stop: "follicle", h: "t4", t: 3600, step: true, at: [600, 252] },
+    { stop: "t4Ride", h: "t4", t: 172800, path: [cV(RT.brain, [600, 252]), ...LUNGS, cA(RT.legL)] },
+    { stop: "deiodinase", h: "t3", t: 7200, step: true },
+    { stop: "trGenes", h: "t3", t: 345600, step: true },
+    { stop: "toBrain", h: "t4", t: 22, b: 1, path: [cV(RT.legL), ...LUNGS, cA(RT.brain, 0, PITUITARY)] },
+    { stop: "feedbackThy", h: "t3", t: 3600, step: true, at: PITUITARY }
+  ] },
+  { id: "epo", effect: "redCells", legs: [
+    { stop: "hypoxiaSense", h: "epo", t: 10800, step: true, at: [640, 525] },
+    { stop: "epoRide", h: "epo", t: 22, b: 1, path: [cV(RT.kidR), ...LUNGS, cA(RT.legL, 0, FEMUR)] },
+    { stop: "marrowEpoR", h: "epo", t: 259200, step: true },
+    { stop: "reticulocyte", h: "rbc", t: 259200, step: true },
+    { stop: "reticToKidney", h: "rbc", t: 86400, path: [cV(RT.legL, FEMUR), ...LUNGS, cA(RT.kidR)] },
+    { stop: "feedbackEpo", h: "rbc", t: 3600, step: true }
+  ] }
+];
+const CASCADE_BY_ID = Object.fromEntries(CASCADES.map(c => [c.id, c]));
+/* organ panels offer the cascade that acts there */
+const CASCADE_FOR_TOPIC = { brain: "stress", heart: "adrenaline", gut: "insulin", pancreas: "insulin", liver: "glucagon",
+                            kidneys: "epo", bones: "epo", throat: "thyroid", eyes: "melatonin" };
+/* tapping a gland, a kidney or a moving hormone particle on the body */
+const KIDNEY_TAPS = [{ id: "kidney", x: 562, y: 525 }, { id: "kidney", x: 638, y: 525 }];
+function tapCascade(id, h){
+  return { adrL: "adrenaline", adrR: "adrenaline", adrenaline: "adrenaline", hypo: "stress", cortisol: "stress",
+           pineal: "melatonin", melatonin: "melatonin", thyroid: "thyroid", kidney: "epo",
+           islets: phaseAt(h) === "exercise" ? "glucagon" : "insulin", insulin: "insulin", lcells: "insulin", glp1: "insulin",
+           glucagon: "glucagon" }[id] || null;
+}
+function defaultCascade(h){
+  const p = phaseAt(h), w = wrapH(h);
+  return p === "exercise" ? "adrenaline" : p === "meal" ? "insulin" : w >= 6 && w < 8 ? "stress" : w >= 20 || w < 6 ? "melatonin" : "thyroid";
+}
 
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
@@ -2397,6 +2890,7 @@ const Scene = (() => {
         ${GLANDS.map(g => `<circle id="s-halo-${g.id}" cx="${g.x}" cy="${g.y}" r="9" class="gland-halo"/>`).join("")}
         ${glands()}
         <g id="s-hormones"></g>
+        <g id="s-cascade"></g>
       </g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
@@ -2410,7 +2904,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "pins"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -2991,13 +3485,192 @@ const Hormones = (() => {
         const q = P.pointAt(r, k.s); x = q.x; y = q.y;
       }
       if (op <= 0 || k.age > 40){ k.e.remove(); list.splice(i, 1); continue; }
+      k.x = x; k.y = y;
       k.e.setAttribute("transform", `translate(${f1(x)} ${f1(y)})`);
       k.e.setAttribute("opacity", f1(op));
     }
   }
+  /* what was tapped: a hormone particle (its id), else a gland or a kidney */
+  function nearest(x, y, maxD){
+    let best = null, bd = maxD;
+    for (const k of list){ if (k.x == null) continue; const d = Math.hypot(k.x - x, k.y - y); if (d < bd){ bd = d; best = k.h.id; } }
+    if (best) return best;
+    bd = maxD * 1.4;
+    for (const g of [...GLANDS, ...KIDNEY_TAPS]){ const d = Math.hypot(g.x - x, g.y - y); if (d < bd){ bd = d; best = g.id; } }
+    return best;
+  }
   /* a still picture: halos sized for the hour (reduced motion, or not live) */
   function setRates(ph){ glands(ph, 0); }
-  return { init, tick, setRates };
+  return { init, tick, setRates, nearest };
+})();
+
+/* =========================================================================
+   CASCADE — one hormone signal followed in time-lapse, the mirror image of
+   IMPULSE. Each leg plays for a few seconds on screen, so the speed-up changes
+   from leg to leg: about ×2 while adrenaline rides the blood, hundreds of
+   times while insulin crosses into muscle, ~10⁵ while thyroid hormone works on
+   genes, and slow motion again for the quick nerve steps. timeScale() drives
+   the day clock and (capped) the body, so the hour and the vitals move on.
+   ========================================================================= */
+const Cascade = (() => {
+  const SPEED = 150, MIN_LEG = 1.4, STEP_S = 2.4, LONG_S = 3.2;
+  let g, rider, halo, trail; const puff = [], fx = [];
+  let C = null, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0, hour0 = 0;
+  function init(){
+    g = Scene.refs.cascade;
+    trail = el("polyline", { class: "imp-trail", points: "" }, g);
+    for (let i = 0; i < 9; i++) puff.push(el("circle", { r: 1.9, opacity: 0 }, g));
+    halo = el("circle", { r: 11, class: "imp-halo" }, g);
+    rider = el("path", { d: "M0 -6 L6 0 L0 6 L-6 0Z", class: "cas-dot" }, g);
+    g.style.display = "none";
+  }
+  /* a polyline sampled by arc length */
+  function poly(P){
+    const cum = [0];
+    for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+    const L = cum[cum.length - 1];
+    return { L, at(t){
+      if (!L) return P[P.length - 1];
+      const s = clamp(t) * L; let lo = 0, hi = cum.length - 1;
+      while (hi - lo > 1){ const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+      const k = cum[hi] > cum[lo] ? (s - cum[lo]) / (cum[hi] - cum[lo]) : 0;
+      return [lerp(P[lo][0], P[hi][0], k), lerp(P[lo][1], P[hi][1], k)];
+    } };
+  }
+  function frac(S, v){
+    if (typeof v === "number") return v;
+    let best = 0, bd = Infinity;
+    for (let i = 0; i <= 200; i++){ const [x, y] = S.at(i / 200), d = Math.hypot(x - v[0], y - v[1]); if (d < bd){ bd = d; best = i / 200; } }
+    return best;
+  }
+  function piece(p){
+    const out = [];
+    if (p.d){ const S = sampler(Scene.svg, mapD(p.d), 80); for (let i = 0; i <= 40; i++) out.push(S.at(i / 40)); return out; }
+    const r = CIRC[p.r], S = sampler(Scene.svg, p.p === "a" ? r.a : r.v, 200);
+    const u0 = frac(S, p.from), u1 = frac(S, p.to), n = Math.max(4, Math.round(Math.abs(u1 - u0) * 100));
+    for (let i = 0; i <= n; i++) out.push(S.at(lerp(u0, u1, i / n)));
+    return out;
+  }
+  /* lay the cascade out: positions, real time and screen time per leg */
+  function build(c){
+    const co = Physio.at(hour0).co;
+    let at = null;
+    return c.legs.map(l => {
+      const o = { ...l };
+      if (l.step){
+        o.at = l.at || at; o.real = l.t; o.screen = l.t >= 86400 ? LONG_S : STEP_S; o.kind = "step";
+      } else {
+        const P = [].concat(...l.path.map(piece));
+        if (at) P.unshift(at);
+        o.S = poly(P);
+        o.real = l.b ? l.t * 5 / co : l.t;
+        o.screen = Math.max(MIN_LEG, o.S.L / SPEED);
+        o.kind = l.path.some(p => p.r != null) ? "blood" : l.h === "nerve" || l.h === "symp" ? "nerve" : "local";
+      }
+      at = o.S ? o.S.at(1) : o.at;
+      return o;
+    });
+  }
+  function start(id, h0){
+    const fresh = !C;
+    C = CASCADE_BY_ID[id]; hour0 = h0;
+    legs = build(C); pre = []; total = 0;
+    legs.forEach(l => { pre.push(total); total += l.real; });
+    li = 0; u = 0; done = false; pts = []; acc = 0;
+    if (fresh) scale = 1;
+    fx.splice(0).forEach(f => f.e.remove());
+    g.style.display = "";
+    trail.setAttribute("points", "");
+    draw();
+  }
+  function stop(){
+    C = null; scale = 1;
+    g.style.display = "none";
+    fx.splice(0).forEach(f => f.e.remove());
+  }
+  const pos = () => {
+    if (!C) return { x: 600, y: 300 };
+    const L = legs[li], [x, y] = L.S ? L.S.at(clamp(u)) : L.at;
+    return { x, y };
+  };
+  /* skip to the next leg (or, after arrival, replay from the start hour) */
+  function next(){
+    if (!C) return;
+    if (done){ startCascade(C.id, true); return; }
+    if (li < legs.length - 1){ li++; u = 0; pts = []; trail.setAttribute("points", ""); }
+    else arrive();
+    draw();
+  }
+  function arrive(){
+    done = true; u = 1;
+    const p = pos(), col = MESSENGERS[legs[legs.length - 1].h][0];
+    ring(p.x, p.y, col, 34);
+    switch (C.effect){
+      case "fast": Rhythm.kick(.3, 12); ring(p.x, p.y, col, 22, .35); break;
+      case "glucose": case "fuel": dots(p.x, p.y, MESSENGERS.glucose[0], 14, true); break;
+      case "feedback": ring(p.x, p.y, col, 22, .4); ring(p.x, p.y, col, 14, .8); break;
+      case "sleepy": ring(p.x, p.y, col, 46, .3); ring(p.x, p.y, col, 62, .7); break;
+      case "metabolism": ring(p.x, p.y, MESSENGERS.t3[0], 24, .3); dots(p.x, p.y, MESSENGERS.t3[0], 10, false); break;
+      case "redCells": dots(p.x, p.y, MESSENGERS.rbc[0], 16, false); break;
+    }
+  }
+  function ring(x, y, col, r, delay = 0){
+    const e = el("circle", { cx: f1(x), cy: f1(y), r: 3, fill: "none", stroke: col, "stroke-width": 2, opacity: 0, "vector-effect": "non-scaling-stroke" }, g);
+    fx.push({ e, age: -delay, life: 1.3, kind: "ring", r });
+  }
+  /* little dots streaming into a cell (glucose) or bursting out of it */
+  function dots(x, y, col, n, inward){
+    for (let i = 0; i < n; i++){
+      const e = el("circle", { r: 2.4, fill: col, opacity: 0 }, g);
+      const a = Math.random() * Math.PI * 2, r = 12 + Math.random() * 26;
+      fx.push({ e, age: -i * .08, life: 2.2, kind: "drift", x, y, dx: Math.cos(a) * r, dy: Math.sin(a) * r, inward });
+    }
+  }
+  function draw(){
+    if (!C) return;
+    const L = legs[li], p = pos(), col = MESSENGERS[L.h][0], k = L.step && !done ? Math.sin(Math.PI * clamp(u)) : 0;
+    rider.setAttribute("transform", `translate(${f1(p.x)} ${f1(p.y)})`); rider.setAttribute("fill", col);
+    halo.setAttribute("cx", f1(p.x)); halo.setAttribute("cy", f1(p.y)); halo.setAttribute("fill", col);
+    halo.setAttribute("r", f1(done ? 8 : 11 + 6 * k * (.7 + .3 * Math.sin(u * 30))));
+    trail.setAttribute("stroke", col);
+    /* at a step, molecules of the new messenger swirl around the cells making it */
+    puff.forEach((c, i) => {
+      const a = i / puff.length * Math.PI * 2 + u * 5, r = 7 + 9 * k;
+      c.setAttribute("cx", f1(p.x + Math.cos(a) * r)); c.setAttribute("cy", f1(p.y + Math.sin(a) * r));
+      c.setAttribute("fill", col); c.setAttribute("opacity", f1(k * .9));
+    });
+  }
+  function tick(dt){
+    if (!C) return;
+    if (!done && !reducedMotion){
+      u += dt / legs[li].screen;
+      if (u >= 1){ if (li < legs.length - 1){ li++; u = 0; } else arrive(); }
+      acc += dt;
+      if (acc > .03 && legs[li].S){ acc = 0; const p = pos(); pts.push(`${f1(p.x)},${f1(p.y)}`); if (pts.length > 60) pts.shift(); trail.setAttribute("points", pts.join(" ")); }
+    }
+    /* time-lapse: ease towards this leg's speed-up, or back to real time after arrival */
+    const target = done ? 1 : legs[li].real / legs[li].screen;
+    scale = Math.exp(lerp(Math.log(scale), Math.log(target), clamp(dt * (done ? 1.8 : 3.5))));
+    for (let i = fx.length - 1; i >= 0; i--){
+      const f = fx[i]; f.age += dt;
+      if (f.age < 0) continue;
+      const t = clamp(f.age / f.life);
+      if (f.kind === "ring"){ f.e.setAttribute("r", f1(3 + f.r * smooth(t))); f.e.setAttribute("opacity", f1(1 - t)); }
+      else {
+        const m = f.inward ? 1 - smooth(t) : smooth(t);
+        f.e.setAttribute("cx", f1(f.x + f.dx * m)); f.e.setAttribute("cy", f1(f.y + f.dy * m)); f.e.setAttribute("opacity", f1(Math.sin(Math.PI * t)));
+      }
+      if (t >= 1){ f.e.remove(); fx.splice(i, 1); }
+    }
+    draw();
+  }
+  function info(){
+    if (!C) return null;
+    const L = legs[li];
+    return { id: C.id, li, n: legs.length, leg: L, done, total,
+             real: done ? total : pre[li] + clamp(u) * L.real, factor: L.real / L.screen };
+  }
+  return { init, start, stop, next, tick, info, pos, timeScale: () => C ? scale : 1, startHour: () => hour0 };
 })();
 
 /* =========================================================================
@@ -4626,11 +5299,11 @@ const Pins = (() => {
   let key = "", restore = () => {};
   const atLevel = (o, level) => { for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = o[LEVELS[i].id]; if (t) return t; } return ""; };
   function render(s){
-    const k = `${s.live}|${s.level}|${!!s.topic}|${s.follow == null && s.impulse == null}`;
+    const k = `${s.live}|${s.level}|${!!s.topic}|${s.follow == null && s.impulse == null && s.cascade == null}`;
     if (k === key) return;
     if (key.split("|")[0] !== String(s.live)) state.i = 0;
     key = k;
-    const pins = !s.topic && s.follow == null && s.impulse == null && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
+    const pins = !s.topic && s.follow == null && s.impulse == null && s.cascade == null && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
     g().innerHTML = pins.map((p, n) => {
       const i = n + 1, { x, y } = Scene.place(p.x, p.y);
       return `<g class="mk" data-i="${i}" tabindex="0" role="button" aria-label="${i}: ${esc(p.title)}"><circle cx="${f1(x)}" cy="${f1(y)}" r="10.5"/><text x="${f1(x)}" y="${f1(y + 4.2)}">${i}</text></g>`;
@@ -4834,6 +5507,7 @@ const Panel = (() => {
         <ul class="sys-legend" aria-label="${esc(STRINGS.legend)}">${legend}</ul>
         ${id === "circulatory" ? `<button type="button" class="chip primary follow-btn" data-follow>${esc(STRINGS.followCell)}</button>` : ""}
         ${id === "nervous" ? `<button type="button" class="chip primary follow-btn" data-impulse="">${esc(STRINGS.followImpulse)}</button>` : ""}
+        ${id === "endocrine" ? `<button type="button" class="chip primary follow-btn" data-cascade="">${esc(STRINGS.followCascade)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -4865,6 +5539,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-at]").forEach(b => b.addEventListener("click", () => store.set({ hour: +b.dataset.at, playing: false })));
     root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
     root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
+    root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -4903,7 +5578,8 @@ const Panel = (() => {
       ${related ? `<div class="related"><p>${esc(STRINGS.seeAlso)}</p><div class="depth">${related}</div></div>` : ""}
       ${partOf ? `<div class="related"><p>${esc(STRINGS.partOf)}</p><div class="depth">${partOf}</div></div>` : ""}
       ${id === "heart" || id === "lungs" ? `<div class="related"><p>${esc(STRINGS.journeyTitle)}</p><div class="depth"><button type="button" class="chip" data-follow>${esc(STRINGS.followCell)}</button></div></div>` : ""}
-      ${IMPULSE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.impulseTitle)}</p><div class="depth"><button type="button" class="chip" data-impulse="${IMPULSE_FOR_TOPIC[id]}">${esc(STRINGS.followImpulse)}: ${esc(CONTENT.impulse.journeys[IMPULSE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
+      ${IMPULSE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.impulseTitle)}</p><div class="depth"><button type="button" class="chip" data-impulse="${IMPULSE_FOR_TOPIC[id]}">${esc(STRINGS.followImpulse)}: ${esc(CONTENT.impulse.journeys[IMPULSE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
+      ${CASCADE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.cascadeTitle)}</p><div class="depth"><button type="button" class="chip" data-cascade="${CASCADE_FOR_TOPIC[id]}">${esc(STRINGS.followCascade)}: ${esc(CONTENT.cascade.journeys[CASCADE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -4917,6 +5593,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-sys]").forEach(b => b.addEventListener("click", () => setLive(b.dataset.sys)));
     root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
     root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
+    root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -4994,17 +5671,61 @@ const Panel = (() => {
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
+  /* while following a hormone cascade: its legs as numbered stops, the current one explained */
+  function renderCascade(s){
+    const C = CONTENT.cascade, c = CASCADE_BY_ID[s.cascade], jc = C.journeys[c.id], seg = s.cascadeSeg || 0, li = LEVEL_INDEX[s.level];
+    const text = levelText(C.stops[c.legs[seg].stop], s.level);
+    const steps = c.legs.map((l, i) => `<li style="--c:${MESSENGERS[l.h][0]}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(C.stops[l.stop].name)}</li>`).join("");
+    const groups = {};
+    CASCADES.forEach(x => (groups[C.journeys[x.id].group] ||= []).push(x.id));
+    const frames = Object.entries(groups).map(([g, ids]) => `<p class="imp-group">${esc(g)}</p><div class="depth">${ids.map(id =>
+      `<button type="button" class="chip${id === c.id ? " primary" : ""}" data-cas="${id}"${id === c.id ? ` aria-pressed="true"` : ""}>${esc(C.journeys[id].name)}</button>`).join("")}</div>`).join("");
+    const first = c.legs.find(l => l.h !== "nerve" && l.h !== "symp");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.cascadeTitle)}</h2>
+      <p class="lede">${esc(STRINGS.cascadeLede)}</p>
+      <section class="sys-card" style="--sc:${MESSENGERS[first.h][0]}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <p class="follow-label imp-paths">${esc(STRINGS.timeFrames)}</p>
+      ${frames}
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopImpulse)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.cascadeHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopCascade);
+    root.querySelector("[data-stop]").addEventListener("click", stopCascade);
+    root.querySelectorAll("[data-cas]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cas)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic;
-    const key = riding ? `impulse:${s.impulse}|${s.level}|${s.impulseSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic;
+    const key = lapse ? `cascade:${s.cascade}|${s.level}|${s.cascadeSeg}`
+              : riding ? `impulse:${s.impulse}|${s.level}|${s.impulseSeg}`
               : following ? `follow:${s.follow}|${s.level}|${s.followSeg}`
                           : `${s.topic}|${s.level}|${s.live}|${phaseAt(s.hour)}${s.topic ? Math.floor(s.hour * 2) : ""}|${stage}`;
     if (key === lastKey && !force) return;
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -5061,10 +5782,10 @@ const Controls = (() => {
     hourBtns.addEventListener("click", e => { const b = e.target.closest("[data-h]"); if (b) store.set({ hour: +b.dataset.h, playing: false }); });
     range.addEventListener("input", () => store.set({ hour: +range.value, playing: false }));
     play.addEventListener("click", () => store.set({ playing: !store.get().playing }));
-    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); } });
+    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); } });
     document.addEventListener("keydown", e => {
       if (e.key !== "Escape") return;
-      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); }
+      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); }
     });
   }
   function sync(s){
@@ -5085,7 +5806,7 @@ const Controls = (() => {
     const hn = $("#hypnoNow");
     hn.classList.toggle("on", inSleep);
     if (inSleep){ hn.style.left = (hh / 24 * 100).toFixed(2) + "%"; hn.style.top = (HYPNO_Y[sl.stage] / 15 * 100).toFixed(1) + "%"; }
-    const riding = s.follow != null || s.impulse != null;
+    const riding = s.follow != null || s.impulse != null || s.cascade != null;
     back.classList.toggle("on", !!s.topic || riding);
     $(".moment").classList.toggle("off", !!s.topic || riding);
     const t = fmtTime(hh);
@@ -5170,7 +5891,7 @@ const Journey = (() => {
 
 /* Start following a red cell (a given one, or one just leaving the heart) */
 function startFollow(i){
-  stopImpulse();
+  stopImpulse(); stopCascade();
   const s = store.get();
   if (s.live !== "circulatory") setLive("circulatory");
   const idx = i == null ? Particles.pickCell() : i;
@@ -5203,12 +5924,15 @@ const ImpulseCard = (() => {
         <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
         <button type="button" class="chip" data-j="another">${esc(STRINGS.anotherPath)}</button>
         <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+        <button type="button" class="chip" data-j="cascade" style="display:none">${esc(STRINGS.followAdrenaline)}</button>
       </div>`;
     els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
-            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]"),
+            cascade: box.querySelector("[data-j=cascade]") };
     box.addEventListener("click", e => {
       const b = e.target.closest("[data-j]"); if (!b) return;
       if (b.dataset.j === "stop") stopImpulse();
+      else if (b.dataset.j === "cascade") startCascade("adrenaline");
       else if (b.dataset.j === "another"){
         const i = IMPULSES.findIndex(j => j.id === store.get().impulse);
         startImpulse(IMPULSES[(i + 1) % IMPULSES.length].id);
@@ -5234,9 +5958,10 @@ const ImpulseCard = (() => {
       els.toast.textContent = arrived ? CONTENT.impulse.journeys[q.id].effect : "";
       els.toast.classList.toggle("on", arrived);
       els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+      els.cascade.style.display = arrived && q.id === "adrenal" ? "" : "none";
     }
   }
-  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; els.cascade.style.display = "none"; } }
   function sync(s){
     const on = s.impulse != null && !s.topic;
     if (on !== box.classList.contains("on")){
@@ -5250,7 +5975,7 @@ const ImpulseCard = (() => {
 /* Start following a nerve impulse (a given journey, or one that suits the hour).
    mirror = run it on the other side of the body. */
 function startImpulse(id, mirror = false){
-  stopFollow();
+  stopFollow(); stopCascade();
   if (store.get().live !== "nervous") setLive("nervous");
   id = id || defaultImpulse(store.get().hour);
   Impulse.start(id, mirror); ImpulseCard.reset();
@@ -5271,13 +5996,103 @@ function stopImpulse(){
 }
 
 /* =========================================================================
+   CASCADE CARD — over the body while a hormone cascade is followed: where the
+   signal is, which messenger carries it, real time elapsed and the time-lapse
+   ========================================================================= */
+const CascadeCard = (() => {
+  const box = $("#cascadeCard");
+  let els = null, last = {}, li = -1, arrived = false;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingCascade)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>${esc(STRINGS.realTime)}</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="another">${esc(STRINGS.anotherCascade)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopCascade();
+      else if (b.dataset.j === "another"){
+        const i = CASCADES.findIndex(c => c.id === store.get().cascade);
+        startCascade(CASCADES[(i + 1) % CASCADES.length].id);
+      }
+      else { Cascade.next(); tick(); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function tick(){
+    const s = store.get(); if (s.cascade == null) return;
+    const q = Cascade.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.cascadeSeg !== li) store.set({ cascadeSeg: li }); }
+    const L = q.leg, col = MESSENGERS[L.h][0];
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("where", CONTENT.cascade.stops[L.stop].name, v => els.where.textContent = v);
+    set("time", fmtDur(q.real), v => els.time.textContent = v);
+    set("bar", Math.round(q.real / q.total * 200), v => els.bar.style.width = v / 2 + "%");
+    const f = q.factor, speed = f < 1 ? STRINGS.slowed(1 / f) : STRINGS.sped(f);
+    const meta = q.done ? STRINGS.cascadeDone(fmtDur(q.total))
+      : `${MESSENGERS[L.h][1]} · ${STRINGS.legKind[L.kind]} · ${speed}${q.total >= 86400 ? " · " + STRINGS.day(Math.floor(q.real / 86400) + 1) : ""}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.cascade.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.cascade != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following a hormone cascade (a given one, or one that suits the hour).
+   The clock jumps to the hour the cascade naturally starts, unless it is
+   already there; replay = start again from the same hour. */
+function startCascade(id, replay = false){
+  stopFollow(); stopImpulse();
+  if (store.get().live !== "endocrine") setLive("endocrine");
+  const s = store.get();
+  id = id || defaultCascade(s.hour);
+  const c = CASCADE_BY_ID[id];
+  let hour = replay ? Cascade.startHour() : s.hour;
+  if (!replay && c.at != null && !inRange(wrapH(hour), c.win[0], c.win[1])) hour = c.at;
+  store.set({ hour, playing: false });
+  Cascade.start(id, hour); CascadeCard.reset();
+  store.set({ cascade: id, cascadeSeg: 0, topic: null });
+  CascadeCard.tick();
+  showScene();
+}
+function stopCascade(){
+  if (store.get().cascade == null) return;
+  Cascade.stop();
+  store.set({ cascade: null, cascadeSeg: null });
+}
+
+/* =========================================================================
    WIRING
    ========================================================================= */
 const FOLLOW_W = 230; /* world units across while following a cell */
 const IMPULSE_W = 200; /* … and a nerve impulse */
+const CASCADE_W = 240; /* … and a hormone cascade */
+const BODY_MAX = 4;     /* in time-lapse, the heart, breath and blood run at most this much faster… */
+const CLOCK_MAX = 3 * 3600; /* …and the day clock at most 3 h per second, so the sky doesn't strobe */
 function cameraFor(s){
   if (s.follow != null && !s.topic) return Camera.focusView(Scene.toView(Particles.cellInfo(s.follow)), FOLLOW_W);
   if (s.impulse != null && !s.topic) return Camera.focusView(Scene.toView(Impulse.pos()), IMPULSE_W);
+  if (s.cascade != null && !s.topic) return Camera.focusView(Scene.toView(Cascade.pos()), CASCADE_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -5291,13 +6106,15 @@ store.subscribe((s, prev) => {
     applySystems(s);
   }
   Pins.render(s);
-  const free = !s.topic && s.follow == null && s.impulse == null;
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  const free = !s.topic && s.follow == null && s.impulse == null && s.cascade == null;
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
+  if (s.cascade != null && (s.topic || s.live !== "endocrine")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "endocrine") stopCascade(); });
   Journey.sync(s);
   ImpulseCard.sync(s);
+  CascadeCard.sync(s);
   if (s.topic !== prev.topic){
     Camera.go(cameraFor(s)); Hotspots.setVisible(free); Scene.focus(s.topic);
     if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
@@ -5322,10 +6139,12 @@ function init(){
   Nerves.init();
   Impulse.init();
   Hormones.init();
+  Cascade.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
   ImpulseCard.build();
+  CascadeCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
@@ -5336,6 +6155,11 @@ function init(){
     if (s.live === "nervous"){
       const h = Nerves.nearest(pt.x, pt.y, tol), t = h && tapJourney(h.id, h.dir);
       if (t){ startImpulse(t.id, t.mirror); return; }
+    }
+    /* hormones live: tap a gland, a kidney or a hormone to follow its cascade */
+    if (s.live === "endocrine"){
+      const id = tapCascade(Hormones.nearest(pt.x, pt.y, tol), s.hour);
+      if (id){ startCascade(id); return; }
     }
     if (!s.shown.circulatory) return;
     const i = Particles.nearestCell(pt.x, pt.y, tol);
@@ -5353,14 +6177,28 @@ function init(){
   let resizeT;
   new ResizeObserver(() => { clearTimeout(resizeT); resizeT = setTimeout(() => { Camera.go(cameraFor(store.get()), true); Pins.refresh(); }, 60); }).observe($("#sceneWrap"));
 
-  let last = performance.now();
+  let last = performance.now(), lastReal = 0, clockDebt = 0;
   function frame(t){
     const dt = Math.min(.05, (t - last) / 1000); last = t;
     const st = store.get();
-    /* bullet time: while an impulse is followed the body (and the clock) run slowed down */
-    const sdt = dt * (st.impulse != null ? Impulse.timeScale() : 1);
-    if (st.playing) store.set({ hour: (st.hour + sdt * CONFIG.hoursPerSecond) % 24 });
-    if ((st.follow != null || st.impulse != null) && !st.topic) Camera.track(cameraFor(st), dt);
+    /* bullet time: while an impulse is followed the body (and the clock) run slowed down.
+       Time-lapse: while a hormone cascade is followed the clock runs at the real
+       time of the signal (capped), and the body faster (capped harder) */
+    const k = st.impulse != null ? Impulse.timeScale() : st.cascade != null ? Cascade.timeScale() : 1;
+    const sdt = dt * Math.min(k, BODY_MAX);
+    if (st.cascade == null){ lastReal = 0; clockDebt = 0; }
+    if (st.cascade != null && !st.topic){
+      /* the clock follows the signal's real time, at most CLOCK_MAX; a backlog
+         under 6 h is caught up, longer ones (days) are let go */
+      const r = Cascade.info().real;
+      if (r < lastReal) clockDebt = 0;
+      clockDebt += Math.max(0, r - lastReal); lastReal = r;
+      if (clockDebt > 6 * 3600) clockDebt = 0;
+      const step = Math.min(clockDebt, dt * CLOCK_MAX);
+      if (step > 0){ clockDebt -= step; store.set({ hour: (st.hour + step / 3600) % 24 }); }
+    }
+    else if (st.playing) store.set({ hour: (st.hour + sdt * CONFIG.hoursPerSecond) % 24 });
+    if ((st.follow != null || st.impulse != null || st.cascade != null) && !st.topic) Camera.track(cameraFor(st), dt);
     else if (Camera.tick(t)) Hotspots.place();
     if (!document.hidden){
       const ph = Physio.at(store.get().hour);
@@ -5375,6 +6213,8 @@ function init(){
       Journey.tick(sdt);
       Impulse.tick(dt);
       ImpulseCard.tick();
+      Cascade.tick(dt);
+      CascadeCard.tick();
     }
     requestAnimationFrame(frame);
   }

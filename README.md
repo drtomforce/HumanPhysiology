@@ -10,6 +10,10 @@ Open `index.html` in any modern browser. No build step and no dependencies (Goog
   The nervous system fires action potentials driven by the hour's physiology: motor and sympathetic traffic in the run, vagal volleys on each out-breath at rest, gut sensory and enteric traffic after meals, and slow waves in the sleeping brain.
   In the endocrine system, the glands secrete hormones (melatonin, growth hormone, thyroid hormone, cortisol, adrenaline, insulin, glucagon and GLP-1) that ride the bloodstream through the heart and lungs to their target organs. Islet and gut hormones pass through the liver first.
   The live system has numbered fact pins on the body and a card in the side panel explaining it for the current part of the day, both at the chosen reading level.
+- **Follow a red blood cell**: tap a cell on the body (or the button in the circulatory card) and the camera rides along with it through the right heart, lungs, left heart, an organ and back.
+  A card shows where it is, its O₂ saturation, how much oxygen each organ takes, laps and how long a real lap takes right now. The side panel explains each stop at the chosen reading level.
+- **Real sleep stages**: the night runs through five 90-minute cycles of light (N1, N2), deep (N3) and REM sleep, shown as a hypnogram above the timeline.
+  Deep sleep brings slow brain waves, the calmest heart and regular breathing. N2 has sleep spindles. REM brings darting eyes, paralysed limbs, snoring, irregular breathing and heart-rate surges.
 - **Live vitals**: heart rate with a scrolling ECG (including the breath-by-breath speeding and slowing of respiratory sinus arrhythmia) and stroke volume, breathing rate and tidal volume, blood glucose (with a 24 h trace), core temperature, blood pressure, cardiac output, arterial → venous blood O₂, and insulin, glucagon, cortisol, melatonin and adrenaline.
 - **Thirteen organs to explore**: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears and throat.
   Each has a close-up illustration and text for each phase of the day (Sleep, Rest, Meal, Exercise).

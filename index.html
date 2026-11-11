@@ -27,11 +27,15 @@
                    and wrapping around midnight. Add a channel: add keyframes,
                    read it in Scene / Vitals. Physio.at() also derives cardiac
                    output, ventilation, venous O₂ (Fick) and the organ flow split. Missing text falls back to the
-                   nearest lower level.
+                   nearest lower level. SLEEP_CYCLES builds the night's hypnogram
+                   (N1/N2/N3/REM); sleepAt(h) gives the stage, and Physio.at()
+                   adds its effects (REM surges, calm N3) and exposes rem / sws.
 
- 3. STORE           Single source of truth {hour, level, topic, playing, shown, live}.
-                   shown = which body systems are drawn; live = the one that is
-                   animated (setSystem / setLive keep the two consistent).
+ 3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
+                   follow, followSeg}. shown = which body systems are drawn; live =
+                   the one that is animated (setSystem / setLive keep the two
+                   consistent). follow = the red cell the camera tracks
+                   (startFollow / stopFollow); followSeg = the leg of its journey.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
                    Renders physiology → SVG attributes. RHYTHM keeps the beat and
@@ -44,6 +48,8 @@
                    routes (NERVES), and hormones secreted by GLANDS that ride
                    the CIRC routes to their target organ (HORMONES).
                    PINS draws the live system's level-aware fact pins.
+                   CAMERA tweens between views, or eases after a followed cell
+                   (track), and JOURNEY is the card that narrates that cell's trip.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -55,9 +61,9 @@
  6. VITALS          Live readout: ECG, breathing, glucose trace, temperature,
                    blood pressure, cardiac output, blood O₂, hormones.
 
- 7. UI              Panel (intro with the live-system card, organ view with
-                   "Part of" chips), timeline, level switch, system switches,
-                   glossary tooltips.
+ 7. UI              Panel (intro with the live-system and sleep-stage cards, organ
+                   view with "Part of" chips, red-cell journey view), timeline with
+                   the hypnogram strip, level switch, system switches, glossary tooltips.
 
  Values are typical for a healthy adult and simplified for teaching; this is
  not medical advice.
@@ -135,6 +141,30 @@ button{ font:inherit; color:inherit; }
 }
 .back.on{ opacity:1; transform:none; pointer-events:auto; }
 
+/* Journey card: shown while the camera follows a red blood cell */
+.journey{ position:absolute; left:20px; top:18px; z-index:3; width:min(310px, calc(100% - 40px)); background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px 12px; box-shadow:0 6px 22px rgba(0,0,0,.08); display:none; }
+.journey.on{ display:block; animation:enter .3s ease both; }
+.j-kicker{ margin:0; font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:7px; }
+.j-kicker::before{ content:""; width:9px; height:9px; border-radius:50%; background:#d63340; box-shadow:0 0 0 2px var(--surface), 0 0 0 3px #d63340; }
+.j-where{ margin:6px 0 9px; font-family:var(--serif); font-size:18px; line-height:1.25; min-height:2.5em; }
+.j-sat{ display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; font-size:12px; color:var(--muted); }
+.j-bar{ height:8px; border-radius:4px; background:var(--surface-2); overflow:hidden; }
+.j-bar i{ display:block; height:100%; border-radius:4px; }
+.j-sat b{ font-variant-numeric:tabular-nums; color:var(--ink); font-size:15px; font-weight:600; min-width:2.8em; text-align:right; }
+.j-meta{ margin:6px 0 0; font-size:12px; color:var(--muted); line-height:1.35; }
+.j-toast{ margin:7px 0 0; font-size:13px; font-weight:600; min-height:1.35em; opacity:0; transition:opacity .4s; }
+.j-toast.on{ opacity:1; }
+.j-btns{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+.j-btns .chip{ padding:4px 11px; font-size:12px; }
+#s-blood .rbc.follow{ stroke:#fff; stroke-width:1.3; }
+#s-blood .rbc-trail{ fill:none; stroke:var(--ink); stroke-opacity:.5; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+.journey-steps{ list-style:none; margin:0 0 18px; padding:0; display:grid; gap:2px; counter-reset:j; }
+.journey-steps li{ display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius:9px; font-size:14px; color:var(--muted); counter-increment:j; }
+.journey-steps li::before{ content:counter(j); font-size:11px; font-weight:600; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; flex:none; color:#fff; background:var(--c); opacity:.75; }
+.journey-steps li.on{ background:var(--bg); color:var(--ink); font-weight:600; }
+.journey-steps li.on::before{ opacity:1; box-shadow:0 0 0 3px var(--surface), 0 0 0 4.5px var(--c); }
+.follow-btn{ margin-top:12px; }
+
 /* Hotspots */
 .hotspots{ position:absolute; inset:0; pointer-events:none; z-index:2; transition:opacity .3s; }
 .hotspots.off{ opacity:0; }
@@ -177,12 +207,19 @@ button{ font:inherit; color:inherit; }
 #vSat{ background:linear-gradient(90deg,#d63340,#5a68bd); -webkit-background-clip:text; background-clip:text; color:transparent; }
 
 /* ---------- Timeline ---------- */
-.timeline{ grid-row:2; grid-column:1; display:grid; grid-template-columns:auto 1fr; gap:2px 16px; align-items:center; padding:12px 28px 16px; border-top:1px solid var(--line); }
+.timeline{ grid-row:2; grid-column:1; display:grid; grid-template-columns:auto 1fr; gap:2px 16px; align-items:center; padding:18px 28px 16px; border-top:1px solid var(--line); }
 .play{ grid-row:span 2; width:40px; height:40px; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface); cursor:pointer; display:grid; place-items:center; }
 .play svg{ width:14px; height:14px; fill:var(--ink); }
 .range{ position:relative; height:26px; display:flex; align-items:center; }
 .daybar{ position:absolute; left:10px; right:10px; top:50%; height:6px; margin-top:-3px; border-radius:3px; background:var(--line); overflow:hidden; pointer-events:none; }
 .daybar i{ position:absolute; top:0; bottom:0; background:var(--c); opacity:.8; }
+/* hypnogram: the night's sleep stages, drawn above the sleep part of the day bar */
+.hypno{ position:absolute; left:10px; right:10px; bottom:calc(50% + 5px); height:15px; pointer-events:none; }
+.hypno svg{ position:absolute; inset:0; width:100%; height:100%; display:block; overflow:hidden; }
+.hypno .hl{ fill:none; stroke:#6c6fc4; stroke-width:1.2; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.hypno .hrem{ fill:#d97bb6; }
+.hypno-now{ position:absolute; width:7px; height:7px; border-radius:50%; background:var(--ink); box-shadow:0 0 0 2px var(--surface); transform:translate(-50%,-50%); display:none; }
+.hypno-now.on{ display:block; }
 .range input{ position:relative; width:100%; margin:0; appearance:none; -webkit-appearance:none; background:transparent; height:26px; cursor:pointer; }
 .range input::-webkit-slider-runnable-track{ height:6px; background:transparent; }
 .range input::-moz-range-track{ height:6px; background:transparent; }
@@ -241,6 +278,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .sys-card .reading p.text{ font-size:15.5px; }
 .sys-card .depth{ margin-top:12px; }
 .sys-card .hint{ margin:12px 0 0; font-size:12.5px; }
+.stage-card .text{ margin:0; font-size:15px; }
 .term{ border:0; background:none; padding:0; font:inherit; color:inherit; cursor:help; text-decoration:underline; text-decoration-style:dotted; text-decoration-color:var(--line-strong); text-underline-offset:3px; text-decoration-thickness:1.5px; }
 .term:hover{ text-decoration-color:var(--ink); }
 #tip{ position:fixed; z-index:20; max-width:280px; background:var(--ink); color:var(--surface); padding:10px 12px; border-radius:10px; font-size:13px; line-height:1.45; pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity .15s, transform .15s; }
@@ -361,6 +399,9 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   .seg button{ padding:6px 11px; }
   .systems{ right:10px; bottom:10px; }
   .moment{ left:18px; top:14px; }
+  .journey{ left:12px; top:12px; width:min(290px, calc(100% - 24px)); padding:10px 12px; }
+  .j-where{ font-size:16px; }
+  .journey.on ~ .back{ display:none; }
   .moment-note{ font-size:13px; }
   .hs-label{ font-size:12px; }
 }
@@ -402,6 +443,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         <p class="moment-phase" id="mPhase">Rest</p>
         <p class="moment-note" id="mNote"></p>
       </div>
+      <div class="journey" id="journey" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
       <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
@@ -430,7 +472,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
     </div>
     <div class="timeline">
       <button class="play" id="playBtn" type="button" aria-label="Play the day"></button>
-      <div class="range"><div class="daybar" id="dayBar"></div><input id="hourRange" type="range" min="0" max="23.99" step="0.01" aria-label="Time of day"></div>
+      <div class="range"><div class="hypno" id="hypno" aria-hidden="true"></div><div class="daybar" id="dayBar"></div><input id="hourRange" type="range" min="0" max="23.99" step="0.01" aria-label="Time of day"></div>
       <div class="hours" id="hourBtns"></div>
     </div>
   </section>
@@ -1082,6 +1124,87 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "phd": "Most people with obesity have high leptin but respond poorly to it, so leptin treatment helps mainly in rare congenital leptin deficiency. Falling leptin during dieting strongly drives hunger and lowers energy expenditure." }
       ]
     }
+  },
+  "sleepStages": {
+    "wake": {
+      "name": "Brief wake",
+      "ms": "You wake up for a moment, roll over and fall back asleep. You probably won’t remember it in the morning.",
+      "hs": "Brief awakenings between sleep cycles are normal, especially towards morning. Most last under a minute or two and are forgotten.",
+      "college": "Short arousals and awakenings, often at the end of a REM period, are a normal part of sleep architecture. They become more frequent with age, and awakenings shorter than a few minutes are rarely remembered.",
+      "phd": "Wake after sleep onset (WASO) rises with age. Micro-arousals and the cyclic alternating pattern reflect the brainstem arousal system, and their density increases in obstructive sleep apnoea and periodic limb movements."
+    },
+    "n1": {
+      "name": "Light sleep (N1)",
+      "ms": "You’re drifting off. Your muscles relax and you might suddenly feel like you’re falling.",
+      "hs": "N1 is the lightest stage, the bridge between waking and sleeping. Brain waves slow down and the eyes roll slowly. A sudden ‘falling’ jerk, called a hypnic jerk, can happen here.",
+      "college": "In N1 the waking alpha rhythm gives way to low-amplitude theta waves (4–7 Hz), with vertex sharp waves and slow rolling eye movements. It makes up only about 5% of the night.",
+      "phd": "N1 is scored when alpha is replaced by low-amplitude, mixed-frequency activity for more than half of a 30 s epoch (AASM criteria). More N1 and more frequent stage shifts are markers of fragmented sleep."
+    },
+    "n2": {
+      "name": "Light sleep (N2)",
+      "ms": "You’re properly asleep now. Your heart slows down and your body cools a little.",
+      "hs": "N2 takes up about half the night. The brain makes short bursts of activity called sleep spindles, which help store what you learned during the day. Heart rate and breathing slow down.",
+      "college": "N2 is marked by sleep spindles (11–16 Hz bursts) and K-complexes. Spindle density is linked to memory consolidation, and spindles help keep sleep from being broken by noise.",
+      "phd": "Spindles are generated by GABAergic neurons of the thalamic reticular nucleus and synchronised through thalamocortical loops. Their coupling to slow oscillations and hippocampal sharp-wave ripples is thought to be central to systems consolidation. Spindle density is reduced in schizophrenia."
+    },
+    "n3": {
+      "name": "Deep sleep (N3)",
+      "ms": "This is deep sleep. It’s very hard to wake you now. Your brain waves are big and slow, and your body does its repair work.",
+      "hs": "In deep sleep the brain makes big, slow waves. Heart rate and blood pressure are at their lowest, breathing is slow and regular, and growth hormone is released. Most deep sleep comes in the first half of the night.",
+      "college": "N3, or slow-wave sleep, has high-amplitude delta waves (0.5–2 Hz). Cortical neurons alternate between active ‘up’ states and silent ‘down’ states. Parasympathetic tone is highest, and the biggest growth-hormone pulse of the day follows the first bout.",
+      "phd": "Slow-wave activity tracks homeostatic sleep pressure (Process S): it rises with time awake and dissipates across the night. In rodents, brain fluid exchange and solute clearance are greatest in this state. Sleepwalking and night terrors arise from incomplete arousals out of N3."
+    },
+    "rem": {
+      "name": "REM sleep (dreaming)",
+      "ms": "This is dream sleep. Your eyes dart around under your eyelids, but the rest of your body can’t move, so you don’t act out your dreams.",
+      "hs": "In REM (rapid eye movement) sleep the brain is almost as active as when you’re awake, and most vivid dreams happen. Your muscles are switched off, except for the eyes and the diaphragm. Heart rate and breathing become irregular. REM periods get longer towards morning.",
+      "college": "REM sleep has a low-amplitude, wake-like EEG, rapid eye movements and skeletal muscle atonia. Autonomic control becomes unstable, with surges in heart rate and blood pressure, and temperature regulation is largely switched off. Upper-airway muscles relax too, so snoring and obstructive apnoeas are often worst in REM.",
+      "phd": "REM is generated by glutamatergic neurons of the sublaterodorsal nucleus, and atonia comes from glycinergic and GABAergic inhibition of motor neurons. Monoaminergic neurons fall silent while cholinergic activity stays high. Ventilatory responses to CO₂ and hypoxia are at their weakest, and REM-related sympathetic surges may contribute to the early-morning peak in cardiac events."
+    }
+  },
+  "journey": {
+    "pa": {
+      "name": "Right heart → lungs",
+      "ms": "Our cell has just come back from the body, dark and low on oxygen. The right side of the heart squeezes it out to the lungs.",
+      "hs": "The right ventricle pumps oxygen-poor blood into the pulmonary artery. It is the only artery in the adult body that carries oxygen-poor blood. The lung circuit runs at low pressure, about 25/10 mmHg.",
+      "college": "Over time the right ventricle pumps the same volume as the left, but the pulmonary circulation is a low-pressure, low-resistance bed: mean pulmonary artery pressure is about 15 mmHg. In exercise, extra capillaries open and the open ones widen, so flow can rise several-fold with little rise in pressure.",
+      "phd": "Pulmonary vascular resistance falls as cardiac output rises, through capillary recruitment and distension. Hypoxic pulmonary vasoconstriction diverts flow away from poorly ventilated alveoli to match ventilation to perfusion. When it is global, as at altitude, it raises pulmonary artery pressure."
+    },
+    "lung": {
+      "name": "Lung capillaries",
+      "ms": "In the lungs the cell squeezes through a tiny blood vessel wrapped around an air sac. Oxygen jumps on board and the cell turns bright red.",
+      "hs": "Gas exchange happens in the capillaries around the alveoli. Oxygen diffuses from the air into the blood and binds to haemoglobin, and carbon dioxide diffuses the other way to be breathed out. At rest a red cell spends only about 0.75 s here.",
+      "college": "Each haemoglobin molecule carries up to four O₂. Blood normally equilibrates with alveolar PO₂ (about 100 mmHg) in roughly a third of the 0.75 s transit time. That reserve matters in exercise, when transit can shorten to about 0.25 s.",
+      "phd": "At rest O₂ uptake is perfusion-limited. Diffusion limitation appears only with very short transit times, low alveolar PO₂ (altitude) or a thickened barrier, which is why some elite athletes develop exercise-induced arterial hypoxaemia. The Haldane effect helps unload CO₂ as haemoglobin takes up O₂."
+    },
+    "pv": {
+      "name": "Lungs → left heart",
+      "ms": "Now full of oxygen, the cell rides back to the heart, this time to the left side.",
+      "hs": "The pulmonary veins carry oxygen-rich blood to the left atrium and on into the left ventricle. They are the only veins that carry oxygen-rich blood.",
+      "college": "Blood leaving the lungs is about 97–98% saturated. A little oxygen-poor blood from the bronchial and coronary veins mixes in (a physiological shunt), so arterial PO₂ ends up slightly below alveolar PO₂.",
+      "phd": "The normal alveolar–arterial gradient of about 5–15 mmHg comes from this anatomical shunt plus ventilation–perfusion mismatch. It widens with age and in lung disease; breathing 100% O₂ separates true shunt from V/Q mismatch."
+    },
+    "artery": {
+      "name": "Left heart → an organ",
+      "ms": "The strong left side of the heart blasts our cell into the aorta, the body’s biggest artery, and off to an organ.",
+      "hs": "The left ventricle pumps blood into the aorta at high pressure, about 120/80 mmHg. The arteries branch again and again. Which organ our cell reaches depends on how much blood each organ is getting right now.",
+      "college": "Cardiac output is shared between organ circuits that run in parallel, in proportion to their conductance, which the arterioles adjust. At rest the gut, kidneys and brain take the biggest shares. In a hard run the working muscles can take over 80%.",
+      "phd": "Flow distribution reflects local metabolic vasodilation (adenosine, K⁺, H⁺, NO) opposed by sympathetic vasoconstriction. In exercise, functional sympatholysis blunts α-adrenergic constriction in active muscle while constriction is maintained in the gut and kidneys."
+    },
+    "cap": {
+      "name": "Capillaries: giving up oxygen",
+      "ms": "In the capillaries the cell slows right down and hands its oxygen to the hungry cells around it. It turns darker as it lets go.",
+      "hs": "Capillary walls are just one cell thick. Oxygen leaves the haemoglobin and diffuses into the tissue, and carbon dioxide comes back. How much oxygen is taken depends on how hard the organ is working.",
+      "college": "Unloading follows the oxygen–haemoglobin dissociation curve. Working muscle is warmer and more acidic, with more CO₂ and 2,3-BPG, which shift the curve to the right (the Bohr effect) and release more O₂ at the same PO₂.",
+      "phd": "Fick principle: O₂ consumption = flow × (CaO₂ − CvO₂). Whole-body extraction is about 25% at rest but can exceed 80% in exercising muscle, helped by capillary recruitment, a right-shifted curve and myoglobin-facilitated diffusion. The kidney extracts little despite its huge flow, because its flow serves filtration, not metabolism."
+    },
+    "vein": {
+      "name": "Veins → right heart",
+      "ms": "Now dark and low on oxygen, the cell travels back through the veins to the right side of the heart, ready for another lap.",
+      "hs": "Veins carry blood back at low pressure. Valves stop it flowing backwards, and squeezing muscles and each in-breath help push it home. A full lap of the body takes about a minute at rest.",
+      "college": "Veins hold about two-thirds of the blood volume. Venous return is helped by the skeletal-muscle pump and the respiratory pump: each in-breath lowers the pressure in the chest and draws blood into the right atrium.",
+      "phd": "In Guyton’s model, venous return equals mean systemic filling pressure minus right atrial pressure, divided by the resistance to venous return. In exercise, sympathetic venoconstriction mobilises blood from the splanchnic reservoir and raises filling pressure."
+    }
   }
 }
 </script>
@@ -1326,7 +1449,22 @@ const STRINGS = {
   legend: "What the moving dots show",
   pinHint: "Numbered pins on the body point out its key parts. Hover over or tap them.",
   partOf: "Part of these systems: tap to watch one",
-  live: "live"
+  live: "live",
+  stage: { wake: "Brief wake", n1: "Light sleep (N1)", n2: "Light sleep (N2)", n3: "Deep sleep (N3)", rem: "REM sleep (dreaming)" },
+  stageShort: { wake: "Awake", n1: "N1", n2: "N2", n3: "Deep", rem: "REM" },
+  stageNow: "Sleep stage now",
+  followCell: "Follow a red blood cell",
+  following: "Following a red blood cell",
+  journeyTitle: "Journey of a red blood cell",
+  journeyLede: "Every red cell runs a figure-of-eight: right heart → lungs → left heart → an organ → back to the right heart. Watch yours turn bright red as it loads oxygen in the lungs and darken as an organ takes it.",
+  journeyHint: "Tip: tap any red dot on the body to follow that cell instead.",
+  stopFollow: "Stop",
+  stopFollowing: "Stop following",
+  another: "Follow another",
+  anotherCell: "Follow another cell",
+  nextStop: "Next stop ›",
+  lap: (n, real, last) => `Lap ${n + 1}${last ? ` · last lap ${last.toFixed(1)} s here` : ""} · a real lap takes about ${real} s right now`,
+  sleepCycle: n => `Sleep cycle ${n} of 5`
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -1374,6 +1512,42 @@ const PHYSIO = {
 };
 /* Oxygen content: 1.34 mL O₂ per g of haemoglobin × ~14.5 g/dL ≈ 194 mL O₂ per L of blood when fully saturated */
 const O2_CAP = 194;
+
+/* Sleep architecture: about five 90-minute cycles from sleep onset. Deep sleep
+   (N3) dominates the first cycles and REM periods lengthen towards morning,
+   with brief awakenings between the late cycles. [minutes, stage] per cycle. */
+const SLEEP_SPAN = SCHEDULE.find(e => e.phase === "sleep");
+const SLEEP_CYCLES = [
+  [[7, "n1"], [18, "n2"], [45, "n3"], [10, "n2"], [10, "rem"]],
+  [[22, "n2"], [33, "n3"], [15, "n2"], [18, "rem"]],
+  [[35, "n2"], [12, "n3"], [15, "n2"], [25, "rem"]],
+  [[3, "n1"], [45, "n2"], [33, "rem"], [4, "wake"]],
+  [[4, "n1"], [52, "n2"], [38, "rem"], [6, "n1"]]
+];
+const STAGE_DEPTH = { wake: 0, n1: .3, n2: .6, n3: 1, rem: 0 };
+const HYPNO_Y = { wake: 1.5, rem: 4.5, n1: 7.5, n2: 10.5, n3: 13.5 }; /* rows of the hypnogram strip */
+const HYPNO = (() => {
+  const segs = []; let m = 0;
+  SLEEP_CYCLES.forEach((c, ci) => c.forEach(([d, stage]) => { segs.push({ from: m, to: m + d, stage, cycle: ci + 1 }); m += d; }));
+  return { segs, len: m };
+})();
+/* minutes since sleep onset, or -1 when not in the sleep span */
+function sleepMinute(h){ const m = wrapH(h - SLEEP_SPAN.from) * 60; return m < HYPNO.len ? m : -1; }
+/* the stage at hour h, with weights blended over ~3 min at stage edges:
+   depth (0 wake/REM … 1 N3), rem, sws (slow-wave, N3) and n2 (spindles) */
+function sleepAt(h){
+  const m = sleepMinute(h);
+  if (m < 0) return { stage: "wake", asleep: false, cycle: 0, depth: 0, rem: 0, sws: 0, n2: 0 };
+  const S = HYPNO.segs, i = Math.max(0, S.findIndex(s => m < s.to));
+  const w = s => s ? { depth: STAGE_DEPTH[s.stage], rem: +(s.stage === "rem"), sws: +(s.stage === "n3"), n2: +(s.stage === "n2") } : { depth: 0, rem: 0, sws: 0, n2: 0 };
+  const cur = w(S[i]), B = 1.5;
+  let other = null, t = 0;
+  if (m - S[i].from < B && i > 0){ other = w(S[i - 1]); t = .5 - (m - S[i].from) / (2 * B); }
+  else if (S[i].to - m < B && i < S.length - 1){ other = w(S[i + 1]); t = .5 - (S[i].to - m) / (2 * B); }
+  const out = { stage: S[i].stage, asleep: S[i].stage !== "wake", cycle: S[i].cycle };
+  for (const k in cur) out[k] = other ? lerp(cur[k], other[k], t) : cur[k];
+  return out;
+}
 function sampleKF(kf, h){
   h = wrapH(h);
   const n = kf.length;
@@ -1392,6 +1566,14 @@ const Physio = {
     for (const k in PHYSIO) out[k] = sampleKF(PHYSIO[k], h);
     out.phase = phaseAt(h);
     out.accent = PHASE_BY_ID[out.phase].color;
+    /* sleep stage: REM brings heart-rate and blood-pressure surges and faster,
+       irregular breathing; deep N3 sleep is the calmest, most regular state */
+    const sl = sleepAt(h);
+    out.sleep = sl; out.rem = sl.rem; out.sws = sl.sws;
+    const wakeBlip = sl.stage === "wake" && sleepMinute(h) >= 0 ? 1 : 0;
+    out.heartRate += 6 * sl.rem - 3 * sl.sws + 5 * wakeBlip;
+    out.sbp += 6 * sl.rem - 4 * sl.sws + 4 * wakeBlip;
+    out.breathRate += 1.5 * sl.rem;
     /* after a meal (gut channel above its fasting level) cardiac output rises
        ~10–15%, mostly through a bigger stroke volume, to feed the gut */
     const pp = clamp((out.gut - .3) / .7) * (1 - out.muscle);
@@ -1420,7 +1602,8 @@ const Physio = {
        (the same idea as the RSA amplitude in Rhythm); sympathetic tone
        follows effort, adrenaline and, a little, the morning cortisol rise. */
     out.vagal = clamp(1.1 - (out.heartRate - 50) / 70) * (1 + .15 * pp);
-    out.sympathetic = clamp(.12 + .8 * out.muscle + .15 * out.cortisol + .2 * out.adrenaline);
+    out.sympathetic = clamp(.12 + .8 * out.muscle + .15 * out.cortisol + .2 * out.adrenaline + .15 * sl.rem);
+    out.vagal = clamp(out.vagal - .15 * sl.rem);
     return out;
   }
 };
@@ -1455,6 +1638,8 @@ const store = createStore({
   level: LEVEL_INDEX[savedLevel] !== undefined ? savedLevel : "hs",
   topic: null,
   playing: false,
+  follow: null,     /* index of the red cell the camera follows, or null */
+  followSeg: null,  /* which leg of its journey that cell is on */
   ...loadSystems()
 });
 /* System switches. Switching a system on makes it live; switching off the
@@ -1599,15 +1784,23 @@ function breathShape(f, ti){ /* f = breath phase → {vol 0–1, psi} */
   return { vol: (Math.exp(-k * x) - Math.exp(-k)) / (1 - Math.exp(-k)), psi: .5 + x / 2 };
 }
 const Rhythm = {
-  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0, lung: 0, insp: 0, ti: .4,
+  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0, lung: 0, insp: 0, ti: .4, bj: 0, bjT: 0, bjN: 0,
   /* lung = volume 0–1; insp > 0 while air flows in (drives the thoracic pump) */
   tick(dt, ph){
-    this.ti = .4 + .09 * clamp((ph.breathRate - 14) / 22);
-    this.breath += dt * ph.breathRate / 60;
+    const rem = ph.rem || 0, sws = ph.sws || 0;
+    /* REM sleep: breathing speeds up and slows down from breath to breath */
+    this.bjN -= dt;
+    if (this.bjN <= 0){ this.bjN = 1.2 + Math.random() * 2.5; this.bjT = (Math.random() * 2 - 1) * .32; }
+    this.bj += (this.bjT - this.bj) * clamp(dt * 1.5);
+    const br = ph.breathRate * (1 + this.bj * rem);
+    this.ti = .4 + .09 * clamp((br - 14) / 22);
+    this.breath += dt * br / 60;
     const b = breathShape(this.breath, this.ti);
     this.lung = b.vol; this.insp = Math.sin(2 * Math.PI * b.psi);
-    this.jitT += (Math.random() - .5) * .012 - this.jitT * dt * .5;
-    this.jitT = clamp(this.jitT, -.015, .015);
+    /* beat-to-beat wander: damped in deep sleep, bigger surges in REM */
+    const lim = .015 * (1 - .7 * sws) + .035 * rem;
+    this.jitT += (Math.random() - .5) * .012 * (1 + 2 * rem) - this.jitT * dt * .5;
+    this.jitT = clamp(this.jitT, -lim, lim);
     this.jit += (this.jitT - this.jit) * clamp(dt * 1.5);
     const rsa = .07 * clamp(1 - (ph.heartRate - 55) / 70) + .005;
     /* in-breath → vagal brake eases → faster, peaking as it ends; out-breath → slower */
@@ -1853,7 +2046,16 @@ const Scene = (() => {
     const v = Rhythm.lung;
     const depth = .022 + .058 * clamp((cur.tidalVol - 420) / 1500);
     r.lungs.setAttribute("transform", `translate(600 300) scale(${(1 + depth * .6 * v).toFixed(3)} ${(1 + depth * v).toFixed(3)}) translate(-600 -300)`);
+    /* REM: the eyes dart about under closed lids */
+    const now = performance.now() / 1000;
+    if (cur.rem > .5 && cur.awake < .5){
+      if (now > sacc.next){ sacc.next = now + .15 + Math.random() * .5; sacc.x = (Math.random() - .5) * 5; }
+    } else sacc.x = 0;
+    sacc.cx += (sacc.x - sacc.cx) * .45;
+    const ex = Math.abs(sacc.cx) < .05 ? "" : `translate(${sacc.cx.toFixed(2)} 0)`;
+    if (ex !== sacc.tf){ sacc.tf = ex; r.eyesShut.setAttribute("transform", ex); }
   }
+  const sacc = { next: 0, x: 0, cx: 0, tf: "" };
 
   function focus(id){
     const p = id && focusPoints[id];
@@ -1897,9 +2099,12 @@ const Particles = (() => {
       const La = a.getTotalLength(), Lv = v.getTotalLength();
       const pa = a.getPointAtLength(La), pv = v.getPointAtLength(0);
       const Lc = Math.max(8, Math.hypot(pv.x - pa.x, pv.y - pa.y));
-      routes.push({ ...c, A: a, V: v, La, Lc, Lv, pa, pv, L: La + Lc + Lv });
+      /* paired beds: capillaries left of the midline (on screen) are the body's right side */
+      const side = ["arms", "kidneys", "legs", "lungs"].includes(c.bed) ? (pa.x < 600 ? "right" : "left") : "";
+      routes.push({ ...c, A: a, V: v, La, Lc, Lv, pa, pv, side, L: La + Lc + Lv });
       (c.sys ? SYS : PUL).push(i);
     });
+    fol.trail = el("polyline", { class: "rbc-trail", points: "" }, R.blood);
     const rng = mulberry32(11);
     for (let i = 0; i < NCELL; i++){
       const ri = rng() < .3 ? PUL[i % 2] : SYS[Math.floor(rng() * SYS.length)];
@@ -1914,16 +2119,23 @@ const Particles = (() => {
     return SYS[0];
   }
   function venSat(bed){ return ph.spo2 * (1 - ph.extract[bed]); }
-  function place(k){
+  /* where a cell is (in figure coordinates), how saturated it is, and which leg
+     of the figure-of-eight it is on: pa → lung → pv (lung circuit), artery → cap → vein */
+  function info(k){
     const r = routes[k.ri], s = k.s;
-    let x, y, sat;
+    let x, y, sat, seg;
     const sa = ph ? ph.spo2 : 97, sv = r.sys ? (ph ? venSat(r.bed) : 70) : sa;
-    if (s < r.La){ const p = r.A.getPointAtLength(s); x = p.x; y = p.y; sat = r.sys ? sa : k.satIn; }
-    else if (s < r.La + r.Lc){ const t = (s - r.La) / r.Lc; x = lerp(r.pa.x, r.pv.x, t); y = lerp(r.pa.y, r.pv.y, t); sat = lerp(r.sys ? sa : k.satIn, sv, smooth(t)); }
-    else { const p = r.V.getPointAtLength(s - r.La - r.Lc); x = p.x; y = p.y; sat = sv; }
-    k.c.setAttribute("cx", f1(x)); k.c.setAttribute("cy", f1(y));
-    const col = satCol(sat);
+    if (s < r.La){ const p = r.A.getPointAtLength(s); x = p.x; y = p.y; sat = r.sys ? sa : k.satIn; seg = r.sys ? "artery" : "pa"; }
+    else if (s < r.La + r.Lc){ const t = (s - r.La) / r.Lc; x = lerp(r.pa.x, r.pv.x, t); y = lerp(r.pa.y, r.pv.y, t); sat = lerp(r.sys ? sa : k.satIn, sv, smooth(t)); seg = r.sys ? "cap" : "lung"; }
+    else { const p = r.V.getPointAtLength(Math.min(r.Lv, s - r.La - r.Lc)); x = p.x; y = p.y; sat = sv; seg = r.sys ? "vein" : "pv"; }
+    return { x, y, sat, seg };
+  }
+  function place(k){
+    const q = info(k);
+    k.c.setAttribute("cx", f1(q.x)); k.c.setAttribute("cy", f1(q.y));
+    const col = satCol(q.sat);
     if (col !== k.col){ k.col = col; k.c.setAttribute("fill", col); }
+    return q;
   }
   /* mean speed scales with cardiac output; arterial flow surges in systole
      (ejection follows the R wave), venous return speeds up on each in-breath
@@ -1943,19 +2155,66 @@ const Particles = (() => {
     if (s < r.La + r.Lc){ const t = (s - r.La) / r.Lc; return { x: lerp(r.pa.x, r.pv.x, t), y: lerp(r.pa.y, r.pv.y, t) }; }
     return r.V.getPointAtLength(Math.min(r.Lv, s - r.La - r.Lc));
   }
+  /* move a cell along its route; at the end of a route it moves on to the next circuit */
+  function step(k, ds){
+    const r = routes[k.ri];
+    k.s += ds;
+    if (k.s >= r.L){
+      k.s -= r.L;
+      if (r.sys){
+        k.satIn = venSat(r.bed); k.ri = PUL[Math.random() < .5 ? 0 : 1];
+        if (k === fol.k){ fol.laps++; fol.lastLap = fol.t - fol.lapStart; fol.lapStart = fol.t; }
+      } else k.ri = pickSys();
+      k.s = Math.min(k.s, routes[k.ri].L - 1);
+    }
+  }
   function moveBlood(dt){
     const f = flow();
-    for (const k of cells){
-      const r = routes[k.ri];
-      k.s += dt * speedAt(r, k.s, f);
-      if (k.s >= r.L){
-        k.s -= r.L;
-        if (r.sys){ k.satIn = venSat(r.bed); k.ri = PUL[Math.random() < .5 ? 0 : 1]; }
-        else k.ri = pickSys();
-        k.s = Math.min(k.s, routes[k.ri].L - 1);
-      }
-      place(k);
+    for (const k of cells){ step(k, dt * speedAt(routes[k.ri], k.s, f)); place(k); }
+    if (fol.k){
+      fol.t += dt; fol.acc += dt;
+      if (fol.acc > .04){ fol.acc = 0; trailPush(); }
     }
+  }
+  /* ---- the followed cell: drawn bigger, with a fading trail ---- */
+  const fol = { k: null, i: null, trail: null, pts: [], acc: 0, t: 0, lapStart: 0, lastLap: 0, laps: 0 };
+  function trailPush(){
+    const k = fol.k;
+    fol.pts.push(`${k.c.getAttribute("cx")},${k.c.getAttribute("cy")}`);
+    if (fol.pts.length > 60) fol.pts.shift();
+    fol.trail.setAttribute("points", fol.pts.join(" "));
+  }
+  function setFollow(i){
+    if (fol.k){ fol.k.c.classList.remove("follow"); fol.k.c.setAttribute("r", 2.8); }
+    Object.assign(fol, { k: i == null ? null : cells[i], i, pts: [], acc: 0, t: 0, lapStart: 0, lastLap: 0, laps: 0 });
+    fol.trail.setAttribute("points", "");
+    if (!fol.k) return;
+    fol.k.c.classList.add("follow"); fol.k.c.setAttribute("r", 4.4);
+    Scene.refs.blood.appendChild(fol.k.c); /* drawn on top */
+    if (ph) place(fol.k);
+  }
+  /* a cell just leaving the right heart, so the journey starts at the start */
+  function pickCell(){
+    let best = 0, bs = Infinity;
+    cells.forEach((k, i) => { const r = routes[k.ri]; const v = r.sys ? 1 + k.s / r.L : k.s / r.La; if (v < bs && k !== fol.k){ bs = v; best = i; } });
+    return best;
+  }
+  function nearestCell(x, y, maxD){
+    let best = null, bd = maxD;
+    cells.forEach((k, i) => { const d = Math.hypot(+k.c.getAttribute("cx") - x, +k.c.getAttribute("cy") - y); if (d < bd){ bd = d; best = i; } });
+    return best;
+  }
+  /* jump the followed cell to the start of its next leg (used when motion is reduced, or to skip ahead) */
+  function nextStop(){
+    const k = fol.k; if (!k || !ph) return;
+    const r = routes[k.ri], b = [r.La, r.La + r.Lc, r.L].find(v => v > k.s + .5);
+    step(k, b - k.s + .5); place(k);
+    fol.pts = []; fol.trail.setAttribute("points", "");
+  }
+  function cellInfo(i){
+    const k = cells[i], r = routes[k.ri];
+    return { ...info(k), bed: r.bed, side: r.side, sys: r.sys, s: k.s, La: r.La, Lc: r.Lc, Lv: r.Lv, satIn: k.satIn,
+             laps: fol.laps, lastLap: fol.lastLap };
   }
   function setRates(p){ ph = p; if (reducedMotion) cells.forEach(place); }
   function add(kind, e, extra = {}){ list.push({ kind, e, age: 0, life: 1, ...extra }); }
@@ -1964,7 +2223,7 @@ const Particles = (() => {
     const g = Scene.refs.fx;
     if (live) moveBlood(dt); /* frozen in place while another system is live */
     if (ph.eating > .5){ accF += dt / .9; while (accF >= 1){ accF--; add("food", el("ellipse", { rx: 6, ry: 4.5, fill: "#b98a5a" }, g), { life: 1.9 }); } } else accF = 0;
-    if (ph.awake < .5){ accZ += dt / 1.3; while (accZ >= 1){ accZ--; const t = el("text", { class: "zz", x: 660, y: 104 }, g); t.textContent = "z"; add("z", t, { life: 2.4 }); } } else accZ = 0;
+    if (ph.awake < .5 && ph.sleep.asleep && ph.rem < .5){ accZ += dt / (1.5 - .7 * ph.sws); while (accZ >= 1){ accZ--; const t = el("text", { class: "zz", x: 660, y: 104 }, g); t.textContent = "z"; add("z", t, { life: 2.4 }); } } else accZ = 0;
     if (ph.sweat > .15){ accS += dt * ph.sweat * 2.4; while (accS >= 1){ accS--; add("sweat", el("path", { d: "M0 -5 C2 -1 3.5 2 0 4 C-3.5 2 -2 -1 0 -5Z", fill: "#7fc3e8" }, g), { life: .9, x: 556 + Math.random() * 88, y: 112 + Math.random() * 20 }); } }
     /* a puff of breath as each out-breath starts, bigger with deeper breaths */
     const inNow = Rhythm.insp > 0;
@@ -1989,6 +2248,7 @@ const Particles = (() => {
     }
   }
   return { init, setRates, tick, flow, speedAt, pointAt, pickSys, routes, SYS, PUL,
+           setFollow, pickCell, nearestCell, nextStop, cellInfo, satCol,
            setLive(v){ live = v; }, get ph(){ return ph; } };
 })();
 
@@ -2001,7 +2261,7 @@ const Particles = (() => {
 const Nerves = (() => {
   const NP = 90, SPEED = { motor: 260, sensory: 220, vagus: 140, symp: 110, ens: 34 };
   const routes = [], pool = [], sparks = [], acc = {};
-  let ph = null, t = 0, wave = 0;
+  let ph = null, t = 0, wave = 0, spindle = 0, nextSpindle = 3;
   function init(){
     const svg = Scene.svg, R = Scene.refs;
     NERV.forEach(n => routes.push({ ...n, S: sampler(svg, n.d, 160) }));
@@ -2021,10 +2281,12 @@ const Nerves = (() => {
   /* expected rates (impulses drawn per second) for each route and direction */
   function rates(p){
     const awake = p.awake > .5 ? 1 : .08, run = Math.max(0, p.muscle - .1), exp = Rhythm.insp < 0 ? 1.7 : .3;
-    const sy = 2.4 * Math.pow(p.sympathetic, 1.5);
+    /* REM sleep: the limbs are paralysed (atonia) while sympathetic surges come and go */
+    const atonia = 1 - (p.rem || 0);
+    const sy = 2.4 * Math.pow(p.sympathetic, 1.5) + 1.2 * (p.rem || 0);
     return {
-      legL: [[1, "motor", .3 * awake + 9 * run], [-1, "sensory", .25 * awake + 4 * run]],
-      armL: [[1, "motor", .35 * awake + 2.5 * run], [-1, "sensory", .4 * awake + 1.2 * run]],
+      legL: [[1, "motor", (.3 * awake + 9 * run) * atonia], [-1, "sensory", .25 * awake + 4 * run]],
+      armL: [[1, "motor", (.35 * awake + 2.5 * run) * atonia], [-1, "sensory", .4 * awake + 1.2 * run]],
       vagH: [[1, "vagus", 3 * p.vagal * exp], [-1, "sensory", .5 * p.vagal]],
       vagG: [[1, "vagus", 1.4 * p.vagal * (.4 + p.gut)], [-1, "sensory", .3 + 3 * p.gut]],
       symH: [[1, "symp", sy]], symG: [[1, "symp", sy * .7]], symAL: [[1, "symp", sy]],
@@ -2047,16 +2309,21 @@ const Nerves = (() => {
       q.c.setAttribute("cx", f1(x)); q.c.setAttribute("cy", f1(y));
       q.c.setAttribute("opacity", f1(clamp(end * 25) * .95));
     }
-    /* brain: big synchronous slow waves in sleep, scattered flicker when awake */
-    const asleep = clamp(1 - p.awake);
+    /* brain: big synchronous slow waves in deep sleep, sleep spindles in N2,
+       and in REM the same scattered flicker as an awake brain */
+    const asleep = clamp(1 - p.awake), rem = p.rem || 0, sws = p.sws || 0, n2 = p.sleep ? p.sleep.n2 : 0;
     wave += dt * .8;
-    const slow = .5 + .5 * Math.sin(2 * Math.PI * wave);
-    Scene.refs.brainGlow.setAttribute("opacity", f1(asleep * (.08 + .32 * slow * slow) + (1 - asleep) * (.1 + .12 * p.muscle)));
-    const flick = (1 - asleep) * (2.5 + 5 * p.muscle);
+    const slow = .5 + .5 * Math.sin(2 * Math.PI * wave), sw = asleep * (1 - rem) * (.25 + .75 * sws);
+    nextSpindle -= dt;
+    if (nextSpindle <= 0){ nextSpindle = 5 + Math.random() * 5; if (n2 > .5) spindle = 1; }
+    spindle = Math.max(0, spindle - dt);
+    const sp = spindle > 0 ? Math.sin(Math.PI * spindle) * (.5 + .5 * Math.sin(2 * Math.PI * 7 * t)) : 0;
+    Scene.refs.brainGlow.setAttribute("opacity", f1(asleep * (1 - rem) * (.08 + .32 * slow * slow * (.25 + .75 * sws) + .3 * sp) + asleep * rem * .14 + (1 - asleep) * (.1 + .12 * p.muscle)));
+    const flick = (1 - asleep) * (2.5 + 5 * p.muscle) + asleep * rem * 4;
     for (const s of sparks){
       if (Math.random() < dt * flick / sparks.length * 4) s.v = 1;
       s.v = Math.max(0, s.v - dt * 4);
-      s.c.setAttribute("opacity", f1(s.v * .9 + asleep * slow * .35));
+      s.c.setAttribute("opacity", f1(s.v * .9 + sw * slow * .35 + asleep * .4 * sp));
     }
   }
   return { init, tick };
@@ -2190,7 +2457,14 @@ const Camera = (() => {
     if (t >= 1){ moving = false; apply(to); }
     return true;
   }
-  return { go, tick, homeView, focusView };
+  /* follow a moving target: ease the view towards v a little every frame */
+  function track(v, dt){
+    moving = false;
+    if (!cur || reducedMotion){ apply(v); return; }
+    const k = 1 - Math.exp(-6 * dt);
+    apply({ x: lerp(cur.x, v.x, k), y: lerp(cur.y, v.y, k), w: lerp(cur.w, v.w, k), h: lerp(cur.h, v.h, k) });
+  }
+  return { go, tick, track, homeView, focusView };
 })();
 
 /* =========================================================================
@@ -2457,9 +2731,11 @@ App.registerTopic({
       const rbc = k.stream("rbc", L, "M150 112 L380 112", 8, () => el("ellipse", { rx: 7, ry: 4.5, fill: "#e27a82" }));
       const csf = ["M150 99 L380 99", "M150 125 L380 125"].map((d, i) => k.stream("csf" + i, L, d, 9, () => el("circle", { r: 1.7, fill: "#3b8fc4" })));
       const waste = k.spray("waste", L, 26, () => el("circle", { r: 1.8, fill: "#8d7b55" }));
-      return dt => {
-        rbc.tick(dt, 34); csf.forEach(c => c.tick(dt, 15, { jit: 2 }));
-        waste.emit(5, dt, () => {
+      return (dt, ph) => {
+        /* clearance is fastest in deep (slow-wave) sleep */
+        const g = .3 + .7 * (ph.sws || 0);
+        rbc.tick(dt, 34); csf.forEach(c => c.tick(dt, 15 * g, { jit: 2 }));
+        waste.emit(5 * g, dt, () => {
           const x = 176 + R() * 170, top = R() < .5;
           return { x0: x, y0: top ? 48 + R() * 36 : 138 + R() * 36, x1: x + 10 + R() * 14, y1: top ? 97 : 127, life: 2.6 + R(), e: "lin", wob: 1.5 };
         });
@@ -3108,6 +3384,7 @@ App.registerTopic({
       ctx.mark(288, capTop - 28, ["", "Lactate leaving the cell", "Lactate exported (MCT4)", "Lactate shuttle (MCT1/4)"], 1);
     }
     if (p === "sleep") ctx.mark(300, 162, ["Repair work", "Building new protein", "Muscle protein synthesis", "MPS (mTORC1-dependent)"]);
+    if (p === "sleep" && ctx.ph.rem > .5) ctx.mark(214, capTop - 22, ["Switched off while you dream", "Muscles paralysed in REM sleep", "REM atonia: motor neurons inhibited", "REM atonia (glycine/GABA_A on α-motor neurons)"]);
     if (p === "rest") ctx.mark(216, 152, ["", "Fat droplet (fuel)", "Intramyocellular lipid", "IMCL droplet"], 1);
     return b;
   },
@@ -3425,7 +3702,7 @@ App.registerTopic({
       /* where the eye looks: bursts of fast saccades in REM sleep, glances while awake */
       m.st = (m.st || 0) - dt;
       if (m.st <= 0){
-        if (!awake){ const rem = k.t % 14 < 7; m.st = rem ? .25 + R() * .45 : 1.5; m.gz = rem ? (R() - .5) * 30 : 0; }
+        if (!awake){ const rem = (ph.rem || 0) > .5; m.st = rem ? .25 + R() * .45 : 1.5; m.gz = rem ? (R() - .5) * 30 : 0; }
         else { m.st = .5 + R() * 1.4; m.gz = (R() - .5) * (p === "exercise" ? 6 : 16); }
       }
       m.ga = lerp(m.ga || 0, m.gz || 0, clamp(dt * 22));
@@ -3661,8 +3938,10 @@ App.registerTopic({
          the epiglottis tips over the airway, breathing pauses and the bolus goes down */
       const u = p === "meal" ? k.t % 5 / 5 : 1, sw = clamp(1 - Math.abs(u - .26) / .12);
       if (pal){
-        const flutter = p === "sleep" ? 3 * Math.sin(2 * Math.PI * 9 * k.t) * Math.max(0, Rh.insp) : 0;
-        pal.setAttribute("transform", `rotate(${f1((p === "sleep" ? 16 : 0) - 28 * sw + flutter)} 72 62)`);
+        /* snoring: the soft palate flutters on each in-breath, worse in REM when the dilator muscles go slack */
+        const rem = ph.rem || 0;
+        const flutter = p === "sleep" ? 3 * (1 + rem) * Math.sin(2 * Math.PI * 9 * k.t) * Math.max(0, Rh.insp) : 0;
+        pal.setAttribute("transform", `rotate(${f1((p === "sleep" ? 16 + 6 * rem : 0) - 28 * sw + flutter)} 72 62)`);
       }
       if (lar) lar.setAttribute("transform", `translate(0 ${f1(-6 * sw)})`);
       if (epi) epi.setAttribute("transform", `rotate(${f1(75 * sw)} 76 134)`);
@@ -3765,11 +4044,11 @@ const Pins = (() => {
   let key = "", restore = () => {};
   const atLevel = (o, level) => { for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = o[LEVELS[i].id]; if (t) return t; } return ""; };
   function render(s){
-    const k = `${s.live}|${s.level}|${!!s.topic}`;
+    const k = `${s.live}|${s.level}|${!!s.topic}|${s.follow == null}`;
     if (k === key) return;
     if (key.split("|")[0] !== String(s.live)) state.i = 0;
     key = k;
-    const pins = !s.topic && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
+    const pins = !s.topic && s.follow == null && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
     g().innerHTML = pins.map((p, n) => {
       const i = n + 1, { x, y } = Scene.place(p.x, p.y);
       return `<g class="mk" data-i="${i}" tabindex="0" role="button" aria-label="${i}: ${esc(p.title)}"><circle cx="${f1(x)}" cy="${f1(y)}" r="10.5"/><text x="${f1(x)}" y="${f1(y + 4.2)}">${i}</text></g>`;
@@ -3930,6 +4209,23 @@ const Panel = (() => {
     for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = ph[LEVELS[i].id]; if (t) return t; }
     return null;
   }
+  /* text for a {ms, hs, college, phd} entry, falling back to the nearest lower level */
+  function levelText(o, level){
+    if (!o) return null;
+    for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = o[LEVELS[i].id]; if (t) return t; }
+    return null;
+  }
+  /* while asleep: what this sleep stage is, on the hypnogram's colours */
+  function stageCard(s){
+    if (sleepMinute(s.hour) < 0) return "";
+    const sl = sleepAt(s.hour), d = CONTENT.sleepStages[sl.stage], text = levelText(d, s.level);
+    return `
+      <section class="sys-card stage-card" style="--sc:${sl.stage === "rem" ? "#d97bb6" : "#6c6fc4"}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(d.name)}</h3><span class="when">${esc(STRINGS.sleepCycle(sl.cycle))}</span></div>
+        <p class="sys-blurb">${esc(STRINGS.stageNow)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+      </section>`;
+  }
   function pips(li){ return `<span class="pips" aria-hidden="true">${LEVELS.map((_, i) => `<i class="${i <= li ? "on" : ""}"></i>`).join("")}</span>`; }
   function systemTextFor(id, phase, level){
     const ph = CONTENT.systems[id]?.phases?.[phase];
@@ -3954,6 +4250,7 @@ const Panel = (() => {
         <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(data.name)}</h3><span class="when">${esc(PHASE_BY_ID[phase].label)}</span></div>
         <p class="sys-blurb">${esc(data.blurb)}</p>
         <ul class="sys-legend" aria-label="${esc(STRINGS.legend)}">${legend}</ul>
+        ${id === "circulatory" ? `<button type="button" class="chip primary follow-btn" data-follow>${esc(STRINGS.followCell)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -3975,6 +4272,7 @@ const Panel = (() => {
       <h2>${esc(STRINGS.introTitle)}</h2>
       <p class="lede">${esc(STRINGS.introLede)}</p>
       ${systemCard(s)}
+      ${stageCard(s)}
       <p class="follow-label">${esc(STRINGS.schedule)}</p>
       <div class="sched">${sched}</div>
       <p class="follow-label">${esc(STRINGS.explore)}</p>
@@ -3982,6 +4280,7 @@ const Panel = (() => {
       <p class="hint">${esc(STRINGS.hint)}</p>`;
     root.querySelectorAll("[data-topic]").forEach(b => b.addEventListener("click", () => store.set({ topic: b.dataset.topic })));
     root.querySelectorAll("[data-at]").forEach(b => b.addEventListener("click", () => store.set({ hour: +b.dataset.at, playing: false })));
+    root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -4018,7 +4317,8 @@ const Panel = (() => {
         <div class="depth">${depthChips(li)}</div>
       </div>
       ${related ? `<div class="related"><p>${esc(STRINGS.seeAlso)}</p><div class="depth">${related}</div></div>` : ""}
-      ${partOf ? `<div class="related"><p>${esc(STRINGS.partOf)}</p><div class="depth">${partOf}</div></div>` : ""}`;
+      ${partOf ? `<div class="related"><p>${esc(STRINGS.partOf)}</p><div class="depth">${partOf}</div></div>` : ""}
+      ${id === "heart" || id === "lungs" ? `<div class="related"><p>${esc(STRINGS.journeyTitle)}</p><div class="depth"><button type="button" class="chip" data-follow>${esc(STRINGS.followCell)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -4030,15 +4330,52 @@ const Panel = (() => {
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
     root.querySelectorAll(".related [data-topic]").forEach(b => b.addEventListener("click", () => store.set({ topic: b.dataset.topic })));
     root.querySelectorAll("[data-sys]").forEach(b => b.addEventListener("click", () => setLive(b.dataset.sys)));
+    root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
+  }
+
+  /* while following a red cell: its route as numbered stops, with the current one explained */
+  const STOPS = [["pa", "#5a68bd"], ["lung", "#9a4f8a"], ["pv", "#d63340"], ["artery", "#d63340"], ["cap", "#9a4f8a"], ["vein", "#5a68bd"]];
+  function renderJourney(s){
+    const seg = s.followSeg || "pa", li = LEVEL_INDEX[s.level], text = levelText(CONTENT.journey[seg], s.level);
+    const steps = STOPS.map(([k, c]) => `<li style="--c:${c}"${k === seg ? ` class="on" aria-current="step"` : ""}>${esc(CONTENT.journey[k].name)}</li>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.journeyTitle)}</h2>
+      <p class="lede">${esc(STRINGS.journeyLede)}</p>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-another>${esc(STRINGS.anotherCell)}</button>
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopFollowing)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.journeyHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopFollow);
+    root.querySelector("[data-stop]").addEventListener("click", stopFollow);
+    root.querySelector("[data-another]").addEventListener("click", () => startFollow());
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
   function render(s, force){
-    const key = `${s.topic}|${s.level}|${s.live}|${phaseAt(s.hour)}${s.topic ? Math.floor(s.hour * 2) : ""}`;
+    const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
+    const following = s.follow != null && !s.topic;
+    const key = following ? `follow:${s.follow}|${s.level}|${s.followSeg}`
+                          : `${s.topic}|${s.level}|${s.live}|${phaseAt(s.hour)}${s.topic ? Math.floor(s.hour * 2) : ""}|${stage}`;
     if (key === lastKey && !force) return;
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    s.topic ? renderTopic(s) : renderIntro(s);
+    following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -4082,12 +4419,24 @@ const Controls = (() => {
       parts.forEach(([a, b]) => segs.push(`<i title="${esc(e.label)}" style="--c:${PHASE_BY_ID[e.phase].color};left:${(a / 24 * 100).toFixed(2)}%;width:${((b - a) / 24 * 100).toFixed(2)}%"></i>`));
     });
     dayBar.innerHTML = segs.join("");
+    /* hypnogram over the sleep span, x = hour × 100; drawn twice (−24 h) so it wraps past midnight */
+    const pts = [], rems = [], x0 = SLEEP_SPAN.from * 100;
+    HYPNO.segs.forEach(g => {
+      const a = x0 + g.from / .6, b = x0 + g.to / .6, y = HYPNO_Y[g.stage];
+      pts.push(`${f1(a)} ${y}`, `${f1(b)} ${y}`);
+      if (g.stage === "rem") rems.push(`<rect class="hrem" x="${f1(a)}" y="${HYPNO_Y.rem - 1.6}" width="${f1(b - a)}" height="3.2"/>`);
+    });
+    const line = `<path class="hl" d="M${f1(x0)} ${HYPNO_Y.wake} L${pts.join(" L")} L${f1(x0 + HYPNO.len / .6)} ${HYPNO_Y.wake}"/>${rems.join("")}`;
+    $("#hypno").innerHTML = `<svg viewBox="0 0 2400 15" preserveAspectRatio="none">${line}<g transform="translate(-2400 0)">${line}</g></svg><i class="hypno-now" id="hypnoNow"></i>`;
     hourBtns.innerHTML = TICKS.map(h => `<button type="button" data-h="${h}" style="left:calc(10px + (100% - 20px) * ${(h / 24).toFixed(4)})" aria-label="${fmtTime(h)}">${pad2(h)}</button>`).join("");
     hourBtns.addEventListener("click", e => { const b = e.target.closest("[data-h]"); if (b) store.set({ hour: +b.dataset.h, playing: false }); });
     range.addEventListener("input", () => store.set({ hour: +range.value, playing: false }));
     play.addEventListener("click", () => store.set({ playing: !store.get().playing }));
-    back.addEventListener("click", () => store.set({ topic: null }));
-    document.addEventListener("keydown", e => { if (e.key === "Escape" && store.get().topic) store.set({ topic: null }); });
+    back.addEventListener("click", () => store.get().topic ? store.set({ topic: null }) : stopFollow());
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Escape") return;
+      if (store.get().topic) store.set({ topic: null }); else stopFollow();
+    });
   }
   function sync(s){
     sw.querySelectorAll("[data-sys]").forEach(row => {
@@ -4102,12 +4451,17 @@ const Controls = (() => {
     hourBtns.querySelectorAll("[data-h]").forEach(b => b.setAttribute("aria-current", +b.dataset.h === tick));
     play.innerHTML = s.playing ? icons.pause : icons.play;
     play.setAttribute("aria-label", s.playing ? "Pause" : "Play the day");
-    range.setAttribute("aria-valuetext", `${fmtTime(hh)}, ${phase.label}`);
-    back.classList.toggle("on", !!s.topic);
-    $(".moment").classList.toggle("off", !!s.topic);
+    const sl = sleepAt(hh), inSleep = sleepMinute(hh) >= 0;
+    range.setAttribute("aria-valuetext", `${fmtTime(hh)}, ${phase.label}${inSleep ? ": " + STRINGS.stage[sl.stage] : ""}`);
+    const hn = $("#hypnoNow");
+    hn.classList.toggle("on", inSleep);
+    if (inSleep){ hn.style.left = (hh / 24 * 100).toFixed(2) + "%"; hn.style.top = (HYPNO_Y[sl.stage] / 15 * 100).toFixed(1) + "%"; }
+    back.classList.toggle("on", !!s.topic || s.follow != null);
+    $(".moment").classList.toggle("off", !!s.topic || s.follow != null);
     const t = fmtTime(hh);
     if ($("#mTime").textContent !== t) $("#mTime").textContent = t;
-    if ($("#mPhase").textContent !== phase.label) $("#mPhase").textContent = phase.label;
+    const pl = inSleep ? `${phase.label} · ${STRINGS.stage[sl.stage]}` : phase.label;
+    if ($("#mPhase").textContent !== pl) $("#mPhase").textContent = pl;
     const note = HOUR_NOTES[Math.floor(hh)];
     if ($("#mNote").textContent !== note) $("#mNote").textContent = note;
   }
@@ -4115,9 +4469,96 @@ const Controls = (() => {
 })();
 
 /* =========================================================================
+   JOURNEY — the card over the body while the camera follows one red cell:
+   where it is, how saturated it is, laps, and what each organ took
+   ========================================================================= */
+const Journey = (() => {
+  const box = $("#journey");
+  const ORGAN = { brain: "the brain", gut: "the gut", arms: "arm", kidneys: "kidney", legs: "leg" };
+  const cap1 = t => t.charAt(0).toUpperCase() + t.slice(1);
+  const organ = q => ORGAN[q.bed].startsWith("the") ? ORGAN[q.bed] : `the ${q.side ? q.side + " " : ""}${ORGAN[q.bed]}`;
+  function where(q){
+    const side = q.side ? q.side + " " : "", end = q.La + q.Lc;
+    switch (q.seg){
+      case "pa": return q.s < q.La * .25 ? "Right ventricle → pulmonary artery" : `Pulmonary artery → ${side}lung`;
+      case "lung": return `${cap1(side)}lung capillaries: picking up O₂`;
+      case "pv": return q.s > end + q.Lv * .7 ? "Left atrium → left ventricle" : "Pulmonary vein → left heart";
+      case "artery": return q.s < q.La * .15 ? "Left ventricle → aorta" : `Artery → ${organ(q)}`;
+      case "cap": return `Capillaries of ${organ(q)}: giving up O₂`;
+      default: return q.s > end + q.Lv * .85 ? "Vena cava → right atrium" : `Vein from ${organ(q)} → right heart`;
+    }
+  }
+  let els = null, last = {}, seg = null, toastT = 0;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.following)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>O₂ saturation</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="another">${esc(STRINGS.another)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), sat: box.querySelector(".j-sat b"), meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast") };
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopFollow();
+      else if (b.dataset.j === "another") startFollow();
+      else { Particles.nextStop(); tick(0); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function toast(t){ els.toast.textContent = t; els.toast.classList.add("on"); toastT = 3.2; }
+  function tick(dt){
+    const s = store.get(); if (s.follow == null) return;
+    const q = Particles.cellInfo(s.follow), ph = Particles.ph; if (!ph) return;
+    if (q.seg !== seg){
+      /* arriving somewhere new: say what happened to the oxygen */
+      if (seg && q.seg === "cap") toast(`${cap1(organ(q))} takes ${Math.round(ph.extract[q.bed] * 100)}% of the oxygen`);
+      if (seg && q.seg === "pv") toast(`Loaded up: ${Math.round(q.satIn)}% → ${Math.round(ph.spo2)}% saturated`);
+      seg = q.seg;
+      if (s.followSeg !== seg) store.set({ followSeg: seg });
+    }
+    toastT -= dt; if (toastT <= 0) els.toast.classList.remove("on");
+    set("where", where(q), v => els.where.textContent = v);
+    const sat = Math.round(q.sat);
+    set("sat", sat, v => { els.sat.textContent = v + "%"; els.bar.style.width = clamp(v / 100) * 100 + "%"; els.bar.style.background = Particles.satCol(v); });
+    const real = Math.round(5 / ph.co * 60 / 5) * 5; /* ~5 L of blood ÷ cardiac output */
+    set("meta", STRINGS.lap(q.laps, real, q.lastLap), v => els.meta.textContent = v);
+  }
+  function sync(s){
+    const on = s.follow != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ last = {}; seg = null; els.toast.classList.remove("on"); tick(0); }
+    }
+  }
+  return { build, tick, sync, reset(){ last = {}; seg = null; } };
+})();
+
+/* Start following a red cell (a given one, or one just leaving the heart) */
+function startFollow(i){
+  const s = store.get();
+  if (s.live !== "circulatory") setLive("circulatory");
+  const idx = i == null ? Particles.pickCell() : i;
+  Particles.setFollow(idx); Journey.reset();
+  store.set({ follow: idx, followSeg: Particles.cellInfo(idx).seg, topic: null });
+  Journey.tick(0);
+}
+function stopFollow(){
+  if (store.get().follow == null) return;
+  Particles.setFollow(null);
+  store.set({ follow: null, followSeg: null });
+}
+
+/* =========================================================================
    WIRING
    ========================================================================= */
+const FOLLOW_W = 230; /* world units across while following a cell */
 function cameraFor(s){
+  if (s.follow != null && !s.topic) return Camera.focusView(Scene.toView(Particles.cellInfo(s.follow)), FOLLOW_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -4131,8 +4572,12 @@ store.subscribe((s, prev) => {
     applySystems(s);
   }
   Pins.render(s);
+  if (s.follow !== prev.follow){ Camera.go(cameraFor(s)); Hotspots.setVisible(!s.topic && s.follow == null); }
+  /* opening an organ, or animating another system, ends the ride */
+  if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
+  Journey.sync(s);
   if (s.topic !== prev.topic){
-    Camera.go(cameraFor(s)); Hotspots.setVisible(!s.topic); Scene.focus(s.topic);
+    Camera.go(cameraFor(s)); Hotspots.setVisible(!s.topic && s.follow == null); Scene.focus(s.topic);
     if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
       setTimeout(() => {
         const r = $("#panel").getBoundingClientRect();
@@ -4156,6 +4601,16 @@ function init(){
   Hormones.init();
   Hotspots.build();
   Controls.build();
+  Journey.build();
+  /* tap a red cell on the body to follow it */
+  $("#scene").addEventListener("click", e => {
+    const s = store.get();
+    if (s.topic || !s.shown.circulatory || e.target.closest(".mk")) return;
+    const m = Scene.refs.blood.getScreenCTM(); if (!m) return;
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    const i = Particles.nearestCell(pt.x, pt.y, 16 / Math.hypot(m.a, m.b));
+    if (i != null) startFollow(i);
+  });
   const s = store.get();
   Scene.update(s.hour);
   Vitals.update(Physio.at(s.hour), s.hour);
@@ -4173,7 +4628,8 @@ function init(){
     const dt = Math.min(.05, (t - last) / 1000); last = t;
     const st = store.get();
     if (st.playing) store.set({ hour: (st.hour + dt * CONFIG.hoursPerSecond) % 24 });
-    if (Camera.tick(t)) Hotspots.place();
+    if (st.follow != null && !st.topic) Camera.track(cameraFor(st), dt);
+    else if (Camera.tick(t)) Hotspots.place();
     if (!document.hidden){
       const ph = Physio.at(store.get().hour);
       Rhythm.tick(dt, ph);
@@ -4184,6 +4640,7 @@ function init(){
       if (!reducedMotion && live === "nervous") Nerves.tick(dt, ph);
       if (!reducedMotion && live === "endocrine") Hormones.tick(dt, ph); else Hormones.setRates(ph);
       Panel.tick(dt, ph);
+      Journey.tick(dt);
     }
     requestAnimationFrame(frame);
   }

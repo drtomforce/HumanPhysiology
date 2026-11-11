@@ -30,12 +30,17 @@
                    nearest lower level. SLEEP_CYCLES builds the night's hypnogram
                    (N1/N2/N3/REM); sleepAt(h) gives the stage, and Physio.at()
                    adds its effects (REM surges, calm N3) and exposes rem / sws.
+                   IMPULSES lists the nerve impulse journeys: fibre legs (path, fibre
+                   type, real speed and length) and synapse legs (real delay,
+                   transmitter), with their text in CONTENT.impulse.
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
-                   follow, followSeg}. shown = which body systems are drawn; live =
-                   the one that is animated (setSystem / setLive keep the two
-                   consistent). follow = the red cell the camera tracks
+                   follow, followSeg, impulse, impulseSeg}. shown = which body systems
+                   are drawn; live = the one that is animated (setSystem / setLive keep
+                   the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
+                   impulse / impulseSeg = the nerve impulse journey followed and its
+                   leg (startImpulse / stopImpulse); only one ride at a time.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
                    Renders physiology → SVG attributes. RHYTHM keeps the beat and
@@ -50,6 +55,9 @@
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
+                   IMPULSE rides one action potential in bullet time: its
+                   timeScale() slows the beat, breath, blood and clock in the frame
+                   loop, and IMPULSE CARD shows the stop, fibre, speed and real ms.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -62,7 +70,8 @@
                    blood pressure, cardiac output, blood O₂, hormones.
 
  7. UI              Panel (intro with the live-system and sleep-stage cards, organ
-                   view with "Part of" chips, red-cell journey view), timeline with
+                   view with "Part of" chips, red-cell and nerve-impulse journey
+                   views), timeline with
                    the hypnogram strip, level switch, system switches, glossary tooltips.
 
  Values are typical for a healthy adult and simplified for teaching; this is
@@ -145,7 +154,7 @@ button{ font:inherit; color:inherit; }
 .journey{ position:absolute; left:20px; top:18px; z-index:3; width:min(310px, calc(100% - 40px)); background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px 12px; box-shadow:0 6px 22px rgba(0,0,0,.08); display:none; }
 .journey.on{ display:block; animation:enter .3s ease both; }
 .j-kicker{ margin:0; font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:7px; }
-.j-kicker::before{ content:""; width:9px; height:9px; border-radius:50%; background:#d63340; box-shadow:0 0 0 2px var(--surface), 0 0 0 3px #d63340; }
+.j-kicker::before{ content:""; width:9px; height:9px; border-radius:50%; background:var(--jc, #d63340); box-shadow:0 0 0 2px var(--surface), 0 0 0 3px var(--jc, #d63340); }
 .j-where{ margin:6px 0 9px; font-family:var(--serif); font-size:18px; line-height:1.25; min-height:2.5em; }
 .j-sat{ display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; font-size:12px; color:var(--muted); }
 .j-bar{ height:8px; border-radius:4px; background:var(--surface-2); overflow:hidden; }
@@ -158,6 +167,12 @@ button{ font:inherit; color:inherit; }
 .j-btns .chip{ padding:4px 11px; font-size:12px; }
 #s-blood .rbc.follow{ stroke:#fff; stroke-width:1.3; }
 #s-blood .rbc-trail{ fill:none; stroke:var(--ink); stroke-opacity:.5; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+/* the followed nerve impulse, its trail and puffs of transmitter at synapses */
+#s-impulse .imp-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-impulse .imp-halo{ opacity:.28; }
+#s-impulse .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+.follow-label.imp-paths{ margin-top:22px; }
+.imp-group{ margin:10px 0 6px; font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.07em; }
 .journey-steps{ list-style:none; margin:0 0 18px; padding:0; display:grid; gap:2px; counter-reset:j; }
 .journey-steps li{ display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius:9px; font-size:14px; color:var(--muted); counter-increment:j; }
 .journey-steps li::before{ content:counter(j); font-size:11px; font-weight:600; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; flex:none; color:#fff; background:var(--c); opacity:.75; }
@@ -444,6 +459,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         <p class="moment-note" id="mNote"></p>
       </div>
       <div class="journey" id="journey" aria-live="polite"></div>
+      <div class="journey" id="impulseCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
       <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
@@ -1205,6 +1221,284 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       "college": "Veins hold about two-thirds of the blood volume. Venous return is helped by the skeletal-muscle pump and the respiratory pump: each in-breath lowers the pressure in the chest and draws blood into the right atrium.",
       "phd": "In Guyton’s model, venous return equals mean systemic filling pressure minus right atrial pressure, divided by the resistance to venous return. In exercise, sympathetic venoconstriction mobilises blood from the splanchnic reservoir and raises filling pressure."
     }
+  },
+  "impulse": {
+    "journeys": {
+      "motorLeg": { "name": "Brain → thigh muscle", "group": "Motor",
+        "blurb": "A ‘move!’ command from the motor cortex runs down the spinal cord, jumps to a motor neuron and races down the leg to make the thigh muscle contract.",
+        "effect": "The thigh muscle contracts" },
+      "motorArm": { "name": "Brain → arm muscle", "group": "Motor",
+        "blurb": "The same kind of command, to the arm. The trip is shorter, so it arrives sooner than a command to the leg.",
+        "effect": "The biceps contracts" },
+      "kneeJerk": { "name": "Knee-jerk reflex", "group": "Reflex",
+        "blurb": "A tap below the kneecap stretches the thigh muscle. Its stretch sensor fires, and the spinal cord sends a kick straight back out. The brain is not involved.",
+        "effect": "The leg kicks, before the brain even knows about the tap" },
+      "sensoryFoot": { "name": "Touch: foot → brain", "group": "Sensory",
+        "blurb": "Something brushes the sole of the foot. The signal climbs the leg and the spinal cord, crosses over in the brainstem and is relayed by the thalamus to the sensory cortex.",
+        "effect": "The touch reaches the sensory cortex" },
+      "gutFull": { "name": "‘I’m full’: stomach → brainstem", "group": "Sensory",
+        "blurb": "As a meal stretches the stomach, slow sensory fibres in the vagus nerve report it to the brainstem. This is one of the signals that make you feel full.",
+        "effect": "The brainstem registers a stretched stomach" },
+      "vagusHeart": { "name": "Vagus → heart", "group": "Autonomic",
+        "blurb": "The vagus nerve is the heart’s brake. One volley from the brainstem delays the very next heartbeat.",
+        "effect": "The next heartbeat comes late" },
+      "sympHeart": { "name": "Sympathetic → heart", "group": "Autonomic",
+        "blurb": "The sympathetic nerves are the heart’s accelerator. Their slow, thin fibres take much longer to arrive and to act than the vagus.",
+        "effect": "Over the next few seconds the heart speeds up" },
+      "adrenal": { "name": "Sympathetic → adrenal gland", "group": "Autonomic",
+        "blurb": "A sympathetic fibre runs straight to the adrenal gland, where nerve signal turns into hormone: adrenaline poured into the blood.",
+        "effect": "Adrenaline is released into the blood" },
+      "vagusGut": { "name": "Vagus → stomach", "group": "Autonomic",
+        "blurb": "The vagus nerve talks to the gut’s own nervous system, which then tells the stomach muscle to squeeze.",
+        "effect": "The stomach wall squeezes" }
+    },
+    "stops": {
+      "m1": {
+        "name": "Motor cortex",
+        "ms": "It starts in the motor cortex, a strip across the top of the brain. A nerve cell there fires an electrical pulse that means ‘move!’.",
+        "hs": "Large nerve cells in the motor cortex send their long fibres all the way down to the spinal cord. The left side of the brain controls the right side of the body, so this command for the right leg starts on the left.",
+        "college": "Upper motor neurons in layer V, including giant Betz cells, fire an action potential that starts at the axon initial segment. Their axons form the corticospinal tract, about a million fibres on each side.",
+        "phd": "Only a few percent of corticospinal axons are large, fast Betz-cell fibres; most are thin and conduct far more slowly. Transcranial magnetic stimulation over the leg area evokes a muscle response after about 25–30 ms."
+      },
+      "decussation": {
+        "name": "Crossing over in the brainstem",
+        "ms": "At the bottom of the brain the signal crosses to the other side. That is why each half of the brain moves the opposite half of the body.",
+        "hs": "In the lowest part of the brainstem, the medulla, most motor fibres cross the midline. This crossing is called the pyramidal decussation.",
+        "college": "About 85–90% of corticospinal fibres cross in the pyramidal decussation and descend in the lateral corticospinal tract. The rest stay on the same side in the anterior tract and mostly control trunk muscles.",
+        "phd": "Because of the crossing, a stroke in the left internal capsule weakens the right side of the body. Mirror movements in some congenital disorders reflect abnormal, uncrossed corticospinal projections."
+      },
+      "cst": {
+        "name": "Down the spinal cord",
+        "ms": "The signal zooms down the spinal cord, inside your backbone, towards the part of the cord that controls the legs.",
+        "hs": "The fibre is wrapped in myelin, a fatty insulation, so the signal jumps from gap to gap instead of creeping along. This makes it about 50 times faster than a bare fibre.",
+        "college": "Myelinated axons conduct by saltatory conduction: the action potential is regenerated only at the nodes of Ranvier, about 1 mm apart, where voltage-gated Na⁺ channels cluster. Conduction velocity rises roughly in proportion to fibre diameter.",
+        "phd": "Nodes are enriched in Nav1.6, anchored by ankyrin-G and βIV-spectrin, with Kv7 and Kv1 channels at the node and juxtaparanode. Demyelination in multiple sclerosis slows or blocks conduction, and heat makes block worse (Uhthoff’s phenomenon)."
+      },
+      "ventralHorn": {
+        "name": "Synapse onto a motor neuron",
+        "ms": "Now the message must jump to a new nerve cell. There is a tiny gap, and the message crosses it as a chemical.",
+        "hs": "In the front (ventral) part of the spinal cord the fibre meets a motor neuron at a synapse. It releases glutamate, which excites the motor neuron so it fires its own pulse. The crossing takes about half a millisecond.",
+        "college": "Glutamate opens AMPA receptors and causes an excitatory postsynaptic potential. A single input rarely fires an α-motor neuron by itself, so many inputs add up (spatial and temporal summation) until threshold is reached at the axon initial segment.",
+        "phd": "Most synaptic delay is the time for presynaptic Ca²⁺ entry to trigger vesicle fusion through synaptotagmin. In primates, direct corticomotoneuronal connections are densest for hand muscles; leg motor neurons get more input through spinal interneurons."
+      },
+      "motorNerve": {
+        "name": "Out along a motor nerve",
+        "ms": "The new signal leaves the spinal cord and races along a nerve to the muscle. Motor nerves are some of the fastest wires in your body.",
+        "hs": "Motor nerve fibres are thick and wrapped in myelin, so signals travel at up to about 120 m/s in the fastest fibres. Each motor neuron controls a group of muscle fibres, called a motor unit.",
+        "college": "α-motor axons are large Aα fibres, 12–20 µm across. Clinical nerve conduction studies measure about 45–60 m/s in the legs, a bit slower than in the arms, because leg fibres are longer and cooler.",
+        "phd": "Motor units are recruited in order of size (Henneman’s principle). Conduction slows by about 1–2 m/s per °C of cooling, and loss of myelin in conditions like Guillain–Barré syndrome shows up as slowing and conduction block."
+      },
+      "nmj": {
+        "name": "Neuromuscular junction",
+        "ms": "At the end of the nerve, the signal is passed to the muscle with a chemical messenger called acetylcholine.",
+        "hs": "The nerve ending releases acetylcholine onto the muscle fibre. It opens channels in the muscle, which starts a pulse in the muscle itself. An enzyme then breaks the acetylcholine down within a millisecond, so the muscle is ready for the next signal.",
+        "college": "Each nerve action potential releases 50–100 vesicles of acetylcholine onto nicotinic receptors at the end-plate. The end-plate potential is several times larger than needed to reach threshold. This safety factor makes transmission almost failure-proof.",
+        "phd": "In myasthenia gravis, antibodies against acetylcholine receptors (or MuSK) eat into the safety factor, so transmission fails with repeated use and weakness gets worse with effort. Acetylcholinesterase inhibitors help by letting acetylcholine act for longer."
+      },
+      "muscleFiber": {
+        "name": "Muscle fibre contracts",
+        "ms": "The pulse sweeps along the muscle fibre and dives inside it. Calcium is released and the fibre squeezes.",
+        "hs": "The muscle fibre carries its own action potential, more slowly than a nerve. It travels down tiny tubes into the fibre and releases calcium, which lets the protein filaments slide past each other.",
+        "college": "The muscle action potential spreads at about 3–5 m/s and enters the T-tubules. Voltage sensors there (dihydropyridine receptors) pull open ryanodine receptors in the sarcoplasmic reticulum, and Ca²⁺ binding to troponin starts cross-bridge cycling.",
+        "phd": "In skeletal muscle, excitation–contraction coupling is mechanical: DHPR (Cav1.1) is linked directly to RyR1 and needs no Ca²⁺ entry. The electromechanical delay from EMG onset to measurable force is about 10 ms or more."
+      },
+      "iaAfferent": {
+        "name": "Stretch sensor fires",
+        "ms": "The tap stretches the thigh muscle. Tiny stretch sensors inside it fire, and the signal shoots up the nerve to the spinal cord.",
+        "hs": "Muscle spindles are stretch sensors inside the muscle. When the tendon below the kneecap is tapped, the thigh muscle is stretched for a moment and the spindles send a burst of signals along the fastest nerve fibres in the body.",
+        "college": "Primary (annulospiral) endings on intrafusal fibres signal how fast and how far a muscle is stretched. Their Ia afferents conduct at up to about 120 m/s. Gamma motor neurons keep the spindle taut so it stays sensitive.",
+        "phd": "Stretch opens mechanosensitive channels (PIEZO2 is required) in the Ia endings. Without PIEZO2, people lose stretch reflexes and limb position sense. Fusimotor (γ) drive sets the spindle’s gain in a task-dependent way."
+      },
+      "monosynaptic": {
+        "name": "One synapse in the spinal cord",
+        "ms": "In the spinal cord the sensory nerve connects straight to a motor nerve. No brain needed, which is why the reflex is so fast.",
+        "hs": "The knee-jerk is a monosynaptic reflex: only one synapse sits between the sensor and the muscle. At the same time, the signal also switches off the muscles on the back of the thigh so they don’t fight the kick.",
+        "college": "Ia afferents synapse directly on α-motor neurons of the same muscle at spinal levels L2–L4. Collaterals excite Ia inhibitory interneurons that inhibit the antagonist hamstrings (reciprocal inhibition).",
+        "phd": "The electrical analogue is the H-reflex. Reflex size is set by presynaptic inhibition of Ia terminals and by the excitability of the motor neuron pool. That is why the Jendrassik manoeuvre (clenching the hands) makes a weak reflex bigger."
+      },
+      "sensoryNerve": {
+        "name": "Touch sensor → up the leg",
+        "ms": "Something touches the sole of the foot. A touch sensor in the skin fires and the signal starts its long climb up the leg.",
+        "hs": "Different sensors in the skin respond to light touch, pressure and vibration. Touch signals travel along thick, myelinated fibres at around 50 m/s, so they reach the spinal cord in about 20 ms.",
+        "college": "Low-threshold mechanoreceptors (Meissner, Merkel, Pacinian and Ruffini endings) send signals along Aβ fibres at about 35–75 m/s. Pain and temperature use thinner Aδ and C fibres, which are much slower.",
+        "phd": "Touch transduction depends on PIEZO2. Aβ afferents also feed spinal circuits that can shut the gate on pain, which is why rubbing a bump helps (gate control)."
+      },
+      "drg": {
+        "name": "Dorsal root ganglion",
+        "ms": "Just outside the spinal cord the signal passes the nerve cell’s body, tucked in a little knot. It doesn’t have to stop there.",
+        "hs": "The cell bodies of sensory neurons sit in the dorsal root ganglia, beside the spinal cord. The cell is shaped like a T, so the signal runs straight past the cell body without a synapse.",
+        "college": "Dorsal root ganglion neurons are pseudounipolar: one axon splits into a peripheral branch and a central branch, and the action potential runs from one to the other without going through the soma.",
+        "phd": "The DRG lies outside the blood–brain barrier, which makes it a target for drugs and toxins. Varicella-zoster virus lies dormant in DRG neurons for decades and can return as shingles in one dermatome."
+      },
+      "dorsalColumn": {
+        "name": "Up the back of the spinal cord",
+        "ms": "The signal climbs all the way up the back of the spinal cord to the brain, on the same side as the foot.",
+        "hs": "Touch and vibration travel up the dorsal columns at the back of the spinal cord. These fibres stay on the same side until they reach the brainstem.",
+        "college": "The central branch enters the dorsal column and ascends in the fasciculus gracilis (from the leg) without synapsing. The fibres are arranged in layers by body part, with the legs nearest the midline.",
+        "phd": "Because the dorsal columns stay on the same side while pain and temperature fibres cross within the cord, a cord hemisection causes Brown-Séquard syndrome. Touch is lost on the same side, and pain is lost on the other."
+      },
+      "dcn": {
+        "name": "Relay and crossing in the brainstem",
+        "ms": "In the brainstem the message is handed to a new nerve cell, which carries it across to the other side.",
+        "hs": "In the medulla, the signal crosses a synapse onto a second neuron. Its fibre crosses the midline, so touch from the right foot ends up on the left side of the brain.",
+        "college": "First-order fibres synapse in the nucleus gracilis. Second-order axons cross as the internal arcuate fibres and ascend as the medial lemniscus.",
+        "phd": "The dorsal column nuclei are not simple relays. They receive descending cortical input and inhibitory interneurons that sharpen receptive fields and filter what reaches the thalamus."
+      },
+      "lemniscus": {
+        "name": "Up to the thalamus",
+        "ms": "The signal rides up through the brainstem towards the middle of the brain.",
+        "hs": "The fibres climb through the brainstem in a ribbon-shaped bundle called the medial lemniscus, heading for the thalamus, the brain’s relay station.",
+        "college": "The medial lemniscus runs through the medulla, pons and midbrain to the ventral posterolateral (VPL) nucleus of the thalamus, keeping its body map all the way.",
+        "phd": "Brainstem strokes can hit the medial lemniscus separately from the corticospinal tract. Medial medullary syndrome, for example, combines weakness and loss of touch on the opposite side with a tongue that deviates to the side of the lesion."
+      },
+      "thalamus": {
+        "name": "Thalamus: the relay station",
+        "ms": "The thalamus, deep in the middle of the brain, passes the message on to the outer layer of the brain.",
+        "hs": "Almost all sensations, except smell, go through the thalamus on their way to the cortex. In sleep the thalamus partly closes the gate, which is one reason you don’t notice every touch at night.",
+        "college": "VPL relay neurons project to primary somatosensory cortex. In NREM sleep they shift into burst firing and transmission to the cortex is reduced, the same thalamocortical machinery that makes sleep spindles.",
+        "phd": "Relay neurons switch between tonic and burst modes through T-type Ca²⁺ channels, controlled by the thalamic reticular nucleus and brainstem modulators. Lesions here can cause central pain (Dejerine–Roussy syndrome)."
+      },
+      "s1": {
+        "name": "Sensory cortex: touch felt",
+        "ms": "The signal arrives in the sensory cortex, just behind the motor strip. Now you feel the touch on your foot.",
+        "hs": "The sensory cortex holds a map of the body, the ‘homunculus’. The foot area is near the top, where the two halves of the brain meet. Body parts with lots of touch sensors, like lips and fingertips, get the biggest areas.",
+        "college": "The first cortical response to stimulating the tibial nerve at the ankle arrives after about 40 ms (the P40 evoked potential). The foot is represented on the medial surface, in the paracentral lobule.",
+        "phd": "Arrival in S1 is not the same as awareness. Conscious report seems to need recurrent activity that builds over a few hundred milliseconds, so in clinical tests the brain responds to stimuli the person does not notice."
+      },
+      "gutAfferent": {
+        "name": "Stretch signal up the vagus",
+        "ms": "Food stretches the stomach. Sensors in its wall notice and send a slow message up the vagus nerve to the brain.",
+        "hs": "Most vagus nerve fibres actually carry information up to the brain. These ones report stretch. They have no myelin, so they travel at only about 1 m/s, slower than a brisk walk.",
+        "college": "Vagal mechanoreceptors in the stomach wall (intraganglionic laminar endings) signal tension. Most gut vagal afferents are unmyelinated C fibres conducting at about 0.5–2 m/s, so it takes about half a second for a signal to reach the brainstem.",
+        "phd": "Single-cell work has mapped distinct vagal sensory types. GLP1R-expressing afferents detect stomach stretch and GPR65-expressing afferents detect nutrients in the intestine, (Williams et al., 2016), and activating the stretch afferents alone is enough to stop feeding (Bai et al., 2019)."
+      },
+      "nodose": {
+        "name": "Nodose ganglion in the neck",
+        "ms": "In the neck the signal passes the cell bodies of these nerve cells, in a small knot, and keeps going into the brainstem.",
+        "hs": "The vagal sensory neurons have their cell bodies in the nodose ganglion, just below the skull. Like the dorsal root ganglia, the signal passes by without a synapse.",
+        "college": "Nodose neurons are pseudounipolar, like DRG neurons. Their central branches enter the medulla and run in the solitary tract.",
+        "phd": "Nodose neurons express receptors for CCK, GLP-1, serotonin and leptin. Hormones from the gut can therefore change their sensitivity, which links nerve and hormone satiety signals."
+      },
+      "nts": {
+        "name": "Brainstem: ‘that’s enough’",
+        "ms": "The message reaches the brainstem. Together with other signals, it tells you that you are getting full.",
+        "hs": "The signal arrives in the nucleus of the solitary tract (NTS) in the brainstem, which collects reports from the heart, lungs and gut. From there it travels to the hypothalamus, which controls hunger.",
+        "college": "Vagal afferents release glutamate onto NTS neurons. The NTS relays to the parabrachial nucleus, the hypothalamus and the dorsal motor nucleus of the vagus, closing vago-vagal reflexes such as receptive relaxation of the stomach.",
+        "phd": "Calcitonin gene-related peptide (CGRP) neurons in the parabrachial nucleus and GLP-1-producing neurons in the NTS help end a meal. GLP-1 drugs act partly in this hindbrain circuit, which is linked to both appetite loss and nausea."
+      },
+      "vagalEfferent": {
+        "name": "Down the vagus nerve",
+        "ms": "A signal leaves the brainstem and travels down the vagus nerve to the heart. Its message is ‘slow down’.",
+        "hs": "Vagal nerve fibres to the heart start in the brainstem. They are thin and only lightly insulated with myelin, so they travel at about 10 m/s, far slower than motor nerves.",
+        "college": "Cardiac vagal preganglionic neurons sit mainly in the nucleus ambiguus. Their thinly myelinated B fibres conduct at about 3–15 m/s. They fire in bursts locked to breathing and blood pressure, mostly in expiration.",
+        "phd": "Cardiac vagal motor neurons are inhibited during inspiration through inputs from the inspiratory network, and are driven by the baroreflex via the NTS. This gating is the main mechanism of respiratory sinus arrhythmia."
+      },
+      "cardiacGanglion": {
+        "name": "Synapse in a heart ganglion",
+        "ms": "On the surface of the heart the message jumps to a second, short nerve cell.",
+        "hs": "Like all autonomic pathways, this one has two nerve cells in a row. The first hands over to the second in a small ganglion on the back of the heart, using acetylcholine.",
+        "college": "Preganglionic fibres release acetylcholine onto nicotinic receptors on neurons in the ganglionated plexuses, in fat pads on the back of the atria.",
+        "phd": "The intrinsic cardiac nervous system is a real processing network, sometimes called the ‘little brain on the heart’. Ganglionated plexus ablation is studied as an add-on treatment for atrial fibrillation."
+      },
+      "vagalPost": {
+        "name": "To the pacemaker",
+        "ms": "The short second nerve cell carries the message the last few millimetres to the heart’s pacemaker.",
+        "hs": "The second nerve cell is very short. It has no myelin, so it is slow, but it only has a few millimetres to go.",
+        "college": "Postganglionic vagal fibres are short, unmyelinated C fibres running from the ganglia to the SA and AV nodes.",
+        "phd": "Because the ganglia sit right on the heart, postganglionic vagal fibres are short. Sympathetic postganglionic fibres instead run from the stellate ganglia, so the two branches have very different conduction times."
+      },
+      "saVagal": {
+        "name": "SA node: brake on",
+        "ms": "The nerve releases acetylcholine onto the pacemaker cells, and they slow down. The next heartbeat comes a bit late.",
+        "hs": "Acetylcholine makes the pacemaker cells of the SA node take longer to reach their firing point. The effect starts within a fraction of a second and fades just as fast, so the vagus can change heart rate from one beat to the next.",
+        "college": "Acetylcholine acts on M2 receptors. Their Gβγ subunits open GIRK channels (I_KACh), which hyperpolarise the cell, and less cAMP reduces the funny current (I_f). Both slow diastolic depolarisation.",
+        "phd": "The direct Gβγ–GIRK link and fast acetylcholinesterase breakdown give a latency of about 200–400 ms and a fast recovery. That is why vagal control dominates the high-frequency (respiratory) band of heart rate variability."
+      },
+      "sympCentral": {
+        "name": "Brainstem → spinal cord",
+        "ms": "A ‘get ready!’ signal starts in the brainstem and runs down the spinal cord.",
+        "hs": "Sympathetic commands start in the brainstem and hypothalamus and travel down the spinal cord to special neurons in the chest and upper belly part of the cord.",
+        "college": "Bulbospinal neurons in the rostral ventrolateral medulla (RVLM) and the paraventricular nucleus project to sympathetic preganglionic neurons in the intermediolateral cell column, from T1 to L2.",
+        "phd": "Glutamatergic presympathetic neurons in the RVLM, many of them C1 cells, set much of the resting sympathetic tone and blood pressure. Their activity follows respiratory and cardiac rhythms, so sympathetic outflow is bursty, not steady."
+      },
+      "lateralHorn": {
+        "name": "Synapse in the spinal cord",
+        "ms": "In the spinal cord the signal is handed to the first nerve cell of the sympathetic pathway.",
+        "hs": "In the lateral horn of the spinal cord, the descending fibre excites a sympathetic preganglionic neuron.",
+        "college": "Sympathetic preganglionic neurons sit in the intermediolateral cell column. They receive descending inputs from the brainstem and hypothalamus as well as segmental inputs from spinal interneurons.",
+        "phd": "After spinal cord injury above T6, preganglionic neurons below the lesion lose brainstem control. A full bladder can then trigger dangerous unopposed sympathetic surges (autonomic dysreflexia)."
+      },
+      "preganglionic": {
+        "name": "Out to the sympathetic chain",
+        "ms": "The signal leaves the spinal cord and travels a short way to a chain of nerve knots beside the spine.",
+        "hs": "Sympathetic preganglionic fibres leave the cord and reach the sympathetic chain, a row of ganglia on either side of the backbone.",
+        "college": "Myelinated B fibres leave in the ventral root and enter the chain through the white rami communicantes. Fibres for the heart synapse in the upper thoracic and stellate ganglia.",
+        "phd": "One preganglionic neuron diverges onto many postganglionic neurons, which spreads and amplifies the signal. Sympathetic outflow is still organ-specific: skin, muscle and kidney nerves can fire very differently."
+      },
+      "chainGanglion": {
+        "name": "Synapse in the chain ganglion",
+        "ms": "In the nerve knot the message jumps to a second nerve cell that will go all the way to the heart.",
+        "hs": "In the chain ganglion, acetylcholine passes the signal to a postganglionic neuron, which carries it on to the organ.",
+        "college": "Ganglionic transmission uses acetylcholine on nicotinic (α3β4) receptors. The cardiac nerves come from the stellate and upper thoracic ganglia.",
+        "phd": "Stellate ganglion block or left cardiac sympathetic denervation reduces arrhythmias in long-QT syndrome and electrical storm, which shows how much sympathetic drive matters to arrhythmia."
+      },
+      "sympPost": {
+        "name": "Slow fibre to the heart",
+        "ms": "This last nerve has no insulation, so it is slow. The message crawls the last 10 cm to the heart at about walking speed.",
+        "hs": "Postganglionic sympathetic fibres have no myelin and travel at only about 1 m/s. That is about 100 times slower than a motor nerve.",
+        "college": "Unmyelinated C fibres conduct at about 0.5–2 m/s. The cardiac nerves branch over the atria and ventricles and end in varicosities, which release noradrenaline along their length.",
+        "phd": "Noradrenaline is released from varicosities without classic synapses (volume transmission), together with neuropeptide Y, which can blunt vagal acetylcholine release for some time after strong sympathetic activity."
+      },
+      "saSymp": {
+        "name": "SA node: accelerator on",
+        "ms": "Noradrenaline from the nerve tells the pacemaker to fire faster. It takes a few seconds to work fully.",
+        "hs": "Noradrenaline acts on β₁ receptors on the pacemaker cells and the heart muscle. The heart beats faster and squeezes harder, but the effect builds over several seconds, much more slowly than the vagal brake.",
+        "college": "β₁ receptors act through Gs, adenylyl cyclase and cAMP. That increases I_f and L-type Ca²⁺ current, so diastolic depolarisation is steeper. The response needs second messengers, so it builds over several seconds and peaks after about 5–10 s.",
+        "phd": "Slow onset and offset limit sympathetic control to the low-frequency band of heart rate variability, which is why LF/HF ratios are a poor index of sympathetic tone. The quick changes from beat to beat are almost all vagal."
+      },
+      "splanchnic": {
+        "name": "Splanchnic nerve to the adrenal",
+        "ms": "This fibre runs straight past the nerve chain and on to the adrenal gland on top of the kidney.",
+        "hs": "Unusually, fibres to the adrenal gland do not stop in the sympathetic chain. They run all the way to the gland in the splanchnic nerves.",
+        "college": "Preganglionic fibres from the lower thoracic cord (about T5–L1) pass through the chain without synapsing, travel in the splanchnic nerves and end directly on the adrenal medulla.",
+        "phd": "Adrenal sympathetic outflow can be controlled separately from other outflows. Hypoglycaemia, for example, drives adrenaline release far more strongly than it drives noradrenaline release from nerves."
+      },
+      "chromaffin": {
+        "name": "Adrenal medulla: nerve → hormone",
+        "ms": "The nerve tells special cells in the adrenal gland to squirt adrenaline into the blood. Now the message travels as a hormone.",
+        "hs": "The chromaffin cells of the adrenal medulla are really nerve cells that never grew fibres. When stimulated, they release adrenaline into the blood, so the whole body gets the message within a minute.",
+        "college": "Chromaffin cells are modified postganglionic neurons. Acetylcholine on nicotinic receptors triggers Ca²⁺-dependent exocytosis, and about 80% of what they release is adrenaline. Blood from the adrenal cortex brings cortisol, which induces PNMT, the enzyme that turns noradrenaline into adrenaline.",
+        "phd": "Strong splanchnic firing also releases PACAP, which sustains catecholamine secretion during prolonged stress, when acetylcholine signalling fades. Phaeochromocytomas are tumours of these cells that cause bursts of hypertension."
+      },
+      "gutEfferent": {
+        "name": "Down the vagus to the stomach",
+        "ms": "A ‘rest and digest’ signal leaves the brainstem and travels down the vagus nerve to the stomach.",
+        "hs": "Vagal motor fibres to the gut start in the dorsal motor nucleus of the vagus. They carry the brain’s instructions, but the gut’s own nerve network decides the details.",
+        "college": "Preganglionic neurons of the dorsal motor nucleus send thin B and C fibres down the vagus. They end on neurons of the myenteric plexus, not on muscle.",
+        "phd": "The DMV has excitatory (cholinergic) and inhibitory (nitrergic, VIP) pathways to the stomach, which control both its tone and its emptying. Cutting the vagus (vagotomy) causes delayed gastric emptying."
+      },
+      "entericGanglion": {
+        "name": "Synapse in the gut’s own nervous system",
+        "ms": "In the stomach wall the vagus hands its message to the gut’s ‘second brain’.",
+        "hs": "The enteric nervous system is a web of neurons in the gut wall. The vagus excites some of its neurons with acetylcholine, and they take it from there.",
+        "college": "Vagal fibres excite myenteric neurons through nicotinic receptors. Each vagal fibre contacts many enteric neurons, so a few thousand fibres can influence millions.",
+        "phd": "The vagus contains far fewer efferent fibres than there are enteric neurons, so it acts more like a modulator of enteric circuits than a direct controller."
+      },
+      "myenteric": {
+        "name": "Through the myenteric plexus",
+        "ms": "Gut nerve cells pass the message along the stomach wall, slowly and steadily.",
+        "hs": "The myenteric plexus lies between the muscle layers of the gut. Its neurons pass signals along the wall to coordinate the squeezing.",
+        "college": "Excitatory motor neurons of the myenteric plexus release acetylcholine and substance P onto smooth muscle. Inhibitory motor neurons release NO and VIP, which relax it.",
+        "phd": "Enteric motor neurons act together with interstitial cells of Cajal, which set the stomach’s slow-wave rhythm (about 3 per minute). The nerves change how strongly each slow wave makes the muscle contract."
+      },
+      "smoothMuscle": {
+        "name": "Stomach muscle squeezes",
+        "ms": "The muscle in the stomach wall squeezes, mixing and pushing the food along.",
+        "hs": "Gut smooth muscle contracts slowly and for a long time. The squeezes come in waves about three times a minute, and the nerve signal makes each wave stronger.",
+        "college": "Acetylcholine on M3 receptors raises intracellular Ca²⁺, activates myosin light-chain kinase and makes the slow-wave plateau potentials stronger, so each wave of contraction is more powerful.",
+        "phd": "In smooth muscle, force also depends on Ca²⁺ sensitisation through RhoA/ROCK. Gastroparesis, as in diabetes, often involves loss of interstitial cells of Cajal and damage to nitrergic neurons."
+      }
+    }
   }
 }
 </script>
@@ -1306,7 +1600,16 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "urea": { "def": "A nitrogen-containing waste made by the liver from amino acids and removed by the kidneys.", "match": ["urea"] },
   "vagus nerve": { "def": "A long nerve linking the brain with the heart, lungs and gut. It slows the heart and carries gut signals.", "match": ["vagus", "vagal"] },
   "villi": { "def": "Finger-like folds of the small intestine lining that increase its surface area.", "match": ["villi"] },
-  "VO₂max": { "def": "The maximum rate at which the body can take up and use oxygen.", "match": ["VO₂max"] }
+  "VO₂max": { "def": "The maximum rate at which the body can take up and use oxygen.", "match": ["VO₂max"] },
+  "acetylcholine": { "def": "A neurotransmitter used by motor nerves, the vagus and autonomic ganglia. It makes muscle contract and slows the heart.", "match": ["acetylcholine"] },
+  "noradrenaline": { "def": "Norepinephrine: the neurotransmitter of most sympathetic nerves. It speeds the heart and narrows blood vessels.", "match": ["noradrenaline", "norepinephrine"] },
+  "neuromuscular junction": { "def": "The synapse where a motor nerve ending meets a muscle fibre and releases acetylcholine.", "match": ["neuromuscular junction", "end-plate"] },
+  "dorsal root ganglion": { "def": "A swelling beside the spinal cord that holds the cell bodies of sensory neurons.", "match": ["dorsal root ganglion", "dorsal root ganglia", "DRG"] },
+  "thalamus": { "def": "A relay station deep in the brain that passes almost all sensory signals on to the cortex.", "match": ["thalamus", "thalamic"] },
+  "chromaffin cells": { "def": "Hormone-releasing cells of the adrenal medulla. They are modified nerve cells that release adrenaline into the blood.", "match": ["chromaffin cells", "chromaffin"] },
+  "conduction velocity": { "def": "How fast an action potential travels along a fibre: from about 1 m/s in bare fibres to over 100 m/s in thick myelinated ones.", "match": ["conduction velocity"] },
+  "muscle spindles": { "def": "Stretch sensors inside muscles that report muscle length and drive stretch reflexes.", "match": ["muscle spindles", "muscle spindle"] },
+  "saltatory conduction": { "def": "The way a signal jumps from one gap in the myelin to the next (the nodes of Ranvier), which makes it much faster.", "match": ["saltatory conduction"] }
 }
 </script>
 
@@ -1366,6 +1669,8 @@ const storage = {
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wrapH = h => ((h % 24) + 24) % 24;
 const pad2 = n => String(n).padStart(2, "0");
+/* a real duration in ms: 0.6 ms, 27.4 ms, 286 ms, 1.13 s */
+const fmtMs = ms => ms < 100 ? `${ms.toFixed(1)} ms` : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(2)} s`;
 function fmtTime(h){ let m = Math.floor(wrapH(h) * 60 + 1e-6); m -= m % 5; return pad2(Math.floor(m / 60)) + ":" + pad2(m % 60); }
 
 /* =========================================================================
@@ -1464,7 +1769,21 @@ const STRINGS = {
   anotherCell: "Follow another cell",
   nextStop: "Next stop ›",
   lap: (n, real, last) => `Lap ${n + 1}${last ? ` · last lap ${last.toFixed(1)} s here` : ""} · a real lap takes about ${real} s right now`,
-  sleepCycle: n => `Sleep cycle ${n} of 5`
+  sleepCycle: n => `Sleep cycle ${n} of 5`,
+  followImpulse: "Follow a nerve impulse",
+  followingImpulse: "Nerve impulse · bullet time",
+  impulseTitle: "Journey of a nerve impulse",
+  impulseLede: "A real nerve signal crosses the body in a few hundredths of a second. To follow one, time is slowed down thousands of times. The heart, the breath and the blood almost stand still.",
+  impulseHint: "Tip: tap any nerve or moving pulse on the body to follow a signal along it.",
+  pathways: "Pick a pathway",
+  anotherPath: "Another pathway",
+  stopImpulse: "Stop following",
+  replay: "Replay ↺",
+  realTime: "Real time",
+  synapse: (tx, t) => `Synapse · ${tx} · ${t} delay`,
+  slowed: f => `slowed ×${f >= 1000 ? Math.round(f / 100) * 100 : f >= 100 ? Math.round(f / 10) * 10 : Math.max(1, Math.round(f))}`.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
+  arrived: t => `Arrived after ${t} of real time`,
+  fibre: { Aa: "Myelinated Aα fibre", Ab: "Myelinated Aβ fibre", Ia: "Ia fibre, the fastest", B: "Thinly myelinated B fibre", C: "Unmyelinated C fibre", tract: "Myelinated tract in the CNS", muscle: "Muscle fibre membrane" }
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -1640,6 +1959,8 @@ const store = createStore({
   playing: false,
   follow: null,     /* index of the red cell the camera follows, or null */
   followSeg: null,  /* which leg of its journey that cell is on */
+  impulse: null,    /* id of the nerve impulse journey being followed, or null */
+  impulseSeg: null, /* which leg of that journey the impulse is on */
   ...loadSystems()
 });
 /* System switches. Switching a system on makes it live; switching off the
@@ -1726,6 +2047,95 @@ const NERV = [
 ];
 CIRC.forEach(c => { c.a = mapD(c.a); c.v = mapD(c.v); });
 NERV.forEach(n => { n.d = mapD(n.d); });
+/* Nerve impulse journeys (IMPULSE). A journey is a chain of legs. A fibre leg has
+   a path d (design coordinates, like NERV, drawn on the viewer's left side;
+   mirrored for the other side), a fibre type, the real conduction speed v (m/s)
+   and real length len (m). A synapse leg has a real delay syn (ms) and its
+   transmitter tx. stop is the key of the text in CONTENT.impulse.stops, kind the
+   colour (NERVE_COLOR, or "muscle") and effect what happens on arrival.
+   Real times add up to typical latencies: cortex → thigh ≈ 25 ms, knee-jerk
+   ≈ 20 ms, foot → sensory cortex ≈ 40 ms (the P40), stomach → brainstem ≈ 0.5 s. */
+const IMPULSES = [
+  { id: "motorLeg", kind: "motor", effect: "quad", legs: [
+    { stop: "m1", d: "M626 104 C622 124 612 150 604 166", fibre: "tract", v: 60, len: .12 },
+    { stop: "decussation", d: "M604 166 C601 176 597 184 597 196", fibre: "tract", v: 60, len: .04 },
+    { stop: "cst", d: "M597 196 L597 578", fibre: "tract", v: 60, len: .45 },
+    { stop: "ventralHorn", syn: .6, tx: "glutamate" },
+    { stop: "motorNerve", d: "M597 578 C594 600 578 614 572 650 C569 676 567 694 566 712", fibre: "Aa", v: 55, len: .5 },
+    { stop: "nmj", syn: .8, tx: "acetylcholine" },
+    { stop: "muscleFiber", d: "M566 712 C564 726 561 740 558 752", fibre: "muscle", v: 4, len: .02, kind: "muscle" }
+  ] },
+  { id: "motorArm", kind: "motor", effect: "arm", legs: [
+    { stop: "m1", d: "M636 114 C628 132 614 152 604 166", fibre: "tract", v: 60, len: .12 },
+    { stop: "decussation", d: "M604 166 C601 176 597 184 597 196", fibre: "tract", v: 60, len: .04 },
+    { stop: "cst", d: "M597 196 L597 274", fibre: "tract", v: 60, len: .1 },
+    { stop: "ventralHorn", syn: .6, tx: "glutamate" },
+    { stop: "motorNerve", d: "M597 274 C560 280 500 280 476 296 C446 318 428 360 420 410", fibre: "Aa", v: 60, len: .35 },
+    { stop: "nmj", syn: .8, tx: "acetylcholine" },
+    { stop: "muscleFiber", d: "M420 410 C419 420 418 430 417 440", fibre: "muscle", v: 4, len: .02, kind: "muscle" }
+  ] },
+  { id: "kneeJerk", kind: "sensory", effect: "quad", legs: [
+    { stop: "iaAfferent", d: "M566 712 C567 694 569 676 572 650 C578 614 594 602 602 580", fibre: "Ia", v: 90, len: .5 },
+    { stop: "monosynaptic", syn: .7, tx: "glutamate" },
+    { stop: "motorNerve", d: "M598 580 C594 600 578 614 572 650 C569 676 567 694 566 712", fibre: "Aa", v: 55, len: .5, kind: "motor" },
+    { stop: "nmj", syn: .8, tx: "acetylcholine" },
+    { stop: "muscleFiber", d: "M566 712 C564 726 561 740 558 752", fibre: "muscle", v: 4, len: .02, kind: "muscle" }
+  ] },
+  { id: "sensoryFoot", kind: "sensory", effect: "brain", legs: [
+    { stop: "sensoryNerve", d: "M556 846 C560 790 566 720 572 650 C578 614 594 602 603 584", fibre: "Ab", v: 50, len: 1 },
+    { stop: "drg", d: "M603 584 C608 581 608 574 603 570", fibre: "Ab", v: 50, len: .03 },
+    { stop: "dorsalColumn", d: "M603 570 L603 192", fibre: "tract", v: 45, len: .6 },
+    { stop: "dcn", syn: .6, tx: "glutamate" },
+    { stop: "lemniscus", d: "M603 192 C600 184 607 178 608 168 C609 158 609 148 609 140", fibre: "tract", v: 40, len: .08 },
+    { stop: "thalamus", syn: .7, tx: "glutamate" },
+    { stop: "s1", d: "M609 140 C611 126 612 112 612 98", fibre: "tract", v: 15, len: .06 }
+  ] },
+  { id: "gutFull", kind: "sensory", effect: "brain", legs: [
+    { stop: "gutAfferent", d: "M656 478 C640 472 620 462 604 440 C584 410 580 360 582 290 C582 254 584 230 586 212", fibre: "C", v: 1, len: .45 },
+    { stop: "nodose", d: "M586 212 C587 200 589 190 592 180", fibre: "C", v: 1, len: .05 },
+    { stop: "nts", syn: 1, tx: "glutamate" }
+  ] },
+  { id: "vagusHeart", kind: "vagus", effect: "slow", legs: [
+    { stop: "vagalEfferent", d: "M594 178 C586 200 582 240 582 290 C582 316 586 332 592 342", fibre: "B", v: 10, len: .3 },
+    { stop: "cardiacGanglion", syn: 1, tx: "acetylcholine" },
+    { stop: "vagalPost", d: "M592 342 C594 346 595 351 595 356", fibre: "C", v: 1, len: .005 },
+    { stop: "saVagal", syn: 250, tx: "acetylcholine" }
+  ] },
+  { id: "sympHeart", kind: "symp", effect: "fast", legs: [
+    { stop: "sympCentral", d: "M600 180 L600 322", fibre: "tract", v: 10, len: .2 },
+    { stop: "lateralHorn", syn: 1, tx: "glutamate" },
+    { stop: "preganglionic", d: "M600 322 L612 328", fibre: "B", v: 5, len: .03 },
+    { stop: "chainGanglion", syn: 1, tx: "acetylcholine" },
+    { stop: "sympPost", d: "M612 328 L612 340 C608 346 602 350 597 355", fibre: "C", v: 1, len: .1 },
+    { stop: "saSymp", syn: 1000, tx: "noradrenaline" }
+  ] },
+  { id: "adrenal", kind: "symp", effect: "adrenaline", legs: [
+    { stop: "sympCentral", d: "M600 180 L600 470", fibre: "tract", v: 10, len: .3 },
+    { stop: "lateralHorn", syn: 1, tx: "glutamate" },
+    { stop: "splanchnic", d: "M600 470 L588 476 L588 488 C578 494 566 496 556 498", fibre: "B", v: 5, len: .12 },
+    { stop: "chromaffin", syn: 10, tx: "acetylcholine" }
+  ] },
+  { id: "vagusGut", kind: "vagus", effect: "gut", legs: [
+    { stop: "gutEfferent", d: "M592 172 C586 200 582 240 582 290 C580 360 584 410 604 440 C618 458 634 468 646 474", fibre: "B", v: 5, len: .45 },
+    { stop: "entericGanglion", syn: 1, tx: "acetylcholine" },
+    { stop: "myenteric", d: "M646 474 C656 478 666 484 672 494", fibre: "C", v: .5, len: .02, kind: "ens" },
+    { stop: "smoothMuscle", syn: 300, tx: "acetylcholine", kind: "ens" }
+  ] }
+];
+const IMPULSE_BY_ID = Object.fromEntries(IMPULSES.map(j => [j.id, j]));
+/* organ panels offer the journey that ends (or starts) there */
+const IMPULSE_FOR_TOPIC = { brain: "sensoryFoot", heart: "vagusHeart", gut: "gutFull", muscles: "motorLeg" };
+/* tapping a nerve on the body: which journey runs along it (dir = direction of traffic) */
+function tapJourney(id, dir){
+  const base = id.replace(/[LR]$/, ""), mirror = /R$/.test(id);
+  const pick = { leg: dir > 0 ? "motorLeg" : "sensoryFoot", arm: "motorArm", vagH: "vagusHeart", vagG: dir > 0 ? "vagusGut" : "gutFull",
+                 symH: "sympHeart", symG: "vagusGut", symA: "adrenal", ens: "vagusGut" }[base];
+  return pick ? { id: pick, mirror } : null;
+}
+function defaultImpulse(h){
+  const p = phaseAt(h);
+  return p === "exercise" ? "motorLeg" : p === "meal" ? "gutFull" : "vagusHeart";
+}
 /* sympathetic chain: a row of ganglia either side of the cord */
 const SYMP_CHAIN = [588, 612].map(x => `M${x} 300 L${x} 560`).join(" ");
 /* Endocrine glands (world coordinates) and the hormones they release. Each
@@ -1784,7 +2194,10 @@ function breathShape(f, ti){ /* f = breath phase → {vol 0–1, psi} */
   return { vol: (Math.exp(-k * x) - Math.exp(-k)) / (1 - Math.exp(-k)), psi: .5 + x / 2 };
 }
 const Rhythm = {
-  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0, lung: 0, insp: 0, ti: .4, bj: 0, bjT: 0, bjN: 0,
+  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0, lung: 0, insp: 0, ti: .4, bj: 0, bjT: 0, bjN: 0, kickK: 0, kickT: 0, kickD: 1,
+  /* a nerve's push on the pacemaker for d seconds: k < 0 is a vagal brake that acts at once
+     and wears off; k > 0 is a sympathetic push that builds over seconds and then fades */
+  kick(k, d){ this.kickK = k; this.kickT = this.kickD = d; },
   /* lung = volume 0–1; insp > 0 while air flows in (drives the thoracic pump) */
   tick(dt, ph){
     const rem = ph.rem || 0, sws = ph.sws || 0;
@@ -1805,6 +2218,11 @@ const Rhythm = {
     const rsa = .07 * clamp(1 - (ph.heartRate - 55) / 70) + .005;
     /* in-breath → vagal brake eases → faster, peaking as it ends; out-breath → slower */
     this.hrNow = ph.heartRate * (1 - rsa * Math.cos(2 * Math.PI * b.psi) + this.jit);
+    if (this.kickT > 0){
+      this.kickT = Math.max(0, this.kickT - dt);
+      const x = this.kickT / this.kickD;
+      this.hrNow *= 1 + this.kickK * (this.kickK < 0 ? x : Math.sin(Math.PI * (1 - x)));
+    }
     this.beat += dt * this.hrNow / 60;
   }
 };
@@ -1973,6 +2391,7 @@ const Scene = (() => {
         <path d="${SYMP_CHAIN}" class="nerve chain"/>
         ${[588, 612].map(x => Array.from({ length: 10 }, (_, i) => `<circle cx="${x}" cy="${306 + i * 27}" r="2.4" class="ganglion"/>`).join("")).join("")}
         <g id="s-npulse"></g>
+        <g id="s-impulse"></g>
       </g>
       <g id="s-endocrine" class="sys sys-endocrine">
         ${GLANDS.map(g => `<circle id="s-halo-${g.id}" cx="${g.x}" cy="${g.y}" r="9" class="gland-halo"/>`).join("")}
@@ -1991,7 +2410,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "hormones", "pins"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "pins"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -2275,7 +2694,7 @@ const Nerves = (() => {
   function fire(ri, dir, kind){
     const p = pool.find(q => !q.on); if (!p) return;
     const r = routes[ri];
-    Object.assign(p, { on: true, r, dir, u: dir > 0 ? 0 : 1, v: SPEED[kind] / r.S.L });
+    Object.assign(p, { on: true, r, dir, kind, u: dir > 0 ? 0 : 1, v: SPEED[kind] / r.S.L });
     p.c.setAttribute("fill", NERVE_COLOR[kind]);
   }
   /* expected rates (impulses drawn per second) for each route and direction */
@@ -2326,7 +2745,170 @@ const Nerves = (() => {
       s.c.setAttribute("opacity", f1(s.v * .9 + sw * slow * .35 + asleep * .4 * sp));
     }
   }
-  return { init, tick };
+  /* what a tap at (x, y) hits: a moving pulse first, else the nearest nerve route */
+  function nearest(x, y, maxD){
+    let best = null, bd = maxD;
+    for (const q of pool){
+      if (!q.on) continue;
+      const [px, py] = q.r.S.at(q.u), d = Math.hypot(px - x, py - y);
+      if (d < bd){ bd = d; best = { id: q.r.id, dir: q.dir }; }
+    }
+    if (best) return best;
+    bd = maxD * .8;
+    for (const r of routes){
+      for (let i = 0; i <= 80; i++){
+        const [px, py] = r.S.at(i / 80), d = Math.hypot(px - x, py - y);
+        if (d < bd){ bd = d; best = { id: r.id, dir: NERVE_DIR[r.kind] || 1 }; }
+      }
+    }
+    return best;
+  }
+  return { init, tick, nearest };
+})();
+
+/* =========================================================================
+   IMPULSE — one nerve impulse followed in bullet time. Each leg plays at a
+   steady speed on screen (a synapse is a short pause with a puff of
+   transmitter), so how much time is slowed changes from leg to leg: thousands
+   of times on fast myelinated fibres, only a few times on slow C fibres.
+   timeScale() is fed to the rest of the body, so the heart, breath and blood
+   slow down with it; on arrival the effect plays and time catches up.
+   ========================================================================= */
+const NERVE_DIR = { motor: 1, sensory: -1, vagus: 1, symp: 1, ens: 1 };
+const impulseColor = kind => kind === "muscle" ? "#e0473c" : NERVE_COLOR[kind];
+const Impulse = (() => {
+  const SPEED = 95, MIN_LEG = 1.3, SYN_S = 1.3, SYN_SLOW = 2.2;
+  const flip = d => d.replace(/(-?[\d.]+)[ ,]+(-?[\d.]+)/g, (_, x, y) => `${1200 - x} ${y}`);
+  let g, dot, halo, trail, puff = [];
+  const fx = [];
+  let J = null, mirror = false, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0;
+  function init(){
+    g = Scene.refs.impulse;
+    trail = el("polyline", { class: "imp-trail", points: "" }, g);
+    for (let i = 0; i < 9; i++) puff.push(el("circle", { r: 1.5, class: "imp-tx", opacity: 0 }, g));
+    halo = el("circle", { r: 10, class: "imp-halo" }, g);
+    dot = el("circle", { r: 4.6, class: "imp-dot" }, g);
+    g.style.display = "none";
+  }
+  /* lay the journey out: path samplers, screen time and real time per leg */
+  function build(j, m){
+    let at = [600, 120];
+    return j.legs.map(l => {
+      const o = { ...l, kind: l.kind || j.kind };
+      if (l.syn != null){ o.real = l.syn; o.screen = l.syn > 20 ? SYN_SLOW : SYN_S; o.at = at; }
+      else {
+        o.S = sampler(Scene.svg, mapD(m ? flip(l.d) : l.d), 120);
+        o.real = l.len / l.v * 1000;
+        o.screen = Math.max(MIN_LEG, o.S.L / SPEED);
+        at = o.S.at(1);
+      }
+      return o;
+    });
+  }
+  function start(id, m = false){
+    const fresh = !J;
+    J = IMPULSE_BY_ID[id]; mirror = m;
+    legs = build(J, m); pre = []; total = 0;
+    legs.forEach(l => { pre.push(total); total += l.real; });
+    li = 0; u = 0; done = false; pts = []; acc = 0;
+    if (fresh) scale = 1;
+    g.style.display = "";
+    trail.setAttribute("points", "");
+    draw();
+  }
+  function stop(){
+    J = null; scale = 1;
+    g.style.display = "none";
+    fx.splice(0).forEach(f => f.e.remove());
+  }
+  const pos = () => {
+    if (!J) return { x: 600, y: 300 };
+    const L = legs[li], [x, y] = L.S ? L.S.at(clamp(u)) : L.at;
+    return { x, y };
+  };
+  /* skip to the next leg (or, after arrival, start again) */
+  function next(){
+    if (!J) return;
+    if (done){ start(J.id, mirror); return; }
+    if (li < legs.length - 1){ li++; u = 0; pts = []; trail.setAttribute("points", ""); }
+    else arrive();
+    draw();
+  }
+  function arrive(){
+    done = true; u = 1;
+    const p = pos(), col = impulseColor(legs[legs.length - 1].kind);
+    ring(p.x, p.y, col, 34);
+    if (J.effect === "quad"){
+      const e = el("ellipse", { cx: mirror ? 655 : 545, cy: legY(690), rx: 27, ry: 72 * LEG_K, fill: "#e0473c", opacity: 0 }, g);
+      g.insertBefore(e, g.firstChild);
+      fx.push({ e, age: 0, life: 1.4, kind: "flash" });
+    }
+    if (J.effect === "arm") ring(p.x, p.y, "#e0473c", 24, .3);
+    if (J.effect === "slow") Rhythm.kick(-.4, 2.2);
+    if (J.effect === "fast") Rhythm.kick(.3, 9);
+    if (J.effect === "gut") ring(p.x - 8, p.y + 6, "#d97bb6", 46, .25);
+    if (J.effect === "brain") ring(p.x, p.y, col, 22, .3);
+    if (J.effect === "adrenaline"){
+      for (let i = 0; i < 14; i++){
+        const e = el("path", { d: "M0 -3.4 L3.4 0 L0 3.4 L-3.4 0Z", fill: "#e0533d", opacity: 0 }, g);
+        const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 26;
+        fx.push({ e, age: -i * .07, life: 2.4, kind: "drift", x: p.x, y: p.y, dx: Math.cos(a) * r, dy: Math.sin(a) * r });
+      }
+    }
+  }
+  function ring(x, y, col, r, delay = 0){
+    const e = el("circle", { cx: f1(x), cy: f1(y), r: 3, fill: "none", stroke: col, "stroke-width": 2, opacity: 0, "vector-effect": "non-scaling-stroke" }, g);
+    fx.push({ e, age: -delay, life: 1.3, kind: "ring", r });
+  }
+  function draw(){
+    if (!J) return;
+    const L = legs[li], p = pos(), col = impulseColor(L.kind), syn = L.syn != null;
+    dot.setAttribute("cx", f1(p.x)); dot.setAttribute("cy", f1(p.y)); dot.setAttribute("fill", col);
+    halo.setAttribute("cx", f1(p.x)); halo.setAttribute("cy", f1(p.y)); halo.setAttribute("fill", col);
+    trail.setAttribute("stroke", col);
+    /* at a synapse the pulse fades out and transmitter puffs across the gap */
+    const k = syn && !done ? Math.sin(Math.PI * clamp(u)) : 0;
+    dot.setAttribute("opacity", f1(done ? .5 : 1 - .7 * k));
+    halo.setAttribute("r", f1(done ? 7 : 9 + 4 * k));
+    puff.forEach((c, i) => {
+      const a = i / puff.length * Math.PI * 2 + u * 2, r = 3 + 11 * clamp(u);
+      c.setAttribute("cx", f1(p.x + Math.cos(a) * r)); c.setAttribute("cy", f1(p.y + Math.sin(a) * r));
+      c.setAttribute("fill", col); c.setAttribute("opacity", f1(k * .9));
+    });
+  }
+  function tick(dt){
+    if (!J) return;
+    const L = legs[li];
+    if (!done && !reducedMotion){
+      u += dt / L.screen;
+      if (u >= 1){
+        if (li < legs.length - 1){ li++; u = 0; } else arrive();
+      }
+      acc += dt;
+      if (acc > .03 && L.S){ acc = 0; const p = pos(); pts.push(`${f1(p.x)},${f1(p.y)}`); if (pts.length > 50) pts.shift(); trail.setAttribute("points", pts.join(" ")); }
+    }
+    /* bullet time: ease towards this leg's slow-motion, or back to real time after arrival */
+    const target = done ? 1 : legs[li].real / 1000 / legs[li].screen;
+    scale = Math.exp(lerp(Math.log(scale), Math.log(target), clamp(dt * (done ? 1.8 : 3.5))));
+    for (let i = fx.length - 1; i >= 0; i--){
+      const f = fx[i]; f.age += dt;
+      const t = clamp(f.age / f.life);
+      if (f.age < 0) continue;
+      if (f.kind === "ring"){ f.e.setAttribute("r", f1(3 + f.r * smooth(t))); f.e.setAttribute("opacity", f1(1 - t)); }
+      else if (f.kind === "flash") f.e.setAttribute("opacity", f1(.75 * Math.sin(Math.PI * Math.min(1, t * 1.6)) * (1 - t * .3)));
+      else { f.e.setAttribute("transform", `translate(${f1(f.x + f.dx * smooth(t))} ${f1(f.y + f.dy * smooth(t))})`); f.e.setAttribute("opacity", f1(Math.sin(Math.PI * t))); }
+      if (t >= 1){ f.e.remove(); fx.splice(i, 1); }
+    }
+    draw();
+  }
+  function info(){
+    if (!J) return null;
+    const L = legs[li];
+    return { id: J.id, li, n: legs.length, leg: L, done, total,
+             real: done ? total : pre[li] + clamp(u) * L.real,
+             slow: L.screen / (L.real / 1000) };
+  }
+  return { init, start, stop, next, tick, info, pos, timeScale: () => J ? scale : 1 };
 })();
 
 /* =========================================================================
@@ -4044,11 +4626,11 @@ const Pins = (() => {
   let key = "", restore = () => {};
   const atLevel = (o, level) => { for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = o[LEVELS[i].id]; if (t) return t; } return ""; };
   function render(s){
-    const k = `${s.live}|${s.level}|${!!s.topic}|${s.follow == null}`;
+    const k = `${s.live}|${s.level}|${!!s.topic}|${s.follow == null && s.impulse == null}`;
     if (k === key) return;
     if (key.split("|")[0] !== String(s.live)) state.i = 0;
     key = k;
-    const pins = !s.topic && s.follow == null && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
+    const pins = !s.topic && s.follow == null && s.impulse == null && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
     g().innerHTML = pins.map((p, n) => {
       const i = n + 1, { x, y } = Scene.place(p.x, p.y);
       return `<g class="mk" data-i="${i}" tabindex="0" role="button" aria-label="${i}: ${esc(p.title)}"><circle cx="${f1(x)}" cy="${f1(y)}" r="10.5"/><text x="${f1(x)}" y="${f1(y + 4.2)}">${i}</text></g>`;
@@ -4251,6 +4833,7 @@ const Panel = (() => {
         <p class="sys-blurb">${esc(data.blurb)}</p>
         <ul class="sys-legend" aria-label="${esc(STRINGS.legend)}">${legend}</ul>
         ${id === "circulatory" ? `<button type="button" class="chip primary follow-btn" data-follow>${esc(STRINGS.followCell)}</button>` : ""}
+        ${id === "nervous" ? `<button type="button" class="chip primary follow-btn" data-impulse="">${esc(STRINGS.followImpulse)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -4281,6 +4864,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-topic]").forEach(b => b.addEventListener("click", () => store.set({ topic: b.dataset.topic })));
     root.querySelectorAll("[data-at]").forEach(b => b.addEventListener("click", () => store.set({ hour: +b.dataset.at, playing: false })));
     root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
+    root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -4318,7 +4902,8 @@ const Panel = (() => {
       </div>
       ${related ? `<div class="related"><p>${esc(STRINGS.seeAlso)}</p><div class="depth">${related}</div></div>` : ""}
       ${partOf ? `<div class="related"><p>${esc(STRINGS.partOf)}</p><div class="depth">${partOf}</div></div>` : ""}
-      ${id === "heart" || id === "lungs" ? `<div class="related"><p>${esc(STRINGS.journeyTitle)}</p><div class="depth"><button type="button" class="chip" data-follow>${esc(STRINGS.followCell)}</button></div></div>` : ""}`;
+      ${id === "heart" || id === "lungs" ? `<div class="related"><p>${esc(STRINGS.journeyTitle)}</p><div class="depth"><button type="button" class="chip" data-follow>${esc(STRINGS.followCell)}</button></div></div>` : ""}
+      ${IMPULSE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.impulseTitle)}</p><div class="depth"><button type="button" class="chip" data-impulse="${IMPULSE_FOR_TOPIC[id]}">${esc(STRINGS.followImpulse)}: ${esc(CONTENT.impulse.journeys[IMPULSE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -4331,6 +4916,7 @@ const Panel = (() => {
     root.querySelectorAll(".related [data-topic]").forEach(b => b.addEventListener("click", () => store.set({ topic: b.dataset.topic })));
     root.querySelectorAll("[data-sys]").forEach(b => b.addEventListener("click", () => setLive(b.dataset.sys)));
     root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
+    root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -4366,16 +4952,59 @@ const Panel = (() => {
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
+  /* while following a nerve impulse: the pathway as numbered stops, the current one explained */
+  function renderImpulse(s){
+    const C = CONTENT.impulse, j = IMPULSE_BY_ID[s.impulse], jc = C.journeys[j.id], seg = s.impulseSeg || 0, li = LEVEL_INDEX[s.level];
+    const legs = j.legs, text = levelText(C.stops[legs[seg].stop], s.level);
+    const steps = legs.map((l, i) => `<li style="--c:${impulseColor(l.kind || j.kind)}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(C.stops[l.stop].name)}</li>`).join("");
+    const groups = {};
+    IMPULSES.forEach(x => (groups[C.journeys[x.id].group] ||= []).push(x.id));
+    const paths = Object.entries(groups).map(([g, ids]) => `<p class="imp-group">${esc(g)}</p><div class="depth">${ids.map(id =>
+      `<button type="button" class="chip${id === j.id ? " primary" : ""}" data-imp="${id}"${id === j.id ? ` aria-pressed="true"` : ""}>${esc(C.journeys[id].name)}</button>`).join("")}</div>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.impulseTitle)}</h2>
+      <p class="lede">${esc(STRINGS.impulseLede)}</p>
+      <section class="sys-card" style="--sc:${impulseColor(j.kind)}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <p class="follow-label imp-paths">${esc(STRINGS.pathways)}</p>
+      ${paths}
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopImpulse)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.impulseHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopImpulse);
+    root.querySelector("[data-stop]").addEventListener("click", stopImpulse);
+    root.querySelectorAll("[data-imp]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.imp)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic;
-    const key = following ? `follow:${s.follow}|${s.level}|${s.followSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic;
+    const key = riding ? `impulse:${s.impulse}|${s.level}|${s.impulseSeg}`
+              : following ? `follow:${s.follow}|${s.level}|${s.followSeg}`
                           : `${s.topic}|${s.level}|${s.live}|${phaseAt(s.hour)}${s.topic ? Math.floor(s.hour * 2) : ""}|${stage}`;
     if (key === lastKey && !force) return;
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -4432,10 +5061,10 @@ const Controls = (() => {
     hourBtns.addEventListener("click", e => { const b = e.target.closest("[data-h]"); if (b) store.set({ hour: +b.dataset.h, playing: false }); });
     range.addEventListener("input", () => store.set({ hour: +range.value, playing: false }));
     play.addEventListener("click", () => store.set({ playing: !store.get().playing }));
-    back.addEventListener("click", () => store.get().topic ? store.set({ topic: null }) : stopFollow());
+    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); } });
     document.addEventListener("keydown", e => {
       if (e.key !== "Escape") return;
-      if (store.get().topic) store.set({ topic: null }); else stopFollow();
+      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); }
     });
   }
   function sync(s){
@@ -4456,8 +5085,9 @@ const Controls = (() => {
     const hn = $("#hypnoNow");
     hn.classList.toggle("on", inSleep);
     if (inSleep){ hn.style.left = (hh / 24 * 100).toFixed(2) + "%"; hn.style.top = (HYPNO_Y[sl.stage] / 15 * 100).toFixed(1) + "%"; }
-    back.classList.toggle("on", !!s.topic || s.follow != null);
-    $(".moment").classList.toggle("off", !!s.topic || s.follow != null);
+    const riding = s.follow != null || s.impulse != null;
+    back.classList.toggle("on", !!s.topic || riding);
+    $(".moment").classList.toggle("off", !!s.topic || riding);
     const t = fmtTime(hh);
     if ($("#mTime").textContent !== t) $("#mTime").textContent = t;
     const pl = inSleep ? `${phase.label} · ${STRINGS.stage[sl.stage]}` : phase.label;
@@ -4540,12 +5170,14 @@ const Journey = (() => {
 
 /* Start following a red cell (a given one, or one just leaving the heart) */
 function startFollow(i){
+  stopImpulse();
   const s = store.get();
   if (s.live !== "circulatory") setLive("circulatory");
   const idx = i == null ? Particles.pickCell() : i;
   Particles.setFollow(idx); Journey.reset();
   store.set({ follow: idx, followSeg: Particles.cellInfo(idx).seg, topic: null });
   Journey.tick(0);
+  showScene();
 }
 function stopFollow(){
   if (store.get().follow == null) return;
@@ -4554,11 +5186,98 @@ function stopFollow(){
 }
 
 /* =========================================================================
+   IMPULSE CARD — over the body while an impulse is followed: where it is,
+   the fibre and its speed, real time elapsed and how much time is slowed
+   ========================================================================= */
+const ImpulseCard = (() => {
+  const box = $("#impulseCard");
+  let els = null, last = {}, li = -1, arrived = false;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingImpulse)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>${esc(STRINGS.realTime)}</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="another">${esc(STRINGS.anotherPath)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopImpulse();
+      else if (b.dataset.j === "another"){
+        const i = IMPULSES.findIndex(j => j.id === store.get().impulse);
+        startImpulse(IMPULSES[(i + 1) % IMPULSES.length].id);
+      }
+      else { Impulse.next(); tick(0); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function tick(){
+    const s = store.get(); if (s.impulse == null) return;
+    const q = Impulse.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.impulseSeg !== li) store.set({ impulseSeg: li }); }
+    const L = q.leg, col = impulseColor(L.kind);
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("where", CONTENT.impulse.stops[L.stop].name, v => els.where.textContent = v);
+    set("time", fmtMs(q.real), v => els.time.textContent = v);
+    set("bar", Math.round(q.real / q.total * 200), v => els.bar.style.width = v / 2 + "%");
+    const meta = q.done ? STRINGS.arrived(fmtMs(q.total))
+      : (L.syn != null ? STRINGS.synapse(L.tx, fmtMs(L.syn)) : `${STRINGS.fibre[L.fibre]} · ${L.v} m/s`) + ` · ${STRINGS.slowed(q.slow)}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.impulse.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.impulse != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following a nerve impulse (a given journey, or one that suits the hour).
+   mirror = run it on the other side of the body. */
+function startImpulse(id, mirror = false){
+  stopFollow();
+  if (store.get().live !== "nervous") setLive("nervous");
+  id = id || defaultImpulse(store.get().hour);
+  Impulse.start(id, mirror); ImpulseCard.reset();
+  store.set({ impulse: id, impulseSeg: 0, topic: null });
+  ImpulseCard.tick();
+  showScene();
+}
+/* on phones the panel sits below the body: bring the body back into view for a ride */
+function showScene(){
+  if (!window.matchMedia("(max-width: 860px)").matches) return;
+  const r = $("#sceneWrap").getBoundingClientRect();
+  if (r.top < -r.height * .3 || r.top > window.innerHeight * .5) window.scrollTo({ top: window.scrollY + r.top - 8, behavior: reducedMotion ? "auto" : "smooth" });
+}
+function stopImpulse(){
+  if (store.get().impulse == null) return;
+  Impulse.stop();
+  store.set({ impulse: null, impulseSeg: null });
+}
+
+/* =========================================================================
    WIRING
    ========================================================================= */
 const FOLLOW_W = 230; /* world units across while following a cell */
+const IMPULSE_W = 200; /* … and a nerve impulse */
 function cameraFor(s){
   if (s.follow != null && !s.topic) return Camera.focusView(Scene.toView(Particles.cellInfo(s.follow)), FOLLOW_W);
+  if (s.impulse != null && !s.topic) return Camera.focusView(Scene.toView(Impulse.pos()), IMPULSE_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -4572,12 +5291,15 @@ store.subscribe((s, prev) => {
     applySystems(s);
   }
   Pins.render(s);
-  if (s.follow !== prev.follow){ Camera.go(cameraFor(s)); Hotspots.setVisible(!s.topic && s.follow == null); }
+  const free = !s.topic && s.follow == null && s.impulse == null;
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
+  if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
   Journey.sync(s);
+  ImpulseCard.sync(s);
   if (s.topic !== prev.topic){
-    Camera.go(cameraFor(s)); Hotspots.setVisible(!s.topic && s.follow == null); Scene.focus(s.topic);
+    Camera.go(cameraFor(s)); Hotspots.setVisible(free); Scene.focus(s.topic);
     if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
       setTimeout(() => {
         const r = $("#panel").getBoundingClientRect();
@@ -4598,17 +5320,25 @@ function init(){
   Scene.build();
   Particles.init();
   Nerves.init();
+  Impulse.init();
   Hormones.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
+  ImpulseCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
-    if (s.topic || !s.shown.circulatory || e.target.closest(".mk")) return;
+    if (s.topic || e.target.closest(".mk")) return;
     const m = Scene.refs.blood.getScreenCTM(); if (!m) return;
-    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
-    const i = Particles.nearestCell(pt.x, pt.y, 16 / Math.hypot(m.a, m.b));
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()), tol = 16 / Math.hypot(m.a, m.b);
+    /* nerves live: tap a pulse or a nerve to follow an impulse along it */
+    if (s.live === "nervous"){
+      const h = Nerves.nearest(pt.x, pt.y, tol), t = h && tapJourney(h.id, h.dir);
+      if (t){ startImpulse(t.id, t.mirror); return; }
+    }
+    if (!s.shown.circulatory) return;
+    const i = Particles.nearestCell(pt.x, pt.y, tol);
     if (i != null) startFollow(i);
   });
   const s = store.get();
@@ -4627,20 +5357,24 @@ function init(){
   function frame(t){
     const dt = Math.min(.05, (t - last) / 1000); last = t;
     const st = store.get();
-    if (st.playing) store.set({ hour: (st.hour + dt * CONFIG.hoursPerSecond) % 24 });
-    if (st.follow != null && !st.topic) Camera.track(cameraFor(st), dt);
+    /* bullet time: while an impulse is followed the body (and the clock) run slowed down */
+    const sdt = dt * (st.impulse != null ? Impulse.timeScale() : 1);
+    if (st.playing) store.set({ hour: (st.hour + sdt * CONFIG.hoursPerSecond) % 24 });
+    if ((st.follow != null || st.impulse != null) && !st.topic) Camera.track(cameraFor(st), dt);
     else if (Camera.tick(t)) Hotspots.place();
     if (!document.hidden){
       const ph = Physio.at(store.get().hour);
-      Rhythm.tick(dt, ph);
+      Rhythm.tick(sdt, ph);
       Scene.animate();
-      Vitals.tick(dt);
-      Particles.tick(dt);
+      Vitals.tick(sdt);
+      Particles.tick(sdt);
       const live = store.get().live;
-      if (!reducedMotion && live === "nervous") Nerves.tick(dt, ph);
-      if (!reducedMotion && live === "endocrine") Hormones.tick(dt, ph); else Hormones.setRates(ph);
-      Panel.tick(dt, ph);
-      Journey.tick(dt);
+      if (!reducedMotion && live === "nervous") Nerves.tick(sdt, ph);
+      if (!reducedMotion && live === "endocrine") Hormones.tick(sdt, ph); else Hormones.setRates(ph);
+      Panel.tick(sdt, ph);
+      Journey.tick(sdt);
+      Impulse.tick(dt);
+      ImpulseCard.tick();
     }
     requestAnimationFrame(frame);
   }

@@ -196,6 +196,23 @@ button{ font:inherit; color:inherit; }
 .j-toast.on{ opacity:1; }
 .j-btns{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
 .j-btns .chip{ padding:4px 11px; font-size:12px; }
+/* ride scrubber: pause button + journey slider, ticks where each leg starts */
+.j-scrub{ display:grid; grid-template-columns:auto 1fr; gap:8px; align-items:center; margin-top:9px; }
+.j-play{ width:30px; height:30px; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface); cursor:pointer; display:grid; place-items:center; padding:0; }
+.j-play svg{ width:11px; height:11px; fill:var(--ink); }
+.journey.paused .j-play{ background:var(--jc, #d63340); border-color:var(--jc, #d63340); }
+.journey.paused .j-play svg{ fill:#fff; }
+.j-track{ position:relative; height:24px; }
+.j-rail, .j-marks{ position:absolute; left:8px; right:8px; pointer-events:none; }
+.j-rail{ top:50%; height:4px; margin-top:-2px; border-radius:2px; background:var(--line); overflow:hidden; }
+.j-rail b{ position:absolute; left:0; top:0; bottom:0; background:var(--jc, #d63340); opacity:.75; }
+.j-marks{ top:0; bottom:0; }
+.j-marks i{ position:absolute; top:50%; width:2px; height:10px; margin:-5px 0 0 -1px; border-radius:1px; background:var(--line-strong); }
+.j-track input{ position:relative; width:100%; margin:0; appearance:none; -webkit-appearance:none; background:transparent; height:24px; cursor:pointer; }
+.j-track input::-webkit-slider-runnable-track{ height:4px; background:transparent; }
+.j-track input::-moz-range-track{ height:4px; background:transparent; }
+.j-track input::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%; margin-top:-6px; background:var(--jc, #d63340); border:3px solid var(--surface); box-shadow:0 0 0 1px var(--line-strong); }
+.j-track input::-moz-range-thumb{ width:10px; height:10px; border-radius:50%; background:var(--jc, #d63340); border:3px solid var(--surface); box-shadow:0 0 0 1px var(--line-strong); }
 #s-blood .rbc.follow{ stroke:#fff; stroke-width:1.3; }
 #s-blood .rbc-trail{ fill:none; stroke:var(--ink); stroke-opacity:.5; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 /* the followed nerve impulse, its trail and puffs of transmitter at synapses */
@@ -2990,6 +3007,10 @@ const STRINGS = {
   stopImpulse: "Stop following",
   replay: "Replay ↺",
   realTime: "Real time",
+  scrubRide: "Scrub through the journey",
+  scrubLap: "Scrub through this lap",
+  pauseRide: "Pause the ride",
+  playRide: "Play the ride",
   synapse: (tx, t) => `Synapse · ${tx} · ${t} delay`,
   slowed: f => `slowed ×${f >= 1000 ? Math.round(f / 100) * 100 : f >= 100 ? Math.round(f / 10) * 10 : Math.max(1, Math.round(f))}`.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
   arrived: t => `Arrived after ${t} of real time`,
@@ -3233,6 +3254,7 @@ const store = createStore({
   breathSeg: null,  /* which leg of that journey the molecule is on */
   bite: null,       /* id of the bite journey being followed, or null */
   biteSeg: null,    /* which leg of that journey the nutrient is on */
+  ridePaused: false, /* the ride (and the whole body with it) is frozen so you can read */
   ...loadSystems()
 });
 /* is the camera riding along with something (a red cell, an impulse, a cascade, a breath or a bite)? */
@@ -4194,8 +4216,11 @@ const Particles = (() => {
       k.s -= r.L;
       if (r.sys){
         k.satIn = venSat(r.bed); k.ri = PUL[Math.random() < .5 ? 0 : 1];
-        if (k === fol.k){ fol.laps++; fol.lastLap = fol.t - fol.lapStart; fol.lapStart = fol.t; }
-      } else k.ri = pickSys();
+        if (k === fol.k){
+          fol.laps++; if (!fol.scrubbed) fol.lastLap = fol.t - fol.lapStart; fol.lapStart = fol.t; fol.scrubbed = false;
+          fol.lap = { pul: k.ri, sys: pickSys() };
+        }
+      } else k.ri = k === fol.k && fol.lap ? fol.lap.sys : pickSys();
       k.s = Math.min(k.s, routes[k.ri].L - 1);
     }
   }
@@ -4208,7 +4233,9 @@ const Particles = (() => {
     }
   }
   /* ---- the followed cell: drawn bigger, with a fading trail ---- */
-  const fol = { k: null, i: null, trail: null, pts: [], acc: 0, t: 0, lapStart: 0, lastLap: 0, laps: 0 };
+  /* lap = the lung route and the organ route of the lap the cell is on (the organ
+     is picked in advance, so the lap can be scrubbed) */
+  const fol = { k: null, i: null, trail: null, pts: [], acc: 0, t: 0, lapStart: 0, lastLap: 0, laps: 0, lap: null, scrubbed: false };
   function trailPush(){
     const k = fol.k;
     fol.pts.push(`${k.c.getAttribute("cx")},${k.c.getAttribute("cy")}`);
@@ -4217,9 +4244,11 @@ const Particles = (() => {
   }
   function setFollow(i){
     if (fol.k){ fol.k.c.classList.remove("follow"); fol.k.c.setAttribute("r", 2.8); }
-    Object.assign(fol, { k: i == null ? null : cells[i], i, pts: [], acc: 0, t: 0, lapStart: 0, lastLap: 0, laps: 0 });
+    Object.assign(fol, { k: i == null ? null : cells[i], i, pts: [], acc: 0, t: 0, lapStart: 0, lastLap: 0, laps: 0, lap: null, scrubbed: false });
     fol.trail.setAttribute("points", "");
     if (!fol.k) return;
+    const r = routes[fol.k.ri];
+    fol.lap = r.sys ? { pul: PUL[0], sys: fol.k.ri } : { pul: fol.k.ri, sys: ph ? pickSys() : SYS[0] };
     fol.k.c.classList.add("follow"); fol.k.c.setAttribute("r", 4.4);
     Scene.refs.blood.appendChild(fol.k.c); /* drawn on top */
     if (ph) place(fol.k);
@@ -4240,6 +4269,22 @@ const Particles = (() => {
     const k = fol.k; if (!k || !ph) return;
     const r = routes[k.ri], b = [r.La, r.La + r.Lc, r.L].find(v => v > k.s + .5);
     step(k, b - k.s + .5); place(k);
+    fol.pts = []; fol.trail.setAttribute("points", "");
+  }
+  /* where the followed cell is in its lap (by distance), with the lap's legs marked */
+  function lapProgress(){
+    const k = fol.k; if (!k || !fol.lap) return null;
+    const P = routes[fol.lap.pul], S = routes[fol.lap.sys], L = P.L + S.L;
+    const t = routes[k.ri].sys ? P.L + k.s : k.s;
+    return { f: clamp(t / L), key: fol.lap.pul + "-" + fol.lap.sys,
+             marks: [P.La, P.La + P.Lc, P.L, P.L + S.La, P.L + S.La + S.Lc].map(v => v / L) };
+  }
+  function lapSeek(f){
+    const k = fol.k; if (!k || !fol.lap) return;
+    const P = routes[fol.lap.pul], S = routes[fol.lap.sys], t = clamp(f) * (P.L + S.L - 1);
+    if (t < P.L){ k.ri = fol.lap.pul; k.s = t; } else { k.ri = fol.lap.sys; k.s = t - P.L; }
+    fol.scrubbed = true;
+    place(k);
     fol.pts = []; fol.trail.setAttribute("points", "");
   }
   function cellInfo(i){
@@ -4279,7 +4324,7 @@ const Particles = (() => {
     }
   }
   return { init, setRates, tick, flow, speedAt, pointAt, pickSys, routes, SYS, PUL,
-           setFollow, pickCell, nearestCell, nextStop, cellInfo, satCol,
+           setFollow, pickCell, nearestCell, nextStop, cellInfo, satCol, lapProgress, lapSeek,
            setLive(v){ live = v; }, get ph(){ return ph; } };
 })();
 
@@ -4388,12 +4433,24 @@ const Nerves = (() => {
    ========================================================================= */
 const NERVE_DIR = { motor: 1, sensory: -1, vagus: 1, symp: 1, ens: 1 };
 const impulseColor = kind => kind === "muscle" ? "#e0473c" : NERVE_COLOR[kind];
+/* Scrubbing a ride (shared by IMPULSE, the TIME-LAPSE RIDES and the BREATH RIDE):
+   a ride is laid out on its screen time; spre = where each leg starts on screen. */
+function screenPre(legs){ const spre = []; let T = 0; legs.forEach(l => { spre.push(T); T += l.screen; }); return { spre, T }; }
+function rideProgress(id, legs, spre, T, li, u, done){
+  return { f: clamp((spre[li] + (done ? 1 : clamp(u)) * legs[li].screen) / T), key: id + ":" + T.toFixed(2), marks: spre.slice(1).map(v => v / T) };
+}
+/* which leg is at fraction f of the ride, and how far along it */
+function rideLocate(legs, spre, T, f){
+  const t = clamp(f) * T; let i = 0;
+  while (i < legs.length - 1 && spre[i + 1] <= t) i++;
+  return [i, clamp((t - spre[i]) / legs[i].screen)];
+}
 const Impulse = (() => {
   const SPEED = 95, MIN_LEG = 1.3, SYN_S = 1.3, SYN_SLOW = 2.2;
   const flip = d => d.replace(/(-?[\d.]+)[ ,]+(-?[\d.]+)/g, (_, x, y) => `${1200 - x} ${y}`);
   let g, dot, halo, trail, puff = [];
   const fx = [];
-  let J = null, mirror = false, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0;
+  let J = null, mirror = false, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0, spre = [], T = 1;
   function init(){
     g = Scene.refs.impulse;
     trail = el("polyline", { class: "imp-trail", points: "" }, g);
@@ -4422,6 +4479,7 @@ const Impulse = (() => {
     J = IMPULSE_BY_ID[id]; mirror = m;
     legs = build(J, m); pre = []; total = 0;
     legs.forEach(l => { pre.push(total); total += l.real; });
+    ({ spre, T } = screenPre(legs));
     li = 0; u = 0; done = false; pts = []; acc = 0;
     if (fresh) scale = 1;
     g.style.display = "";
@@ -4520,7 +4578,15 @@ const Impulse = (() => {
              real: done ? total : pre[li] + clamp(u) * L.real,
              slow: L.screen / (L.real / 1000) };
   }
-  return { init, start, stop, next, tick, info, pos, timeScale: () => J ? scale : 1 };
+  const progress = () => J ? rideProgress(J.id, legs, spre, T, li, u, done) : null;
+  function seek(f){
+    if (!J) return;
+    if (f >= 1){ if (!done){ li = legs.length - 1; arrive(); } }
+    else { done = false; [li, u] = rideLocate(legs, spre, T, f); }
+    pts = []; trail.setAttribute("points", "");
+    draw();
+  }
+  return { init, start, stop, next, tick, info, pos, progress, seek, timeScale: () => J ? scale : 1 };
 })();
 
 /* =========================================================================
@@ -4667,7 +4733,7 @@ function lapseRide(o){
   const SPEED = 150, MIN_LEG = 1.4, STEP_S = 2.4, LONG_S = 3.2;
   const screenOf = o.screen || ((l, S) => S ? Math.max(MIN_LEG, S.L / SPEED) : l.t >= 86400 ? LONG_S : STEP_S);
   let g, rider, halo, trail; const puff = [], fx = [];
-  let C = null, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0, hour0 = 0;
+  let C = null, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0, hour0 = 0, spre = [], T = 1;
   function init(){
     g = Scene.refs[o.ref];
     trail = el("polyline", { class: "imp-trail", points: "" }, g);
@@ -4701,6 +4767,7 @@ function lapseRide(o){
     C = o.byId[id]; hour0 = h0;
     legs = build(C); pre = []; total = 0;
     legs.forEach(l => { pre.push(total); total += l.real; });
+    ({ spre, T } = screenPre(legs));
     li = 0; u = 0; done = false; pts = []; acc = 0;
     if (fresh) scale = 1;
     fx.splice(0).forEach(f => f.e.remove());
@@ -4788,7 +4855,15 @@ function lapseRide(o){
     return { id: C.id, li, n: legs.length, leg: L, done, total,
              real: done ? total : pre[li] + clamp(u) * L.real, factor: L.real / L.screen };
   }
-  return { init, start, stop, next, tick, info, pos, timeScale: () => C ? scale : 1, startHour: () => hour0 };
+  const progress = () => C ? rideProgress(C.id, legs, spre, T, li, u, done) : null;
+  function seek(f){
+    if (!C) return;
+    if (f >= 1){ if (!done){ li = legs.length - 1; arrive(); } }
+    else { done = false; [li, u] = rideLocate(legs, spre, T, f); }
+    pts = []; trail.setAttribute("points", "");
+    draw();
+  }
+  return { init, start, stop, next, tick, info, pos, progress, seek, timeScale: () => C ? scale : 1, startHour: () => hour0 };
 }
 
 /* CASCADE — one hormone signal in time-lapse, the mirror image of IMPULSE:
@@ -5076,7 +5151,7 @@ const BreathRide = (() => {
   const SPEED = 120, MIN_LEG = 1.3, STEP_S = 2.2, LONG_S = 3.2;
   let g, rider, halo, trail; const puff = [], fx = [];
   let B = null, legs = [], li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0;
-  let armed = false, prevIn = null, legReal = 0, realDone = 0, total = 0, mouth = false;
+  let armed = false, prevIn = null, legReal = 0, realDone = 0, total = 0, mouth = false, spre = [], T = 1;
   function init(){
     g = Scene.refs.breathRide;
     trail = el("polyline", { class: "imp-trail", points: "" }, g);
@@ -5120,6 +5195,7 @@ const BreathRide = (() => {
     const fresh = !B, ph = Physio.at(h);
     B = BREATH_BY_ID[id]; mouth = ph.muscle > .5;
     legs = build(B, ph); total = legs.reduce((a, l) => a + l.real, 0);
+    ({ spre, T } = screenPre(legs));
     li = 0; u = 0; done = false; pts = []; acc = 0; armed = false; prevIn = null; legReal = 0; realDone = 0;
     if (fresh) scale = 1;
     fx.splice(0).forEach(f => f.e.remove());
@@ -5206,7 +5282,8 @@ const BreathRide = (() => {
         if (armed){
           legReal += dt * scale;
           const flipped = nowIn !== want, P = flipped ? 1 : want ? Rhythm.vol : 1 - Rhythm.vol;
-          u = clamp((P - L.f0) / (L.f1 - L.f0));
+          /* never backwards: after scrubbing into the leg, hold until the breath catches up */
+          u = Math.max(u, clamp((P - L.f0) / (L.f1 - L.f0)));
           while (u >= 1 && !done){
             if (li < legs.length - 1){ advance(); L = legs[li]; u = L.gate && armed ? clamp((P - L.f0) / (L.f1 - L.f0)) : 0; }
             else arrive();
@@ -5244,7 +5321,22 @@ const BreathRide = (() => {
              p: L.p == null ? null : lerp(L.p0, L.p, L.step ? smooth(k) : k),
              factor: L.gate ? 1 : L.real / L.screen };
   }
-  return { init, start, stop, next, tick, info, pos, timeScale: () => B ? scale : 1, mouth: () => mouth };
+  const progress = () => B ? rideProgress(B.id, legs, spre, T, li, u, done) : null;
+  /* scrub: air legs then wait for the next breath in the right direction */
+  function seek(f){
+    if (!B) return;
+    const was = li, realBefore = i => legs.slice(0, i).reduce((a, l) => a + l.real, 0);
+    if (f >= 1){
+      if (!done){ li = legs.length - 1; u = 1; realDone = realBefore(li); legReal = legs[li].real; arrive(); }
+    } else {
+      done = false; [li, u] = rideLocate(legs, spre, T, f);
+      realDone = realBefore(li); legReal = legs[li].gate ? u * legs[li].real : 0; armed = false;
+      if (li !== was) enter();
+    }
+    pts = []; trail.setAttribute("points", "");
+    draw();
+  }
+  return { init, start, stop, next, tick, info, pos, progress, seek, timeScale: () => B ? scale : 1, mouth: () => mouth };
 })();
 
 /* =========================================================================
@@ -7402,12 +7494,60 @@ const Panel = (() => {
   return { render, tick };
 })();
 
+const PLAY_ICONS = { play: `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9.5-5.5z"/></svg>`, pause: `<svg viewBox="0 0 14 14" aria-hidden="true"><rect x="2.5" y="1.5" width="3.2" height="11" rx="1"/><rect x="8.3" y="1.5" width="3.2" height="11" rx="1"/></svg>` };
+
+/* =========================================================================
+   RIDE SCRUBBER — the pause button and the journey slider on every ride card.
+   eng = { progress() → {f 0–1, marks (leg starts, 0–1), key}, seek(f) };
+   after() runs once a scrub has moved the ride (to move the day clock with it).
+   Dragging pauses the ride, like dragging the day slider pauses the day.
+   ========================================================================= */
+let rideSeeked = false; /* tells the frame loop the ride's real time jumped (no clock catch-up) */
+function rideScrub(box, eng, label, after){
+  box.querySelector(".j-btns").insertAdjacentHTML("beforebegin", `
+    <div class="j-scrub">
+      <button type="button" class="j-play"></button>
+      <div class="j-track"><div class="j-rail"><b></b></div><div class="j-marks"></div>
+        <input type="range" min="0" max="1000" step="1" value="0" aria-label="${esc(label)}"></div>
+    </div>`);
+  const play = box.querySelector(".j-play"), range = box.querySelector(".j-scrub input"),
+        fill = box.querySelector(".j-rail b"), marks = box.querySelector(".j-marks");
+  let dragging = false, key = null, paused = null, last = -1;
+  play.addEventListener("click", () => store.set({ ridePaused: !store.get().ridePaused }));
+  range.addEventListener("pointerdown", () => { dragging = true; if (!store.get().ridePaused) store.set({ ridePaused: true }); });
+  window.addEventListener("pointerup", () => { dragging = false; });
+  window.addEventListener("pointercancel", () => { dragging = false; });
+  range.addEventListener("input", () => {
+    if (!store.get().ridePaused) store.set({ ridePaused: true });
+    eng.seek(+range.value / 1000);
+    rideSeeked = true;
+    if (after) after();
+    sync();
+  });
+  function sync(){
+    const p = eng.progress(); if (!p) return;
+    if (p.key !== key){ key = p.key; marks.innerHTML = p.marks.map(m => `<i style="left:${(m * 100).toFixed(2)}%"></i>`).join(""); }
+    const v = Math.round(p.f * 1000);
+    if (v !== last){ last = v; fill.style.width = (p.f * 100).toFixed(2) + "%"; if (!dragging) range.value = v; }
+    const pz = !!store.get().ridePaused;
+    if (pz !== paused){
+      paused = pz;
+      play.innerHTML = pz ? PLAY_ICONS.play : PLAY_ICONS.pause;
+      play.setAttribute("aria-label", pz ? STRINGS.playRide : STRINGS.pauseRide);
+      box.classList.toggle("paused", pz);
+    }
+  }
+  return { sync, reset(){ key = null; last = -1; paused = null; } };
+}
+/* scrubbing a time-lapse ride moves the day clock to the matching hour */
+const lapseClock = ride => () => { const q = ride.info(); if (q) store.set({ hour: (ride.startHour() + q.real / 3600) % 24 }); };
+
 /* =========================================================================
    CONTROLS — level switch, timeline, play
    ========================================================================= */
 const Controls = (() => {
   const sw = $("#sysSwitch"), seg = $("#levelSeg"), range = $("#hourRange"), hourBtns = $("#hourBtns"), dayBar = $("#dayBar"), play = $("#playBtn"), back = $("#backBtn");
-  const icons = { play: `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9.5-5.5z"/></svg>`, pause: `<svg viewBox="0 0 14 14" aria-hidden="true"><rect x="2.5" y="1.5" width="3.2" height="11" rx="1"/><rect x="8.3" y="1.5" width="3.2" height="11" rx="1"/></svg>` };
+  const icons = PLAY_ICONS;
   const TICKS = [0, 3, 6, 9, 12, 15, 18, 21];
   function build(){
     /* system switches: the switch shows or hides a layer; the name makes it the live one */
@@ -7453,6 +7593,10 @@ const Controls = (() => {
     play.addEventListener("click", () => store.set({ playing: !store.get().playing }));
     back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); stopBite(); } });
     document.addEventListener("keydown", e => {
+      /* space pauses or resumes a ride (unless typing, or pressing a focused button) */
+      if (e.key === " " && riding(store.get()) && !store.get().topic && !e.target.closest("button, textarea, select, [contenteditable], input:not([type=range])")){
+        e.preventDefault(); store.set({ ridePaused: !store.get().ridePaused }); return;
+      }
       if (e.key !== "Escape") return;
       if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); stopBite(); }
     });
@@ -7508,7 +7652,7 @@ const Journey = (() => {
       default: return q.s > end + q.Lv * .85 ? "Vena cava → right atrium" : `Vein from ${organ(q)} → right heart`;
     }
   }
-  let els = null, last = {}, seg = null, toastT = 0;
+  let els = null, last = {}, seg = null, toastT = 0, scrub = null;
   function build(){
     box.innerHTML = `
       <p class="j-kicker">${esc(STRINGS.following)}</p>
@@ -7522,6 +7666,7 @@ const Journey = (() => {
         <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
       </div>`;
     els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), sat: box.querySelector(".j-sat b"), meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast") };
+    scrub = rideScrub(box, { progress: Particles.lapProgress, seek: Particles.lapSeek }, STRINGS.scrubLap);
     box.addEventListener("click", e => {
       const b = e.target.closest("[data-j]"); if (!b) return;
       if (b.dataset.j === "stop") stopFollow();
@@ -7547,12 +7692,13 @@ const Journey = (() => {
     set("sat", sat, v => { els.sat.textContent = v + "%"; els.bar.style.width = clamp(v / 100) * 100 + "%"; els.bar.style.background = Particles.satCol(v); });
     const real = Math.round(5 / ph.co * 60 / 5) * 5; /* ~5 L of blood ÷ cardiac output */
     set("meta", STRINGS.lap(q.laps, real, q.lastLap), v => els.meta.textContent = v);
+    scrub.sync();
   }
   function sync(s){
     const on = s.follow != null && !s.topic;
     if (on !== box.classList.contains("on")){
       box.classList.toggle("on", on);
-      if (on){ last = {}; seg = null; els.toast.classList.remove("on"); tick(0); }
+      if (on){ last = {}; seg = null; els.toast.classList.remove("on"); scrub.reset(); tick(0); }
     }
   }
   return { build, tick, sync, reset(){ last = {}; seg = null; } };
@@ -7565,14 +7711,14 @@ function startFollow(i){
   if (s.live !== "circulatory") setLive("circulatory");
   const idx = i == null ? Particles.pickCell() : i;
   Particles.setFollow(idx); Journey.reset();
-  store.set({ follow: idx, followSeg: Particles.cellInfo(idx).seg, topic: null });
+  store.set({ follow: idx, followSeg: Particles.cellInfo(idx).seg, topic: null, ridePaused: false });
   Journey.tick(0);
   showScene();
 }
 function stopFollow(){
   if (store.get().follow == null) return;
   Particles.setFollow(null);
-  store.set({ follow: null, followSeg: null });
+  store.set({ follow: null, followSeg: null, ridePaused: false });
 }
 
 /* =========================================================================
@@ -7581,7 +7727,7 @@ function stopFollow(){
    ========================================================================= */
 const ImpulseCard = (() => {
   const box = $("#impulseCard");
-  let els = null, last = {}, li = -1, arrived = false;
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
   function build(){
     box.innerHTML = `
       <p class="j-kicker">${esc(STRINGS.followingImpulse)}</p>
@@ -7598,6 +7744,7 @@ const ImpulseCard = (() => {
     els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
             meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]"),
             cascade: box.querySelector("[data-j=cascade]") };
+    scrub = rideScrub(box, Impulse, STRINGS.scrubRide);
     box.addEventListener("click", e => {
       const b = e.target.closest("[data-j]"); if (!b) return;
       if (b.dataset.j === "stop") stopImpulse();
@@ -7629,8 +7776,9 @@ const ImpulseCard = (() => {
       els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
       els.cascade.style.display = arrived && q.id === "adrenal" ? "" : "none";
     }
+    scrub.sync();
   }
-  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; els.cascade.style.display = "none"; } }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; els.cascade.style.display = "none"; } }
   function sync(s){
     const on = s.impulse != null && !s.topic;
     if (on !== box.classList.contains("on")){
@@ -7648,7 +7796,7 @@ function startImpulse(id, mirror = false){
   if (store.get().live !== "nervous") setLive("nervous");
   id = id || defaultImpulse(store.get().hour);
   Impulse.start(id, mirror); ImpulseCard.reset();
-  store.set({ impulse: id, impulseSeg: 0, topic: null });
+  store.set({ impulse: id, impulseSeg: 0, topic: null, ridePaused: false });
   ImpulseCard.tick();
   showScene();
 }
@@ -7661,7 +7809,7 @@ function showScene(){
 function stopImpulse(){
   if (store.get().impulse == null) return;
   Impulse.stop();
-  store.set({ impulse: null, impulseSeg: null });
+  store.set({ impulse: null, impulseSeg: null, ridePaused: false });
 }
 
 /* =========================================================================
@@ -7670,7 +7818,7 @@ function stopImpulse(){
    ========================================================================= */
 const CascadeCard = (() => {
   const box = $("#cascadeCard");
-  let els = null, last = {}, li = -1, arrived = false;
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
   function build(){
     box.innerHTML = `
       <p class="j-kicker">${esc(STRINGS.followingCascade)}</p>
@@ -7685,6 +7833,7 @@ const CascadeCard = (() => {
       </div>`;
     els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
             meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    scrub = rideScrub(box, Cascade, STRINGS.scrubRide, lapseClock(Cascade));
     box.addEventListener("click", e => {
       const b = e.target.closest("[data-j]"); if (!b) return;
       if (b.dataset.j === "stop") stopCascade();
@@ -7715,8 +7864,9 @@ const CascadeCard = (() => {
       els.toast.classList.toggle("on", arrived);
       els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
     }
+    scrub.sync();
   }
-  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
   function sync(s){
     const on = s.cascade != null && !s.topic;
     if (on !== box.classList.contains("on")){
@@ -7740,14 +7890,14 @@ function startCascade(id, replay = false){
   if (!replay && c.at != null && !inRange(wrapH(hour), c.win[0], c.win[1])) hour = c.at;
   store.set({ hour, playing: false });
   Cascade.start(id, hour); CascadeCard.reset();
-  store.set({ cascade: id, cascadeSeg: 0, topic: null });
+  store.set({ cascade: id, cascadeSeg: 0, topic: null, ridePaused: false });
   CascadeCard.tick();
   showScene();
 }
 function stopCascade(){
   if (store.get().cascade == null) return;
   Cascade.stop();
-  store.set({ cascade: null, cascadeSeg: null });
+  store.set({ cascade: null, cascadeSeg: null, ridePaused: false });
 }
 
 /* =========================================================================
@@ -7757,7 +7907,7 @@ function stopCascade(){
    ========================================================================= */
 const BreathCard = (() => {
   const box = $("#breathCard");
-  let els = null, last = {}, li = -1, arrived = false;
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
   function build(){
     box.innerHTML = `
       <p class="j-kicker">${esc(STRINGS.followingBreath)}</p>
@@ -7772,6 +7922,7 @@ const BreathCard = (() => {
       </div>`;
     els = { where: box.querySelector(".j-where"), label: box.querySelector(".j-sat span"), bar: box.querySelector(".j-bar i"), val: box.querySelector(".j-sat b"),
             meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    scrub = rideScrub(box, BreathRide, STRINGS.scrubRide);
     box.addEventListener("click", e => {
       const b = e.target.closest("[data-j]"); if (!b) return;
       if (b.dataset.j === "stop") stopBreath();
@@ -7807,8 +7958,9 @@ const BreathCard = (() => {
       els.toast.classList.toggle("on", arrived);
       els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
     }
+    scrub.sync();
   }
-  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
   function sync(s){
     const on = s.breath != null && !s.topic;
     if (on !== box.classList.contains("on")){
@@ -7826,14 +7978,14 @@ function startBreath(id){
   const s = store.get();
   id = id || defaultBreath(s.hour);
   BreathRide.start(id, s.hour); BreathCard.reset();
-  store.set({ breath: id, breathSeg: 0, topic: null });
+  store.set({ breath: id, breathSeg: 0, topic: null, ridePaused: false });
   BreathCard.tick();
   showScene();
 }
 function stopBreath(){
   if (store.get().breath == null) return;
   BreathRide.stop();
-  store.set({ breath: null, breathSeg: null });
+  store.set({ breath: null, breathSeg: null, ridePaused: false });
 }
 
 /* =========================================================================
@@ -7842,7 +7994,7 @@ function stopBreath(){
    ========================================================================= */
 const BiteCard = (() => {
   const box = $("#biteCard");
-  let els = null, last = {}, li = -1, arrived = false;
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
   function build(){
     box.innerHTML = `
       <p class="j-kicker">${esc(STRINGS.followingBite)}</p>
@@ -7857,6 +8009,7 @@ const BiteCard = (() => {
       </div>`;
     els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
             meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    scrub = rideScrub(box, BiteRide, STRINGS.scrubRide, lapseClock(BiteRide));
     box.addEventListener("click", e => {
       const b = e.target.closest("[data-j]"); if (!b) return;
       if (b.dataset.j === "stop") stopBite();
@@ -7887,8 +8040,9 @@ const BiteCard = (() => {
       els.toast.classList.toggle("on", arrived);
       els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
     }
+    scrub.sync();
   }
-  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
   function sync(s){
     const on = s.bite != null && !s.topic;
     if (on !== box.classList.contains("on")){
@@ -7910,14 +8064,14 @@ function startBite(id, replay = false){
   const hour = replay ? BiteRide.startHour() : biteHour(s.hour);
   store.set({ hour, playing: false });
   BiteRide.start(id, hour); BiteCard.reset();
-  store.set({ bite: id, biteSeg: 0, topic: null });
+  store.set({ bite: id, biteSeg: 0, topic: null, ridePaused: false });
   BiteCard.tick();
   showScene();
 }
 function stopBite(){
   if (store.get().bite == null) return;
   BiteRide.stop();
-  store.set({ bite: null, biteSeg: null });
+  store.set({ bite: null, biteSeg: null, ridePaused: false });
 }
 
 /* =========================================================================
@@ -8049,9 +8203,13 @@ function init(){
        time of the signal (capped), and the body faster (capped harder) */
     const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : null;
     const k = st.impulse != null ? Impulse.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
-    const sdt = dt * Math.min(k, BODY_MAX);
+    /* a paused ride freezes everything: the rider, the body and the clock */
+    const paused = st.ridePaused && riding(st) && !st.topic, rdt = paused ? 0 : dt;
+    const sdt = rdt * Math.min(k, BODY_MAX);
     if (!lapse){ lastReal = 0; clockDebt = 0; }
-    if (lapse && !st.topic){
+    /* scrubbed: the slider already set the hour, so don't catch the clock up */
+    if (rideSeeked){ rideSeeked = false; if (lapse) lastReal = lapse.info().real; clockDebt = 0; }
+    if (lapse && !st.topic && !paused){
       /* the clock follows the signal's real time, at most CLOCK_MAX; a backlog
          under 6 h is caught up, longer ones (days) are let go */
       const r = lapse.info().real;
@@ -8061,7 +8219,7 @@ function init(){
       const step = Math.min(clockDebt, dt * CLOCK_MAX);
       if (step > 0){ clockDebt -= step; store.set({ hour: (st.hour + step / 3600) % 24 }); }
     }
-    else if (st.playing) store.set({ hour: (st.hour + sdt * CONFIG.hoursPerSecond) % 24 });
+    else if (st.playing && !paused) store.set({ hour: (st.hour + sdt * CONFIG.hoursPerSecond) % 24 });
     if (riding(st) && !st.topic) Camera.track(cameraFor(st), dt);
     else if (Camera.tick(t)) Hotspots.place();
     if (!document.hidden){
@@ -8077,13 +8235,13 @@ function init(){
       if (!reducedMotion && live === "digestive") Digestion.tick(sdt, ph); else Digestion.setRates(ph);
       Panel.tick(sdt, ph);
       Journey.tick(sdt);
-      Impulse.tick(dt);
+      Impulse.tick(rdt);
       ImpulseCard.tick();
-      Cascade.tick(dt);
+      Cascade.tick(rdt);
       CascadeCard.tick();
-      BreathRide.tick(dt);
+      BreathRide.tick(rdt);
       BreathCard.tick();
-      BiteRide.tick(dt);
+      BiteRide.tick(rdt);
       BiteCard.tick();
     }
     requestAnimationFrame(frame);

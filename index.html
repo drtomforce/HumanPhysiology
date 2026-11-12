@@ -17,7 +17,8 @@
 
  1. DATA (JSON blocks in <script type="application/json">)
     #body-content  topics → phases → levels → text, and systems (circulatory,
-                   nervous, endocrine, respiratory, digestive) → phases → levels → text plus fact pins
+                   nervous, endocrine, respiratory, digestive, urinary) → phases → levels
+                   → text plus fact pins
                    {title, x, y, levels…}. The schema is the contract.
     #body-glossary term → definition + match forms. Terms are auto-linked.
     #body-hours    one short "what's happening now" note per hour (24).
@@ -44,19 +45,24 @@
                    BITES lists the bite journeys: one nutrient through the gut, timed
                    like CASCADES (gut, lymph, blood and step legs with real durations),
                    each with its molecule (MOLECULES); text in CONTENT.bite.
+                   URINES lists the urinary journeys (drop ride): blood, gut, nephron
+                   (tubule) and urine legs timed like BITES; the bladder leg's time is
+                   a function of the hour (toNextVoid), so it waits for the day's next
+                   trip to the toilet (VOIDS); text in CONTENT.urine.
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
                    follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg, breath,
-                   breathSeg, bite, biteSeg}. shown = which body systems
+                   breathSeg, bite, biteSeg, drop, dropSeg, ridePaused}. shown = which body systems
                    are drawn; live = the one that is animated (setSystem / setLive keep
                    the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
                    impulse / impulseSeg = the nerve impulse journey followed and its
                    leg (startImpulse / stopImpulse); cascade / cascadeSeg the same for
                    a hormone cascade (startCascade / stopCascade), breath / breathSeg
-                   for a breath journey (startBreath / stopBreath), and bite / biteSeg
-                   for a bite journey (startBite / stopBite); one ride at a time,
-                   and riding(s) says whether one is on.
+                   for a breath journey (startBreath / stopBreath), bite / biteSeg
+                   for a bite journey (startBite / stopBite) and drop / dropSeg for a
+                   urinary journey (startDrop / stopDrop); one ride at a time
+                   (stopRides), and riding(s) says whether one is on.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
                    Renders physiology → SVG attributes. RHYTHM keeps the beat and
@@ -70,7 +76,9 @@
                    the CIRC routes to their target organ (HORMONES), and air dots
                    moved in and out of the airways by the breath volume (AIRWAYS),
                    and stomach waves, chyme, bile, pancreatic juice, absorbed
-                   nutrients and the colon's load (DIGESTION).
+                   nutrients and the colon's load (DIGESTION), and filtrate down the
+                   nephrons, urine down the ureters, the bladder filling and
+                   emptying, and renin in the run (URINARY).
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
@@ -89,6 +97,9 @@
                    BITE RIDE follows one nutrient from a bite of food in time-lapse,
                    slow enough on long legs that the day clock keeps up; BITE CARD
                    shows the stop, the molecule, real time and the time-lapse.
+                   DROP RIDE follows one molecule through the kidney in time-lapse
+                   (lapseRide again, with BITE RIDE's clockScreen); DROP CARD shows
+                   the stop, real time, the time-lapse and when the next pee is.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -102,7 +113,7 @@
 
  7. UI              Panel (intro with the live-system and sleep-stage cards, organ
                    view with "Part of" chips, red-cell, nerve-impulse, hormone-cascade,
-                   breath and bite journey views), timeline with
+                   breath, bite and drop journey views), timeline with
                    the hypnogram strip, level switch, system switches, glossary tooltips.
 
  Values are typical for a healthy adult and simplified for teaching; this is
@@ -438,9 +449,17 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .gi-gb{ fill:#7da33a; stroke:#5b7d26; stroke-width:1; }
 .gi-wave{ fill:none; stroke:#c4702e; stroke-width:2.6; }
 .gi-dot{ stroke:#ffffff80; stroke-width:.5; }
-#s-breathRide .imp-halo, #s-biteRide .imp-halo{ opacity:.28; }
-#s-breathRide .cas-dot, #s-biteRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-#s-breathRide .imp-trail, #s-biteRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+.ur-tube{ fill:none; stroke:#1597a8; stroke-width:2.2; stroke-linecap:round; opacity:.7; }
+.ur-tube.urethra{ stroke-width:2.6; }
+.ur-nephron{ fill:none; stroke:#7fd3dc; stroke-width:1.1; stroke-linecap:round; stroke-linejoin:round; opacity:.9; }
+.ur-glom{ fill:#d6505a; stroke:#7fd3dc; stroke-width:.9; }
+.ur-pelvis{ fill:#1597a8; opacity:.35; }
+.ur-bladder{ stroke:#1597a8; stroke-width:1.6; }
+.ur-sphincter{ fill:none; stroke:#1597a8; stroke-width:2.4; }
+.ur-dot{ stroke:#ffffff80; stroke-width:.5; }
+#s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo{ opacity:.28; }
+#s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 #s-pins .mk{ cursor:pointer; outline:none; }
 #s-pins .mk circle{ fill:var(--pc, var(--ink)); stroke:var(--bg); stroke-width:2.4; }
 #s-pins .mk text{ fill:#fff; font:600 12px var(--sans); text-anchor:middle; pointer-events:none; }
@@ -538,6 +557,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="journey" id="cascadeCard" aria-live="polite"></div>
       <div class="journey" id="breathCard" aria-live="polite"></div>
       <div class="journey" id="biteCard" aria-live="polite"></div>
+      <div class="journey" id="dropCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
       <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
@@ -1409,6 +1429,118 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "hs": "The portal vein brings nutrient-rich blood from the gut. The liver keeps much of the sugar as glycogen and breaks down toxins and drugs before they reach the rest of the body.",
           "college": "The liver receives about 75% of its blood through the portal vein. It takes up roughly a quarter to a third of the glucose in a meal on first pass and clears most excess amino acids, turning their nitrogen into urea.",
           "phd": "First-pass metabolism in the gut wall and liver (largely CYP3A4) is why many drugs have low oral bioavailability; in cirrhosis, portosystemic shunting raises it, and lets gut-derived ammonia reach the brain."
+        }
+      ]
+    },
+    "urinary": {
+      "name": "Urinary system",
+      "blurb": "Kidneys to bladder: cleaning the blood and balancing water and salt",
+      "phases": {
+        "sleep": {
+          "ms": "While you sleep, your kidneys keep cleaning your blood but make much less urine. A hormone called ADH tells them to save water, so the urine is darker and there is less of it. That is why you can usually sleep all night without getting up to pee, and why your first pee in the morning is a deeper yellow.",
+          "hs": "At night the pituitary releases more ADH (vasopressin), and the kidneys put more water back into the blood. Urine flow drops to about half of the daytime rate and becomes more concentrated. The bladder fills slowly through the night, and its stretch signals are damped during sleep. The first full bladder of the day is emptied on waking.",
+          "college": "Urine flow, GFR and sodium excretion all follow circadian rhythms with a night-time low. The nocturnal rise in ADH inserts aquaporin-2 into collecting-duct principal cells, and urine osmolality can approach 800–1000 mOsm/kg. Functional bladder capacity is larger in sleep, as cortical inhibition of the pontine micturition centre and stretch-receptor thresholds rise.",
+          "phd": "Nocturia, waking at night to void, arises from nocturnal polyuria (over a third of 24-hour urine at night), reduced bladder capacity, or both. In older adults the nocturnal ADH rise blunts, and fluid redistributed from the legs on lying down adds to night-time natriuresis. Kidney clock genes (Per1, Bmal1) set the daily rhythm of ENaC and other transporters (Gumz et al., 2009)."
+        },
+        "rest": {
+          "ms": "Your two kidneys clean all your blood many times a day. They take out waste and extra water, and send it down two tubes to your bladder. The bladder is a stretchy bag that holds the urine until you are ready to go to the toilet.",
+          "hs": "About a fifth of all the blood the heart pumps goes to the kidneys. Each kidney has about a million nephrons, tiny filters that clean the blood and then take back what the body needs. Urine trickles down the ureters, pushed by waves of muscle, and the bladder holds it until it is about half full, when you start to feel the urge to go.",
+          "college": "The kidneys filter about 180 L of plasma a day (a GFR of ~125 mL/min) and reabsorb over 99% of it, leaving 1–2 L of urine. Ureteric peristalsis, a few waves a minute, carries urine in small boluses. The bladder stays at low pressure while it fills (the detrusor relaxes under sympathetic control), and the first urge comes at about 150–250 mL.",
+          "phd": "Renal autoregulation keeps renal blood flow and GFR nearly constant between about 80 and 180 mmHg, through the myogenic response of the afferent arteriole and tubuloglomerular feedback from the macula densa. The kidneys use about 10% of the body’s oxygen, mostly to drive Na⁺ reabsorption, which makes the outer medulla one of the most oxygen-starved tissues in the body."
+        },
+        "meal": {
+          "ms": "After a meal and a drink, your kidneys get busier. They filter out the extra water, the salt from your food and the waste from protein, so you will soon need to pee.",
+          "hs": "Drinking dilutes the blood a little. Sensors in the brain notice and turn ADH down, so the kidneys let more water go and urine becomes pale. A protein-rich meal makes the kidneys filter faster for a few hours, and the extra salt is removed over the next day or so.",
+          "college": "A water load suppresses ADH within minutes, aquaporin-2 is pulled back from the collecting duct, and urine can be diluted to about 50–100 mOsm/kg within an hour. A protein meal raises GFR by 20–40% (renal functional reserve). The liver turns the nitrogen of surplus amino acids into urea, which the kidneys excrete.",
+          "phd": "Oropharyngeal signals from drinking suppress ADH before plasma osmolality changes: in rodents, vasopressin neurons fall silent within seconds of drinking (Mandelblat-Cerf et al., 2017). Intestinal sodium sensing may prime renal excretion, and urea recycling through UT-A1 and UT-A3 in the inner medulla lets the kidney excrete urea without losing water."
+        },
+        "exercise": {
+          "ms": "When you run, your body sends blood to your legs, so less reaches your kidneys. They make less urine and save water and salt to make up for what you lose as sweat.",
+          "hs": "During exercise, sympathetic nerves narrow the blood vessels of the kidneys, and their blood flow can fall by half or more. The kidneys release renin, which leads to the hormone aldosterone, and with ADH it makes them keep salt and water. Urine flow drops and urine becomes darker.",
+          "college": "Renal blood flow falls with exercise intensity, by up to 50–75% at maximal effort, but GFR falls less, because the efferent arteriole constricts too and filtration fraction rises. Renin release from the juxtaglomerular cells (β1-adrenergic, low perfusion pressure and low NaCl at the macula densa) drives angiotensin II and aldosterone, increasing Na⁺ reabsorption.",
+          "phd": "Post-exercise proteinuria is common and harmless, reflecting higher filtration fraction and saturated tubular protein uptake. Extreme exertion in the heat can cause acute kidney injury through hypoperfusion, myoglobin from rhabdomyolysis and hyperthermia. Exercise-associated hyponatraemia comes mainly from drinking beyond losses while ADH is released for non-osmotic reasons."
+        }
+      },
+      "pins": [
+        {
+          "id": "kidney",
+          "title": "Kidneys",
+          "x": 676,
+          "y": 516,
+          "ms": "Two fist-sized, bean-shaped organs near your back. Together they clean all the liquid part of your blood about 60 times a day.",
+          "hs": "Each kidney has an outer cortex, where blood is filtered, and an inner medulla, where urine is concentrated. About 1.2 litres of blood flow through the two kidneys every minute.",
+          "college": "The kidneys receive about 20% of resting cardiac output, far more than their weight would suggest, because their job is filtering rather than feeding themselves. They also make EPO and renin and activate vitamin D.",
+          "phd": "Renal blood flow is about 400 mL per 100 g of tissue a minute, among the highest of any organ, yet the medulla receives only about a tenth of it, which preserves its osmotic gradient but leaves it close to hypoxia."
+        },
+        {
+          "id": "glomerulus",
+          "title": "Glomerulus",
+          "x": 528,
+          "y": 504,
+          "ms": "Each kidney has about a million tiny filters. Blood pressure pushes water and small molecules through, while blood cells and proteins stay behind.",
+          "hs": "The glomerulus is a ball of capillaries inside a cup called Bowman’s capsule. It filters about 125 mL of fluid a minute from the blood into the nephron’s tubule.",
+          "college": "The filtration barrier has three layers: fenestrated endothelium, the glomerular basement membrane and podocyte foot processes with slit diaphragms. Molecules with a radius under about 2 nm pass freely; albumin is mostly held back by size and charge.",
+          "phd": "Mutations in slit-diaphragm proteins such as nephrin (NPHS1) and podocin (NPHS2) cause congenital nephrotic syndrome, showing that the podocyte is the final barrier to protein loss."
+        },
+        {
+          "id": "henle",
+          "title": "Loop of Henle",
+          "x": 536,
+          "y": 552,
+          "ms": "A long hairpin bend in each nephron dips deep into the kidney and makes the middle of the kidney very salty, which later helps it save water.",
+          "hs": "The loop of Henle pumps salt out into the inner kidney. This builds up a salty gradient, so later on water can be drawn out of the urine by osmosis.",
+          "college": "The thick ascending limb reabsorbs NaCl through NKCC2 but is impermeable to water. This countercurrent multiplier builds a medullary gradient from about 300 to 1200 mOsm/kg. Loop diuretics such as furosemide block NKCC2.",
+          "phd": "Mutations in NKCC2, ROMK, the chloride channel ClC-Kb or its subunit barttin cause Bartter syndrome, a salt-wasting disorder that mimics lifelong loop-diuretic use."
+        },
+        {
+          "id": "collecting",
+          "title": "Collecting duct and ADH",
+          "x": 570,
+          "y": 504,
+          "ms": "The last tube of the nephron decides how much water to keep, following orders from a hormone called ADH.",
+          "hs": "When you need to save water, ADH opens water channels in the collecting duct, and water flows back into the salty inner kidney. Without ADH, the water stays in the urine.",
+          "college": "ADH acts on V2 receptors of principal cells, inserting aquaporin-2 into the apical membrane. Aldosterone, acting on the same cells, increases Na⁺ uptake through ENaC.",
+          "phd": "In nephrogenic diabetes insipidus, mutations in AVPR2 or AQP2 make the collecting duct deaf to ADH, and patients pass up to 10–20 L of dilute urine a day."
+        },
+        {
+          "id": "jga",
+          "title": "Juxtaglomerular apparatus",
+          "x": 626,
+          "y": 504,
+          "ms": "Special cells in the kidney check your blood pressure and salt. If either falls, they send out a signal that helps raise them again.",
+          "hs": "Where the tubule loops back to touch its own glomerulus, sensor cells check the salt in the fluid. Nearby cells release renin when blood pressure or salt is low.",
+          "college": "The macula densa senses NaCl delivery and adjusts the afferent arteriole (tubuloglomerular feedback) and renin release. Granular cells release renin in response to low perfusion pressure, low distal NaCl and β1-adrenergic stimulation.",
+          "phd": "Renin release is the rate-limiting step of the renin–angiotensin system. Juxtaglomerular cells sense stretch through their own baroreceptor mechanism, and macula densa signalling uses ATP, adenosine and prostaglandins (COX-2, nNOS)."
+        },
+        {
+          "id": "ureter",
+          "title": "Ureters",
+          "x": 574,
+          "y": 576,
+          "ms": "Two thin tubes carry urine from the kidneys to the bladder. Their walls squeeze it down, so it gets there even when you lie down.",
+          "hs": "Waves of muscle contraction, about 2–6 a minute, push small squirts of urine down each 25–30 cm ureter. Where they enter the bladder, they tunnel through its wall so urine can’t flow back up.",
+          "college": "Pacemaker cells in the renal pelvis set the rate of peristalsis, which rises with urine flow. The oblique course through the bladder wall forms a flap valve against reflux.",
+          "phd": "Vesicoureteral reflux, from a short intramural tunnel, affects about 1% of children and predisposes to kidney infection and scarring; it often resolves as the tunnel lengthens with growth."
+        },
+        {
+          "id": "bladder",
+          "title": "Bladder",
+          "x": 628,
+          "y": 596,
+          "ms": "A stretchy muscle bag that holds urine. It can hold about a large cupful before you really need to go.",
+          "hs": "The bladder can hold about 400–500 mL. Stretch sensors in its wall send signals to the brain, and you start to feel the urge when it is about half full.",
+          "college": "The detrusor muscle relaxes as the bladder fills (accommodation), so pressure stays low. Sympathetic nerves relax the detrusor and close the internal sphincter; parasympathetic pelvic nerves contract it to void.",
+          "phd": "Bladder afferents (Aδ for stretch, C-fibres for pain and inflammation) relay through the periaqueductal grey. In overactive bladder, β3-adrenergic agonists such as mirabegron help it store by relaxing the detrusor."
+        },
+        {
+          "id": "micturition",
+          "title": "Sphincters and peeing",
+          "x": 580,
+          "y": 614,
+          "ms": "Two rings of muscle keep the bladder shut. You can tighten one of them on purpose until you find a toilet.",
+          "hs": "When you decide to go, a centre in the brainstem squeezes the bladder and opens both sphincters. A healthy pee takes about 20–30 seconds, in a person as in a dog or an elephant.",
+          "college": "The pontine micturition centre coordinates detrusor contraction with relaxation of the internal (smooth) and external (striated, pudendal nerve) sphincters. Babies void by spinal reflex; voluntary control develops with the frontal cortex.",
+          "phd": "Mammals over 3 kg empty their bladders in about 21 seconds, because longer urethras raise flow by gravity (Yang et al., 2014). Spinal cord injury above the sacral cord causes detrusor–sphincter dyssynergia."
         }
       ]
     }
@@ -2658,6 +2790,267 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "phd": "A missing rectoanal inhibitory reflex points to Hirschsprung disease, in which enteric neurons fail to colonise the end of the bowel during development, often because of RET or EDNRB mutations."
       }
     }
+  },
+  "urine": {
+    "journeys": {
+      "water": {
+        "name": "A sip of water → urine",
+        "group": "Water and waste",
+        "blurb": "One water molecule from a sip: absorbed by the gut, carried to the kidney, filtered, and one of the few that escape being taken back. It waits in the bladder until the next pee.",
+        "effect": "Out it goes, at the next pee"
+      },
+      "urea": {
+        "name": "Protein waste → urea → out",
+        "group": "Water and waste",
+        "blurb": "The nitrogen from an amino acid, turned into urea by the liver, filtered by the kidney, recycled in the deep medulla to help save water, and finally passed in the urine.",
+        "effect": "Nitrogen out, as urea"
+      },
+      "glucose": {
+        "name": "Glucose: filtered and saved",
+        "group": "Saved",
+        "blurb": "A glucose molecule is filtered out of the blood with the water, but the kidney never wastes sugar: SGLT2 pumps it straight back and it returns to the blood.",
+        "effect": "Back in the blood: no sugar wasted"
+      },
+      "renin": {
+        "name": "Renin → aldosterone → salt kept",
+        "group": "Saved",
+        "blurb": "When pressure or salt reaching the kidney falls, as in a run, the kidney releases renin. It makes angiotensin II in the blood and lungs, which calls up aldosterone from the adrenal gland, and aldosterone tells the kidney to keep salt.",
+        "effect": "Salt kept, and water with it"
+      }
+    },
+    "stops": {
+      "drink": {
+        "name": "A sip of water",
+        "ms": "You take a sip. Water is the most common molecule in your body: about 60% of an adult’s weight.",
+        "hs": "An adult takes in about 2.5 L of water a day: around 1.5 L from drinks, 0.7 L from food and 0.3 L made by burning fuel in the mitochondria. The same amount leaves as urine, sweat, breath and stool.",
+        "college": "Total body water is about 42 L in a 70 kg man: two-thirds inside cells and one-third outside, of which a quarter is plasma. Thirst is triggered by a 1–2% rise in plasma osmolality, sensed in the brain’s circumventricular organs.",
+        "phd": "Water turnover is measured with deuterium-labelled water: an average water molecule stays in the body for roughly 10 days, faster in hot climates and in active people (Yamada et al., 2022)."
+      },
+      "swallowWater": {
+        "name": "Down the oesophagus",
+        "ms": "A gulp of water goes down your food pipe in a second or two.",
+        "hs": "Liquids fall down the oesophagus faster than food, in about a second, helped by a wave of muscle.",
+        "college": "Liquid boluses are carried mainly by gravity and the pressure of the swallow, ahead of the peristaltic wave.",
+        "phd": "Even before the water is absorbed, swallowing signals reach the hypothalamus and quench thirst and ADH within a minute, an anticipatory signal that stops us drinking too much."
+      },
+      "stomachWater": {
+        "name": "Through the stomach",
+        "ms": "Water doesn’t wait long in the stomach. Most of it passes on to the intestine in a few minutes.",
+        "hs": "On an empty stomach, half of a glass of water leaves within 10–15 minutes. With a meal it mixes in and goes more slowly.",
+        "college": "Gastric emptying of water is exponential, with a half-time of about 10–20 minutes, driven by the tone of the fundus. Very little water is absorbed through the stomach wall itself.",
+        "phd": "Energy-containing drinks empty more slowly because duodenal nutrient sensors (CCK, GLP-1) brake gastric emptying, which is why sports drinks are kept around 6–8% carbohydrate."
+      },
+      "absorbWater": {
+        "name": "Absorbed in the small intestine",
+        "ms": "The small intestine soaks the water into your blood.",
+        "hs": "Water can’t be pumped, so it follows salt and sugar. As the gut wall takes up sodium and glucose, water follows by osmosis.",
+        "college": "The intestine absorbs about 8–9 L a day (drinks plus secretions), mostly in the jejunum. Na⁺–glucose cotransport through SGLT1 drags water with it, the basis of oral rehydration solution.",
+        "phd": "Oral rehydration therapy, sugar plus salt in water, is credited with saving tens of millions of lives from cholera and other diarrhoeal diseases since the 1970s; The Lancet called it potentially the most important medical advance of the 20th century."
+      },
+      "portalWater": {
+        "name": "Portal vein to the liver",
+        "ms": "The water flows with the blood from the gut to the liver.",
+        "hs": "All blood from the gut passes the liver first, in the portal vein.",
+        "college": "Portal blood carries the absorbed water through the hepatic sinusoids into the hepatic veins and on to the inferior vena cava.",
+        "phd": "Portal osmoreceptors sense the dilution of a water load and can cut ADH secretion before the systemic plasma changes."
+      },
+      "waterRide": {
+        "name": "Through the heart to the kidney",
+        "ms": "The blood carries the water through your heart and lungs and down to your kidneys.",
+        "hs": "A fifth of the blood the heart pumps goes to the kidneys, so our molecule soon arrives in a renal artery.",
+        "college": "The water molecule mixes through the plasma within a minute, and through the extracellular and cell water over the next hour, as the falling osmolality switches off ADH.",
+        "phd": "Most molecules of a sip stay in the body water for days. We follow one of the lucky ones that is filtered on its first pass and escapes being taken back."
+      },
+      "afferent": {
+        "name": "Into a glomerulus",
+        "ms": "The blood enters one of about a million tiny filters in the kidney.",
+        "hs": "A small artery, the afferent arteriole, brings the blood into the glomerulus, a little ball of capillaries.",
+        "college": "Glomerular capillary pressure, about 50–60 mmHg, is high because the afferent arteriole is wide and the efferent arteriole, leaving the glomerulus, is narrow.",
+        "phd": "Afferent arteriolar tone sets GFR through the myogenic response and tubuloglomerular feedback; angiotensin II constricts mainly the efferent side, which is why ACE inhibitors can drop GFR in renal artery stenosis."
+      },
+      "filtered": {
+        "name": "Filtered",
+        "ms": "Pressure pushes water and small molecules through the filter. Blood cells and big proteins stay behind.",
+        "hs": "About a fifth of the plasma flowing through is filtered into Bowman’s capsule. The filtrate is like plasma without the proteins.",
+        "college": "Filtration follows Starling forces: glomerular capillary pressure, minus Bowman’s space pressure and plasma oncotic pressure, which rises along the capillary. The filtration fraction is about 20%.",
+        "phd": "Single-nephron GFR is about 60–80 nL/min; with nephron loss, the remaining nephrons hyperfilter, a compensation that over years damages the glomeruli (the Brenner hypothesis)."
+      },
+      "proximalWater": {
+        "name": "Proximal tubule: most goes back",
+        "ms": "The first part of the tube takes back most of the water and salt. Our molecule is one of the few that stay in.",
+        "hs": "About two-thirds of the filtered water and salt are taken back here, along with all the sugar and amino acids. Water moves through water channels, following the salt.",
+        "college": "Proximal reabsorption is isosmotic: Na⁺ is pumped out by the basolateral Na⁺/K⁺-ATPase and water follows through aquaporin-1, both through cells and between them. About 120 L of the 180 L filtered each day returns here.",
+        "phd": "Aquaporin-1 was the first water channel identified (Agre, Nobel Prize 2003). AQP1-null humans (Colton-null blood group) cannot fully concentrate urine when deprived of water."
+      },
+      "henleWater": {
+        "name": "Loop of Henle",
+        "ms": "The tube dips deep into the salty middle of the kidney and back up.",
+        "hs": "On the way down, water is drawn out into the salty surroundings. On the way up, salt is pumped out but water can’t follow. The urine leaves the loop more dilute than blood.",
+        "college": "The thin descending limb is water-permeable (AQP1), and the ascending limb is not, while its thick part reabsorbs NaCl through NKCC2. This countercurrent multiplication builds the medullary gradient; the vasa recta keep it from being washed away.",
+        "phd": "The thin ascending limb’s passive NaCl exit, and urea’s role in it, are still debated in models of the inner-medullary concentrating mechanism."
+      },
+      "distal": {
+        "name": "Distal tubule",
+        "ms": "The tube comes back up close to where it started, and takes back a little more salt.",
+        "hs": "The distal tubule touches its own glomerulus, where sensor cells check the salt in the urine. It takes back a little more salt and calcium.",
+        "college": "The distal convoluted tubule reabsorbs about 5–7% of filtered Na⁺ through the thiazide-sensitive NCC cotransporter and is the main site of regulated Ca²⁺ reabsorption, under parathyroid hormone.",
+        "phd": "WNK kinases regulate NCC; mutations in WNK1 and WNK4 cause familial hyperkalaemic hypertension (Gordon syndrome), which thiazides treat very effectively."
+      },
+      "collectingWater": {
+        "name": "Collecting duct: ADH decides",
+        "ms": "The last tube decides how much water to keep. Tonight ADH might say save it; after a big drink it says let it go.",
+        "hs": "ADH opens water channels in the collecting duct. With lots of ADH, water is drawn out into the salty inner kidney and urine becomes dark and concentrated. With little ADH, the water stays in and urine is pale.",
+        "college": "ADH acts through V2 receptors and cAMP to insert aquaporin-2 into principal cells. Urine osmolality can range from about 50 to 1200 mOsm/kg, so the same solute load can leave in 0.5 L or 20 L of urine.",
+        "phd": "AQP2 is shuttled by PKA phosphorylation at Ser256; over days, ADH also raises AQP2 gene expression. Lithium reduces AQP2 and is a common cause of acquired nephrogenic diabetes insipidus."
+      },
+      "ureter": {
+        "name": "Down the ureter",
+        "ms": "Urine drips into the middle of the kidney and is squeezed down a long thin tube to the bladder.",
+        "hs": "Waves of muscle push small squirts of urine down the ureter, a few times a minute.",
+        "college": "Peristaltic waves begin at pacemaker cells in the renal pelvis and travel at 2–6 cm/s. As urine flow rises, the waves come more often and carry larger boluses.",
+        "phd": "A kidney stone stuck in the ureter makes it contract violently against the block, causing renal colic; α-blockers such as tamsulosin relax the ureter and help small stones pass."
+      },
+      "bladderWait": {
+        "name": "Waiting in the bladder",
+        "ms": "The urine waits in the bladder until you decide to go to the toilet.",
+        "hs": "The bladder slowly fills while its muscle relaxes to make room. Stretch signals tell you when it is getting full.",
+        "college": "Storage is under sympathetic control (β3 relaxation of the detrusor, α1 contraction of the bladder neck) and somatic tone in the external sphincter. Pressure stays below about 10 cmH₂O until near capacity.",
+        "phd": "The bladder lining (urothelium) is not just a barrier: it releases ATP when stretched, which activates P2X3 receptors on sensory nerves and contributes to the sensation of fullness."
+      },
+      "void": {
+        "name": "Out!",
+        "ms": "Time to pee. The bladder squeezes, the rings of muscle open and the urine flows out.",
+        "hs": "The brainstem’s pee centre makes the bladder muscle contract and both sphincters relax at the same time.",
+        "college": "The pontine micturition centre (Barrington’s nucleus) drives parasympathetic outflow through the pelvic nerves (S2–S4) to contract the detrusor via M3 receptors, while inhibiting the pudendal nerve to the external sphincter.",
+        "phd": "Most mammals heavier than 3 kg empty the bladder in about 21 seconds; a longer urethra lets gravity raise the flow (Yang et al., 2014)."
+      },
+      "ureaCycle": {
+        "name": "Urea made in the liver",
+        "ms": "Extra protein from your food is broken down, and the liver turns its waste nitrogen into urea.",
+        "hs": "When amino acids are burnt for energy, their nitrogen becomes toxic ammonia. The liver locks it safely into urea.",
+        "college": "The urea cycle in periportal hepatocytes combines ammonia and aspartate nitrogen with CO₂ into urea, costing 3 ATP (4 high-energy bonds) per molecule. An adult makes about 20–35 g of urea a day.",
+        "phd": "Inherited urea-cycle defects, most often ornithine transcarbamylase deficiency, cause hyperammonaemic crises; nitrogen-scavenging drugs such as sodium phenylbutyrate open an alternative route for nitrogen out of the body."
+      },
+      "ureaRide": {
+        "name": "Riding to the kidney",
+        "ms": "The urea travels in your blood to your kidneys.",
+        "hs": "Urea dissolves in the blood and is carried through the heart and lungs to the kidneys.",
+        "college": "Blood urea nitrogen is normally about 7–20 mg/dL. It rises with protein intake, dehydration and falling GFR.",
+        "phd": "Urea moves across most cell membranes through UT-B transporters, including those of red blood cells, which keeps red cells from shrinking as they pass through the urea-rich medulla."
+      },
+      "proximalUrea": {
+        "name": "Proximal tubule: some goes back",
+        "ms": "Some of the urea soaks back into the blood here, but most of it carries on.",
+        "hs": "As water is taken back, urea becomes more concentrated in the tubule, so about half of it leaks back into the blood.",
+        "college": "Urea is reabsorbed passively in the proximal tubule as water reabsorption concentrates it; about 40–50% of filtered urea returns here.",
+        "phd": "Because urea reabsorption depends on water reabsorption, the BUN:creatinine ratio rises in dehydration (prerenal azotaemia), a classic bedside clue."
+      },
+      "henleUrea": {
+        "name": "Loop of Henle: urea comes back in",
+        "ms": "Deep in the kidney, urea that had leaked out comes back into the tube. The kidney recycles it.",
+        "hs": "Urea is recycled: it leaks out of the collecting duct into the inner kidney and back into the loop, so it piles up there and helps make the inner kidney salty.",
+        "college": "Urea secreted into the thin limbs through UT-A2 is recycled from the inner-medullary collecting duct, keeping its interstitial concentration high.",
+        "phd": "UT-A1/A3 knockout mice can’t concentrate urine on a high-protein diet (Fenton et al., 2004), showing the role of urea recycling in the concentrating mechanism."
+      },
+      "collectingUrea": {
+        "name": "Collecting duct: urea helps save water",
+        "ms": "In the deepest part of the kidney, urea helps draw out water so less of it is lost.",
+        "hs": "ADH opens urea channels deep in the collecting duct. Urea moves out and makes the surroundings even saltier, which pulls out more water.",
+        "college": "ADH activates UT-A1 and UT-A3 in the inner-medullary collecting duct; urea accounts for about half of the inner-medullary osmolality, letting urine reach 1200 mOsm/kg.",
+        "phd": "A high-protein diet raises maximal urine concentrating ability, and low-protein diets reduce it, through the urea supply to the medulla."
+      },
+      "glucoseLiver": {
+        "name": "Glucose in the blood",
+        "ms": "There is always some sugar in your blood, from food or from your liver.",
+        "hs": "The liver releases glucose to keep blood sugar steady, about 4–6 mmol/L between meals.",
+        "college": "The kidneys filter about 180 g of glucose a day, more than the body uses, so every gram must be taken back.",
+        "phd": "The kidney also makes glucose (gluconeogenesis in the proximal tubule), about 20–25% of glucose release after an overnight fast and more in prolonged fasting."
+      },
+      "glucoseRide": {
+        "name": "Riding to the kidney",
+        "ms": "The sugar rides the blood to the kidneys.",
+        "hs": "Like everything small in the blood, glucose reaches the kidneys with the fifth of the heart’s output that goes there.",
+        "college": "Plasma glucose is freely filtered, so its concentration in Bowman’s space equals that in plasma.",
+        "phd": "Filtered glucose load = GFR × plasma glucose; at a GFR of 125 mL/min and 5 mmol/L that is about 0.6 mmol a minute."
+      },
+      "sglt2": {
+        "name": "SGLT2 takes it back",
+        "ms": "Pumps in the first part of the tube grab the sugar and send it back to the blood, so none is wasted.",
+        "hs": "The SGLT2 transporter pulls glucose into the tubule cells together with sodium. Only when blood sugar is very high (above about 10 mmol/L) can these pumps not keep up, and sugar spills into the urine, as in untreated diabetes.",
+        "college": "SGLT2 in the early proximal tubule (S1–S2) takes back about 90% of filtered glucose, and SGLT1 further along takes the rest. Glucose leaves the cell through GLUT2. The renal threshold is about 10 mmol/L (180 mg/dL).",
+        "phd": "SGLT2 inhibitors (gliflozins) make the kidney spill 60–80 g of glucose a day. Beyond lowering glucose, they reduce heart-failure hospitalisation and slow kidney disease (EMPA-REG, DAPA-HF, EMPA-KIDNEY), probably partly by restoring tubuloglomerular feedback."
+      },
+      "peritubular": {
+        "name": "Back into the blood",
+        "ms": "The sugar crosses back into tiny blood vessels wrapped around the tube.",
+        "hs": "Peritubular capillaries surround the tubules and collect everything they take back.",
+        "college": "Peritubular capillaries carry blood from the efferent arteriole; their low hydrostatic and high oncotic pressure favour uptake of reabsorbed fluid.",
+        "phd": "The efferent circulation makes the kidney’s peritubular capillaries a second capillary bed in series, a portal-like arrangement, like the hypothalamo-pituitary and gut–liver circulations."
+      },
+      "renalVein": {
+        "name": "Renal vein, home",
+        "ms": "The sugar leaves the kidney in the vein and goes back to the heart, ready to be used.",
+        "hs": "The renal vein carries the cleaned blood to the vena cava and back to the heart.",
+        "college": "Renal venous blood has slightly less volume and slightly higher protein concentration than arterial blood, because about 1% of the plasma has left as urine.",
+        "phd": "The left renal vein passes between the aorta and the superior mesenteric artery, where it can be compressed (nutcracker syndrome)."
+      },
+      "maculaDensa": {
+        "name": "Macula densa senses less salt",
+        "ms": "In the run less blood reaches the kidney. Sensor cells notice and raise the alarm.",
+        "hs": "Sensor cells, where the tubule touches its own glomerulus, notice that less salt is arriving. With sympathetic nerves and the lower pressure, they make nearby cells release renin.",
+        "college": "Juxtaglomerular granular cells release renin in response to three signals: low afferent arteriolar pressure, low NaCl at the macula densa, and β1-adrenergic stimulation by renal sympathetic nerves.",
+        "phd": "Macula densa cells sense NaCl through NKCC2 and signal through COX-2–derived prostaglandin E2 and nNOS; NSAIDs blunt renin release and can cause hyperkalaemia for this reason."
+      },
+      "reninBlood": {
+        "name": "Renin into the blood",
+        "ms": "Renin is released into the blood and travels with it.",
+        "hs": "Renin is an enzyme. In the blood it finds angiotensinogen, a protein made by the liver, and snips it.",
+        "college": "Renin cleaves angiotensinogen to the decapeptide angiotensin I. Plasma renin activity can rise several-fold during hard exercise.",
+        "phd": "Direct renin inhibitors such as aliskiren block this first step, but adding them to ACE inhibitors or ARBs gave no benefit and more harm (ALTITUDE)."
+      },
+      "angI": {
+        "name": "Angiotensin I",
+        "ms": "Renin turns a blood protein into a messenger called angiotensin I.",
+        "hs": "Angiotensin I is not very active yet. It needs one more cut.",
+        "college": "Angiotensin I (10 amino acids) is converted to angiotensin II (8 amino acids) by angiotensin-converting enzyme (ACE).",
+        "phd": "Chymase in the heart and blood vessels can also make angiotensin II, one reason ACE inhibitors don’t block it completely."
+      },
+      "ace": {
+        "name": "ACE in the lungs",
+        "ms": "In the lungs, an enzyme turns the messenger into its strong form, angiotensin II.",
+        "hs": "The lungs’ capillaries are lined with ACE, angiotensin-converting enzyme. As the blood passes through, angiotensin I becomes the powerful angiotensin II.",
+        "college": "ACE on pulmonary endothelium converts most angiotensin I in a single pass, and also breaks down bradykinin. ACE inhibitors block both, which explains their dry cough.",
+        "phd": "ACE2, a different enzyme that converts angiotensin II into vasodilating angiotensin-(1–7), is the cell-entry receptor of SARS-CoV-2."
+      },
+      "angIIRide": {
+        "name": "Angiotensin II to the adrenal gland",
+        "ms": "The messenger rides back down to the adrenal gland, on top of the kidney.",
+        "hs": "Angiotensin II narrows blood vessels to raise blood pressure, makes you thirsty and tells the adrenal gland to make aldosterone.",
+        "college": "Angiotensin II acts through AT1 receptors: vasoconstriction, efferent arteriolar constriction, aldosterone and ADH release, thirst and proximal Na⁺ reabsorption.",
+        "phd": "AT1 receptor blockers (sartans) and ACE inhibitors slow diabetic kidney disease partly by relaxing the efferent arteriole and lowering glomerular pressure."
+      },
+      "aldosterone": {
+        "name": "Aldosterone made",
+        "ms": "The adrenal gland makes a salt-saving hormone, aldosterone.",
+        "hs": "The outer layer of the adrenal gland makes aldosterone when angiotensin II or a high potassium level reaches it.",
+        "college": "Zona glomerulosa cells make aldosterone using aldosterone synthase (CYP11B2). Potassium and angiotensin II are its main triggers; ACTH has a smaller effect.",
+        "phd": "Somatic KCNJ5 mutations in aldosterone-producing adenomas make the cells depolarise and secrete aldosterone autonomously, a common cause of primary aldosteronism."
+      },
+      "aldoRide": {
+        "name": "Aldosterone to the kidney",
+        "ms": "The hormone rides in the blood back to the kidney.",
+        "hs": "Aldosterone travels through the heart and lungs and back to the kidney’s collecting ducts.",
+        "college": "Aldosterone is a steroid: it crosses cell membranes and binds the mineralocorticoid receptor inside principal cells.",
+        "phd": "Cortisol binds the mineralocorticoid receptor just as well, but principal cells inactivate it with 11β-HSD2; liquorice blocks this enzyme and causes apparent mineralocorticoid excess."
+      },
+      "enac": {
+        "name": "ENaC: salt kept",
+        "ms": "Aldosterone tells the kidney to keep more salt. Water stays with the salt, so blood volume is protected.",
+        "hs": "Aldosterone adds more sodium channels to the collecting duct, so more salt goes back into the blood, and potassium goes out in the urine instead.",
+        "college": "Over 1–2 hours aldosterone induces SGK1, which keeps ENaC in the apical membrane, and increases Na⁺/K⁺-ATPase. Na⁺ reabsorption drives K⁺ and H⁺ secretion. Spironolactone and amiloride block this step.",
+        "phd": "Gain-of-function ENaC mutations (Liddle syndrome) cause early, low-renin hypertension, showing how much blood pressure depends on this last 2–3% of filtered sodium."
+      }
+    }
   }
 }
 </script>
@@ -2826,7 +3219,27 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "ileocaecal valve": { "def": "The valve between the end of the small intestine (the ileum) and the large intestine.", "match": ["ileocaecal valve"] },
   "gastric emptying": { "def": "How fast the stomach passes its contents on into the duodenum.", "match": ["gastric emptying"] },
   "bolus": { "def": "A soft ball of chewed food, ready to swallow.", "match": ["bolus"] },
-  "interstitial cells of Cajal": { "def": "Pacemaker cells in the gut wall that set the rhythm of its contractions.", "match": ["interstitial cells of Cajal"] }
+  "interstitial cells of Cajal": { "def": "Pacemaker cells in the gut wall that set the rhythm of its contractions.", "match": ["interstitial cells of Cajal"] },
+  "GFR": { "def": "Glomerular filtration rate: how much fluid all the kidney’s filters make each minute, about 125 mL.", "match": ["GFR", "glomerular filtration rate"] },
+  "Bowman’s capsule": { "def": "The cup around each glomerulus that collects the filtered fluid.", "match": ["Bowman’s capsule", "Bowman’s space"] },
+  "proximal tubule": { "def": "The first part of the nephron’s tubule. It takes back about two-thirds of the filtered water and salt and all the sugar.", "match": ["proximal tubule", "proximal tubules"] },
+  "loop of Henle": { "def": "The hairpin part of the nephron that dips into the medulla and makes it salty, so the kidney can save water.", "match": ["loop of Henle", "loops of Henle"] },
+  "collecting duct": { "def": "The last tube of the nephron, where ADH and aldosterone fine-tune how much water and salt are kept.", "match": ["collecting duct", "collecting ducts"] },
+  "renal medulla": { "def": "The inner part of the kidney, made very salty by the loops of Henle.", "match": ["renal medulla", "inner medulla", "outer medulla", "medullary gradient", "inner kidney"] },
+  "countercurrent multiplier": { "def": "The loop of Henle’s trick of pumping salt from its ascending limb to build a salty gradient deep in the kidney.", "match": ["countercurrent multiplier", "countercurrent multiplication", "countercurrent"] },
+  "aquaporins": { "def": "Water channels in cell membranes. Aquaporin-2 in the collecting duct is opened by ADH.", "match": ["aquaporins", "aquaporin", "aquaporin-2", "aquaporin-1", "water channels", "AQP2", "AQP1"] },
+  "SGLT2": { "def": "The transporter in the proximal tubule that takes filtered glucose back into the body, together with sodium.", "match": ["SGLT2", "gliflozins"] },
+  "renin": { "def": "An enzyme from the kidney, released when blood pressure or salt falls. It starts the chain that makes angiotensin II and aldosterone.", "match": ["renin"] },
+  "angiotensin II": { "def": "A hormone that narrows blood vessels, causes thirst and releases aldosterone. It is made from angiotensin I by ACE in the lungs.", "match": ["angiotensin II", "angiotensin I", "angiotensinogen", "angiotensin"] },
+  "aldosterone": { "def": "A steroid hormone from the adrenal glands that makes the kidney keep salt and lose potassium.", "match": ["aldosterone"] },
+  "ENaC": { "def": "The sodium channel of the collecting duct, increased by aldosterone.", "match": ["ENaC"] },
+  "macula densa": { "def": "Sensor cells where the tubule touches its own glomerulus. They measure the salt arriving and control renin and filtration.", "match": ["macula densa"] },
+  "juxtaglomerular cells": { "def": "Cells in the wall of the artery entering the glomerulus that release renin.", "match": ["juxtaglomerular cells", "juxtaglomerular apparatus", "juxtaglomerular", "granular cells"] },
+  "osmolality": { "def": "How concentrated a fluid is in dissolved particles. Blood is about 290 mOsm/kg; urine ranges from about 50 to 1200.", "match": ["osmolality", "osmolarity", "mOsm/kg"] },
+  "ureters": { "def": "The two muscular tubes that carry urine from the kidneys to the bladder.", "match": ["ureters", "ureter", "ureteric"] },
+  "detrusor": { "def": "The muscle of the bladder wall. It relaxes as the bladder fills and squeezes to empty it.", "match": ["detrusor"] },
+  "micturition": { "def": "Emptying the bladder: peeing.", "match": ["micturition", "voiding", "void"] },
+  "UT-A1": { "def": "A urea channel deep in the collecting duct, opened by ADH, that lets urea help the kidney save water.", "match": ["UT-A1", "UT-A3", "UT-A2", "urea recycling"] }
 }
 </script>
 
@@ -2838,8 +3251,8 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "Melatonin peaks. The liver releases stored glucose to keep the brain fuelled.",
   "Core body temperature reaches its daily low, around 36.4 °C.",
   "Cortisol starts climbing. Dreams (REM) get longer toward morning.",
-  "Getting ready to wake: heart rate and blood pressure begin to rise.",
-  "Awake! Cortisol surges, and breakfast starts the gut working.",
+  "Getting ready to wake: heart rate and blood pressure begin to rise. The bladder is nearly full.",
+  "Awake! First pee of the day, dark after a night of ADH. Cortisol surges, and breakfast starts the gut working.",
   "Blood sugar peaks after breakfast. Insulin sends it into muscle and liver.",
   "The stomach empties breakfast into the small intestine.",
   "Alertness and body temperature keep climbing. A good time for focus.",
@@ -2941,14 +3354,17 @@ const SYSTEMS = [
     legend: [["#5cb6f2", "Fresh air: oxygen in"], ["#98a0ae", "Used air: carbon dioxide out"], ["#e0705a", "Diaphragm and breathing muscles"]] },
   { id: "digestive", short: "Food", color: "#c4702e",
     legend: [["#c98a52", "Food and chyme"], ["#c4702e", "Squeezing waves (peristalsis)"], ["#7da33a", "Bile from the gallbladder"],
-             ["#e3a13c", "Pancreatic juice"], ["#b3a52e", "Nutrients to the liver"], ["#8a5a3a", "Waste in the colon"]] }
+             ["#e3a13c", "Pancreatic juice"], ["#b3a52e", "Nutrients to the liver"], ["#8a5a3a", "Waste in the colon"]] },
+  { id: "urinary", short: "Urine", color: "#1597a8",
+    legend: [["#7fd3dc", "Filtrate from the glomeruli"], ["#e8cf5a", "Urine: pale by day, dark at night"], ["#1597a8", "Ureter squeezes"],
+             ["#c2569a", "Renin from the kidney"]] }
 ];
 const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
 /* which systems each organ topic belongs to (shown as "Part of" chips) */
 const ORGAN_SYSTEMS = {
   brain: ["nervous", "endocrine", "respiratory"], heart: ["circulatory", "nervous"], lungs: ["respiratory", "circulatory"],
   gut: ["digestive", "nervous", "endocrine", "circulatory"], liver: ["digestive", "circulatory", "endocrine"],
-  pancreas: ["endocrine", "digestive"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory", "respiratory"],
+  pancreas: ["endocrine", "digestive"], kidneys: ["urinary", "endocrine", "circulatory"], muscles: ["nervous", "circulatory", "respiratory"],
   skin: ["circulatory", "nervous"], bones: ["circulatory", "endocrine"],
   eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "digestive", "nervous", "endocrine"]
 };
@@ -2966,7 +3382,7 @@ function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.fr
 
 const STRINGS = {
   introTitle: "A day in the life of your body",
-  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air and food. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
+  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air, food and urine. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
   schedule: "Today’s plan: tap to jump",
   explore: "Look closer",
   hint: "Tip: dotted words have short definitions. Hover or tap them. Values are typical for a healthy adult.",
@@ -3047,7 +3463,17 @@ const STRINGS = {
   biteJourneys: "Pick a nutrient",
   anotherBite: "Another nutrient",
   biteDone: t => `Done after ${t} of real time`,
-  biteKind: { gut: "moved along the gut", step: "cells at work", blood: "riding the blood", lymph: "in the lymph" }
+  biteKind: { gut: "moved along the gut", step: "cells at work", blood: "riding the blood", lymph: "in the lymph" },
+  followUrine: "Follow a drop",
+  followingUrine: "Drop ride · time-lapse",
+  urineTitle: "Journey of a drop",
+  urineLede: "Follow one molecule through the kidney: filtered from the blood, taken back or let go along the nephron, and carried to the bladder. Time is sped up, from seconds in the blood and minutes in the nephron to hours in the bladder, which waits for the next trip to the toilet. The day clock really moves.",
+  urineHint: "Tip: with the urinary system live, tap a kidney, the bladder or a moving drop to start a ride.",
+  urineJourneys: "Pick a journey",
+  anotherUrine: "Another journey",
+  urineDone: t => `Done after ${t} of real time`,
+  urineKind: { gut: "absorbed from the gut", step: "cells at work", blood: "riding the blood", tubule: "flowing down the nephron", urine: "in the urine" },
+  untilVoid: t => `waits for the next pee at ${t}`
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -3098,8 +3524,22 @@ const PHYSIO = {
   /* colon contents, 0–1: builds up overnight and empties after breakfast */
   colon:      [[0,.55],[4,.62],[6.5,.68],[7.5,.66],[7.9,.3],[9,.32],[13,.42],[17,.48],[20,.5],[23,.52]],
   /* mass movements in the colon: the gastrocolic reflex, strongest after breakfast */
-  massMove:   [[7.3,0],[7.6,1],[7.95,0],[12.55,0],[12.8,.4],[13.05,0],[19.25,0],[19.5,.4],[19.75,0]]
+  massMove:   [[7.3,0],[7.6,1],[7.95,0],[12.55,0],[12.8,.4],[13.05,0],[19.25,0],[19.5,.4],[19.75,0]],
+  /* ADH (vasopressin), 0–1: high through the night, falls on waking and with
+     the drinks at meals, rises in the run as sweat concentrates the blood */
+  adh:        [[0,.8],[3,.88],[6,.8],[6.8,.5],[7.6,.3],[9,.4],[11,.45],[12.6,.3],[14,.4],[16.8,.42],[17.3,.7],[17.95,.85],[18.4,.65],[19.3,.35],[20.5,.4],[22,.5],[23,.7]],
+  /* bladder volume, 0–1 of a ~450 mL capacity: fills slowly overnight and
+     faster after meals and drinks, and empties at each void (VOIDS) */
+  bladder:    [[0,.17],[3,.47],[6.56,.9],[6.68,.04],[8,.14],[9.5,.34],[10.39,.5],[10.51,.04],[12,.13],[13.29,.42],[13.41,.04],[14.5,.18],[16.56,.44],[16.68,.04],[18.3,.09],[18.96,.16],[19.08,.04],[20.5,.22],[22.76,.52],[22.88,.04],[23.5,.09]]
 };
+/* the day's trips to the toilet: on waking, mid-morning, after lunch, before
+   the run, before dinner and at bedtime (the bladder keyframes empty here) */
+const VOIDS = [6.62, 10.45, 13.35, 16.62, 19.02, 22.82];
+/* real seconds from hour h to the next void (at least a minute) */
+function toNextVoid(h){
+  const w = wrapH(h), d = Math.min(...VOIDS.map(v => wrapH(v - w)));
+  return Math.max(60, d * 3600);
+}
 /* PO₂ (mmHg) on the oxygen–haemoglobin curve for a saturation in % (Hill, n ≈ 2.7, P50 ≈ 26.8) */
 const hillPO2 = sat => { const s = clamp(sat / 100, .05, .995); return 26.8 * Math.pow(s / (1 - s), 1 / 2.7); };
 /* Oxygen content: 1.34 mL O₂ per g of haemoglobin × ~14.5 g/dL ≈ 194 mL O₂ per L of blood when fully saturated */
@@ -3210,6 +3650,17 @@ const Physio = {
     out.motility = 1 - .6 * out.muscle;
     const fasting = clamp(1 - out.stomach * 6) * clamp((.45 - out.gut) / .25), mmcPh = (wrapH(h) * 60 / 100) % 1;
     out.mmc = fasting * (mmcPh < .1 ? Math.sin(Math.PI * mmcPh / .1) : 0) * (1 - out.muscle);
+    /* kidneys and bladder. GFR ~125 mL/min: ~15% lower asleep, ~25% lower in
+       the run (renal vasoconstriction), up to ~25% higher after a meal (protein).
+       Urine flow, mL/min: ~0.5 asleep or running (high ADH), up to ~1.6 after
+       drinks (low ADH). Urine osmolality, mOsm/kg, follows ADH (~400 → ~950).
+       Renin rises with the sympathetic drive and low kidney flow of the run.
+       voiding = the bladder emptying, a few minutes around each VOIDS hour. */
+    out.gfr = 125 * (1 - .15 * (1 - out.awake)) * (1 - .25 * out.muscle) * (1 + .25 * pp);
+    out.urineFlow = (.3 + 1.4 * (1 - out.adh)) * (1 - .25 * out.muscle);
+    out.urineOsm = 150 + 950 * out.adh;
+    out.renin = clamp(.12 + .7 * out.muscle + .15 * out.sympathetic);
+    out.voiding = Math.max(...VOIDS.map(v => clamp(1 - Math.abs(((wrapH(h - v) + 12) % 24) - 12) / .05)));
     return out;
   }
 };
@@ -3228,7 +3679,7 @@ function createStore(initial){
 const now = new Date();
 const savedLevel = storage.get("humanphysiology.level");
 function loadSystems(){
-  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false };
+  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false, urinary: false };
   let live = "circulatory";
   try {
     const s = JSON.parse(storage.get("humanphysiology.shown") || "null");
@@ -3254,11 +3705,13 @@ const store = createStore({
   breathSeg: null,  /* which leg of that journey the molecule is on */
   bite: null,       /* id of the bite journey being followed, or null */
   biteSeg: null,    /* which leg of that journey the nutrient is on */
+  drop: null,       /* id of the urinary journey (drop ride) being followed, or null */
+  dropSeg: null,    /* which leg of that journey the molecule is on */
   ridePaused: false, /* the ride (and the whole body with it) is frozen so you can read */
   ...loadSystems()
 });
-/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath or a bite)? */
-const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null;
+/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath, a bite or a drop)? */
+const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null || s.drop != null;
 /* System switches. Switching a system on makes it live; switching off the
    live one hands "live" to another shown system (or to none). */
 function setSystem(id, on){
@@ -3769,6 +4222,95 @@ function biteHour(h){
   return MEAL_BITES.find(m => m > w) ?? MEAL_BITES[0];
 }
 
+/* Urinary system (design coordinates, mapped like NERV). Each kidney drains at
+   its hilum into the renal pelvis; the ureters run down to the bladder, which
+   sits low in the pelvis (BLADDER_AT is its neck, where the urethra leaves).
+   One schematic nephron is drawn in each kidney (the viewer's right one is
+   mirrored): the glomerulus in the cortex, the proximal tubule (PT_D), the loop
+   of Henle down into the medulla (LOOP_D), the distal tubule back up to touch
+   its own glomerulus at the macula densa (DCT_D, JGA) and the collecting duct
+   to the pelvis (CD_D). The renal artery (CIRC kidney route) enters at HILUM_A
+   and the vein leaves at HILUM_V. */
+const GLOM = [542, 512], JGA = [546, 513], HILUM_A = [562, 521], HILUM_V = [562, 530], CD_PT = [556, 522], BLADDER_PT = [600, 596];
+const PT_D = "M542 512 C538 508 535 513 538 516 C541 519 545 514 548 517";
+const LOOP_D = "M548 517 C548 525 549 533 550 539 C551 542 554 542 554 539 C554 532 553 524 552 518";
+const DCT_D = "M552 518 C552 514 549 511 546 513";
+const CD_D = "M546 513 C550 508 556 509 556 515 L556 530";
+const NEPHRON_D = PT_D + LOOP_D.slice("M548 517".length) + DCT_D.slice("M552 518".length) + CD_D.slice("M546 513".length);
+const PELVIS = [[557, 528], [643, 528]];
+const URETER_L = "M557 530 C561 550 574 572 591 594", URETER_R = "M643 530 C639 550 626 572 609 594";
+const BLADDER_AT = [600, 606];
+const BLADDER_D = "M0 0 C-8 0 -15 -7 -15 -15 C-15 -23 -8 -27 0 -27 C8 -27 15 -23 15 -15 C15 -7 8 0 0 0Z";
+const URETHRA_D = "M600 606 L600 626", SPHINCTER_D = "M595 612 Q600 616 605 612";
+Object.assign(MOLECULES, {
+  urea: ["#9b7fd4", "Urea"], urine: ["#e8cf5a", "Urine"], renin: ["#c2569a", "Renin"], angI: ["#d886b5", "Angiotensin I"],
+  angII: ["#a8326e", "Angiotensin II"], aldo: ["#d98b2b", "Aldosterone"], sodium: ["#8fa3b8", "Sodium (Na⁺)"]
+});
+/* Urinary journeys (DROP RIDE), timed like BITES: stop (text in CONTENT.urine.stops),
+   m (the molecule, MOLECULES), t real seconds, step = cells at work in one
+   place, b = a blood ride scaled by cardiac output, k = the kind of leg (blood,
+   gut, tubule, urine). Nephron transit takes a few minutes (proximal tubule
+   ~15 s, loop ~45 s, distal ~30 s, collecting duct a few minutes) and a
+   ureter bolus about 20 s. t may be a function of the hour the leg starts:
+   the bladder leg waits for the day's next void (toNextVoid). */
+const kidneyLegs = (m, pt, loop, cd) => [
+  { stop: "afferent", m, t: 1, k: "blood", path: [cP(HILUM_A, GLOM)] },
+  { stop: "filtered", m, t: 1, step: true, at: GLOM },
+  { stop: pt, m, t: 15, k: "tubule", path: [cD(PT_D)] },
+  { stop: loop, m, t: 45, k: "tubule", path: [cD(LOOP_D)] },
+  { stop: "distal", m, t: 30, k: "tubule", path: [cD(DCT_D)] },
+  { stop: cd, m, t: 180, k: "tubule", path: [cD(CD_D)] },
+  { stop: "ureter", m, t: 20, k: "urine", path: [cD(URETER_L)] },
+  { stop: "bladderWait", m, t: toNextVoid, step: true, at: BLADDER_PT, wait: true },
+  { stop: "void", m, t: 25, k: "urine", path: [cD(URETHRA_D)] }
+];
+const TO_KIDNEY = [cV(RT.gut, LIVER), ...LUNGS, cA(RT.kidL)];
+const URINES = [
+  { id: "water", effect: "out", legs: [
+    { stop: "drink", m: "h2o", t: 3, step: true, at: MOUTH_PT },
+    { stop: "swallowWater", m: "h2o", t: 2, k: "gut", path: [cD(ORG.eso)] },
+    { stop: "stomachWater", m: "h2o", t: 600, k: "gut", path: [cD(STOMACH_RIDE)] },
+    { stop: "absorbWater", m: "h2o", t: 900, k: "gut", path: [cD(DUODENUM_D), cD(SI_A)] },
+    { stop: "portalWater", m: "h2o", t: 6, b: 1, path: [cV(RT.gut, 0, LIVER)] },
+    { stop: "waterRide", m: "h2o", t: 20, b: 1, path: TO_KIDNEY },
+    ...kidneyLegs("h2o", "proximalWater", "henleWater", "collectingWater")
+  ] },
+  { id: "urea", effect: "out", legs: [
+    { stop: "ureaCycle", m: "urea", t: 600, step: true, at: LIVER },
+    { stop: "ureaRide", m: "urea", t: 20, b: 1, path: TO_KIDNEY },
+    ...kidneyLegs("urea", "proximalUrea", "henleUrea", "collectingUrea")
+  ] },
+  { id: "glucose", effect: "saved", legs: [
+    { stop: "glucoseLiver", m: "glucose", t: 60, step: true, at: LIVER },
+    { stop: "glucoseRide", m: "glucose", t: 20, b: 1, path: TO_KIDNEY },
+    ...kidneyLegs("glucose").slice(0, 2),
+    { stop: "sglt2", m: "glucose", t: 6, k: "tubule", path: [cD(PT_D)] },
+    { stop: "peritubular", m: "glucose", t: 2, k: "blood", path: [cP(HILUM_V)] },
+    { stop: "renalVein", m: "glucose", t: 8, b: 1, path: [cV(RT.kidL)] }
+  ] },
+  { id: "renin", effect: "salt", legs: [
+    { stop: "maculaDensa", m: "renin", t: 30, step: true, at: JGA },
+    { stop: "reninBlood", m: "renin", t: 8, b: 1, path: [cP(HILUM_V), cV(RT.kidL)] },
+    { stop: "angI", m: "angI", t: 20, step: true },
+    { stop: "ace", m: "angII", t: 4, b: 1, path: [...LUNGS] },
+    { stop: "angIIRide", m: "angII", t: 6, b: 1, path: [cA(RT.kidL), cP(ADRENAL)] },
+    { stop: "aldosterone", m: "aldo", t: 900, step: true, at: ADRENAL },
+    { stop: "aldoRide", m: "aldo", t: 20, b: 1, path: [cV(RT.kidL, ADRENAL), ...LUNGS, cA(RT.kidL), cP(CD_PT)] },
+    { stop: "enac", m: "sodium", t: 5400, step: true }
+  ] }
+];
+const URINE_BY_ID = Object.fromEntries(URINES.map(u => [u.id, u]));
+/* organ panels offer the urinary journey that passes through */
+const URINE_FOR_TOPIC = { kidneys: "water", liver: "urea", pancreas: "glucose", lungs: "renin" };
+/* tapping the kidneys, the bladder or a moving dot on the body */
+function tapUrine(id){
+  return { drop: "water", kidney: "water", ureter: "water", bladder: "water", urethra: "water", renin: "renin" }[id] || null;
+}
+function defaultUrine(h){
+  const p = phaseAt(h);
+  return p === "exercise" ? "renin" : p === "sleep" ? "urea" : p === "meal" ? "glucose" : "water";
+}
+
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
   let out = `<path d="M${f1(x)} ${f1(y)}L${f1(x2)} ${f1(y2)}" stroke-width="${f1(w)}"/>`;
@@ -4032,6 +4574,16 @@ const Scene = (() => {
         <g id="s-food"></g>
         <g id="s-biteRide"></g>
       </g>
+      <g id="s-urinary" class="sys sys-urinary">
+        ${[0, 1].map(m => `<g${m ? ` transform="translate(1200 0) scale(-1 1)"` : ""}><path d="${mapD(NEPHRON_D)}" class="ur-nephron"/><circle cx="${GLOM[0]}" cy="${GLOM[1]}" r="2.8" class="ur-glom"/></g>`).join("")}
+        ${PELVIS.map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="3.2" ry="5.5" class="ur-pelvis"/>`).join("")}
+        <path d="${mapD(URETER_L)}" class="ur-tube"/><path d="${mapD(URETER_R)}" class="ur-tube"/>
+        <path d="${mapD(URETHRA_D)}" class="ur-tube urethra"/>
+        <g transform="translate(${bodyPt(...BLADDER_AT).join(" ")})"><path id="s-bladder" d="${BLADDER_D}" class="ur-bladder" fill="#efe39a" fill-opacity=".6"/></g>
+        <path id="s-sphincter" d="${mapD(SPHINCTER_D)}" class="ur-sphincter"/>
+        <g id="s-urine"></g>
+        <g id="s-dropRide"></g>
+      </g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
       <g id="s-eyesShut" class="face"><path d="M571 189 Q578 194 585 189"/><path d="M615 189 Q622 194 629 189"/></g>
@@ -4044,7 +4596,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -4720,12 +5272,13 @@ function piece(p){
 }
 
 /* =========================================================================
-   TIME-LAPSE RIDES — CASCADE and BITE RIDE share this engine. One signal (a
+   TIME-LAPSE RIDES — CASCADE, BITE RIDE and DROP RIDE share this engine. One signal (a
    hormone, a bite of food) is followed leg by leg, and each leg plays for a
    few seconds on screen, so the speed-up changes from leg to leg. The options
    say where to draw (ref), which ride is which (byId), a leg's colour (col),
    what kind of leg it is (kindOf), how long a leg plays (screen, optional),
-   how to replay (restart) and what happens on arrival (effect).
+   how to replay (restart) and what happens on arrival (effect). A leg's t
+   may be a function of the hour the leg starts (the drop ride's bladder wait).
    timeScale() drives the day clock and (capped) the body, so the hour and the
    vitals move on.
    ========================================================================= */
@@ -4745,20 +5298,21 @@ function lapseRide(o){
   /* lay the ride out: positions, real time and screen time per leg */
   function build(c){
     const co = Physio.at(hour0).co;
-    let at = null;
+    let at = null, cum = 0;
     return c.legs.map(l => {
-      const o2 = { ...l };
+      const o2 = { ...l }, t = typeof l.t === "function" ? l.t(hour0 + cum / 3600) : l.t;
       if (l.step){
-        o2.at = l.at || at; o2.real = l.t; o2.kind = "step";
+        o2.at = l.at || at; o2.real = t; o2.kind = "step";
       } else {
         const P = [].concat(...l.path.map(piece));
         if (at) P.unshift(at);
         o2.S = poly(P);
-        o2.real = l.b ? l.t * 5 / co : l.t;
+        o2.real = l.b ? t * 5 / co : t;
         o2.kind = l.path.some(p => p.r != null) ? "blood" : o.kindOf(l);
       }
       o2.screen = screenOf(o2, o2.S);
       at = o2.S ? o2.S.at(1) : o2.at;
+      cum += o2.real;
       return o2;
     });
   }
@@ -4852,7 +5406,7 @@ function lapseRide(o){
   function info(){
     if (!C) return null;
     const L = legs[li];
-    return { id: C.id, li, n: legs.length, leg: L, done, total,
+    return { id: C.id, li, n: legs.length, leg: L, done, total, start: pre[li],
              real: done ? total : pre[li] + clamp(u) * L.real, factor: L.real / L.screen };
   }
   const progress = () => C ? rideProgress(C.id, legs, spre, T, li, u, done) : null;
@@ -4887,29 +5441,50 @@ const Cascade = lapseRide({
   }
 });
 
+/* Screen time for the long time-lapse rides (BITE RIDE, DROP RIDE): long legs
+   play slowly enough (up to 9 s) that the day clock, capped at CLOCK_MAX, keeps up. */
+function clockScreen(l, S){
+  const SPEED = 150, MIN_LEG = 1.4, STEP_S = 2.4, MAX_S = 9;
+  return Math.max(S ? Math.max(MIN_LEG, S.L / SPEED) : STEP_S, Math.min(MAX_S, l.real / (CLOCK_MAX * .9)));
+}
+
 /* BITE RIDE — one nutrient from a bite of food, in time-lapse: hours in the
    stomach and small intestine, a day or more in the colon, seconds in the
    blood. Long legs play slowly enough that the day clock (capped at CLOCK_MAX)
    keeps up, so you watch the day go by as the food is digested. */
-const BiteRide = (() => {
-  const SPEED = 150, MIN_LEG = 1.4, STEP_S = 2.4, MAX_S = 9;
-  const lapse = l => Math.min(MAX_S, l.real / (CLOCK_MAX * .9));
-  return lapseRide({
-    ref: "biteRide", byId: BITE_BY_ID,
-    col: l => MOLECULES[l.m][0],
-    kindOf: l => l.lymph ? "lymph" : "gut",
-    screen: (l, S) => Math.max(S ? Math.max(MIN_LEG, S.L / SPEED) : STEP_S, lapse(l)),
-    restart: id => startBite(id, true),
-    effect(e, p, col, { ring, dots }){
-      switch (e){
-        case "glucose": dots(p.x, p.y, MOLECULES.glucose[0], 14, true); break;
-        case "fat": dots(p.x, p.y, MOLECULES.fat[0], 14, false); ring(p.x, p.y, MOLECULES.fat[0], 20, .4); break;
-        case "build": ring(p.x, p.y, MOLECULES.amino[0], 22, .3); dots(p.x, p.y, MOLECULES.amino[0], 12, true); break;
-        case "out": ring(p.x, p.y, MOLECULES.stool[0], 24, .3); dots(p.x, p.y, MOLECULES.scfa[0], 10, false); break;
-      }
+const BiteRide = lapseRide({
+  ref: "biteRide", byId: BITE_BY_ID,
+  col: l => MOLECULES[l.m][0],
+  kindOf: l => l.lymph ? "lymph" : "gut",
+  screen: clockScreen,
+  restart: id => startBite(id, true),
+  effect(e, p, col, { ring, dots }){
+    switch (e){
+      case "glucose": dots(p.x, p.y, MOLECULES.glucose[0], 14, true); break;
+      case "fat": dots(p.x, p.y, MOLECULES.fat[0], 14, false); ring(p.x, p.y, MOLECULES.fat[0], 20, .4); break;
+      case "build": ring(p.x, p.y, MOLECULES.amino[0], 22, .3); dots(p.x, p.y, MOLECULES.amino[0], 12, true); break;
+      case "out": ring(p.x, p.y, MOLECULES.stool[0], 24, .3); dots(p.x, p.y, MOLECULES.scfa[0], 10, false); break;
     }
-  });
-})();
+  }
+});
+
+/* DROP RIDE — one molecule through the kidney, in time-lapse: seconds in the
+   blood, minutes down the nephron, and hours in the bladder, which waits for
+   the day's next void so the ride pees when the body does. */
+const DropRide = lapseRide({
+  ref: "dropRide", byId: URINE_BY_ID,
+  col: l => MOLECULES[l.m][0],
+  kindOf: l => l.k || "tubule",
+  screen: clockScreen,
+  restart: id => startDrop(id, true),
+  effect(e, p, col, { ring, dots }){
+    switch (e){
+      case "out": ring(p.x, p.y, MOLECULES.urine[0], 24, .3); dots(p.x, p.y, MOLECULES.urine[0], 12, false); break;
+      case "saved": dots(p.x, p.y, MOLECULES.glucose[0], 14, true); break;
+      case "salt": ring(p.x, p.y, MOLECULES.aldo[0], 22, .3); dots(p.x, p.y, MOLECULES.sodium[0], 12, true); break;
+    }
+  }
+});
 
 /* =========================================================================
    AIRWAYS — air moved by the lungs. Fresh-air dots enter at the nose (the
@@ -5133,6 +5708,111 @@ const Digestion = (() => {
     if (near(panc, 30) || (x > 570 && x < 672 && y > 503 && y < 528)) return "pancreas";
     if (x > 570 && x < 630 && y > 548 && y < 604) return "smallInt";
     if (near(colon, 80)) return "colon";
+    return null;
+  }
+  return { init, tick, setRates, nearest };
+})();
+
+/* =========================================================================
+   URINARY — the kidneys and bladder at work. Filtrate leaves each glomerulus
+   at a rate set by the GFR and runs down the nephron, shrinking as most of it
+   is taken back, and turning from clear filtrate into urine. Peristaltic waves
+   (a few a minute, sped up here) push boluses of urine down the ureters, more
+   often and bigger when urine flow is high. Urine is pale when ADH is low and
+   dark when it is high (at night, in the run). The bladder swells as it fills
+   and, at each void, the detrusor squeezes, the sphincter opens and urine runs
+   down the urethra. In the run the kidneys release renin. Runs only while the
+   urinary system is live.
+   ========================================================================= */
+const Urinary = (() => {
+  const NP = 70, FILTRATE = "#7fd3dc", PALE = "#f3ecb4", DARK = "#d9a21f";
+  const pool = [];
+  let neph, ureters = [], urethra, t = 0, wavePh = 0, still = "";
+  let accF = 0, accS = 0, accR = 0;
+  const urineCol = p => mix(PALE, DARK, clamp((p.urineOsm - 300) / 750));
+  const BLADDER_W = bodyPt(...BLADDER_AT);
+  function init(){
+    const svg = Scene.svg, g = Scene.refs.urine;
+    neph = sampler(svg, mapD(NEPHRON_D), 120);
+    ureters = [URETER_L, URETER_R].map(d => sampler(svg, mapD(d), 60));
+    urethra = sampler(svg, mapD(URETHRA_D), 20);
+    for (let i = 0; i < NP; i++) pool.push({ c: el("circle", { r: 1.6, class: "ur-dot", opacity: 0 }, g), on: false });
+  }
+  function spawn(kind, col, r, extra){
+    const d = pool.find(q => !q.on); if (!d) return null;
+    Object.assign(d, { on: true, kind, u: 0, age: 0, side: 1 }, extra);
+    d.c.setAttribute("fill", col); d.c.setAttribute("r", r);
+    return d;
+  }
+  const put = (c, [x, y]) => { c.setAttribute("cx", f1(x)); c.setAttribute("cy", f1(y)); };
+  /* the bladder fills (and squeezes while voiding); the sphincter opens to void */
+  function bladder(p){
+    const k = (.55 + .5 * p.bladder) * (1 - .12 * p.voiding);
+    Scene.refs.bladder.setAttribute("transform", `scale(${f1(k * 100) / 100})`);
+    Scene.refs.bladder.setAttribute("fill", urineCol(p));
+    Scene.refs.sphincter.setAttribute("opacity", f1(1 - .8 * p.voiding));
+  }
+  function tick(dt, p){
+    t += dt; still = "";
+    const col = urineCol(p);
+    /* filtrate from both glomeruli, ∝ GFR */
+    accF += dt * 3 * p.gfr / 125;
+    while (accF >= 1){ accF--; spawn("neph", FILTRATE, 1.5, { side: Math.random() < .5 ? 1 : -1, col }); }
+    /* ureter peristalsis: each wave carries a bolus down both ureters */
+    const per = 6 / (.4 + p.urineFlow), prev = wavePh;
+    wavePh = (wavePh + dt / per) % 1;
+    if (wavePh < prev) ureters.forEach((S, i) => spawn("bolus", col, f1(1.5 + .9 * clamp(p.urineFlow / 1.5)), { i }));
+    /* voiding: a stream down the urethra */
+    if (p.voiding > .05){ accS += dt * 14 * p.voiding; while (accS >= 1){ accS--; spawn("stream", col, 1.7); } } else accS = 0;
+    /* renin puffs from the kidneys in the run */
+    if (p.renin > .3){ accR += dt * 3 * (p.renin - .3); while (accR >= 1){ accR--; spawn("renin", MOLECULES.renin[0], 1.6, { side: Math.random() < .5 ? 1 : -1, a: Math.random() * 6.28 }); } } else accR = 0;
+    for (const d of pool){
+      if (!d.on) continue;
+      d.age += dt;
+      let pt, op = .9, done = false;
+      switch (d.kind){
+        case "neph": {
+          d.u += dt / 3.2; done = d.u >= 1;
+          const [x, y] = neph.at(d.u); pt = [d.side > 0 ? x : 1200 - x, y];
+          /* most of the filtrate is taken back: the dot fades and turns to urine on the way */
+          op = .95 * (1 - .6 * clamp(d.u * 1.4));
+          if (d.u > .7 && !d.urine){ d.urine = true; d.c.setAttribute("fill", d.col); }
+          break;
+        }
+        case "bolus": d.u += dt / 2.4; pt = ureters[d.i].at(d.u); done = d.u >= 1; break;
+        case "stream": d.u += dt / .7; pt = urethra.at(d.u); done = d.u >= 1; break;
+        case "renin": {
+          d.u += dt / 2; done = d.u >= 1;
+          const r = 4 + 16 * d.u, c = d.side > 0 ? [552, 524] : [648, 524];
+          pt = [c[0] + Math.cos(d.a) * r, c[1] + Math.sin(d.a) * r]; op = .85 * (1 - d.u); break;
+        }
+      }
+      if (done){ d.on = false; d.urine = false; d.c.setAttribute("opacity", 0); continue; }
+      put(d.c, pt); d.c.setAttribute("opacity", f1(op * clamp(d.age * 5)));
+    }
+    bladder(p);
+  }
+  /* a still picture (reduced motion, or not live): bladder size and urine colour */
+  function setRates(p){
+    const k = `${p.bladder.toFixed(2)}|${p.voiding.toFixed(2)}|${Math.round(p.urineOsm / 20)}`;
+    if (k === still) return;
+    still = k;
+    bladder(p);
+  }
+  /* what a tap at (x, y) hits: a moving dot, else a kidney, the bladder, a ureter or the urethra */
+  function nearest(x, y, maxD){
+    let best = null, bd = maxD;
+    for (const d of pool){
+      if (!d.on) continue;
+      const dd = Math.hypot(+d.c.getAttribute("cx") - x, +d.c.getAttribute("cy") - y);
+      if (dd < bd){ bd = dd; best = d.kind === "renin" ? "renin" : "drop"; }
+    }
+    if (best) return best;
+    const near = (S, n, k = .8) => { for (let i = 0; i <= n; i++){ const [px, py] = S.at(i / n); if (Math.hypot(px - x, py - y) < maxD * k) return true; } return false; };
+    if (Math.hypot(x - BLADDER_W[0], y - (BLADDER_W[1] - 12)) < maxD * 1.3) return "bladder";
+    if ([[552, 524], [648, 524]].some(([kx, ky]) => Math.abs(x - kx) < 16 && Math.abs(y - ky) < 24)) return "kidney";
+    if (ureters.some(S => near(S, 30))) return "ureter";
+    if (near(urethra, 10)) return "urethra";
     return null;
   }
   return { init, tick, setRates, nearest };
@@ -7176,6 +7856,7 @@ const Panel = (() => {
         ${id === "endocrine" ? `<button type="button" class="chip primary follow-btn" data-cascade="">${esc(STRINGS.followCascade)}</button>` : ""}
         ${id === "respiratory" ? `<button type="button" class="chip primary follow-btn" data-breath="">${esc(STRINGS.followBreath)}</button>` : ""}
         ${id === "digestive" ? `<button type="button" class="chip primary follow-btn" data-bite="">${esc(STRINGS.followBite)}</button>` : ""}
+        ${id === "urinary" ? `<button type="button" class="chip primary follow-btn" data-drop="">${esc(STRINGS.followUrine)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -7210,6 +7891,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
     root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
     root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
+    root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -7251,7 +7933,8 @@ const Panel = (() => {
       ${IMPULSE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.impulseTitle)}</p><div class="depth"><button type="button" class="chip" data-impulse="${IMPULSE_FOR_TOPIC[id]}">${esc(STRINGS.followImpulse)}: ${esc(CONTENT.impulse.journeys[IMPULSE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${CASCADE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.cascadeTitle)}</p><div class="depth"><button type="button" class="chip" data-cascade="${CASCADE_FOR_TOPIC[id]}">${esc(STRINGS.followCascade)}: ${esc(CONTENT.cascade.journeys[CASCADE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${BREATH_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.breathTitle)}</p><div class="depth"><button type="button" class="chip" data-breath="${BREATH_FOR_TOPIC[id]}">${esc(STRINGS.followBreath)}: ${esc(CONTENT.breath.journeys[BREATH_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
-      ${BITE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.biteTitle)}</p><div class="depth"><button type="button" class="chip" data-bite="${BITE_FOR_TOPIC[id]}">${esc(STRINGS.followBite)}: ${esc(CONTENT.bite.journeys[BITE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
+      ${BITE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.biteTitle)}</p><div class="depth"><button type="button" class="chip" data-bite="${BITE_FOR_TOPIC[id]}">${esc(STRINGS.followBite)}: ${esc(CONTENT.bite.journeys[BITE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
+      ${URINE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.urineTitle)}</p><div class="depth"><button type="button" class="chip" data-drop="${URINE_FOR_TOPIC[id]}">${esc(STRINGS.followUrine)}: ${esc(CONTENT.urine.journeys[URINE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -7268,6 +7951,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
     root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
     root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
+    root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -7473,10 +8157,53 @@ const Panel = (() => {
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
+  /* while following a drop: the journey's legs as numbered stops, the current one explained */
+  function renderDrop(s){
+    const C = CONTENT.urine, b = URINE_BY_ID[s.drop], jc = C.journeys[b.id], seg = s.dropSeg || 0, li = LEVEL_INDEX[s.level];
+    const text = levelText(C.stops[b.legs[seg].stop], s.level);
+    const steps = b.legs.map((l, i) => `<li style="--c:${MOLECULES[l.m][0]}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(C.stops[l.stop].name)}</li>`).join("");
+    const groups = {};
+    URINES.forEach(x => (groups[C.journeys[x.id].group] ||= []).push(x.id));
+    const list = Object.entries(groups).map(([g, ids]) => `<p class="imp-group">${esc(g)}</p><div class="depth">${ids.map(id =>
+      `<button type="button" class="chip${id === b.id ? " primary" : ""}" data-dt="${id}"${id === b.id ? ` aria-pressed="true"` : ""}>${esc(C.journeys[id].name)}</button>`).join("")}</div>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.urineTitle)}</h2>
+      <p class="lede">${esc(STRINGS.urineLede)}</p>
+      <section class="sys-card" style="--sc:${MOLECULES[b.legs[0].m][0]}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <p class="follow-label imp-paths">${esc(STRINGS.urineJourneys)}</p>
+      ${list}
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopImpulse)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.urineHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopDrop);
+    root.querySelector("[data-stop]").addEventListener("click", stopDrop);
+    root.querySelectorAll("[data-dt]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.dt)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic;
-    const key = eating ? `bite:${s.bite}|${s.level}|${s.biteSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic, peeing = s.drop != null && !s.topic;
+    const key = peeing ? `drop:${s.drop}|${s.level}|${s.dropSeg}`
+              : eating ? `bite:${s.bite}|${s.level}|${s.biteSeg}`
               : breathing ? `breath:${s.breath}|${s.level}|${s.breathSeg}`
               : lapse ? `cascade:${s.cascade}|${s.level}|${s.cascadeSeg}`
               : riding ? `impulse:${s.impulse}|${s.level}|${s.impulseSeg}`
@@ -7486,7 +8213,7 @@ const Panel = (() => {
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    peeing ? renderDrop(s) : eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -7591,14 +8318,14 @@ const Controls = (() => {
     hourBtns.addEventListener("click", e => { const b = e.target.closest("[data-h]"); if (b) store.set({ hour: +b.dataset.h, playing: false }); });
     range.addEventListener("input", () => store.set({ hour: +range.value, playing: false }));
     play.addEventListener("click", () => store.set({ playing: !store.get().playing }));
-    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); stopBite(); } });
+    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else stopRides(); });
     document.addEventListener("keydown", e => {
       /* space pauses or resumes a ride (unless typing, or pressing a focused button) */
       if (e.key === " " && riding(store.get()) && !store.get().topic && !e.target.closest("button, textarea, select, [contenteditable], input:not([type=range])")){
         e.preventDefault(); store.set({ ridePaused: !store.get().ridePaused }); return;
       }
       if (e.key !== "Escape") return;
-      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); stopBite(); }
+      if (store.get().topic) store.set({ topic: null }); else stopRides();
     });
   }
   function sync(s){
@@ -7706,7 +8433,7 @@ const Journey = (() => {
 
 /* Start following a red cell (a given one, or one just leaving the heart) */
 function startFollow(i){
-  stopImpulse(); stopCascade(); stopBreath(); stopBite();
+  stopRides("follow");
   const s = store.get();
   if (s.live !== "circulatory") setLive("circulatory");
   const idx = i == null ? Particles.pickCell() : i;
@@ -7792,7 +8519,7 @@ const ImpulseCard = (() => {
 /* Start following a nerve impulse (a given journey, or one that suits the hour).
    mirror = run it on the other side of the body. */
 function startImpulse(id, mirror = false){
-  stopFollow(); stopCascade(); stopBreath(); stopBite();
+  stopRides("impulse");
   if (store.get().live !== "nervous") setLive("nervous");
   id = id || defaultImpulse(store.get().hour);
   Impulse.start(id, mirror); ImpulseCard.reset();
@@ -7881,7 +8608,7 @@ const CascadeCard = (() => {
    The clock jumps to the hour the cascade naturally starts, unless it is
    already there; replay = start again from the same hour. */
 function startCascade(id, replay = false){
-  stopFollow(); stopImpulse(); stopBreath(); stopBite();
+  stopRides("cascade");
   if (store.get().live !== "endocrine") setLive("endocrine");
   const s = store.get();
   id = id || defaultCascade(s.hour);
@@ -7973,7 +8700,7 @@ const BreathCard = (() => {
 
 /* Start following a breath journey (a given one, or one that suits the hour) */
 function startBreath(id){
-  stopFollow(); stopImpulse(); stopCascade(); stopBite();
+  stopRides("breath");
   if (store.get().live !== "respiratory") setLive("respiratory");
   const s = store.get();
   id = id || defaultBreath(s.hour);
@@ -8057,7 +8784,7 @@ const BiteCard = (() => {
    starts with a bite of the meal that is on, or the clock jumps to the next
    meal; replay = start again from the same hour. */
 function startBite(id, replay = false){
-  stopFollow(); stopImpulse(); stopCascade(); stopBreath();
+  stopRides("bite");
   if (store.get().live !== "digestive") setLive("digestive");
   const s = store.get();
   id = id || defaultBite(s.hour);
@@ -8075,6 +8802,98 @@ function stopBite(){
 }
 
 /* =========================================================================
+   DROP CARD — over the body while a urinary journey is followed: where the
+   molecule is, real time elapsed, the time-lapse and, in the bladder, when
+   the next pee will be
+   ========================================================================= */
+const DropCard = (() => {
+  const box = $("#dropCard");
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingUrine)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>${esc(STRINGS.realTime)}</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="another">${esc(STRINGS.anotherUrine)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    scrub = rideScrub(box, DropRide, STRINGS.scrubRide, lapseClock(DropRide));
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopDrop();
+      else if (b.dataset.j === "another"){
+        const i = URINES.findIndex(x => x.id === store.get().drop);
+        startDrop(URINES[(i + 1) % URINES.length].id);
+      }
+      else { DropRide.next(); tick(); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function tick(){
+    const s = store.get(); if (s.drop == null) return;
+    const q = DropRide.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.dropSeg !== li) store.set({ dropSeg: li }); }
+    const L = q.leg, col = MOLECULES[L.m][0];
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("where", CONTENT.urine.stops[L.stop].name, v => els.where.textContent = v);
+    set("time", fmtDur(q.real), v => els.time.textContent = v);
+    set("bar", Math.round(q.real / q.total * 200), v => els.bar.style.width = v / 2 + "%");
+    const f = q.factor, speed = f < 1 ? STRINGS.slowed(1 / f) : STRINGS.sped(f);
+    const meta = q.done ? STRINGS.urineDone(fmtDur(q.total))
+      : L.wait ? `${MOLECULES[L.m][1]} · ${STRINGS.untilVoid(fmtTime(DropRide.startHour() + (q.start + L.real) / 3600))} · ${speed}`
+      : `${MOLECULES[L.m][1]} · ${STRINGS.urineKind[L.kind]} · ${speed}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.urine.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+    scrub.sync();
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.drop != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following a urinary journey (a given one, or one that suits the hour),
+   from the hour now; replay = start again from the same hour. */
+function startDrop(id, replay = false){
+  stopRides("drop");
+  if (store.get().live !== "urinary") setLive("urinary");
+  const s = store.get();
+  id = id || defaultUrine(s.hour);
+  const hour = replay ? DropRide.startHour() : s.hour;
+  store.set({ hour, playing: false });
+  DropRide.start(id, hour); DropCard.reset();
+  store.set({ drop: id, dropSeg: 0, topic: null, ridePaused: false });
+  DropCard.tick();
+  showScene();
+}
+function stopDrop(){
+  if (store.get().drop == null) return;
+  DropRide.stop();
+  store.set({ drop: null, dropSeg: null, ridePaused: false });
+}
+/* end every ride except one (a new ride starting, or Back / Escape ending them all) */
+function stopRides(except){
+  const stops = { follow: stopFollow, impulse: stopImpulse, cascade: stopCascade, breath: stopBreath, bite: stopBite, drop: stopDrop };
+  for (const k in stops) if (k !== except) stops[k]();
+}
+
+/* =========================================================================
    WIRING
    ========================================================================= */
 const FOLLOW_W = 230; /* world units across while following a cell */
@@ -8082,6 +8901,7 @@ const IMPULSE_W = 200; /* … and a nerve impulse */
 const CASCADE_W = 240; /* … and a hormone cascade */
 const BREATH_W = 220;  /* … and a breath */
 const BITE_W = 250;    /* … and a bite */
+const DROP_W = 200;    /* … and a drop */
 const BODY_MAX = 4;     /* in time-lapse, the heart, breath and blood run at most this much faster… */
 const CLOCK_MAX = 3 * 3600; /* …and the day clock at most 3 h per second, so the sky doesn't strobe */
 function cameraFor(s){
@@ -8090,6 +8910,7 @@ function cameraFor(s){
   if (s.cascade != null && !s.topic) return Camera.focusView(Scene.toView(Cascade.pos()), CASCADE_W);
   if (s.breath != null && !s.topic) return Camera.focusView(Scene.toView(BreathRide.pos()), BREATH_W);
   if (s.bite != null && !s.topic) return Camera.focusView(Scene.toView(BiteRide.pos()), BITE_W);
+  if (s.drop != null && !s.topic) return Camera.focusView(Scene.toView(DropRide.pos()), DROP_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -8104,18 +8925,20 @@ store.subscribe((s, prev) => {
   }
   Pins.render(s);
   const free = !s.topic && !riding(s);
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
   if (s.cascade != null && (s.topic || s.live !== "endocrine")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "endocrine") stopCascade(); });
   if (s.breath != null && (s.topic || s.live !== "respiratory")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "respiratory") stopBreath(); });
   if (s.bite != null && (s.topic || s.live !== "digestive")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "digestive") stopBite(); });
+  if (s.drop != null && (s.topic || s.live !== "urinary")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "urinary") stopDrop(); });
   Journey.sync(s);
   ImpulseCard.sync(s);
   CascadeCard.sync(s);
   BreathCard.sync(s);
   BiteCard.sync(s);
+  DropCard.sync(s);
   if (s.topic !== prev.topic){
     Camera.go(cameraFor(s)); Hotspots.setVisible(free); Scene.focus(s.topic);
     if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
@@ -8145,6 +8968,8 @@ function init(){
   BreathRide.init();
   Digestion.init();
   BiteRide.init();
+  Urinary.init();
+  DropRide.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
@@ -8152,6 +8977,7 @@ function init(){
   CascadeCard.build();
   BreathCard.build();
   BiteCard.build();
+  DropCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
@@ -8178,6 +9004,11 @@ function init(){
       const id = tapBite(Digestion.nearest(pt.x, pt.y, tol));
       if (id){ startBite(id); return; }
     }
+    /* urinary live: tap a kidney, the bladder or a moving drop to follow a journey */
+    if (s.live === "urinary"){
+      const id = tapUrine(Urinary.nearest(pt.x, pt.y, tol));
+      if (id){ startDrop(id); return; }
+    }
     if (!s.shown.circulatory) return;
     const i = Particles.nearestCell(pt.x, pt.y, tol);
     if (i != null) startFollow(i);
@@ -8201,7 +9032,7 @@ function init(){
     /* bullet time: while an impulse is followed the body (and the clock) run slowed down.
        Time-lapse: while a hormone cascade is followed the clock runs at the real
        time of the signal (capped), and the body faster (capped harder) */
-    const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : null;
+    const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : st.drop != null ? DropRide : null;
     const k = st.impulse != null ? Impulse.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
     /* a paused ride freezes everything: the rider, the body and the clock */
     const paused = st.ridePaused && riding(st) && !st.topic, rdt = paused ? 0 : dt;
@@ -8233,6 +9064,7 @@ function init(){
       if (!reducedMotion && live === "endocrine") Hormones.tick(sdt, ph); else Hormones.setRates(ph);
       if (!reducedMotion && live === "respiratory") Airways.tick(sdt, ph); else Airways.setRates(ph);
       if (!reducedMotion && live === "digestive") Digestion.tick(sdt, ph); else Digestion.setRates(ph);
+      if (!reducedMotion && live === "urinary") Urinary.tick(sdt, ph); else Urinary.setRates(ph);
       Panel.tick(sdt, ph);
       Journey.tick(sdt);
       Impulse.tick(rdt);
@@ -8243,6 +9075,8 @@ function init(){
       BreathCard.tick();
       BiteRide.tick(rdt);
       BiteCard.tick();
+      DropRide.tick(rdt);
+      DropCard.tick();
     }
     requestAnimationFrame(frame);
   }

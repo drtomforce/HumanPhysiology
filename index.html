@@ -3319,7 +3319,7 @@ const CONFIG = {
   world: { w: 1200, h: 1000, cx: 600 },
   seed: 7,
   hoursPerSecond: 0.8,          /* a whole day in 30 s */
-  bbox: { x0: 420, x1: 1075, y0: 70, y1: 1000 },
+  bbox: { x0: 420, x1: 1075, y0: 70, y1: 1070 },
   focusCenter: { x: 600, y: 420 }
 };
 
@@ -3749,15 +3749,22 @@ const ORG = {
    (portal vein) before it gets home. Shared trunks repeat the same path text,
    so cells on different routes run down the same aorta and vena cava. */
 /* Body proportions. Geometry below is drawn in "design" coordinates and then
-   stretched: the legs (below the hips, y > HIP_Y) by LEG_K and the arms (|x−600|
-   ≥ ARM_DX, below the shoulders) by ARM_K, so the figure stands about seven heads
-   tall. bodyPt maps a design point to body coordinates; mapD does the same for
-   every "x y" pair of an absolute path. The whole body is then narrowed by BODY_SX
-   around the midline (see Scene.toView). */
-const HIP_Y = 600, LEG_K = 1.4, SHOULDER_Y = 300, ARM_K = 1.15, ARM_DX = 130, BODY_SX = .88;
-const legY = y => y <= HIP_Y ? y : HIP_Y + (y - HIP_Y) * LEG_K;
+   stretched: the thighs (HIP_Y → KNEE_Y) by THIGH_K and the shins (KNEE_Y →
+   ANKLE_Y) by SHIN_K, and the arms (|x−600| ≥ ARM_DX, below the shoulders) by
+   ARM_K and swung in towards the hips by up to ARM_IN, so the figure stands about
+   seven heads tall: crotch near half height, knee a bit above a quarter, elbows
+   at the waist and wrists at the crotch. bodyPt maps a design point to body
+   coordinates; mapD does the same for every "x y" pair of an absolute path. The
+   whole body is then narrowed by BODY_SX around the midline (see Scene.toView). */
+const HIP_Y = 600, KNEE_Y = 771, ANKLE_Y = 846, THIGH_K = 1.1, SHIN_K = 3,
+  SHOULDER_Y = 300, ARM_K = 1.15, ARM_DX = 130, ARM_IN = 30, BODY_SX = .88;
+const legY = y => y <= HIP_Y ? y : y <= KNEE_Y ? HIP_Y + (y - HIP_Y) * THIGH_K
+  : HIP_Y + (KNEE_Y - HIP_Y) * THIGH_K + (y - KNEE_Y) * SHIN_K;
 const armY = y => y <= SHOULDER_Y ? y : SHOULDER_Y + (y - SHOULDER_Y) * ARM_K;
-const bodyPt = (x, y) => [x, Math.abs(x - 600) >= ARM_DX ? armY(y) : legY(y)];
+const armX = (x, y) => x + Math.sign(600 - x) * ARM_IN * clamp((y - SHOULDER_Y) / 300);
+const bodyPt = (x, y) => Math.abs(x - 600) >= ARM_DX ? [armX(x, y), armY(y)] : [x, legY(y)];
+/* the quadriceps: an ellipse over the front of the thigh (design y 618 → 762) */
+const QUAD_EL = { cy: (legY(618) + legY(762)) / 2, ry: (legY(762) - legY(618)) / 2 };
 const mapD = d => d.replace(/(-?[\d.]+)[ ,]+(-?[\d.]+)/g, (_, x, y) => { const [X, Y] = bodyPt(+x, +y); return `${f1(X)} ${f1(Y)}`; });
 const AO = "M616 346 C615 326 614 310 610 300";                        /* ascending aorta to the arch */
 const AO_D = AO + " C618 312 610 332 607 360 L606 470";                  /* descending aorta */
@@ -4459,10 +4466,32 @@ const Scene = (() => {
   }
   /* faint limb bones under the skin: femur, kneecap and shin; upper arm and forearm.
      side = 1 for the body's right (viewer's left), -1 for the left */
-  const TORSO_D = "M452 302 C452 276 470 264 500 259 C532 254 556 248 574 236 L626 236 C644 248 668 254 700 259 C730 264 748 276 748 302 L736 450 C730 486 724 520 732 560 C736 590 724 612 700 614 L500 614 C476 612 464 590 468 560 C476 520 470 486 464 450 Z";
-  const LIMBS = [["M550 600 C546 690 540 770 536 846", 80], ["M650 600 C654 690 660 770 664 846", 80], ["M470 285 C432 330 424 450 420 588", 50], ["M730 285 C768 330 776 450 780 588", 50]]
-    .map(([d, w]) => [mapD(d), w]);
-  const flushLimbs = LIMBS.map(([d, w]) => `<path d="${d}" fill="none" stroke-width="${w}" stroke-linecap="round"/>`).join("");
+  /* torso: shoulders, a chest that tapers to the waist below the ribs, then the hips;
+     wide enough to hold the lungs, liver and stomach with a margin */
+  const TORSO_D = "M452 302 C452 276 470 264 500 259 C532 254 556 248 574 236 L626 236 C644 248 668 254 700 259 C730 264 748 276 748 302"
+    + " C744 340 732 372 726 400 C718 440 716 470 708 500 C702 524 704 540 716 558 C726 574 726 598 708 612"
+    + " C680 624 630 626 600 640 C570 626 520 624 492 612 C474 598 474 574 484 558 C496 540 498 524 492 500 C484 470 482 440 474 400 C468 372 456 340 452 302 Z";
+  /* limbs: a design-coordinate centre line (one cubic) and its width at design y,
+     drawn as a tapered outline (thigh → knee → calf → ankle, shoulder → elbow → wrist) */
+  const LEG_W = [[600, 104], [650, 90], [740, 60], [771, 50], [784, 54], [800, 56], [846, 30]];
+  const ARM_W = [[292, 50], [330, 48], [410, 38], [440, 35], [470, 40], [570, 26], [588, 25]];
+  const LIMBS = [["M550 600 C546 690 540 770 536 846", LEG_W], ["M650 600 C654 690 660 770 664 846", LEG_W],
+                 ["M472 292 C436 330 424 450 420 588", ARM_W], ["M728 292 C764 330 776 450 780 588", ARM_W]].map(([d, W]) => taper(d, W));
+  function taper(d, W){
+    const [x0, y0, x1, y1, x2, y2, x3, y3] = d.match(/-?[\d.]+/g).map(Number), N = 36;
+    const at = t => { const u = 1 - t; return [u*u*u*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x3, u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3]; };
+    const wAt = y => { let i = 0; while (i < W.length - 2 && y > W[i + 1][0]) i++; const [ya, wa] = W[i], [yb, wb] = W[i + 1], u = clamp((y - ya) / (yb - ya)); return wa + (wb - wa) * u * u * (3 - 2 * u); };
+    const pts = Array.from({ length: N + 1 }, (_, i) => { const [x, y] = at(i / N); return [...bodyPt(x, y), wAt(y) / 2]; });
+    const L = [], R = [];
+    pts.forEach(([x, y, h], i) => {
+      const [ax, ay] = pts[Math.max(0, i - 1)], [bx, by] = pts[Math.min(N, i + 1)], len = Math.hypot(bx - ax, by - ay) || 1;
+      const nx = -(by - ay) / len * h, ny = (bx - ax) / len * h;
+      L.push(`${f1(x + nx)} ${f1(y + ny)}`); R.unshift(`${f1(x - nx)} ${f1(y - ny)}`);
+    });
+    const r0 = f1(pts[0][2]), r1 = f1(pts[N][2]);
+    return `M${L.join(" L")} A${r1} ${r1} 0 0 0 ${R.join(" L")} A${r0} ${r0} 0 0 0 ${L[0]}Z`;
+  }
+  const flushLimbs = LIMBS.map(d => `<path d="${d}"/>`).join("");
   function bone(x1, y1, x2, y2, w){
     const a = Math.atan2(y2 - y1, x2 - x1), nx = -Math.sin(a) * w * .45, ny = Math.cos(a) * w * .45;
     const knobs = [[x1, y1], [x2, y2]].map(([x, y]) => `<circle cx="${f1(x + nx)}" cy="${f1(y + ny)}" r="${f1(w * .62)}"/><circle cx="${f1(x - nx)}" cy="${f1(y - ny)}" r="${f1(w * .62)}"/>`).join("");
@@ -4471,9 +4500,11 @@ const Scene = (() => {
   const mx = (x, side) => side > 0 ? x : 1200 - x;
   const legBones = side => bone(mx(551, side), legY(622), mx(543, side), legY(758), 13) + bone(mx(542, side), legY(784), mx(537, side), legY(838), 11)
     + `<ellipse cx="${mx(543, side)}" cy="${legY(771)}" rx="7" ry="8.5" class="patella"/>`;
-  const armBones = side => bone(mx(464, side), armY(304), mx(441, side), armY(438), 9) + bone(mx(437, side), armY(456), mx(424, side), armY(570), 6) + bone(mx(447, side), armY(458), mx(434, side), armY(570), 5);
+  const armBone = (x1, y1, x2, y2, w, side) => bone(...bodyPt(mx(x1, side), y1), ...bodyPt(mx(x2, side), y2), w);
+  const armBones = side => armBone(464, 304, 441, 438, 9, side) + armBone(437, 456, 424, 570, 6, side) + armBone(447, 458, 434, 570, 5, side);
+  const [handLx, handY] = bodyPt(422, 606);
   function build(){
-    const limb = (d, w) => `<path d="${d}" class="limb-o" stroke-width="${w + 4}"/><path d="${d}" class="limb" stroke-width="${w}"/>`;
+    const limb = d => `<path d="${d}" class="skin"/>`;
     let stars = "";
     for (let i = 0; i < 16; i++) stars += `<circle cx="${f1(870 + R() * 180)}" cy="${f1(140 + R() * 130)}" r="${f1(.8 + R() * 1.2)}"/>`;
     let gy = "";
@@ -4499,15 +4530,15 @@ const Scene = (() => {
       <path d="M960 135 V325 M865 230 H1055" class="win-bar"/>
     </g>
     <circle cx="960" cy="230" r="95" class="win-frame"/>
-    <ellipse cx="600" cy="${legY(874)}" rx="170" ry="14" class="shadow"/>
+    <ellipse cx="600" cy="${legY(ANKLE_Y) + 32}" rx="150" ry="14" class="shadow"/>
     <g id="s-figure" transform="${FIGURE_TF}">
     <g id="s-body">
-      ${limb(...LIMBS[0])}${limb(...LIMBS[1])}
+      ${limb(LIMBS[0])}${limb(LIMBS[1])}
       <g class="bones">${legBones(1)}${legBones(-1)}</g>
-      <ellipse cx="522" cy="${legY(866)}" rx="44" ry="16" class="skin"/><ellipse cx="678" cy="${legY(866)}" rx="44" ry="16" class="skin"/>
-      <ellipse id="s-quadL" cx="545" cy="${legY(690)}" rx="27" ry="${72 * LEG_K}"/><ellipse id="s-quadR" cx="655" cy="${legY(690)}" rx="27" ry="${72 * LEG_K}"/>
-      ${limb(...LIMBS[2])}${limb(...LIMBS[3])}
-      <circle cx="420" cy="${armY(600)}" r="24" class="skin"/><circle cx="780" cy="${armY(600)}" r="24" class="skin"/>
+      <ellipse cx="524" cy="${legY(ANKLE_Y) + 18}" rx="40" ry="15" class="skin"/><ellipse cx="676" cy="${legY(ANKLE_Y) + 18}" rx="40" ry="15" class="skin"/>
+      <ellipse id="s-quadL" cx="545" cy="${QUAD_EL.cy}" rx="27" ry="${QUAD_EL.ry}"/><ellipse id="s-quadR" cx="655" cy="${QUAD_EL.cy}" rx="27" ry="${QUAD_EL.ry}"/>
+      ${limb(LIMBS[2])}${limb(LIMBS[3])}
+      <ellipse cx="${f1(handLx)}" cy="${f1(handY)}" rx="15" ry="25" class="skin"/><ellipse cx="${f1(1200 - handLx)}" cy="${f1(handY)}" rx="15" ry="25" class="skin"/>
       <g class="bones">${armBones(1)}${armBones(-1)}</g>
       <rect x="574" y="208" width="52" height="56" rx="14" class="skin"/>
       <path class="skin" d="${TORSO_D}"/>
@@ -4681,7 +4712,7 @@ const Scene = (() => {
     svg.querySelectorAll("#s-vessels, #s-pulm").forEach(g => g.classList.toggle("ghost", !shown.circulatory && live === "endocrine"));
   }
   /* a design-coordinate point (as in CONTENT pins) → scene coordinates */
-  const place = (x, y) => toView({ x, y: bodyPt(x, y)[1] });
+  const place = (x, y) => { const [X, Y] = bodyPt(x, y); return toView({ x: X, y: Y }); };
   return { build, update, animate, focus, setSystems, svg, focusPoints, toView, place, refs: r, get bbox(){ return CONFIG.bbox; } };
 })();
 
@@ -5061,7 +5092,7 @@ const Impulse = (() => {
     const p = pos(), col = impulseColor(legs[legs.length - 1].kind);
     ring(p.x, p.y, col, 34);
     if (J.effect === "quad"){
-      const e = el("ellipse", { cx: mirror ? 655 : 545, cy: legY(690), rx: 27, ry: 72 * LEG_K, fill: "#e0473c", opacity: 0 }, g);
+      const e = el("ellipse", { cx: mirror ? 655 : 545, cy: QUAD_EL.cy, rx: 27, ry: QUAD_EL.ry, fill: "#e0473c", opacity: 0 }, g);
       g.insertBefore(e, g.firstChild);
       fx.push({ e, age: 0, life: 1.4, kind: "flash" });
     }

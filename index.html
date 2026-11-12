@@ -17,7 +17,7 @@
 
  1. DATA (JSON blocks in <script type="application/json">)
     #body-content  topics → phases → levels → text, and systems (circulatory,
-                   nervous, endocrine, respiratory) → phases → levels → text plus fact pins
+                   nervous, endocrine, respiratory, digestive) → phases → levels → text plus fact pins
                    {title, x, y, levels…}. The schema is the contract.
     #body-glossary term → definition + match forms. Terms are auto-linked.
     #body-hours    one short "what's happening now" note per hour (24).
@@ -41,17 +41,21 @@
                    (gate "in"/"out", their share of one breath), plus diffusion,
                    blood and mucus legs with real durations, each with its molecule
                    (MOLECULES) and partial pressure; text in CONTENT.breath.
+                   BITES lists the bite journeys: one nutrient through the gut, timed
+                   like CASCADES (gut, lymph, blood and step legs with real durations),
+                   each with its molecule (MOLECULES); text in CONTENT.bite.
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
                    follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg, breath,
-                   breathSeg}. shown = which body systems
+                   breathSeg, bite, biteSeg}. shown = which body systems
                    are drawn; live = the one that is animated (setSystem / setLive keep
                    the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
                    impulse / impulseSeg = the nerve impulse journey followed and its
                    leg (startImpulse / stopImpulse); cascade / cascadeSeg the same for
-                   a hormone cascade (startCascade / stopCascade), and breath / breathSeg
-                   for a breath journey (startBreath / stopBreath); one ride at a time,
+                   a hormone cascade (startCascade / stopCascade), breath / breathSeg
+                   for a breath journey (startBreath / stopBreath), and bite / biteSeg
+                   for a bite journey (startBite / stopBite); one ride at a time,
                    and riding(s) says whether one is on.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
@@ -64,14 +68,17 @@
                    blood cells (PARTICLES), action potentials along the NERV
                    routes (NERVES), and hormones secreted by GLANDS that ride
                    the CIRC routes to their target organ (HORMONES), and air dots
-                   moved in and out of the airways by the breath volume (AIRWAYS).
+                   moved in and out of the airways by the breath volume (AIRWAYS),
+                   and stomach waves, chyme, bile, pancreatic juice, absorbed
+                   nutrients and the colon's load (DIGESTION).
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
                    IMPULSE rides one action potential in bullet time: its
                    timeScale() slows the beat, breath, blood and clock in the frame
                    loop, and IMPULSE CARD shows the stop, fibre, speed and real ms.
-                   CASCADE is its mirror image, a hormone signal in time-lapse: its
+                   CASCADE is its mirror image, a hormone signal in time-lapse (built,
+                   like BITE RIDE, by the shared lapseRide engine): its
                    timeScale() moves the day clock on (capped by CLOCK_MAX) and
                    speeds up the body (capped by BODY_MAX); CASCADE CARD shows the
                    stop, the messenger, real time elapsed and the time-lapse.
@@ -79,6 +86,9 @@
                    ride the real breath (and wait for it), other legs are slowed or
                    sped up; BREATH CARD shows the stop, its partial pressure and
                    whether it is waiting for the in- or out-breath.
+                   BITE RIDE follows one nutrient from a bite of food in time-lapse,
+                   slow enough on long legs that the day clock keeps up; BITE CARD
+                   shows the stop, the molecule, real time and the time-lapse.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -91,8 +101,8 @@
                    blood pressure, cardiac output, blood O₂, hormones.
 
  7. UI              Panel (intro with the live-system and sleep-stage cards, organ
-                   view with "Part of" chips, red-cell, nerve-impulse and
-                   hormone-cascade journey views), timeline with
+                   view with "Part of" chips, red-cell, nerve-impulse, hormone-cascade,
+                   breath and bite journey views), timeline with
                    the hypnogram strip, level switch, system switches, glossary tooltips.
 
  Values are typical for a healthy adult and simplified for teaching; this is
@@ -399,9 +409,21 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .diaphragm{ fill:none; stroke:#d0604c; stroke-width:3.4; stroke-linecap:round; opacity:.85; }
 .resp-mus{ fill:none; stroke:#e0705a; stroke-width:2.2; stroke-linecap:round; }
 .air{ stroke:#ffffff99; stroke-width:.5; }
-#s-breathRide .imp-halo{ opacity:.28; }
-#s-breathRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-#s-breathRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+.gi-tract{ fill:none; stroke:#c4702e; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; opacity:.5; }
+.gi-tract.thin{ stroke-width:2; }
+.gi-tract.colon{ stroke-width:5; opacity:.35; stroke-dasharray:6 2; stroke-linecap:butt; }
+.gi-wall{ fill:none; stroke:#c4702e; stroke-width:2.2; opacity:.75; }
+.gi-gland{ fill:#e3a8a0; stroke:#c4702e; stroke-width:1; }
+.gi-duct{ fill:none; stroke:#c4702e; stroke-width:1; opacity:.6; }
+.gi-duct.bile{ stroke:#7da33a; stroke-width:1.6; opacity:.85; }
+.gi-duct.panc{ stroke:#e3a13c; stroke-width:1.4; stroke-dasharray:3 2; opacity:.85; }
+.gi-lymph{ fill:none; stroke:#e6cf7a; stroke-width:1.4; stroke-dasharray:1.5 3; stroke-linecap:round; opacity:.8; }
+.gi-gb{ fill:#7da33a; stroke:#5b7d26; stroke-width:1; }
+.gi-wave{ fill:none; stroke:#c4702e; stroke-width:2.6; }
+.gi-dot{ stroke:#ffffff80; stroke-width:.5; }
+#s-breathRide .imp-halo, #s-biteRide .imp-halo{ opacity:.28; }
+#s-breathRide .cas-dot, #s-biteRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-breathRide .imp-trail, #s-biteRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 #s-pins .mk{ cursor:pointer; outline:none; }
 #s-pins .mk circle{ fill:var(--pc, var(--ink)); stroke:var(--bg); stroke-width:2.4; }
 #s-pins .mk text{ fill:#fff; font:600 12px var(--sans); text-anchor:middle; pointer-events:none; }
@@ -459,7 +481,9 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   .vt-wide{ grid-template-columns:auto 1fr; }
   .moment-note{ display:none; }
   .sw-name .long{ display:none; } .sw-name .short{ display:inline; }
-  .sw-name{ font-size:12px; }
+  .sw-name{ font-size:12px; padding:2px 5px 2px 7px; }
+  .systems{ gap:3px; }
+  .sw{ padding:2px 3px 2px 4px; }
   .systems-label{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){
@@ -496,6 +520,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="journey" id="impulseCard" aria-live="polite"></div>
       <div class="journey" id="cascadeCard" aria-live="polite"></div>
       <div class="journey" id="breathCard" aria-live="polite"></div>
+      <div class="journey" id="biteCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
       <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
@@ -1246,6 +1271,128 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "hs": "Chemoreceptors in the brainstem sense CO₂ (as acidity), and the carotid bodies in your neck sense low oxygen. Both make you breathe more.",
           "college": "Central chemoreceptors provide about 70% of the response to CO₂. The carotid bodies respond within a second to falling PaO₂ and rising PaCO₂ or H⁺.",
           "phd": "The retrotrapezoid nucleus is the key CO₂-sensing site, using proton-sensing channels such as TASK-2 and GPR4. Carotid body glomus cells sense O₂ through mitochondrial signalling." }
+      ]
+    },
+    "digestive": {
+      "name": "Digestive system",
+      "blurb": "Mouth to colon: turning meals into molecules the body can use",
+      "phases": {
+        "sleep": {
+          "ms": "While you sleep, your gut keeps working quietly. Dinner leaves your stomach slowly, and every hour and a half or so a strong wave sweeps through the empty stomach and intestines to clean out leftovers. The large intestine slows right down, which is why you rarely need the toilet at night.",
+          "hs": "Gut movement and digestive juices slow down at night, so a late dinner empties from the stomach more slowly. Once the stomach is empty, the migrating motor complex takes over: about every 90–120 minutes a band of strong contractions sweeps from the stomach to the end of the small intestine, clearing out leftover food and bacteria. The colon almost stops during sleep and starts up again on waking.",
+          "college": "The migrating motor complex (MMC) cycles through a quiet phase I, an irregular phase II and a 5–10 minute burst of maximal contractions in phase III, which creeps down the small intestine at a few centimetres a minute. Phase III starting in the stomach coincides with peaks of the hormone motilin. Gastric acid secretion follows a circadian rhythm, highest in the late evening, and colonic motor activity is lowest in sleep and rises sharply on waking.",
+          "phd": "Loss of MMC activity, as in diabetic autonomic neuropathy or with opioids, predisposes to small intestinal bacterial overgrowth. Gut epithelial and enteric cells carry their own circadian clocks, nutrient transporters such as SGLT1 vary across the day, and the timing of meals can shift peripheral clocks independently of the SCN (Damiola et al., 2000). Late eating and shift work impair glucose tolerance, partly through this misalignment."
+        },
+        "rest": {
+          "ms": "Between meals your gut is busy with what you last ate. The small intestine soaks up the nutrients and sends them in the blood to the liver. The leftovers move on to the large intestine, where trillions of friendly bacteria live.",
+          "hs": "Food spends about 2–4 hours in the stomach, 3–5 hours in the small intestine and a day or more in the large intestine. Most nutrients are absorbed in the small intestine, whose folds, villi and microvilli give it a surface of about 30 m², roughly half a badminton court. The colon takes back water and salt, and its bacteria ferment fibre.",
+          "college": "Liquids leave the stomach quickly and steadily, solids only after a lag while the antrum grinds them down. Feedback from the intestine (CCK, GLP-1, PYY and the ‘ileal brake’) slows gastric emptying when nutrients arrive. Absorbed sugars and amino acids reach the liver first through the portal vein; fat bypasses it as chylomicrons in the lymph.",
+          "phd": "The colonic microbiota, about 38 trillion bacteria (Sender et al., 2016), ferments 20–60 g of carbohydrate a day into short-chain fatty acids, which supply around 5–10% of the body’s energy. Butyrate is the main fuel of colonocytes, and its oxidation keeps the lumen low in oxygen, which favours strictly anaerobic bacteria. SCFAs also signal through FFAR2 and FFAR3 on L-cells and immune cells."
+        },
+        "meal": {
+          "ms": "Digestion starts before the first bite: smelling food makes your mouth water. Teeth and saliva break the food up, and you swallow it down the food pipe. The stomach mixes it with acid into a thick soup and squirts it bit by bit into the small intestine, where bile and pancreatic juice finish the job.",
+          "hs": "The sight and smell of food trigger saliva and stomach acid through the vagus nerve (the cephalic phase). The stomach relaxes to hold the meal, then waves of contraction, about three a minute, grind it into chyme. As chyme enters the duodenum, the hormone CCK makes the gallbladder squeeze out bile and the pancreas release enzymes, while secretin brings bicarbonate to neutralise the acid. Eating also wakes up the colon (the gastrocolic reflex).",
+          "college": "Digestion is controlled in cephalic, gastric and intestinal phases. Gastric accommodation, a vagal, nitric oxide–mediated relaxation of the fundus, lets the stomach take 1–1.5 L with little rise in pressure. The antrum grinds particles to under 1–2 mm before they pass the pylorus. Duodenal acid releases secretin, and fat and protein release CCK, which contracts the gallbladder, drives pancreatic enzyme secretion and slows gastric emptying.",
+          "phd": "Gastric slow waves (~3 per minute) are generated by interstitial cells of Cajal and spread from a pacemaker on the greater curvature; muscle contracts only when nerves or hormones push the slow-wave plateau above threshold. Disrupted ICC networks underlie gastroparesis. Enteroendocrine ‘neuropod’ cells synapse directly onto vagal afferents and report sugar in the gut to the brainstem within milliseconds (Kaelberer et al., 2018)."
+        },
+        "exercise": {
+          "ms": "When you run, your body sends most of its blood to your legs and less to your gut. Digestion slows down, which is why running straight after a big meal can give you a stomach ache.",
+          "hs": "During hard exercise, sympathetic nerves narrow the gut’s blood vessels, and blood flow to the gut can fall by more than half. Stomach emptying and gut movements slow, and absorption drops. That is why a big meal right before a run can cause cramps or nausea, while a light snack an hour or two before is fine.",
+          "college": "Splanchnic blood flow falls by 60–80% at high intensity as sympathetic vasoconstriction diverts cardiac output to muscle. Gastric emptying of drinks changes little below about 70% of VO₂max but slows above it. The intestine still absorbs glucose during exercise, and mixing glucose with fructose (SGLT1 plus GLUT5) lets athletes burn about 1.5–1.8 g of carbohydrate a minute.",
+          "phd": "Prolonged strenuous exercise causes transient intestinal hypoperfusion and epithelial injury, with rising I-FABP and increased permeability; 30–50% of endurance athletes report gastrointestinal symptoms (de Oliveira, Burini & Jeukendrup, 2014). The ‘trained gut’ idea holds that regular carbohydrate intake during training up-regulates intestinal transporters and reduces symptoms."
+        }
+      },
+      "pins": [
+        {
+          "id": "mouth",
+          "title": "Mouth and salivary glands",
+          "x": 630,
+          "y": 224,
+          "ms": "Teeth cut and grind food, and about a litre and a half of saliva a day wets it so you can swallow.",
+          "hs": "Saliva contains amylase, which starts breaking starch into sugar, and mucus that makes food slippery. Chewing turns each mouthful into a soft ball called a bolus.",
+          "college": "Three pairs of major salivary glands secrete 1–1.5 L a day, mostly under parasympathetic control. Salivary amylase keeps working inside the swallowed bolus until stomach acid reaches it.",
+          "phd": "The number of copies of the salivary amylase gene AMY1 varies from 2 to over 15 between people and is higher in populations with traditionally starch-rich diets (Perry et al., 2007)."
+        },
+        {
+          "id": "oesophagus",
+          "title": "Oesophagus",
+          "x": 592,
+          "y": 330,
+          "ms": "The food pipe carries each swallow to your stomach. Muscles squeeze it down, so you could even swallow upside down.",
+          "hs": "A wave of peristalsis carries a swallow down the 25 cm oesophagus in about 8 seconds. A ring of muscle at the bottom keeps stomach acid from coming back up.",
+          "college": "The upper third is skeletal muscle and the lower two-thirds smooth muscle. The lower oesophageal sphincter relaxes as each swallow begins, and its tone, with the crural diaphragm, forms the barrier against reflux.",
+          "phd": "Transient lower oesophageal sphincter relaxations, triggered by a stretched stomach through a vagovagal reflex, are the main mechanism of gastro-oesophageal reflux, which is why reflux is commonest after meals."
+        },
+        {
+          "id": "stomach",
+          "title": "Stomach",
+          "x": 684,
+          "y": 432,
+          "ms": "Your stomach is a stretchy bag that holds a meal, mixes it with acid and churns it into a thick soup.",
+          "hs": "The stomach lining makes hydrochloric acid strong enough to kill most germs, plus pepsin to start digesting protein. A thick layer of mucus stops it from digesting itself.",
+          "college": "Parietal cells pump H⁺ through the H⁺/K⁺-ATPase, stimulated by acetylcholine, gastrin and histamine, bringing the pH down to 1–2. Chief cells release pepsinogen, which the acid turns into pepsin.",
+          "phd": "Proton pump inhibitors block the H⁺/K⁺-ATPase irreversibly, so acid returns only as new pumps are made. Helicobacter pylori survives the acid with urease, and its discovery (Marshall and Warren, Nobel Prize 2005) transformed the treatment of peptic ulcers."
+        },
+        {
+          "id": "pylorus",
+          "title": "Pylorus",
+          "x": 600,
+          "y": 494,
+          "ms": "A ring of muscle at the stomach’s exit lets only small spoonfuls of mashed food through at a time.",
+          "hs": "The pylorus opens briefly with each stomach wave and lets through only pieces smaller than about 2 mm, a few millilitres at a time.",
+          "college": "Gastric emptying delivers roughly 2–4 kcal a minute to the duodenum, held steady by feedback: acid, fat and very concentrated chyme in the duodenum all slow it.",
+          "phd": "Gastric emptying is measured with scintigraphy or ¹³C-octanoate breath tests. In diabetes both slow emptying (gastroparesis) and fast emptying shape post-meal glucose, and GLP-1 receptor agonists act partly by slowing it."
+        },
+        {
+          "id": "gallbladder",
+          "title": "Gallbladder and bile",
+          "x": 552,
+          "y": 494,
+          "ms": "The liver makes bile and the gallbladder stores it. After a fatty meal it squeezes bile into the gut to help break up the fat.",
+          "hs": "Bile salts work like washing-up liquid, breaking fat into tiny droplets that enzymes can reach. The hormone CCK makes the gallbladder contract.",
+          "college": "The liver secretes 500–1000 mL of bile a day, and the gallbladder concentrates it 5–10-fold. About 95% of bile acids are reabsorbed at the end of the ileum and return to the liver, cycling several times a day (the enterohepatic circulation).",
+          "phd": "Bile acids are hormones too: in the ileum they activate FXR, which releases FGF19 to switch off bile acid synthesis in the liver, and they act on TGR5 on L-cells. Gut bacteria convert primary into secondary bile acids."
+        },
+        {
+          "id": "pancreas",
+          "title": "Pancreas: digestive juice",
+          "x": 654,
+          "y": 542,
+          "ms": "As well as insulin, the pancreas makes a powerful juice full of enzymes that digest food in the small intestine.",
+          "hs": "Pancreatic juice contains enzymes for starch (amylase), fat (lipase) and protein (trypsin and others), plus bicarbonate to neutralise stomach acid.",
+          "college": "Acinar cells secrete 1–2 L a day. Protein-cutting enzymes are made in inactive forms; enteropeptidase on the duodenal wall switches trypsinogen to trypsin, which then activates the rest.",
+          "phd": "Trypsin switched on too early, inside the pancreas, is central to pancreatitis; mutations in PRSS1 (cationic trypsinogen) and SPINK1 (a trypsin inhibitor) cause hereditary forms."
+        },
+        {
+          "id": "smallInt",
+          "title": "Small intestine",
+          "x": 600,
+          "y": 578,
+          "ms": "This long, coiled tube, several metres long, is where most of your food is absorbed into the blood.",
+          "hs": "Its lining is folded into villi, and each villus cell is covered in microvilli, so the surface is about 30 m². Sugars and amino acids go into tiny blood vessels; fats go into lymph vessels called lacteals.",
+          "college": "The jejunum absorbs most sugars, amino acids and fats; the end of the ileum takes up bile acids and vitamin B₁₂. Segmentation mixes chyme with the digestive juices, while peristalsis slowly moves it on.",
+          "phd": "Enterocytes live only 3–5 days and are renewed from Lgr5⁺ stem cells in the crypts (Barker et al., 2007), making the gut lining one of the fastest-renewing tissues in the body."
+        },
+        {
+          "id": "colon",
+          "title": "Large intestine",
+          "x": 560,
+          "y": 580,
+          "ms": "The large intestine dries out what is left, and its friendly bacteria feed on fibre. What remains leaves as poo.",
+          "hs": "The colon takes back water and salt, turning about 1.5 L of liquid a day into firm stool. Its bacteria ferment fibre into short-chain fatty acids that feed the colon’s own cells.",
+          "college": "Colonic transit takes around 20–40 hours, with wide variation. Slow haustral contractions mix the contents, and a few mass movements a day, often after breakfast (the gastrocolic reflex), push them towards the rectum.",
+          "phd": "Short-chain fatty acids signal through FFAR2 and FFAR3 and inhibit histone deacetylases; butyrate expands colonic regulatory T cells (Furusawa et al., 2013), one link between fibre intake and immune tolerance."
+        },
+        {
+          "id": "liver",
+          "title": "Liver: the first stop",
+          "x": 566,
+          "y": 450,
+          "ms": "Blood from the gut goes to the liver first. The liver stores sugar and checks for anything harmful.",
+          "hs": "The portal vein brings nutrient-rich blood from the gut. The liver keeps much of the sugar as glycogen and breaks down toxins and drugs before they reach the rest of the body.",
+          "college": "The liver receives about 75% of its blood through the portal vein. It takes up roughly a quarter to a third of the glucose in a meal on first pass and clears most excess amino acids, turning their nitrogen into urea.",
+          "phd": "First-pass metabolism in the gut wall and liver (largely CYP3A4) is why many drugs have low oral bioavailability; in cirrhosis, portosystemic shunting raises it, and lets gut-derived ammonia reach the brain."
+        }
       ]
     }
   },
@@ -2226,6 +2373,274 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "phd": "Airway and gut immunity are linked: swallowed airway antigens are sampled in the gut, and the gut–lung axis may shape allergic airway disease."
       }
     }
+  },
+  "bite": {
+    "journeys": {
+      "carb": {
+        "name": "Starch → glucose → muscle",
+        "group": "Fuel",
+        "blurb": "A bite of bread: its starch is cut into glucose by saliva and pancreatic enzymes, absorbed in the small intestine, checked by the liver and finally taken up by a thigh muscle.",
+        "effect": "The muscle stores the glucose as glycogen, or burns it"
+      },
+      "fat": {
+        "name": "Fat → chylomicron → muscle",
+        "group": "Fuel",
+        "blurb": "A drop of butter: bile breaks it up, lipase splits it, and the gut repackages it into chylomicrons that take the slow road through the lymph, skipping the liver.",
+        "effect": "Fatty acids freed, for muscle to burn or fat tissue to store"
+      },
+      "protein": {
+        "name": "Protein → amino acids → muscle",
+        "group": "Building blocks",
+        "blurb": "A bite of egg: stomach acid unfolds the protein, pepsin and pancreatic enzymes cut it into amino acids, and the liver passes many of them on to muscle to build new protein.",
+        "effect": "New muscle protein is built"
+      },
+      "fibre": {
+        "name": "Fibre → gut bacteria → out",
+        "group": "Gut bacteria",
+        "blurb": "A piece of fibre from an apple: we can’t digest it ourselves, so it travels all the way to the colon, where bacteria ferment it. What is left leaves the body a day or so later.",
+        "effect": "Out it goes, about a day after the meal"
+      }
+    },
+    "stops": {
+      "chew": {
+        "name": "Chewing and saliva",
+        "ms": "Teeth cut the food up and saliva wets it. Saliva already starts digesting starch, which is why bread tastes sweeter the longer you chew it.",
+        "hs": "Chewing breaks food into small pieces with a large surface for enzymes. Salivary amylase starts cutting starch into maltose, and mucus binds everything into a soft bolus. Fat and protein leave the mouth almost unchanged.",
+        "college": "Salivary flow rises from about 0.3 to several mL a minute with food, driven by parasympathetic nerves acting on muscarinic receptors. α-Amylase cuts α-1,4 links between glucose units; lingual lipase matters little in adults. Taste and smell also start the cephalic phase of acid, pancreatic and insulin secretion.",
+        "phd": "Cephalic-phase insulin release, within minutes of tasting food and before glucose rises, is small but improves glucose tolerance; sham-feeding studies show it is carried by the vagus (Teff, 2011)."
+      },
+      "swallow": {
+        "name": "Swallowed down the oesophagus",
+        "ms": "Your tongue pushes the food back, a flap covers the windpipe, and muscles squeeze the food down to your stomach in a few seconds.",
+        "hs": "Swallowing starts on purpose and then becomes an automatic reflex. Breathing pauses, the epiglottis covers the larynx, and a wave of peristalsis carries the bolus down the oesophagus in about 8 seconds.",
+        "college": "The swallowing centre in the medulla sequences the oral, pharyngeal and oesophageal phases. Primary peristalsis travels at 2–4 cm/s; the lower oesophageal sphincter relaxes as the swallow begins and closes once the bolus has passed.",
+        "phd": "High-resolution manometry maps oesophageal peristalsis, and the Chicago Classification uses its pressure patterns to diagnose disorders such as achalasia, in which inhibitory neurons are lost and the sphincter fails to relax."
+      },
+      "stomachCarb": {
+        "name": "Churned in the stomach",
+        "ms": "In the stomach the bread is mixed with acid and churned into a thick soup called chyme. Starchy food is among the first to leave.",
+        "hs": "Acid stops salivary amylase, but inside the swallowed bolus it keeps working for a while. The stomach grinds the food and lets carbohydrate-rich chyme out fastest, so blood sugar starts rising within 15–30 minutes of a meal.",
+        "college": "Gastric emptying is regulated by energy rather than volume: duodenal receptors keep delivery at roughly 2–4 kcal a minute. Carbohydrate-rich meals empty faster than fatty ones, and the rate of emptying is a major driver of the post-meal glucose peak.",
+        "phd": "Glycaemic index depends on gastric emptying and on starch structure: amylose-rich and retrograded (cooked then cooled) starches resist digestion. Emptying rate is a major determinant of post-meal glucose in both health and type 2 diabetes (Horowitz and colleagues)."
+      },
+      "duodenumCarb": {
+        "name": "Pancreatic amylase in the duodenum",
+        "ms": "In the first part of the small intestine, juice from the pancreas pours in and cuts the starch into tiny sugar pieces.",
+        "hs": "Pancreatic amylase is much stronger than the saliva version. It cuts starch into maltose and short chains of glucose. Bicarbonate from the pancreas neutralises the stomach acid so the enzymes can work.",
+        "college": "Secretin, released by duodenal S-cells when acid arrives, drives bicarbonate secretion from pancreatic duct cells through CFTR, bringing duodenal pH to about 6–7. Pancreatic α-amylase digests starch to maltose, maltotriose and α-limit dextrins.",
+        "phd": "The pancreas makes its enzymes in great excess: fat and protein maldigestion appear only when more than about 90% of its output is lost (DiMagno et al., 1973)."
+      },
+      "brushBorder": {
+        "name": "Finished at the brush border",
+        "ms": "On the tiny fingers lining the small intestine, enzymes snip the last sugar pieces into single glucose molecules.",
+        "hs": "The surface of the villi is covered in microvilli, called the brush border. Enzymes fixed to it, such as maltase and sucrase, finish the job, turning maltose and table sugar into single sugars like glucose.",
+        "college": "Brush-border disaccharidases (sucrase-isomaltase, maltase-glucoamylase, lactase) sit in the apical membrane, so the last step happens right next to the transporters. Lactase falls after weaning in most of the world’s adults, causing lactose intolerance.",
+        "phd": "Lactase persistence arose independently in dairying populations through regulatory variants upstream of LCT, such as −13910*T (Enattah et al., 2002), one of the strongest signals of recent selection in humans."
+      },
+      "sglt1": {
+        "name": "Into the cell with sodium",
+        "ms": "Glucose is pulled into the gut lining cells together with salt, then let out the other side towards the blood.",
+        "hs": "A transporter called SGLT1 carries glucose into the cell together with sodium. On the other side, GLUT2 lets glucose out into the capillaries of the villus. This is why rehydration drinks contain both salt and sugar.",
+        "college": "SGLT1 is secondary active transport, coupling 2 Na⁺ to each glucose and using the Na⁺ gradient kept up by the basolateral Na⁺/K⁺-ATPase. Fructose enters through GLUT5 instead. Glucose leaves through GLUT2, which also moves to the apical side when gut glucose is high.",
+        "phd": "Coupled sodium–glucose transport, and the water that follows it, is the basis of oral rehydration solution, credited with saving tens of millions of lives from cholera and other diarrhoeas. SGLT1 on L-cells also senses glucose and triggers GLP-1 release."
+      },
+      "portalCarb": {
+        "name": "Portal vein to the liver",
+        "ms": "The sugary blood doesn’t go straight to the heart. It goes to the liver first.",
+        "hs": "Blood from the gut gathers in the portal vein, which leads to the liver. After a meal its glucose can be much higher than in the rest of the body.",
+        "college": "Portal glucose can exceed 10 mmol/L after a carbohydrate meal. Glucose sensors in the portal vein signal the meal to the brain through vagal afferents and help switch the liver from releasing glucose to taking it up.",
+        "phd": "Hepatic glucose uptake depends on a portal-to-arterial glucose gradient (the ‘portal signal’) as well as insulin: the same glucose given into a peripheral vein is taken up less by the liver (Cherrington and colleagues)."
+      },
+      "liverGlycogen": {
+        "name": "The liver keeps a share",
+        "ms": "The liver grabs some of the glucose and stores it as glycogen, to let out later when you are hungry or asleep.",
+        "hs": "Insulin, arriving in the same portal blood, tells the liver to store glucose as glycogen. The rest passes on into the general circulation.",
+        "college": "The liver keeps roughly a quarter to a third of the glucose from a meal. Glucokinase, with a low affinity and no product inhibition, lets hepatocyte uptake rise in step with portal glucose.",
+        "phd": "During fasting, glucokinase is held in the nucleus by its regulatory protein (GKRP) and is released by glucose and fructose-1-phosphate, so a little fructose actually boosts hepatic glucose uptake."
+      },
+      "glucoseOut": {
+        "name": "Through the heart to a thigh muscle",
+        "ms": "The rest of the glucose rides the blood through the heart and lungs and out to your muscles.",
+        "hs": "From the liver, glucose goes through the right heart, the lungs and the left heart, then out in the arteries. Blood sugar peaks about 30–60 minutes after a meal.",
+        "college": "In healthy people the post-meal glucose peak stays below about 7.8 mmol/L (140 mg/dL) and returns to baseline within 2–3 hours. Most of the meal’s glucose ends up in skeletal muscle, under insulin’s influence.",
+        "phd": "Continuous glucose monitoring shows that people respond very differently to the same foods, and these differences can be predicted in part from the gut microbiome (Zeevi et al., 2015)."
+      },
+      "glut4Bite": {
+        "name": "Taken up by muscle",
+        "ms": "Insulin opens doors in the muscle cell, and the glucose goes in. The muscle stores it or burns it for energy.",
+        "hs": "Insulin moves GLUT4 transporters to the muscle cell surface, so glucose can enter. Inside, it is stored as glycogen or used for energy. Exercise brings GLUT4 to the surface too, even without insulin.",
+        "college": "Under insulin clamp conditions, skeletal muscle takes up about 70–80% of the infused glucose. Hexokinase II traps it as glucose-6-phosphate, and glycogen synthase, activated by insulin, stores it.",
+        "phd": "In insulin resistance the main defect is insulin-stimulated glycogen synthesis in muscle, traced by ¹³C-NMR to impaired glucose transport and phosphorylation (Shulman et al., 1990)."
+      },
+      "stomachFat": {
+        "name": "Fat waits in the stomach",
+        "ms": "Fat floats on top of the stomach soup and leaves last, which is why a fatty meal keeps you full for longer.",
+        "hs": "Churning breaks fat into smaller droplets, and gastric lipase starts to digest a little of it. Fat reaching the duodenum releases CCK, which slows stomach emptying, so fatty meals stay in the stomach for 3–4 hours.",
+        "college": "Gastric lipase, stable in acid, splits 10–30% of dietary triglyceride. Fat is the strongest brake on gastric emptying, acting through CCK, GLP-1, PYY and vagal afferents: the duodenal and ileal brakes.",
+        "phd": "Taking some fat before a carbohydrate meal slows gastric emptying and lowers the post-meal glucose peak in type 2 diabetes, partly through incretins (Gentilcore et al., 2006)."
+      },
+      "bileSalts": {
+        "name": "Bile breaks up the fat",
+        "ms": "In the duodenum, bile from the gallbladder breaks the fat into tiny droplets, like washing-up liquid on a greasy pan.",
+        "hs": "CCK makes the gallbladder squeeze bile into the duodenum through the bile duct. Bile salts coat fat droplets and split them into many tiny ones, giving enzymes a huge surface to work on.",
+        "college": "Bile acids have a fat-loving face and a water-loving face, so they emulsify fat into droplets about 1 µm across. CCK both contracts the gallbladder and relaxes the sphincter of Oddi.",
+        "phd": "Above their critical micellar concentration (about 1–2 mM), bile acids form mixed micelles with phospholipid and cholesterol; in cholestasis, fat and the fat-soluble vitamins A, D, E and K are poorly absorbed."
+      },
+      "lipase": {
+        "name": "Pancreatic lipase cuts the fat",
+        "ms": "An enzyme from the pancreas snips each fat molecule into smaller pieces that can be absorbed.",
+        "hs": "Pancreatic lipase splits triglycerides (one glycerol with three fatty acids) into free fatty acids and monoglycerides. A helper protein, colipase, lets it work on the bile-coated droplets.",
+        "college": "Colipase anchors lipase to the bile-salt-coated surface. Lipase cuts the outer two ester bonds, leaving 2-monoacylglycerol. The drug orlistat blocks lipases and lets about 30% of dietary fat pass undigested.",
+        "phd": "Lipase is so abundant that fatty stools appear only after more than 90% of pancreatic output is lost; enzyme replacement in exocrine insufficiency, as in cystic fibrosis, is dosed per gram of dietary fat."
+      },
+      "micelle": {
+        "name": "Ferried in micelles",
+        "ms": "The fat pieces ride in tiny bubbles of bile to the gut wall and slip into its cells.",
+        "hs": "Fatty acids and monoglycerides are carried by bile salts in tiny clusters called micelles through the watery layer next to the gut wall. There they slip into the cells, while the bile salts stay behind to be used again.",
+        "college": "Micelles carry lipid across the unstirred water layer; fatty acids enter enterocytes by diffusion and through CD36 and FATP4. Bile acids are reabsorbed later, in the terminal ileum, and return to the liver.",
+        "phd": "Ezetimibe blocks NPC1L1, the brush-border cholesterol transporter, lowering LDL cholesterol by about 20%; plant sterols work by competing with cholesterol for room in the micelles."
+      },
+      "chylomicron": {
+        "name": "Packed into chylomicrons",
+        "ms": "Inside the gut cell, the fat pieces are rebuilt and packed into little fat parcels for the journey.",
+        "hs": "In the gut lining cell, fatty acids are rebuilt into triglycerides and packed with cholesterol and protein into big particles called chylomicrons.",
+        "college": "Triglycerides are rebuilt in the smooth ER, and microsomal triglyceride transfer protein (MTP) loads them onto apolipoprotein B-48 to form chylomicrons up to about 1 µm across.",
+        "phd": "Loss of MTP causes abetalipoproteinaemia, with fat malabsorption and deficiency of fat-soluble vitamins; the MTP inhibitor lomitapide is used in homozygous familial hypercholesterolaemia."
+      },
+      "lacteal": {
+        "name": "Into a lacteal",
+        "ms": "The fat parcels are too big for the tiny blood vessels, so they go into a lymph vessel instead.",
+        "hs": "Chylomicrons are too large to enter blood capillaries. They go into the lymph vessel in the middle of each villus, the lacteal, whose lymph turns milky after a fatty meal.",
+        "college": "Lacteal walls have loose, button-like junctions that let chylomicrons in. Lymph from the gut collects in the cisterna chyli at the back of the abdomen.",
+        "phd": "Switching lacteal junctions from ‘buttons’ to ‘zippers’ (by blocking VEGF-A signalling through neuropilin-1) stops chylomicron uptake and protects mice from diet-induced obesity (Zhang et al., 2018)."
+      },
+      "thoracicDuct": {
+        "name": "Up the thoracic duct",
+        "ms": "The fat travels slowly up a lymph tube in your chest and joins the blood near your neck.",
+        "hs": "Lymph flows slowly up the thoracic duct beside the spine and empties into the left subclavian vein near the neck. This way, fat skips the liver on its first pass.",
+        "college": "The thoracic duct carries 2–4 L of lymph a day, more after fatty meals. Chylomicrons reach the blood 1–2 hours after a meal, and blood triglycerides peak at about 3–4 hours.",
+        "phd": "Damage to the thoracic duct causes chylothorax, milky fluid around the lung. It is treated with medium-chain triglycerides, which go straight into the portal vein without forming chylomicrons."
+      },
+      "chyloRide": {
+        "name": "Through the heart to the muscle",
+        "ms": "The fat parcels join the blood, pass through the heart and lungs, and are carried out to muscles and fat tissue.",
+        "hs": "From the vein, chylomicrons pass through the right heart and lungs and then out in the arteries to capillaries all over the body, especially in muscle, the heart and fat tissue.",
+        "college": "Chylomicron triglyceride is cleared within minutes of reaching the plasma. Unlike sugars and amino acids, dietary fat reaches the general circulation before the liver sees it.",
+        "phd": "Triglyceride-rich lipoproteins and their remnants after meals are linked to cardiovascular risk independently of LDL, and non-fasting lipid profiles are now accepted for routine testing (Nordestgaard et al., 2016)."
+      },
+      "lpl": {
+        "name": "Freed by lipoprotein lipase",
+        "ms": "Enzymes on the blood vessel walls unpack the fat, and the muscle takes in the fatty acids to burn.",
+        "hs": "Lipoprotein lipase on the walls of capillaries splits the chylomicron’s triglycerides into fatty acids. Muscle burns them for energy and fat tissue stores them. The leftover remnant goes to the liver.",
+        "college": "Lipoprotein lipase is held on the endothelium by GPIHBP1 and activated by apoC-II. After meals insulin raises its activity in fat tissue, while fasting and exercise raise it in muscle.",
+        "phd": "ANGPTL3, 4 and 8 share out lipoprotein lipase activity between tissues; people with loss-of-function variants in ANGPTL3 or ANGPTL4 have low triglycerides and less coronary disease, prompting drugs such as evinacumab."
+      },
+      "pepsin": {
+        "name": "Unfolded by acid, cut by pepsin",
+        "ms": "Stomach acid unfolds the protein like untangling wool, and an enzyme called pepsin starts cutting it into pieces.",
+        "hs": "Hydrochloric acid denatures proteins, opening up their folded shape. Pepsin, switched on by the acid, cuts them into shorter chains called peptides. About 10–20% of protein digestion happens here.",
+        "college": "Chief cells secrete pepsinogen, which turns itself into pepsin below pH 5; pepsin prefers to cut next to aromatic amino acids and leucine. Protein and peptides also release gastrin from G-cells, which drives more acid.",
+        "phd": "The stomach is not essential for protein digestion: after gastrectomy or with acid suppression, pancreatic enzymes do most of the work, but absorption of iron, calcium and vitamin B₁₂ suffers."
+      },
+      "trypsin": {
+        "name": "Trypsin in the duodenum",
+        "ms": "In the small intestine, enzymes from the pancreas chop the protein pieces into even smaller ones.",
+        "hs": "Trypsin and chymotrypsin from the pancreas cut peptides into small pieces. They are made in inactive forms so they can’t digest the pancreas itself, and only switch on in the gut.",
+        "college": "Enteropeptidase on the duodenal brush border turns trypsinogen into trypsin, which then activates chymotrypsinogen, proelastase and procarboxypeptidases. CCK and the vagus drive their secretion.",
+        "phd": "Trypsin also gives feedback: in the gut it breaks down the peptides that release CCK, so dietary trypsin inhibitors raise CCK and pancreatic secretion."
+      },
+      "peptidases": {
+        "name": "Snipped at the brush border",
+        "ms": "On the gut wall, more enzymes cut the pieces into single amino acids and tiny pairs.",
+        "hs": "Peptidases on the brush border cut peptides into amino acids and pieces two or three amino acids long. These are the building blocks the body can absorb.",
+        "college": "Brush-border aminopeptidases and dipeptidyl peptidases finish the job; about two-thirds of protein is absorbed as di- and tripeptides rather than as free amino acids.",
+        "phd": "Some peptides resist digestion. Proline-rich gluten peptides survive brush-border peptidases, which is central to coeliac disease, where tissue transglutaminase modifies them and HLA-DQ2 or DQ8 presents them to T cells."
+      },
+      "pept1": {
+        "name": "Into the cell",
+        "ms": "The amino acids are pulled into the gut lining cells and passed on towards the blood.",
+        "hs": "Amino acids enter the cells through several transporters, many coupled to sodium. Small peptides use PepT1, are cut inside the cell, and leave as amino acids.",
+        "college": "PepT1 is a proton-coupled di- and tripeptide transporter with broad specificity; it also carries drugs such as some β-lactam antibiotics and valaciclovir.",
+        "phd": "Hartnup disease (loss of the neutral amino acid transporter B⁰AT1, SLC6A19) causes amino acids in the urine but rarely protein malnutrition, because peptide uptake by PepT1 makes up for it."
+      },
+      "portalProt": {
+        "name": "Portal vein to the liver",
+        "ms": "Like sugar, the amino acids go to the liver first.",
+        "hs": "Amino acids travel in the portal vein to the liver, which gets first pick.",
+        "college": "After a protein meal, portal amino acid levels rise several-fold. The branched-chain amino acids are the ones that mostly pass through the liver untouched.",
+        "phd": "When the liver fails, ammonia from protein digestion and gut bacteria reaches the brain and causes hepatic encephalopathy; lactulose and rifaximin reduce ammonia production in the colon."
+      },
+      "liverAmino": {
+        "name": "The liver sorts them",
+        "ms": "The liver uses some amino acids to build proteins and turns the extras into fuel, getting rid of their nitrogen as urea.",
+        "hs": "The liver builds blood proteins such as albumin and clotting factors. Amino acids it doesn’t need are broken down: their nitrogen becomes urea, which the kidneys remove, and the rest can become glucose or fuel.",
+        "college": "Most amino acids are deaminated in the liver, and the urea cycle disposes of the nitrogen. The branched-chain amino acids (leucine, isoleucine, valine) escape, because the liver has little of the enzyme that starts their breakdown, so they reach muscle.",
+        "phd": "Urea synthesis is tuned to protein intake through N-acetylglutamate, an activator of carbamoyl phosphate synthetase I that the liver makes in response to arginine."
+      },
+      "aminoRide": {
+        "name": "Through the heart to the muscle",
+        "ms": "The amino acids ride the blood to the muscles.",
+        "hs": "Amino acids leave the liver, pass through the heart and lungs and reach the muscles in the arteries. Blood amino acids peak 1–2 hours after a protein meal.",
+        "college": "Leucine in particular rises after a meal and acts as a signal as well as a building block. Insulin from the same meal slows the breakdown of muscle protein.",
+        "phd": "Protein sources differ in how fast they are digested: whey is ‘fast’ and casein ‘slow’ (Boirie et al., 1997), which shapes the size and length of the post-meal amino acid rise."
+      },
+      "mps": {
+        "name": "Built into new muscle",
+        "ms": "The muscle uses the amino acids as building blocks to repair and build itself, especially after exercise.",
+        "hs": "Muscle cells link amino acids into new proteins. Muscle is always being broken down and rebuilt, and a protein meal tips the balance towards building, especially in the day after exercise.",
+        "college": "Leucine activates mTORC1, which switches on protein synthesis; muscle protein synthesis stays raised for about 3 hours after a meal. Around 20–40 g of high-quality protein gives the maximal response in young adults.",
+        "phd": "Resistance exercise and protein work together on muscle protein synthesis for 24–48 hours; older muscle shows ‘anabolic resistance’ and needs more protein per meal for the same response."
+      },
+      "stomachFibre": {
+        "name": "Fibre thickens the stomach soup",
+        "ms": "Our own enzymes can’t digest fibre. In the stomach some of it soaks up water and turns into a gel, which helps you feel full.",
+        "hs": "Soluble fibre, like that in oats, forms a thick gel that slows stomach emptying. That spreads sugar absorption out over time and lowers the blood sugar peak.",
+        "college": "Viscous fibres such as β-glucan and psyllium thicken the gut contents, slowing gastric emptying and the diffusion of nutrients to the gut wall; insoluble fibres such as cellulose mainly add bulk and pass through intact.",
+        "phd": "Oat β-glucan lowers post-meal glucose and LDL cholesterol depending on its dose and molecular weight, which supports approved health claims in the EU and the US."
+      },
+      "smallIntFibre": {
+        "name": "Through the small intestine untouched",
+        "ms": "Fibre travels through the whole small intestine without being absorbed, carrying water and other leftovers with it.",
+        "hs": "Humans have no enzymes for fibre, so it passes through the small intestine unchanged in 3–5 hours. On the way some fibres bind bile acids, which helps lower cholesterol.",
+        "college": "Fibres resist human enzymes because of their β-glycosidic bonds. Viscous fibres trap bile acids, so more are lost in stool and the liver uses more cholesterol to make new ones.",
+        "phd": "Undigested carbohydrate reaching the ileum activates the ileal brake through GLP-1 and PYY from L-cells, slowing transit higher up the gut."
+      },
+      "ileocaecal": {
+        "name": "Through the ileocaecal valve",
+        "ms": "At the end of the small intestine, a valve lets the leftovers into the large intestine and stops them coming back.",
+        "hs": "The ileocaecal valve opens briefly to let small amounts through, especially after the next meal, when a reflex pushes the ileum’s contents on. It also keeps colon bacteria out of the small intestine.",
+        "college": "Contents arrive in the caecum as liquid, about 1.5 L a day. The valve and the ileal brake together regulate the rate.",
+        "phd": "Bacteria rise from about 10³–10⁴ per mL in the jejunum to 10¹¹–10¹² per gram in the colon; when the valve or gut motility fails, bacteria can overgrow the small intestine."
+      },
+      "ferment": {
+        "name": "Fermented by gut bacteria",
+        "ms": "In the large intestine, trillions of bacteria feast on the fibre. They make gas and useful acids.",
+        "hs": "Colon bacteria ferment fibre into short-chain fatty acids (acetate, propionate and butyrate) and gases such as hydrogen, carbon dioxide and methane. Different fibres feed different bacteria.",
+        "college": "Fermentation in the proximal colon makes SCFAs in a ratio of roughly 60:20:20 acetate:propionate:butyrate, at 70–140 mM in total, which lowers colonic pH.",
+        "phd": "Specialist bacteria such as Ruminococcus bromii and Bacteroides break down complex polysaccharides and cross-feed butyrate producers like Faecalibacterium prausnitzii; in mice, low-fibre diets wear away this diversity over generations (Sonnenburg et al., 2016)."
+      },
+      "butyrate": {
+        "name": "Short-chain fatty acids at work",
+        "ms": "One of these acids, butyrate, is the favourite food of the cells lining the colon. Others travel to the liver and the rest of the body.",
+        "hs": "Colon cells get most of their energy from butyrate. Propionate goes to the liver, where it can be made into glucose, and acetate reaches the rest of the body. These acids also make gut cells release hormones such as GLP-1 and PYY.",
+        "college": "Colonocytes get about 70% of their energy from butyrate, and burning it uses up oxygen, keeping the lumen anaerobic. SCFAs activate FFAR2 and FFAR3 on L-cells, releasing GLP-1 and PYY.",
+        "phd": "Butyrate inhibits histone deacetylases and expands colonic regulatory T cells (Furusawa et al., 2013). When antibiotics remove butyrate producers, oxygen leaks into the lumen and favours bacteria such as Salmonella (Byndloss et al., 2017)."
+      },
+      "waterBack": {
+        "name": "Water drawn back",
+        "ms": "As the leftovers move slowly through the large intestine, water is taken back into the body and they turn from liquid into soft poo.",
+        "hs": "The colon takes back most of the water and salt that reach it, leaving about 100–200 g of stool a day. Slow, pouch-forming contractions (haustra) mix it for many hours.",
+        "college": "The colon absorbs about 1.3 L of the roughly 1.5 L it receives each day, driven by sodium uptake through ENaC (boosted by aldosterone) and by SCFA-coupled transport. Fibre holds water, adding bulk and softening stool.",
+        "phd": "Whole-gut transit varies widely, from about 10 to over 70 hours in healthy people, and stool form on the Bristol scale is a useful guide to it (Lewis & Heaton, 1997)."
+      },
+      "massMove": {
+        "name": "A mass movement, and out",
+        "ms": "A few times a day, usually after breakfast, a big squeeze pushes everything along into the rectum, and you feel you need the toilet.",
+        "hs": "Mass movements are strong waves that push stool along much of the colon at once, often set off by eating (the gastrocolic reflex). A stretched rectum gives the urge to go, and you decide when to relax the outer sphincter.",
+        "college": "High-amplitude propagated contractions happen a few times a day, mostly after waking and after meals. Rectal stretch relaxes the internal anal sphincter (the rectoanal inhibitory reflex), while the external sphincter and puborectalis are under voluntary control.",
+        "phd": "A missing rectoanal inhibitory reflex points to Hirschsprung disease, in which enteric neurons fail to colonise the end of the bowel during development, often because of RET or EDNRB mutations."
+      }
+    }
   }
 }
 </script>
@@ -2368,7 +2783,33 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "mucociliary escalator": { "def": "The layer of mucus that beating cilia sweep up the airways to the throat, carrying trapped dust and germs.", "match": ["mucociliary escalator", "mucociliary clearance", "mucociliary transport"] },
   "phrenic nerve": { "def": "The nerve from the neck (spinal levels C3–C5) that makes the diaphragm contract.", "match": ["phrenic nerve", "phrenic nerves", "phrenic"] },
   "ventilatory threshold": { "def": "The exercise intensity above which breathing rises faster than oxygen use, as extra CO₂ from buffered lactic acid is breathed out.", "match": ["ventilatory threshold"] },
-  "pre-Bötzinger complex": { "def": "A small cluster of neurons in the medulla that generates the rhythm of breathing in.", "match": ["pre-Bötzinger complex", "preBötC"] }
+  "pre-Bötzinger complex": { "def": "A small cluster of neurons in the medulla that generates the rhythm of breathing in.", "match": ["pre-Bötzinger complex", "preBötC"] },
+  "amylase": { "def": "An enzyme in saliva and pancreatic juice that breaks starch into sugars.", "match": ["amylase", "α-amylase"] },
+  "pepsin": { "def": "A protein-cutting enzyme made in the stomach. It only works in acid.", "match": ["pepsin", "pepsinogen"] },
+  "lipase": { "def": "An enzyme that splits fat (triglyceride) into fatty acids.", "match": ["lipase", "lipases"] },
+  "trypsin": { "def": "A protein-cutting enzyme from the pancreas that is switched on in the small intestine.", "match": ["trypsin", "trypsinogen"] },
+  "micelles": { "def": "Tiny clusters of bile salts that carry digested fat to the gut wall.", "match": ["micelles", "micelle", "micellar"] },
+  "chylomicrons": { "def": "Large fat-carrying particles made by gut cells. They travel in the lymph and then the blood.", "match": ["chylomicrons", "chylomicron"] },
+  "lacteal": { "def": "The lymph vessel in the middle of each villus that takes up absorbed fat.", "match": ["lacteals", "lacteal"] },
+  "brush border": { "def": "The fuzzy surface of microvilli on gut lining cells, studded with digestive enzymes.", "match": ["brush border", "brush-border", "microvilli"] },
+  "duodenum": { "def": "The first part of the small intestine, where bile and pancreatic juice mix with chyme.", "match": ["duodenum", "duodenal"] },
+  "pylorus": { "def": "The ring of muscle at the stomach’s exit that lets chyme into the duodenum a little at a time.", "match": ["pylorus", "pyloric"] },
+  "gallbladder": { "def": "A small sac under the liver that stores and concentrates bile.", "match": ["gallbladder"] },
+  "CCK": { "def": "Cholecystokinin: a gut hormone released by fat and protein. It squeezes the gallbladder, releases pancreatic enzymes and helps you feel full.", "match": ["CCK", "cholecystokinin"] },
+  "secretin": { "def": "A hormone from the duodenum, released by acid, that makes the pancreas send bicarbonate.", "match": ["secretin"] },
+  "microbiota": { "def": "The trillions of bacteria and other microbes living in the gut, mostly in the colon.", "match": ["microbiota", "microbiome"] },
+  "short-chain fatty acids": { "def": "Acetate, propionate and butyrate: acids made by gut bacteria from fibre. They feed colon cells and send signals around the body.", "match": ["short-chain fatty acids", "SCFAs", "SCFA"] },
+  "butyrate": { "def": "A short-chain fatty acid made by gut bacteria; the main fuel of colon cells.", "match": ["butyrate"] },
+  "gastrocolic reflex": { "def": "The colon waking up when food enters the stomach, which often brings the urge to go after breakfast.", "match": ["gastrocolic reflex"] },
+  "segmentation": { "def": "Ring-shaped contractions that mix gut contents back and forth without moving them on much.", "match": ["segmentation"] },
+  "enterocytes": { "def": "The absorbing cells that line the small intestine.", "match": ["enterocytes", "enterocyte"] },
+  "SGLT1": { "def": "A gut transporter that pulls glucose into cells together with sodium.", "match": ["SGLT1"] },
+  "lymph": { "def": "Fluid that drains from tissues through lymph vessels back into the blood. After a meal, gut lymph carries fat.", "match": ["lymph", "lymphatic"] },
+  "thoracic duct": { "def": "The main lymph vessel. It runs up beside the spine and empties into a vein near the neck.", "match": ["thoracic duct"] },
+  "ileocaecal valve": { "def": "The valve between the end of the small intestine (the ileum) and the large intestine.", "match": ["ileocaecal valve"] },
+  "gastric emptying": { "def": "How fast the stomach passes its contents on into the duodenum.", "match": ["gastric emptying"] },
+  "bolus": { "def": "A soft ball of chewed food, ready to swallow.", "match": ["bolus"] },
+  "interstitial cells of Cajal": { "def": "Pacemaker cells in the gut wall that set the rhythm of its contractions.", "match": ["interstitial cells of Cajal"] }
 }
 </script>
 
@@ -2480,16 +2921,19 @@ const SYSTEMS = [
   { id: "endocrine", short: "Hormones", color: "#8a5cc4",
     legend: [] /* filled from HORMONES below */ },
   { id: "respiratory", short: "Air", color: "#3f8fe0",
-    legend: [["#5cb6f2", "Fresh air: oxygen in"], ["#98a0ae", "Used air: carbon dioxide out"], ["#e0705a", "Diaphragm and breathing muscles"]] }
+    legend: [["#5cb6f2", "Fresh air: oxygen in"], ["#98a0ae", "Used air: carbon dioxide out"], ["#e0705a", "Diaphragm and breathing muscles"]] },
+  { id: "digestive", short: "Food", color: "#c4702e",
+    legend: [["#c98a52", "Food and chyme"], ["#c4702e", "Squeezing waves (peristalsis)"], ["#7da33a", "Bile from the gallbladder"],
+             ["#e3a13c", "Pancreatic juice"], ["#b3a52e", "Nutrients to the liver"], ["#8a5a3a", "Waste in the colon"]] }
 ];
 const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
 /* which systems each organ topic belongs to (shown as "Part of" chips) */
 const ORGAN_SYSTEMS = {
   brain: ["nervous", "endocrine", "respiratory"], heart: ["circulatory", "nervous"], lungs: ["respiratory", "circulatory"],
-  gut: ["nervous", "endocrine", "circulatory"], liver: ["circulatory", "endocrine"],
-  pancreas: ["endocrine"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory", "respiratory"],
+  gut: ["digestive", "nervous", "endocrine", "circulatory"], liver: ["digestive", "circulatory", "endocrine"],
+  pancreas: ["endocrine", "digestive"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory", "respiratory"],
   skin: ["circulatory", "nervous"], bones: ["circulatory", "endocrine"],
-  eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "nervous", "endocrine"]
+  eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "digestive", "nervous", "endocrine"]
 };
 
 /* The day plan. Anything not listed is "rest". */
@@ -2505,7 +2949,7 @@ function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.fr
 
 const STRINGS = {
   introTitle: "A day in the life of your body",
-  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones and air. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
+  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air and food. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
   schedule: "Today’s plan: tap to jump",
   explore: "Look closer",
   hint: "Tip: dotted words have short definitions. Hover or tap them. Values are typical for a healthy adult.",
@@ -2573,7 +3017,16 @@ const STRINGS = {
   waitOut: "Waiting for the next out-breath…",
   inStep: "real time, in step with the breath",
   breathDone: t => `Done after ${t} of real time`,
-  breathKind: { air: "carried by the air", step: "cells at work", blood: "riding the blood", nerve: "nerve signal", local: "diffusing", mucus: "on the mucus" }
+  breathKind: { air: "carried by the air", step: "cells at work", blood: "riding the blood", nerve: "nerve signal", local: "diffusing", mucus: "on the mucus" },
+  followBite: "Follow a bite",
+  followingBite: "Bite ride · time-lapse",
+  biteTitle: "Journey of a bite",
+  biteLede: "Follow one nutrient from a bite of food: chewed, swallowed, churned, broken down, absorbed and delivered. Digestion is slow, so time is sped up: seconds in the mouth, hours in the stomach and small intestine, a day or more in the colon. The day clock really moves, so watch blood sugar rise after the meal and night fall while the fibre is still on its way.",
+  biteHint: "Tip: with the digestive system live, tap the mouth, the stomach, the gallbladder, the gut or a moving dot to start a ride.",
+  biteJourneys: "Pick a nutrient",
+  anotherBite: "Another nutrient",
+  biteDone: t => `Done after ${t} of real time`,
+  biteKind: { gut: "moved along the gut", step: "cells at work", blood: "riding the blood", lymph: "in the lymph" }
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -2617,7 +3070,14 @@ const PHYSIO = {
      smaller pulses later in the night and after exercise */
   growthHormone: [[0,.95],[.75,.7],[1.5,.3],[2.5,.15],[3.25,.35],[4,.12],[6.5,.05],[16.8,.05],[17.6,.25],[18.2,.45],[19,.15],[20,.05],[22.9,.06],[23.5,.6]],
   /* thyroid hormone: steady through the day */
-  thyroid:    [[0,.35],[12,.35]]
+  thyroid:    [[0,.35],[12,.35]],
+  /* stomach contents, 0–1: filled at each meal and emptied over 3–4 h (dinner
+     empties slowest, into the night) */
+  stomach:    [[0,.04],[1,0],[7.2,0],[7.9,.85],[8.5,.72],[9.5,.4],[10.5,.12],[11.5,.02],[12.2,0],[12.9,1],[13.5,.86],[14.5,.52],[15.5,.22],[16.5,.05],[17.2,0],[19,0],[19.6,1],[20.25,.88],[21.25,.56],[22.25,.27],[23.25,.1]],
+  /* colon contents, 0–1: builds up overnight and empties after breakfast */
+  colon:      [[0,.55],[4,.62],[6.5,.68],[7.5,.66],[7.9,.3],[9,.32],[13,.42],[17,.48],[20,.5],[23,.52]],
+  /* mass movements in the colon: the gastrocolic reflex, strongest after breakfast */
+  massMove:   [[7.3,0],[7.6,1],[7.95,0],[12.55,0],[12.8,.4],[13.05,0],[19.25,0],[19.5,.4],[19.75,0]]
 };
 /* PO₂ (mmHg) on the oxygen–haemoglobin curve for a saturation in % (Hill, n ≈ 2.7, P50 ≈ 26.8) */
 const hillPO2 = sat => { const s = clamp(sat / 100, .05, .995); return 26.8 * Math.pow(s / (1 - s), 1 / 2.7); };
@@ -2722,6 +3182,13 @@ const Physio = {
     out.pvo2 = hillPO2(out.svo2);
     out.rq = .8 + .15 * out.muscle;
     out.vco2 = out.rq * out.vo2;
+    /* gut motility: a full duodenum releases CCK (bile and pancreatic juice
+       flow); exercise brakes the gut. When fasting, the migrating motor complex
+       sends a strong sweep (phase III, ~10 min) every ~100 minutes. */
+    out.cck = clamp(out.stomach * 1.5) * (1 - .5 * out.muscle);
+    out.motility = 1 - .6 * out.muscle;
+    const fasting = clamp(1 - out.stomach * 6) * clamp((.45 - out.gut) / .25), mmcPh = (wrapH(h) * 60 / 100) % 1;
+    out.mmc = fasting * (mmcPh < .1 ? Math.sin(Math.PI * mmcPh / .1) : 0) * (1 - out.muscle);
     return out;
   }
 };
@@ -2740,7 +3207,7 @@ function createStore(initial){
 const now = new Date();
 const savedLevel = storage.get("humanphysiology.level");
 function loadSystems(){
-  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false };
+  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false };
   let live = "circulatory";
   try {
     const s = JSON.parse(storage.get("humanphysiology.shown") || "null");
@@ -2764,10 +3231,12 @@ const store = createStore({
   cascadeSeg: null, /* which leg of that cascade the signal is on */
   breath: null,     /* id of the breath journey being followed, or null */
   breathSeg: null,  /* which leg of that journey the molecule is on */
+  bite: null,       /* id of the bite journey being followed, or null */
+  biteSeg: null,    /* which leg of that journey the nutrient is on */
   ...loadSystems()
 });
-/* is the camera riding along with something (a red cell, an impulse, a cascade or a breath)? */
-const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null;
+/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath or a bite)? */
+const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null;
 /* System switches. Switching a system on makes it live; switching off the
    live one hands "live" to another shown system (or to none). */
 function setSystem(id, on){
@@ -3173,6 +3642,111 @@ function defaultBreath(h){
   return p === "sleep" ? "chemoreflex" : p === "meal" ? "co2Out" : "oxygenIn";
 }
 
+/* Digestive system (design coordinates, mapped like NERV). The tract runs from
+   the mouth down the oesophagus (ORG.eso) into the stomach, whose lumen is
+   STOMACH_RIDE from the cardia to the pylorus. The duodenum curls round the
+   head of the pancreas, where the bile duct (from the gallbladder under the
+   liver) and the pancreatic duct open together at the ampulla; then the coiled
+   small intestine (ORG.smallInt: jejunum SI_A, then ileum), the ileum's end into
+   the caecum, the colon (ORG.colon) and the rectum. Absorbed sugars and amino
+   acids leave in the portal vein (the gut route of CIRC) for the liver; fats
+   leave as chylomicrons in the lymph, up the thoracic duct to the left
+   subclavian vein. */
+const STOMACH_RIDE = "M630 446 C648 440 670 446 676 466 C682 488 664 506 642 508 C626 509 612 505 604 500";
+const DUODENUM_D = "M604 500 C588 499 570 500 564 510 C558 522 562 536 570 544 C574 549 577 552 580 552";
+const SI_A = "M580 552 H620 Q627 552 627 558 Q627 564 620 564 H580";
+const ILEUM_END = "M620 600 C630 604 626 612 610 612 C594 612 578 610 566 604";
+const COLON_UP = "M566 604 L566 548 Q566 536 578 536 L622 536 Q634 536 634 548 L634 586";
+const COLON_DOWN = "M634 586 L634 612 C634 626 620 632 608 636 L602 648";
+const GB_AT = [567, 489];
+const GALLBLADDER_D = "M-5 -6 C1 -9 7 -5 6 1 C5 7 -1 9 -4 5 C-7 1 -8 -4 -5 -6Z";
+const BILE_DUCT_D = "M566 495 C565 503 563 514 561 524";
+const PANC_DUCT_D = "M660 510 C640 514 612 518 590 519 C576 520 567 522 561 524";
+const SALIVARY = [[583, 215], [617, 215]];
+const THORACIC_D = "M602 560 L602 300 C604 290 612 284 624 284";
+const MOUTH_PT = [600, 211], VILLUS = [580, 564], CISTERNA = [602, 560], VENOUS_ANGLE = [624, 284], CAECUM = [566, 598], ANUS = [602, 648];
+Object.assign(MOLECULES, {
+  starch: ["#e2b04a", "Starch"], glucose: ["#b3a52e", "Glucose"], fat: ["#f08c2e", "Fat (triglyceride)"],
+  micelle: ["#d9c03a", "Fatty acids in micelles"], chylo: ["#f2dc9a", "Chylomicron"], protein: ["#c0584a", "Protein"],
+  peptide: ["#d4766a", "Peptides"], amino: ["#e48aa6", "Amino acids"], fibre: ["#6f9a37", "Fibre"],
+  scfa: ["#3fae9a", "Short-chain fatty acids"], stool: ["#8a5a3a", "Stool"]
+});
+/* Bite journeys (BITE RIDE), followed in time-lapse like CASCADES: each leg has
+   stop (its text in CONTENT.bite.stops), m (the molecule: colour and name in
+   MOLECULES) and t, its real duration in seconds; step = cells at work in one
+   place, b = a blood ride scaled by cardiac output, lymph = carried in lymph.
+   Times are typical for a mixed meal: the stomach empties over 2–4 h (fat
+   slowest), the small intestine takes 3–5 h and the colon a day or more. */
+const BITES = [
+  { id: "carb", effect: "glucose", legs: [
+    { stop: "chew", m: "starch", t: 20, step: true, at: MOUTH_PT },
+    { stop: "swallow", m: "starch", t: 8, path: [cD(ORG.eso)] },
+    { stop: "stomachCarb", m: "starch", t: 5400, path: [cD(STOMACH_RIDE)] },
+    { stop: "duodenumCarb", m: "starch", t: 600, path: [cD(DUODENUM_D)] },
+    { stop: "brushBorder", m: "glucose", t: 2400, path: [cD(SI_A)] },
+    { stop: "sglt1", m: "glucose", t: .5, step: true },
+    { stop: "portalCarb", m: "glucose", t: 6, b: 1, path: [cV(RT.gut, 0, LIVER)] },
+    { stop: "liverGlycogen", m: "glucose", t: 300, step: true },
+    { stop: "glucoseOut", m: "glucose", t: 22, b: 1, path: [cV(RT.gut, LIVER), ...LUNGS, cA(RT.legL)] },
+    { stop: "glut4Bite", m: "glucose", t: 600, step: true }
+  ] },
+  { id: "fat", effect: "fat", legs: [
+    { stop: "chew", m: "fat", t: 20, step: true, at: MOUTH_PT },
+    { stop: "swallow", m: "fat", t: 8, path: [cD(ORG.eso)] },
+    { stop: "stomachFat", m: "fat", t: 10800, path: [cD(STOMACH_RIDE)] },
+    { stop: "bileSalts", m: "fat", t: 600, path: [cD(DUODENUM_D)] },
+    { stop: "lipase", m: "micelle", t: 600, step: true },
+    { stop: "micelle", m: "micelle", t: 2400, path: [cD(SI_A)] },
+    { stop: "chylomicron", m: "chylo", t: 1800, step: true },
+    { stop: "lacteal", m: "chylo", t: 900, lymph: true, path: [cP(VILLUS, CISTERNA)] },
+    { stop: "thoracicDuct", m: "chylo", t: 2700, lymph: true, path: [cD(THORACIC_D)] },
+    { stop: "chyloRide", m: "chylo", t: 22, b: 1, path: [cV(2, VENOUS_ANGLE), ...LUNGS, cA(RT.legL)] },
+    { stop: "lpl", m: "fat", t: 900, step: true }
+  ] },
+  { id: "protein", effect: "build", legs: [
+    { stop: "chew", m: "protein", t: 20, step: true, at: MOUTH_PT },
+    { stop: "swallow", m: "protein", t: 8, path: [cD(ORG.eso)] },
+    { stop: "pepsin", m: "protein", t: 7200, path: [cD(STOMACH_RIDE)] },
+    { stop: "trypsin", m: "peptide", t: 600, path: [cD(DUODENUM_D)] },
+    { stop: "peptidases", m: "peptide", t: 2400, path: [cD(SI_A)] },
+    { stop: "pept1", m: "amino", t: .5, step: true },
+    { stop: "portalProt", m: "amino", t: 6, b: 1, path: [cV(RT.gut, 0, LIVER)] },
+    { stop: "liverAmino", m: "amino", t: 600, step: true },
+    { stop: "aminoRide", m: "amino", t: 22, b: 1, path: [cV(RT.gut, LIVER), ...LUNGS, cA(RT.legL)] },
+    { stop: "mps", m: "amino", t: 10800, step: true }
+  ] },
+  { id: "fibre", effect: "out", legs: [
+    { stop: "chew", m: "fibre", t: 20, step: true, at: MOUTH_PT },
+    { stop: "swallow", m: "fibre", t: 8, path: [cD(ORG.eso)] },
+    { stop: "stomachFibre", m: "fibre", t: 9000, path: [cD(STOMACH_RIDE)] },
+    { stop: "smallIntFibre", m: "fibre", t: 14400, path: [cD(DUODENUM_D), cD(ORG.smallInt)] },
+    { stop: "ileocaecal", m: "fibre", t: 1800, path: [cD(ILEUM_END)] },
+    { stop: "ferment", m: "scfa", t: 28800, step: true, at: CAECUM },
+    { stop: "butyrate", m: "scfa", t: 3600, step: true },
+    { stop: "waterBack", m: "stool", t: 43200, path: [cD(COLON_UP)] },
+    { stop: "massMove", m: "stool", t: 900, path: [cD(COLON_DOWN)] }
+  ] }
+];
+const BITE_BY_ID = Object.fromEntries(BITES.map(b => [b.id, b]));
+/* organ panels offer the bite journey that passes through */
+const BITE_FOR_TOPIC = { gut: "carb", liver: "protein", pancreas: "fat", throat: "carb", muscles: "protein" };
+/* tapping the gut, its glands or a moving dot on the body */
+function tapBite(id){
+  return { mouth: "carb", eso: "carb", stomach: "protein", chyme: "carb", gallbladder: "fat", bile: "fat", pancreas: "fat",
+           juice: "fat", duodenum: "fat", smallInt: "carb", nutrient: "carb", colon: "fibre", stool: "fibre" }[id] || null;
+}
+function defaultBite(h){
+  const w = wrapH(h);
+  return phaseAt(w) === "sleep" ? "fibre" : w < 11 ? "carb" : w < 16 ? "protein" : w < 19 ? "carb" : "fat";
+}
+/* a bite ride starts with a bite: the hour now if a meal is on, or the next meal */
+const MEAL_BITES = SCHEDULE.filter(e => e.phase === "meal").map(e => e.from + .15);
+function biteHour(h){
+  const w = wrapH(h);
+  if (phaseAt(w) === "meal") return w;
+  return MEAL_BITES.find(m => m > w) ?? MEAL_BITES[0];
+}
+
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
   let out = `<path d="M${f1(x)} ${f1(y)}L${f1(x2)} ${f1(y2)}" stroke-width="${f1(w)}"/>`;
@@ -3423,6 +3997,19 @@ const Scene = (() => {
         <g id="s-air"></g>
         <g id="s-breathRide"></g>
       </g>
+      <g id="s-digestive" class="sys sys-digestive">
+        ${SALIVARY.map(([x, y]) => `<path d="M${x} ${y} Q${(x + 600) / 2} ${y - 3} 600 212" class="gi-duct"/><ellipse cx="${x}" cy="${y}" rx="4.5" ry="3" class="gi-gland"/>`).join("")}
+        <path d="${mapD(ORG.eso)}" class="gi-tract"/>
+        <path d="${mapD(ORG.stomach)}" class="gi-wall"/>
+        <path d="${mapD(ORG.colon)}" class="gi-tract colon"/><path d="${mapD(COLON_DOWN)}" class="gi-tract"/>
+        <path d="${mapD(DUODENUM_D)}" class="gi-tract"/>
+        <path d="${mapD(ORG.smallInt)}" class="gi-tract thin"/><path d="${mapD(ILEUM_END)}" class="gi-tract thin"/>
+        <path d="${mapD(THORACIC_D)}" class="gi-lymph"/>
+        <path d="${mapD(PANC_DUCT_D)}" class="gi-duct panc"/><path d="${mapD(BILE_DUCT_D)}" class="gi-duct bile"/>
+        <g transform="translate(${GB_AT[0]} ${GB_AT[1]})"><path id="s-gb" d="${GALLBLADDER_D}" class="gi-gb"/></g>
+        <g id="s-food"></g>
+        <g id="s-biteRide"></g>
+      </g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
       <g id="s-eyesShut" class="face"><path d="M571 189 Q578 194 585 189"/><path d="M615 189 Q622 194 629 189"/></g>
@@ -3435,7 +4022,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -4067,48 +4654,51 @@ function piece(p){
 }
 
 /* =========================================================================
-   CASCADE — one hormone signal followed in time-lapse, the mirror image of
-   IMPULSE. Each leg plays for a few seconds on screen, so the speed-up changes
-   from leg to leg: about ×2 while adrenaline rides the blood, hundreds of
-   times while insulin crosses into muscle, ~10⁵ while thyroid hormone works on
-   genes, and slow motion again for the quick nerve steps. timeScale() drives
-   the day clock and (capped) the body, so the hour and the vitals move on.
+   TIME-LAPSE RIDES — CASCADE and BITE RIDE share this engine. One signal (a
+   hormone, a bite of food) is followed leg by leg, and each leg plays for a
+   few seconds on screen, so the speed-up changes from leg to leg. The options
+   say where to draw (ref), which ride is which (byId), a leg's colour (col),
+   what kind of leg it is (kindOf), how long a leg plays (screen, optional),
+   how to replay (restart) and what happens on arrival (effect).
+   timeScale() drives the day clock and (capped) the body, so the hour and the
+   vitals move on.
    ========================================================================= */
-const Cascade = (() => {
+function lapseRide(o){
   const SPEED = 150, MIN_LEG = 1.4, STEP_S = 2.4, LONG_S = 3.2;
+  const screenOf = o.screen || ((l, S) => S ? Math.max(MIN_LEG, S.L / SPEED) : l.t >= 86400 ? LONG_S : STEP_S);
   let g, rider, halo, trail; const puff = [], fx = [];
   let C = null, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0, hour0 = 0;
   function init(){
-    g = Scene.refs.cascade;
+    g = Scene.refs[o.ref];
     trail = el("polyline", { class: "imp-trail", points: "" }, g);
     for (let i = 0; i < 9; i++) puff.push(el("circle", { r: 1.9, opacity: 0 }, g));
     halo = el("circle", { r: 11, class: "imp-halo" }, g);
     rider = el("path", { d: "M0 -6 L6 0 L0 6 L-6 0Z", class: "cas-dot" }, g);
     g.style.display = "none";
   }
-  /* lay the cascade out: positions, real time and screen time per leg */
+  /* lay the ride out: positions, real time and screen time per leg */
   function build(c){
     const co = Physio.at(hour0).co;
     let at = null;
     return c.legs.map(l => {
-      const o = { ...l };
+      const o2 = { ...l };
       if (l.step){
-        o.at = l.at || at; o.real = l.t; o.screen = l.t >= 86400 ? LONG_S : STEP_S; o.kind = "step";
+        o2.at = l.at || at; o2.real = l.t; o2.kind = "step";
       } else {
         const P = [].concat(...l.path.map(piece));
         if (at) P.unshift(at);
-        o.S = poly(P);
-        o.real = l.b ? l.t * 5 / co : l.t;
-        o.screen = Math.max(MIN_LEG, o.S.L / SPEED);
-        o.kind = l.path.some(p => p.r != null) ? "blood" : l.h === "nerve" || l.h === "symp" ? "nerve" : "local";
+        o2.S = poly(P);
+        o2.real = l.b ? l.t * 5 / co : l.t;
+        o2.kind = l.path.some(p => p.r != null) ? "blood" : o.kindOf(l);
       }
-      at = o.S ? o.S.at(1) : o.at;
-      return o;
+      o2.screen = screenOf(o2, o2.S);
+      at = o2.S ? o2.S.at(1) : o2.at;
+      return o2;
     });
   }
   function start(id, h0){
     const fresh = !C;
-    C = CASCADE_BY_ID[id]; hour0 = h0;
+    C = o.byId[id]; hour0 = h0;
     legs = build(C); pre = []; total = 0;
     legs.forEach(l => { pre.push(total); total += l.real; });
     li = 0; u = 0; done = false; pts = []; acc = 0;
@@ -4131,23 +4721,16 @@ const Cascade = (() => {
   /* skip to the next leg (or, after arrival, replay from the start hour) */
   function next(){
     if (!C) return;
-    if (done){ startCascade(C.id, true); return; }
+    if (done){ o.restart(C.id); return; }
     if (li < legs.length - 1){ li++; u = 0; pts = []; trail.setAttribute("points", ""); }
     else arrive();
     draw();
   }
   function arrive(){
     done = true; u = 1;
-    const p = pos(), col = MESSENGERS[legs[legs.length - 1].h][0];
+    const p = pos(), col = o.col(legs[legs.length - 1]);
     ring(p.x, p.y, col, 34);
-    switch (C.effect){
-      case "fast": Rhythm.kick(.3, 12); ring(p.x, p.y, col, 22, .35); break;
-      case "glucose": case "fuel": dots(p.x, p.y, MESSENGERS.glucose[0], 14, true); break;
-      case "feedback": ring(p.x, p.y, col, 22, .4); ring(p.x, p.y, col, 14, .8); break;
-      case "sleepy": ring(p.x, p.y, col, 46, .3); ring(p.x, p.y, col, 62, .7); break;
-      case "metabolism": ring(p.x, p.y, MESSENGERS.t3[0], 24, .3); dots(p.x, p.y, MESSENGERS.t3[0], 10, false); break;
-      case "redCells": dots(p.x, p.y, MESSENGERS.rbc[0], 16, false); break;
-    }
+    o.effect(C.effect, p, col, { ring, dots });
   }
   function ring(x, y, col, r, delay = 0){
     const e = el("circle", { cx: f1(x), cy: f1(y), r: 3, fill: "none", stroke: col, "stroke-width": 2, opacity: 0, "vector-effect": "non-scaling-stroke" }, g);
@@ -4163,12 +4746,12 @@ const Cascade = (() => {
   }
   function draw(){
     if (!C) return;
-    const L = legs[li], p = pos(), col = MESSENGERS[L.h][0], k = L.step && !done ? Math.sin(Math.PI * clamp(u)) : 0;
+    const L = legs[li], p = pos(), col = o.col(L), k = L.step && !done ? Math.sin(Math.PI * clamp(u)) : 0;
     rider.setAttribute("transform", `translate(${f1(p.x)} ${f1(p.y)})`); rider.setAttribute("fill", col);
     halo.setAttribute("cx", f1(p.x)); halo.setAttribute("cy", f1(p.y)); halo.setAttribute("fill", col);
     halo.setAttribute("r", f1(done ? 8 : 11 + 6 * k * (.7 + .3 * Math.sin(u * 30))));
     trail.setAttribute("stroke", col);
-    /* at a step, molecules of the new messenger swirl around the cells making it */
+    /* at a step, molecules swirl around the cells at work */
     puff.forEach((c, i) => {
       const a = i / puff.length * Math.PI * 2 + u * 5, r = 7 + 9 * k;
       c.setAttribute("cx", f1(p.x + Math.cos(a) * r)); c.setAttribute("cy", f1(p.y + Math.sin(a) * r));
@@ -4206,6 +4789,51 @@ const Cascade = (() => {
              real: done ? total : pre[li] + clamp(u) * L.real, factor: L.real / L.screen };
   }
   return { init, start, stop, next, tick, info, pos, timeScale: () => C ? scale : 1, startHour: () => hour0 };
+}
+
+/* CASCADE — one hormone signal in time-lapse, the mirror image of IMPULSE:
+   about ×2 while adrenaline rides the blood, hundreds of times while insulin
+   crosses into muscle, ~10⁵ while thyroid hormone works on genes, and slow
+   motion again for the quick nerve steps. */
+const Cascade = lapseRide({
+  ref: "cascade", byId: CASCADE_BY_ID,
+  col: l => MESSENGERS[l.h][0],
+  kindOf: l => l.h === "nerve" || l.h === "symp" ? "nerve" : "local",
+  restart: id => startCascade(id, true),
+  effect(e, p, col, { ring, dots }){
+    switch (e){
+      case "fast": Rhythm.kick(.3, 12); ring(p.x, p.y, col, 22, .35); break;
+      case "glucose": case "fuel": dots(p.x, p.y, MESSENGERS.glucose[0], 14, true); break;
+      case "feedback": ring(p.x, p.y, col, 22, .4); ring(p.x, p.y, col, 14, .8); break;
+      case "sleepy": ring(p.x, p.y, col, 46, .3); ring(p.x, p.y, col, 62, .7); break;
+      case "metabolism": ring(p.x, p.y, MESSENGERS.t3[0], 24, .3); dots(p.x, p.y, MESSENGERS.t3[0], 10, false); break;
+      case "redCells": dots(p.x, p.y, MESSENGERS.rbc[0], 16, false); break;
+    }
+  }
+});
+
+/* BITE RIDE — one nutrient from a bite of food, in time-lapse: hours in the
+   stomach and small intestine, a day or more in the colon, seconds in the
+   blood. Long legs play slowly enough that the day clock (capped at CLOCK_MAX)
+   keeps up, so you watch the day go by as the food is digested. */
+const BiteRide = (() => {
+  const SPEED = 150, MIN_LEG = 1.4, STEP_S = 2.4, MAX_S = 9;
+  const lapse = l => Math.min(MAX_S, l.real / (CLOCK_MAX * .9));
+  return lapseRide({
+    ref: "biteRide", byId: BITE_BY_ID,
+    col: l => MOLECULES[l.m][0],
+    kindOf: l => l.lymph ? "lymph" : "gut",
+    screen: (l, S) => Math.max(S ? Math.max(MIN_LEG, S.L / SPEED) : STEP_S, lapse(l)),
+    restart: id => startBite(id, true),
+    effect(e, p, col, { ring, dots }){
+      switch (e){
+        case "glucose": dots(p.x, p.y, MOLECULES.glucose[0], 14, true); break;
+        case "fat": dots(p.x, p.y, MOLECULES.fat[0], 14, false); ring(p.x, p.y, MOLECULES.fat[0], 20, .4); break;
+        case "build": ring(p.x, p.y, MOLECULES.amino[0], 22, .3); dots(p.x, p.y, MOLECULES.amino[0], 12, true); break;
+        case "out": ring(p.x, p.y, MOLECULES.stool[0], 24, .3); dots(p.x, p.y, MOLECULES.scfa[0], 10, false); break;
+      }
+    }
+  });
 })();
 
 /* =========================================================================
@@ -4296,6 +4924,140 @@ const Airways = (() => {
     if (phr.some(q => near(q.S, 40))) return "phrenic";
     if (dia && near(dia, 60)) return "diaphragm";
     if (ALV_ENDS.some(([ax, ay]) => Math.hypot(x - ax, y - ay) < 28 || Math.hypot(x - (1200 - ax), y - ay) < 28)) return "lungs";
+    return null;
+  }
+  return { init, tick, setRates, nearest };
+})();
+
+/* =========================================================================
+   DIGESTION — the gut at work. After a meal, rings of contraction sweep the
+   stomach towards the pylorus (about 3 a minute, sped up here) and each one
+   squirts a little chyme into the duodenum; food churns inside, less as the
+   stomach empties. CCK from the full duodenum squeezes the gallbladder and
+   sends bile and pancreatic juice down their ducts. Chyme is mixed back and
+   forth (segmentation) as it creeps along the small intestine, and absorbed
+   nutrients leave in the portal vein for the liver. The colon fills slowly and
+   empties in mass movements after meals, most of all after breakfast. When
+   fasting, the migrating motor complex sweeps the stomach and small intestine
+   clean every ~100 minutes. The run brakes it all. Runs only while the
+   digestive system is live.
+   ========================================================================= */
+const Digestion = (() => {
+  const NP = 80, NC = 12, PERIOD = 7, CHYME = "#c98a52", BILE = "#7da33a", JUICE = "#e3a13c", MMC = "#e9c9a6";
+  const pool = [], churn = [], waves = [];
+  let st, gut = [], gutL = 0, colon, bile, panc, portal, portalEnd = 1, ph = null, t = 0, still = "";
+  let accBile = 0, accJuice = 0, accNut = 0, accStool = 0, accMmc = 0, wavePh = 0;
+  function init(){
+    const svg = Scene.svg, g = Scene.refs.food;
+    st = sampler(svg, mapD(STOMACH_RIDE), 80);
+    gut = [DUODENUM_D, ORG.smallInt, ILEUM_END].map(d => sampler(svg, mapD(d), 160));
+    gutL = gut.reduce((a, S) => a + S.L, 0);
+    colon = sampler(svg, mapD(COLON_UP + COLON_DOWN.slice("M634 586".length)), 160);
+    bile = sampler(svg, mapD(BILE_DUCT_D), 40); panc = sampler(svg, mapD(PANC_DUCT_D), 60);
+    portal = sampler(svg, CIRC[RT.gut].v, 200); portalEnd = frac(portal, LIVER);
+    for (let i = 0; i < 2; i++) waves.push(el("circle", { r: 10, class: "gi-wave", opacity: 0 }, g));
+    for (let i = 0; i < NC; i++) churn.push(el("circle", { r: 3.2, class: "gi-dot", fill: CHYME, opacity: 0 }, g));
+    for (let i = 0; i < NP; i++) pool.push({ c: el("circle", { r: 2.4, class: "gi-dot", opacity: 0 }, g), on: false });
+  }
+  function spawn(kind, col, extra){
+    const d = pool.find(q => !q.on); if (!d) return null;
+    Object.assign(d, { on: true, kind, u: 0, s: 0, age: 0, ph0: Math.random() * 6.3 }, extra);
+    d.c.setAttribute("fill", col); d.c.setAttribute("r", kind === "stool" ? 3.2 : kind === "nut" ? 2 : 2.4);
+    return d;
+  }
+  /* a point along the gut route (duodenum → small intestine → end of the ileum), by distance */
+  function gutAt(s){
+    for (const S of gut){ if (s <= S.L) return S.at(s / S.L); s -= S.L; }
+    const S = gut[gut.length - 1]; return S.at(1);
+  }
+  const put = (c, [x, y]) => { c.setAttribute("cx", f1(x)); c.setAttribute("cy", f1(y)); };
+  /* food churning in the stomach, fewer pieces as it empties */
+  function drawChurn(p, time){
+    const n = Math.round(NC * clamp(p.stomach * 1.2));
+    churn.forEach((c, i) => {
+      if (i >= n){ c.setAttribute("opacity", 0); return; }
+      const u = clamp(.08 + .78 * i / NC + .03 * Math.sin(time * 1.3 + i)), [x, y] = st.at(u), a = st.angle(u) + Math.PI / 2;
+      const r = (u < .5 ? 9 : 9 - 10 * (u - .5)) * Math.sin(time * 1.9 + i * 1.7);
+      put(c, [x + Math.cos(a) * r, y + Math.sin(a) * r]); c.setAttribute("opacity", .85);
+    });
+  }
+  function squeeze(p){ Scene.refs.gb.setAttribute("transform", p.cck > .02 ? `scale(${f1(1 - .3 * p.cck)})` : ""); }
+  function tick(dt, p){
+    ph = p; t += dt; still = "";
+    const mot = p.motility, fill = clamp(p.stomach * 1.4), mmc = p.mmc;
+    /* stomach waves: two rings, half a period apart, from the body to the pylorus */
+    const per = PERIOD * (mmc > .3 ? .6 : 1) / Math.max(.4, mot);
+    const prev = wavePh; wavePh = (wavePh + dt / per) % 1;
+    const A = clamp(fill * mot + mmc);
+    waves.forEach((c, i) => {
+      const f = (wavePh + i / 2) % 1, u = .25 + .75 * f;
+      put(c, st.at(u)); c.setAttribute("r", f1(12 - 7 * f));
+      c.setAttribute("opacity", f1(A * .8 * Math.sin(Math.PI * f)));
+      /* a wave reaching the pylorus squirts a little chyme into the duodenum */
+      const pf = (prev + i / 2) % 1;
+      if (f < pf && p.stomach > .04) for (let k = 0, n = 1 + Math.round(2 * p.stomach); k < n; k++) spawn("chyme", CHYME, { s: -k * 4 });
+    });
+    drawChurn(p, t);
+    /* CCK: bile and pancreatic juice flow while chyme is in the duodenum (juice starts with the first bite) */
+    accBile += dt * 3 * p.cck; while (accBile >= 1){ accBile--; spawn("bile", BILE); }
+    accJuice += dt * (3 * p.cck + 1.2 * p.eating); while (accJuice >= 1){ accJuice--; spawn("juice", JUICE); }
+    /* absorbed nutrients leave in the portal vein for the liver */
+    accNut += dt * 4 * clamp((p.gut - .3) / .7) * mot; while (accNut >= 1){ accNut--; spawn("nut", MOLECULES.glucose[0], { s: Math.random() * .25 }); }
+    /* the housekeeper: fasting sweeps of the migrating motor complex */
+    if (mmc > .3){ accMmc += dt * 1.6; while (accMmc >= 1){ accMmc--; spawn("mmc", MMC); } } else accMmc = 0;
+    /* the colon keeps a slowly moving load, and empties in mass movements */
+    const target = Math.round(p.colon * 10), have = pool.filter(d => d.on && d.kind === "stool").length;
+    if (have < target){ accStool += dt * 1.5; if (accStool >= 1){ accStool = 0; spawn("stool", MOLECULES.stool[0], { u: Math.random() * .35 }); } }
+    const creep = (.004 * (.4 + .6 * p.awake) + .22 * p.massMove) * mot;
+    for (const d of pool){
+      if (!d.on) continue;
+      d.age += dt;
+      let pt, op = .9, done = false;
+      switch (d.kind){
+        case "chyme": case "mmc": {
+          d.s += dt * (d.kind === "mmc" ? 70 : 10 * mot);
+          const s = d.s + (d.kind === "chyme" ? 5 * Math.sin(2.2 * t + d.ph0) : 0);  /* segmentation: back and forth */
+          pt = gutAt(Math.max(0, s)); done = d.s >= gutL;
+          op = d.kind === "mmc" ? .8 : .9 * (1 - .65 * clamp(d.s / gutL)); break;
+        }
+        case "bile": d.u += dt / 1.4; pt = bile.at(d.u); done = d.u >= 1; break;
+        case "juice": d.u += dt / 2.2; pt = panc.at(d.u); done = d.u >= 1; break;
+        case "nut": d.s += dt / 1.8; pt = portal.at(d.s * portalEnd); done = d.s >= 1; op = .9 * Math.min(1, (1 - d.s) * 4); break;
+        case "stool": d.u += dt * creep; pt = colon.at(d.u); done = d.u >= 1; break;
+      }
+      if (done){ d.on = false; d.c.setAttribute("opacity", 0); continue; }
+      put(d.c, pt); d.c.setAttribute("opacity", f1(op * clamp(d.age * 4)));
+    }
+    squeeze(p);
+  }
+  /* a still picture (reduced motion, or not live): stomach contents and gallbladder only */
+  function setRates(p){
+    ph = p;
+    const k = `${p.stomach.toFixed(2)}|${p.cck.toFixed(2)}`;
+    if (k === still) return;
+    still = k;
+    drawChurn(p, 0); squeeze(p);
+    waves.forEach(c => c.setAttribute("opacity", 0));
+  }
+  /* what a tap at (x, y) hits: a moving dot, else the mouth, gallbladder, stomach, gut or glands */
+  function nearest(x, y, maxD){
+    let best = null, bd = maxD;
+    const byKind = { chyme: "chyme", mmc: "chyme", bile: "bile", juice: "juice", nut: "nutrient", stool: "stool" };
+    for (const d of pool){
+      if (!d.on) continue;
+      const dd = Math.hypot(+d.c.getAttribute("cx") - x, +d.c.getAttribute("cy") - y);
+      if (dd < bd){ bd = dd; best = byKind[d.kind]; }
+    }
+    if (best) return best;
+    const near = (S, n, k = .8) => { for (let i = 0; i <= n; i++){ const [px, py] = S.at(i / n); if (Math.hypot(px - x, py - y) < maxD * k) return true; } return false; };
+    if (Math.hypot(x - MOUTH_PT[0], y - MOUTH_PT[1]) < maxD * 1.2 || SALIVARY.some(([sx, sy]) => Math.hypot(x - sx, y - sy) < maxD)) return "mouth";
+    if (Math.hypot(x - GB_AT[0], y - GB_AT[1]) < maxD) return "gallbladder";
+    if (near(st, 40, 1.4)) return "stomach";
+    if (Math.abs(x - 600) < maxD * .8 && y > 214 && y < 300) return "eso";
+    if (near(gut[0], 40)) return "duodenum";
+    if (near(panc, 30) || (x > 570 && x < 672 && y > 503 && y < 528)) return "pancreas";
+    if (x > 570 && x < 630 && y > 548 && y < 604) return "smallInt";
+    if (near(colon, 80)) return "colon";
     return null;
   }
   return { init, tick, setRates, nearest };
@@ -6321,6 +7083,7 @@ const Panel = (() => {
         ${id === "nervous" ? `<button type="button" class="chip primary follow-btn" data-impulse="">${esc(STRINGS.followImpulse)}</button>` : ""}
         ${id === "endocrine" ? `<button type="button" class="chip primary follow-btn" data-cascade="">${esc(STRINGS.followCascade)}</button>` : ""}
         ${id === "respiratory" ? `<button type="button" class="chip primary follow-btn" data-breath="">${esc(STRINGS.followBreath)}</button>` : ""}
+        ${id === "digestive" ? `<button type="button" class="chip primary follow-btn" data-bite="">${esc(STRINGS.followBite)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -6354,6 +7117,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
     root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
     root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
+    root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -6394,7 +7158,8 @@ const Panel = (() => {
       ${id === "heart" || id === "lungs" ? `<div class="related"><p>${esc(STRINGS.journeyTitle)}</p><div class="depth"><button type="button" class="chip" data-follow>${esc(STRINGS.followCell)}</button></div></div>` : ""}
       ${IMPULSE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.impulseTitle)}</p><div class="depth"><button type="button" class="chip" data-impulse="${IMPULSE_FOR_TOPIC[id]}">${esc(STRINGS.followImpulse)}: ${esc(CONTENT.impulse.journeys[IMPULSE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${CASCADE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.cascadeTitle)}</p><div class="depth"><button type="button" class="chip" data-cascade="${CASCADE_FOR_TOPIC[id]}">${esc(STRINGS.followCascade)}: ${esc(CONTENT.cascade.journeys[CASCADE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
-      ${BREATH_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.breathTitle)}</p><div class="depth"><button type="button" class="chip" data-breath="${BREATH_FOR_TOPIC[id]}">${esc(STRINGS.followBreath)}: ${esc(CONTENT.breath.journeys[BREATH_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
+      ${BREATH_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.breathTitle)}</p><div class="depth"><button type="button" class="chip" data-breath="${BREATH_FOR_TOPIC[id]}">${esc(STRINGS.followBreath)}: ${esc(CONTENT.breath.journeys[BREATH_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
+      ${BITE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.biteTitle)}</p><div class="depth"><button type="button" class="chip" data-bite="${BITE_FOR_TOPIC[id]}">${esc(STRINGS.followBite)}: ${esc(CONTENT.bite.journeys[BITE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -6410,6 +7175,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
     root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
     root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
+    root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -6573,10 +7339,53 @@ const Panel = (() => {
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
+  /* while following a bite: the journey's legs as numbered stops, the current one explained */
+  function renderBite(s){
+    const C = CONTENT.bite, b = BITE_BY_ID[s.bite], jc = C.journeys[b.id], seg = s.biteSeg || 0, li = LEVEL_INDEX[s.level];
+    const text = levelText(C.stops[b.legs[seg].stop], s.level);
+    const steps = b.legs.map((l, i) => `<li style="--c:${MOLECULES[l.m][0]}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(C.stops[l.stop].name)}</li>`).join("");
+    const groups = {};
+    BITES.forEach(x => (groups[C.journeys[x.id].group] ||= []).push(x.id));
+    const list = Object.entries(groups).map(([g, ids]) => `<p class="imp-group">${esc(g)}</p><div class="depth">${ids.map(id =>
+      `<button type="button" class="chip${id === b.id ? " primary" : ""}" data-bt="${id}"${id === b.id ? ` aria-pressed="true"` : ""}>${esc(C.journeys[id].name)}</button>`).join("")}</div>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.biteTitle)}</h2>
+      <p class="lede">${esc(STRINGS.biteLede)}</p>
+      <section class="sys-card" style="--sc:${MOLECULES[b.legs[0].m][0]}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <p class="follow-label imp-paths">${esc(STRINGS.biteJourneys)}</p>
+      ${list}
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopImpulse)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.biteHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopBite);
+    root.querySelector("[data-stop]").addEventListener("click", stopBite);
+    root.querySelectorAll("[data-bt]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bt)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic;
-    const key = breathing ? `breath:${s.breath}|${s.level}|${s.breathSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic;
+    const key = eating ? `bite:${s.bite}|${s.level}|${s.biteSeg}`
+              : breathing ? `breath:${s.breath}|${s.level}|${s.breathSeg}`
               : lapse ? `cascade:${s.cascade}|${s.level}|${s.cascadeSeg}`
               : riding ? `impulse:${s.impulse}|${s.level}|${s.impulseSeg}`
               : following ? `follow:${s.follow}|${s.level}|${s.followSeg}`
@@ -6585,7 +7394,7 @@ const Panel = (() => {
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -6642,10 +7451,10 @@ const Controls = (() => {
     hourBtns.addEventListener("click", e => { const b = e.target.closest("[data-h]"); if (b) store.set({ hour: +b.dataset.h, playing: false }); });
     range.addEventListener("input", () => store.set({ hour: +range.value, playing: false }));
     play.addEventListener("click", () => store.set({ playing: !store.get().playing }));
-    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); } });
+    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); stopBite(); } });
     document.addEventListener("keydown", e => {
       if (e.key !== "Escape") return;
-      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); }
+      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); stopBite(); }
     });
   }
   function sync(s){
@@ -6751,7 +7560,7 @@ const Journey = (() => {
 
 /* Start following a red cell (a given one, or one just leaving the heart) */
 function startFollow(i){
-  stopImpulse(); stopCascade(); stopBreath();
+  stopImpulse(); stopCascade(); stopBreath(); stopBite();
   const s = store.get();
   if (s.live !== "circulatory") setLive("circulatory");
   const idx = i == null ? Particles.pickCell() : i;
@@ -6835,7 +7644,7 @@ const ImpulseCard = (() => {
 /* Start following a nerve impulse (a given journey, or one that suits the hour).
    mirror = run it on the other side of the body. */
 function startImpulse(id, mirror = false){
-  stopFollow(); stopCascade(); stopBreath();
+  stopFollow(); stopCascade(); stopBreath(); stopBite();
   if (store.get().live !== "nervous") setLive("nervous");
   id = id || defaultImpulse(store.get().hour);
   Impulse.start(id, mirror); ImpulseCard.reset();
@@ -6922,7 +7731,7 @@ const CascadeCard = (() => {
    The clock jumps to the hour the cascade naturally starts, unless it is
    already there; replay = start again from the same hour. */
 function startCascade(id, replay = false){
-  stopFollow(); stopImpulse(); stopBreath();
+  stopFollow(); stopImpulse(); stopBreath(); stopBite();
   if (store.get().live !== "endocrine") setLive("endocrine");
   const s = store.get();
   id = id || defaultCascade(s.hour);
@@ -7012,7 +7821,7 @@ const BreathCard = (() => {
 
 /* Start following a breath journey (a given one, or one that suits the hour) */
 function startBreath(id){
-  stopFollow(); stopImpulse(); stopCascade();
+  stopFollow(); stopImpulse(); stopCascade(); stopBite();
   if (store.get().live !== "respiratory") setLive("respiratory");
   const s = store.get();
   id = id || defaultBreath(s.hour);
@@ -7028,12 +7837,97 @@ function stopBreath(){
 }
 
 /* =========================================================================
+   BITE CARD — over the body while a bite journey is followed: where the
+   nutrient is, what it has become, real time elapsed and the time-lapse
+   ========================================================================= */
+const BiteCard = (() => {
+  const box = $("#biteCard");
+  let els = null, last = {}, li = -1, arrived = false;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingBite)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>${esc(STRINGS.realTime)}</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="another">${esc(STRINGS.anotherBite)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopBite();
+      else if (b.dataset.j === "another"){
+        const i = BITES.findIndex(x => x.id === store.get().bite);
+        startBite(BITES[(i + 1) % BITES.length].id);
+      }
+      else { BiteRide.next(); tick(); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function tick(){
+    const s = store.get(); if (s.bite == null) return;
+    const q = BiteRide.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.biteSeg !== li) store.set({ biteSeg: li }); }
+    const L = q.leg, col = MOLECULES[L.m][0];
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("where", CONTENT.bite.stops[L.stop].name, v => els.where.textContent = v);
+    set("time", fmtDur(q.real), v => els.time.textContent = v);
+    set("bar", Math.round(q.real / q.total * 200), v => els.bar.style.width = v / 2 + "%");
+    const f = q.factor, speed = f < 1 ? STRINGS.slowed(1 / f) : STRINGS.sped(f);
+    const meta = q.done ? STRINGS.biteDone(fmtDur(q.total))
+      : `${MOLECULES[L.m][1]} · ${STRINGS.biteKind[L.kind]} · ${speed}${q.total >= 86400 ? " · " + STRINGS.day(Math.floor(q.real / 86400) + 1) : ""}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.bite.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.bite != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following a bite (a given nutrient, or one that suits the hour). It
+   starts with a bite of the meal that is on, or the clock jumps to the next
+   meal; replay = start again from the same hour. */
+function startBite(id, replay = false){
+  stopFollow(); stopImpulse(); stopCascade(); stopBreath();
+  if (store.get().live !== "digestive") setLive("digestive");
+  const s = store.get();
+  id = id || defaultBite(s.hour);
+  const hour = replay ? BiteRide.startHour() : biteHour(s.hour);
+  store.set({ hour, playing: false });
+  BiteRide.start(id, hour); BiteCard.reset();
+  store.set({ bite: id, biteSeg: 0, topic: null });
+  BiteCard.tick();
+  showScene();
+}
+function stopBite(){
+  if (store.get().bite == null) return;
+  BiteRide.stop();
+  store.set({ bite: null, biteSeg: null });
+}
+
+/* =========================================================================
    WIRING
    ========================================================================= */
 const FOLLOW_W = 230; /* world units across while following a cell */
 const IMPULSE_W = 200; /* … and a nerve impulse */
 const CASCADE_W = 240; /* … and a hormone cascade */
 const BREATH_W = 220;  /* … and a breath */
+const BITE_W = 250;    /* … and a bite */
 const BODY_MAX = 4;     /* in time-lapse, the heart, breath and blood run at most this much faster… */
 const CLOCK_MAX = 3 * 3600; /* …and the day clock at most 3 h per second, so the sky doesn't strobe */
 function cameraFor(s){
@@ -7041,6 +7935,7 @@ function cameraFor(s){
   if (s.impulse != null && !s.topic) return Camera.focusView(Scene.toView(Impulse.pos()), IMPULSE_W);
   if (s.cascade != null && !s.topic) return Camera.focusView(Scene.toView(Cascade.pos()), CASCADE_W);
   if (s.breath != null && !s.topic) return Camera.focusView(Scene.toView(BreathRide.pos()), BREATH_W);
+  if (s.bite != null && !s.topic) return Camera.focusView(Scene.toView(BiteRide.pos()), BITE_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -7055,16 +7950,18 @@ store.subscribe((s, prev) => {
   }
   Pins.render(s);
   const free = !s.topic && !riding(s);
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
   if (s.cascade != null && (s.topic || s.live !== "endocrine")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "endocrine") stopCascade(); });
   if (s.breath != null && (s.topic || s.live !== "respiratory")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "respiratory") stopBreath(); });
+  if (s.bite != null && (s.topic || s.live !== "digestive")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "digestive") stopBite(); });
   Journey.sync(s);
   ImpulseCard.sync(s);
   CascadeCard.sync(s);
   BreathCard.sync(s);
+  BiteCard.sync(s);
   if (s.topic !== prev.topic){
     Camera.go(cameraFor(s)); Hotspots.setVisible(free); Scene.focus(s.topic);
     if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
@@ -7092,12 +7989,15 @@ function init(){
   Cascade.init();
   Airways.init();
   BreathRide.init();
+  Digestion.init();
+  BiteRide.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
   ImpulseCard.build();
   CascadeCard.build();
   BreathCard.build();
+  BiteCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
@@ -7118,6 +8018,11 @@ function init(){
     if (s.live === "respiratory"){
       const id = tapBreath(Airways.nearest(pt.x, pt.y, tol));
       if (id){ startBreath(id); return; }
+    }
+    /* gut live: tap the mouth, stomach, gallbladder, gut or a moving dot to follow a bite */
+    if (s.live === "digestive"){
+      const id = tapBite(Digestion.nearest(pt.x, pt.y, tol));
+      if (id){ startBite(id); return; }
     }
     if (!s.shown.circulatory) return;
     const i = Particles.nearestCell(pt.x, pt.y, tol);
@@ -7142,13 +8047,14 @@ function init(){
     /* bullet time: while an impulse is followed the body (and the clock) run slowed down.
        Time-lapse: while a hormone cascade is followed the clock runs at the real
        time of the signal (capped), and the body faster (capped harder) */
-    const k = st.impulse != null ? Impulse.timeScale() : st.cascade != null ? Cascade.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
+    const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : null;
+    const k = st.impulse != null ? Impulse.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
     const sdt = dt * Math.min(k, BODY_MAX);
-    if (st.cascade == null){ lastReal = 0; clockDebt = 0; }
-    if (st.cascade != null && !st.topic){
+    if (!lapse){ lastReal = 0; clockDebt = 0; }
+    if (lapse && !st.topic){
       /* the clock follows the signal's real time, at most CLOCK_MAX; a backlog
          under 6 h is caught up, longer ones (days) are let go */
-      const r = Cascade.info().real;
+      const r = lapse.info().real;
       if (r < lastReal) clockDebt = 0;
       clockDebt += Math.max(0, r - lastReal); lastReal = r;
       if (clockDebt > 6 * 3600) clockDebt = 0;
@@ -7168,6 +8074,7 @@ function init(){
       if (!reducedMotion && live === "nervous") Nerves.tick(sdt, ph);
       if (!reducedMotion && live === "endocrine") Hormones.tick(sdt, ph); else Hormones.setRates(ph);
       if (!reducedMotion && live === "respiratory") Airways.tick(sdt, ph); else Airways.setRates(ph);
+      if (!reducedMotion && live === "digestive") Digestion.tick(sdt, ph); else Digestion.setRates(ph);
       Panel.tick(sdt, ph);
       Journey.tick(sdt);
       Impulse.tick(dt);
@@ -7176,6 +8083,8 @@ function init(){
       CascadeCard.tick();
       BreathRide.tick(dt);
       BreathCard.tick();
+      BiteRide.tick(dt);
+      BiteCard.tick();
     }
     requestAnimationFrame(frame);
   }

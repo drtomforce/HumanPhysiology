@@ -17,7 +17,7 @@
 
  1. DATA (JSON blocks in <script type="application/json">)
     #body-content  topics → phases → levels → text, and systems (circulatory,
-                   nervous, endocrine) → phases → levels → text plus fact pins
+                   nervous, endocrine, respiratory) → phases → levels → text plus fact pins
                    {title, x, y, levels…}. The schema is the contract.
     #body-glossary term → definition + match forms. Terms are auto-linked.
     #body-hours    one short "what's happening now" note per hour (24).
@@ -37,15 +37,22 @@
                    nerve and local hops, and steps where cells make or answer a
                    hormone, each with its real duration and messenger (MESSENGERS);
                    text in CONTENT.cascade.
+                   BREATHS lists the breath journeys: air legs locked to the breath
+                   (gate "in"/"out", their share of one breath), plus diffusion,
+                   blood and mucus legs with real durations, each with its molecule
+                   (MOLECULES) and partial pressure; text in CONTENT.breath.
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
-                   follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg}. shown = which body systems
+                   follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg, breath,
+                   breathSeg}. shown = which body systems
                    are drawn; live = the one that is animated (setSystem / setLive keep
                    the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
                    impulse / impulseSeg = the nerve impulse journey followed and its
                    leg (startImpulse / stopImpulse); cascade / cascadeSeg the same for
-                   a hormone cascade (startCascade / stopCascade); one ride at a time.
+                   a hormone cascade (startCascade / stopCascade), and breath / breathSeg
+                   for a breath journey (startBreath / stopBreath); one ride at a time,
+                   and riding(s) says whether one is on.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
                    Renders physiology → SVG attributes. RHYTHM keeps the beat and
@@ -56,7 +63,8 @@
                    with its own animator, and only the live one runs:
                    blood cells (PARTICLES), action potentials along the NERV
                    routes (NERVES), and hormones secreted by GLANDS that ride
-                   the CIRC routes to their target organ (HORMONES).
+                   the CIRC routes to their target organ (HORMONES), and air dots
+                   moved in and out of the airways by the breath volume (AIRWAYS).
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
@@ -67,6 +75,10 @@
                    timeScale() moves the day clock on (capped by CLOCK_MAX) and
                    speeds up the body (capped by BODY_MAX); CASCADE CARD shows the
                    stop, the messenger, real time elapsed and the time-lapse.
+                   BREATH RIDE follows a molecule in step with the breath: air legs
+                   ride the real breath (and wait for it), other legs are slowed or
+                   sped up; BREATH CARD shows the stop, its partial pressure and
+                   whether it is waiting for the in- or out-breath.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -378,6 +390,18 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .gland-stalk{ stroke:var(--gland-line); stroke-width:2; }
 .gland-halo{ fill:#8a5cc4; opacity:.15; }
 .hormone{ stroke:#00000033; stroke-width:.6; }
+.airway{ fill:none; stroke:#3f8fe0; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round; opacity:.45; }
+.airway.upper{ stroke-width:2.6; opacity:.55; }
+.airway.mouth{ stroke-dasharray:2 2.5; }
+.airway.bronchus{ stroke-width:1.6; opacity:.4; }
+.alv{ fill:#3f8fe0; opacity:.18; }
+.phrenic{ fill:none; stroke:var(--nerve); stroke-width:1.2; stroke-dasharray:3 2.5; opacity:.75; }
+.diaphragm{ fill:none; stroke:#d0604c; stroke-width:3.4; stroke-linecap:round; opacity:.85; }
+.resp-mus{ fill:none; stroke:#e0705a; stroke-width:2.2; stroke-linecap:round; }
+.air{ stroke:#ffffff99; stroke-width:.5; }
+#s-breathRide .imp-halo{ opacity:.28; }
+#s-breathRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-breathRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 #s-pins .mk{ cursor:pointer; outline:none; }
 #s-pins .mk circle{ fill:var(--pc, var(--ink)); stroke:var(--bg); stroke-width:2.4; }
 #s-pins .mk text{ fill:#fff; font:600 12px var(--sans); text-anchor:middle; pointer-events:none; }
@@ -471,6 +495,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="journey" id="journey" aria-live="polite"></div>
       <div class="journey" id="impulseCard" aria-live="polite"></div>
       <div class="journey" id="cascadeCard" aria-live="polite"></div>
+      <div class="journey" id="breathCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
       <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
@@ -1149,6 +1174,78 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "hs": "Fat cells release leptin. More fat means more leptin, which tells the brain that energy stores are full.",
           "college": "Leptin acts in the arcuate nucleus of the hypothalamus, stimulating POMC neurons and inhibiting AgRP/NPY neurons. Fat also releases adiponectin, which improves insulin sensitivity.",
           "phd": "Most people with obesity have high leptin but respond poorly to it, so leptin treatment helps mainly in rare congenital leptin deficiency. Falling leptin during dieting strongly drives hunger and lowers energy expenditure." }
+      ]
+    },
+    "respiratory": {
+      "name": "Respiratory system",
+      "blurb": "Nose, airways and lungs: swapping oxygen for carbon dioxide",
+      "phases": {
+        "sleep": {
+          "ms": "Asleep, you breathe slowly and gently without ever thinking about it. Your brainstem keeps the rhythm going all night. In dream sleep your breathing becomes uneven, and the muscles of your throat relax so much that some people snore.",
+          "hs": "During sleep the brainstem becomes less sensitive to carbon dioxide, so each breath is a little smaller and CO₂ in the blood rises by 3–5 mmHg. Muscle tone in the throat falls, which narrows the upper airway. In REM sleep almost every muscle is switched off except the diaphragm, so breathing becomes irregular and snoring is often loudest.",
+          "college": "Loss of the waking ‘drive to breathe’ lowers minute ventilation by about 10–15% in NREM sleep, and PaCO₂ settles a few mmHg higher. The hypercapnic and hypoxic ventilatory responses are blunted, most of all in REM. Upper-airway dilator muscles such as genioglossus lose tone, raising airway resistance, and REM atonia removes intercostal support, leaving the diaphragm to work alone.",
+          "phd": "Obstructive sleep apnoea arises when the pharynx collapses under the negative pressure of inspiration once dilator tone is lost; its endotypes include a collapsible airway, a low arousal threshold, high loop gain and poor muscle responsiveness (Eckert et al., 2013). High loop gain, an over-sensitive chemoreflex, also drives central apnoeas and periodic breathing, as at altitude or in heart failure. Hypoglossal nerve stimulation and drugs that restore pharyngeal tone (such as atomoxetine with oxybutynin) target these traits."
+        },
+        "rest": {
+          "ms": "Every breath in brings fresh air with oxygen deep into your lungs. Every breath out gets rid of carbon dioxide, a waste gas your cells make. A dome-shaped muscle under your lungs, the diaphragm, does most of the work. Breathing out at rest needs no effort at all: your lungs simply spring back.",
+          "hs": "When the diaphragm contracts it flattens and pulls the lungs down, so air rushes in. Breathing out is passive: the stretchy lungs recoil. At rest each breath moves about 500 mL, but the first 150 mL never reaches the air sacs. It just fills the airways, which are called dead space. In the alveoli, oxygen diffuses into the blood and carbon dioxide diffuses out.",
+          "college": "Alveolar ventilation, (tidal volume − dead space) × rate, about 4.2 L/min at rest, sets alveolar PCO₂ through the relationship PACO₂ ∝ VCO₂ / VA. The alveolar gas equation then gives PAO₂ ≈ PiO₂ − PACO₂ / R ≈ 100 mmHg. Surfactant lowers surface tension so small alveoli do not collapse, and compliance is high, so quiet breathing costs only about 2% of the body’s oxygen use.",
+          "phd": "The blood–gas barrier is about 0.3–0.5 µm thick over roughly 100 m², a structural compromise between diffusion and mechanical strength (West, 2003). Ventilation–perfusion ratios vary from apex to base, and the spread of V̇/Q̇ rather than diffusion limitation explains most of the normal alveolar–arterial gradient. Respiratory rhythm comes from the pre-Bötzinger complex, coupled to an expiratory oscillator in the parafacial region that is recruited when the out-breath becomes active."
+        },
+        "meal": {
+          "ms": "You can’t breathe and swallow at the same time. Each time you swallow, your breathing stops for a moment and a flap called the epiglottis covers your windpipe so food goes down the right way. A full stomach also pushes up a little on your diaphragm.",
+          "hs": "Each swallow causes a brief pause in breathing, called swallow apnoea, while the larynx rises and the epiglottis folds over the airway. Breathing usually restarts with a breath out, which helps blow away any crumbs near the windpipe. Digesting food raises the body’s CO₂ production by about 10%, so breathing deepens slightly after a meal.",
+          "college": "Swallowing is coordinated by a brainstem pattern generator that inhibits the respiratory rhythm for about 0.5–1 s, and most swallows fall in the expiratory phase, followed by expiration, which protects against aspiration. The thermic effect of food raises VO₂ and VCO₂, and a carbohydrate-rich meal raises the respiratory quotient towards 1, so ventilation rises to hold PaCO₂ steady.",
+          "phd": "Poor timing of breathing and swallowing, with swallows during inspiration or followed by inspiration, is linked to aspiration in COPD, Parkinson’s disease and after stroke (Martin-Harris et al.). Gastric distension raises intra-abdominal pressure and can modestly reduce functional residual capacity, an effect that matters more in obesity and lung disease, and large carbohydrate loads can precipitate hypercapnia in patients with limited ventilatory reserve."
+        },
+        "exercise": {
+          "ms": "When you run, you breathe much faster and deeper, and you start breathing through your mouth to move more air. You can take in more than ten times as much air as at rest. Muscles between your ribs and in your belly join in to push the air out quickly.",
+          "hs": "Minute ventilation can rise from about 6 to over 70 L/min in a hard run, through both bigger breaths (up to about 2 L) and faster ones. The out-breath becomes active: abdominal and internal intercostal muscles squeeze the chest. Even so, oxygen and carbon dioxide in arterial blood barely change, because breathing rises in step with what the muscles use and produce.",
+          "college": "In moderate exercise, ventilation rises in proportion to VCO₂, holding PaCO₂ near 40 mmHg. Above the ventilatory threshold, lactic acid buffered by bicarbonate releases extra CO₂ and ventilation rises faster than VO₂; beyond respiratory compensation, PaCO₂ falls. Accessory muscles join in, and mouth breathing lowers airway resistance at flows above about 35 L/min.",
+          "phd": "How ventilation is matched so precisely to metabolism remains debated: candidates include central command, group III/IV muscle afferents and carotid body sensing, but no error signal is large enough on its own (Forster et al., 2012). In healthy people the lungs rarely limit VO₂max, yet many highly trained athletes show exercise-induced arterial hypoxaemia, and respiratory muscle work can steal blood flow from the legs through a metaboreflex (Dempsey)."
+        }
+      },
+      "pins": [
+        { "id": "nose", "title": "Nasal cavity", "x": 600, "y": 196,
+          "ms": "Your nose warms, wets and cleans the air before it reaches your lungs. Hairs and sticky mucus catch dust.",
+          "hs": "Curled bony shelves called turbinates make the air swirl over warm, wet lining, so by the back of the throat it is near body temperature and fully humidified.",
+          "college": "Nasal breathing adds about half of total airway resistance, which is why we switch to mouth breathing at high flows. The nose also adds nitric oxide to the inhaled air.",
+          "phd": "Water vapour at 37 °C has a pressure of 47 mmHg, so humidification lowers inspired PO₂ from about 159 to 149 mmHg before the air reaches the lungs." },
+        { "id": "larynx", "title": "Larynx and epiglottis", "x": 586, "y": 234,
+          "ms": "The voice box sits at the top of your windpipe. A flap called the epiglottis closes it when you swallow.",
+          "hs": "The vocal cords inside the larynx open wide when you breathe in and close to make sound or to build up pressure for a cough.",
+          "college": "The posterior cricoarytenoid is the only muscle that opens the vocal cords, and it contracts just before each in-breath.",
+          "phd": "Laryngeal adductor reflexes and the cough reflex are mediated by vagal afferents. Inducible laryngeal obstruction during exercise can mimic asthma in young athletes." },
+        { "id": "trachea", "title": "Windpipe", "x": 616, "y": 272,
+          "ms": "The windpipe is a tube held open by rings of cartilage. It carries air down to your lungs.",
+          "hs": "Its lining has millions of tiny hairs called cilia that sweep mucus, and the dirt stuck in it, up towards the throat.",
+          "college": "Cilia beat about 10–15 times a second in a coordinated wave, moving the mucus layer up the trachea at roughly 5–10 mm a minute.",
+          "phd": "In cystic fibrosis, loss of CFTR chloride secretion dehydrates the airway surface liquid, so mucus becomes thick and mucociliary clearance fails." },
+        { "id": "bronchi", "title": "Bronchial tree", "x": 572, "y": 326,
+          "ms": "The windpipe splits into two tubes, one for each lung, and these keep splitting into smaller and smaller branches.",
+          "hs": "The airways branch about 23 times, ending in tiny tubes called bronchioles. Smooth muscle in their walls can tighten, which is what happens in asthma.",
+          "college": "Total cross-sectional area grows so fast with branching that air slows almost to a stop near the alveoli, where gas moves by diffusion rather than bulk flow.",
+          "phd": "Airway smooth muscle tone is set by vagal acetylcholine on M3 receptors and relaxed by β₂-agonists; airway hyperresponsiveness and remodelling define asthma." },
+        { "id": "alveoli", "title": "Alveoli", "x": 528, "y": 380,
+          "ms": "At the ends of the tubes are about 400 million tiny air sacs. This is where oxygen moves into your blood.",
+          "hs": "The alveoli are wrapped in capillaries. Their walls are so thin that oxygen and carbon dioxide cross in a fraction of a second.",
+          "college": "Spread flat, the alveolar surface would cover about 70–100 m². Type II cells make surfactant, and type I cells form the thin exchange surface.",
+          "phd": "Alveolar recruitment and surfactant function are central to ventilating injured lungs; low tidal volumes improve survival in ARDS by limiting overdistension." },
+        { "id": "pleura", "title": "Pleura", "x": 690, "y": 330,
+          "ms": "Each lung is wrapped in a thin, slippery bag that lets it glide against your ribs as you breathe.",
+          "hs": "A thin film of fluid between the two layers of pleura holds the lungs against the chest wall, so they follow it as it expands.",
+          "college": "Pressure in the pleural space is about −5 cmH₂O at rest and falls to about −8 on inspiration. If air gets in (a pneumothorax), the lung collapses.",
+          "phd": "The balance of lung recoil inwards and chest-wall recoil outwards sets functional residual capacity; the pleural pressure gradient from apex to base explains regional ventilation." },
+        { "id": "diaphragm", "title": "Diaphragm", "x": 652, "y": 430,
+          "ms": "The diaphragm is a dome-shaped muscle under your lungs. When it tightens, it moves down and air flows in.",
+          "hs": "The diaphragm does about 70% of the work of quiet breathing. It is controlled by the phrenic nerve, which comes from the neck.",
+          "college": "The phrenic nerve arises from spinal roots C3–C5, which is why injuries above C3 stop breathing. The diaphragm’s fibres are fatigue-resistant and active for a lifetime.",
+          "phd": "Diaphragm weakness develops within hours of mechanical ventilation (ventilator-induced diaphragm dysfunction), driven by disuse atrophy and oxidative stress." },
+        { "id": "control", "title": "Breathing control", "x": 586, "y": 168,
+          "ms": "Your brainstem sets the rhythm of your breathing. Sensors check how much carbon dioxide is in your blood and adjust it.",
+          "hs": "Chemoreceptors in the brainstem sense CO₂ (as acidity), and the carotid bodies in your neck sense low oxygen. Both make you breathe more.",
+          "college": "Central chemoreceptors provide about 70% of the response to CO₂. The carotid bodies respond within a second to falling PaO₂ and rising PaCO₂ or H⁺.",
+          "phd": "The retrotrapezoid nucleus is the key CO₂-sensing site, using proton-sensing channels such as TASK-2 and GPR4. Carotid body glomus cells sense O₂ through mitochondrial signalling." }
       ]
     }
   },
@@ -1852,6 +1949,283 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "phd": "Drugs that block the prolyl hydroxylases (daprodustat, roxadustat) mimic low oxygen and raise the body’s own EPO in the anaemia of kidney disease. When EPO keeps overshooting, as with EPO-secreting tumours, the result is secondary polycythaemia."
       }
     }
+  },
+  "breath": {
+    "journeys": {
+      "oxygenIn": { "name": "Oxygen: air → thigh muscle", "group": "Gas exchange",
+        "blurb": "One oxygen molecule rides an in-breath down to an air sac, slips into a red cell and is carried to a working thigh muscle, where a mitochondrion turns it into water.",
+        "effect": "The oxygen becomes water, and the mitochondrion makes ATP" },
+      "co2Out": { "name": "Carbon dioxide: muscle → out", "group": "Gas exchange",
+        "blurb": "Carbon dioxide made in the thigh muscle hides in the blood as bicarbonate, is set free again in the lungs, then waits for an out-breath to carry it away.",
+        "effect": "Out it goes, in a puff of breath" },
+      "chemoreflex": { "name": "Too much CO₂ → a deeper breath", "group": "Control",
+        "blurb": "Carbon dioxide reaches the brainstem and makes the fluid there more acidic. Sensors tell the breathing centre, which fires the phrenic nerve, and the diaphragm pulls in a bigger breath.",
+        "effect": "A deeper breath blows off the extra CO₂" },
+      "dust": { "name": "A speck of dust: caught and swept out", "group": "Defence",
+        "blurb": "A speck of dust is breathed in and sticks to the mucus lining an airway. Beating cilia carry it slowly up the windpipe to the throat, where it is swallowed.",
+        "effect": "Swallowed: stomach acid takes care of it" }
+    },
+    "stops": {
+      "nose": {
+        "name": "In through the nose",
+        "ms": "Our oxygen molecule is sucked into a nostril as the diaphragm pulls down. Inside, the air is warmed and wetted.",
+        "hs": "The nasal cavity warms, humidifies and filters the air. Adding water vapour dilutes the oxygen slightly, so its partial pressure drops from about 159 to 149 mmHg.",
+        "college": "Air is about 21% oxygen, so at sea level PO₂ = 0.21 × 760 ≈ 159 mmHg. Saturated with water vapour at 37 °C (47 mmHg), inspired PO₂ becomes 0.21 × (760 − 47) ≈ 149 mmHg.",
+        "phd": "Turbinate airflow and the nasal cycle shape heat and water exchange; nasal nitric oxide, mostly from the paranasal sinuses, may improve V̇/Q̇ matching when it is inhaled."
+      },
+      "mouth": {
+        "name": "In through the mouth",
+        "ms": "Running hard, you gulp air through your mouth. Our oxygen molecule rushes in with it.",
+        "hs": "Above about 35 litres a minute we switch to mouth breathing, because the mouth offers far less resistance than the nose. The air is less warmed and filtered, so the windpipe has to finish the job.",
+        "college": "Oronasal breathing halves upper-airway resistance at high flows. Humidification is completed deeper in the airways, which is why cold, dry air can trigger exercise-induced bronchoconstriction.",
+        "phd": "Water loss from the airway surface during high ventilation raises its osmolarity, triggering mast-cell mediator release; this is the mechanism behind exercise-induced bronchoconstriction."
+      },
+      "windpipe": {
+        "name": "Down the windpipe",
+        "ms": "The molecule zooms down the windpipe, a tube held open by rings of cartilage.",
+        "hs": "The trachea is about 12 cm long and 2 cm wide. Air moves fastest here, several metres a second in a deep breath, because the tube is narrow.",
+        "college": "Flow in the trachea is often turbulent, which contributes much of total airway resistance. The cartilage rings keep it from collapsing when pressure falls.",
+        "phd": "Most airway resistance lies in the large and medium airways, not the small ones, so small-airway disease can progress a long way before spirometry changes (the ‘quiet zone’)."
+      },
+      "bronchialTree": {
+        "name": "Through the bronchial tree",
+        "ms": "The tubes split again and again, like the branches of an upside-down tree, getting tinier each time.",
+        "hs": "After about 16 branchings the airways become small enough to have air sacs on their walls. Fresh air mixes with the air already in the lungs, so oxygen’s partial pressure falls towards 100 mmHg.",
+        "college": "Only part of each breath reaches the alveoli: the last 150 mL or so stays in the conducting airways (anatomical dead space) and is breathed straight out again.",
+        "phd": "Bulk flow brings gas only to about the terminal bronchioles. Beyond that, the total cross-section is so large that gas mixes mainly by diffusion, the stationary diffusion front sitting in the acinus."
+      },
+      "alveolarAir": {
+        "name": "In an alveolus",
+        "ms": "The molecule arrives in a tiny air sac, thinner than a soap bubble, with blood flowing all around it.",
+        "hs": "Alveolar air has less oxygen than outside air, about 100 mmHg, because each breath only replaces part of it and the blood keeps taking oxygen out.",
+        "college": "Alveolar gas equation: PAO₂ = PiO₂ − PACO₂ / R = 149 − 40 / 0.8 ≈ 100 mmHg. Alveolar PO₂ swings only a few mmHg through each breath because functional residual capacity is a large buffer.",
+        "phd": "The alveolar gas equation assumes a steady state; during hyperventilation or with a changing respiratory exchange ratio, the simplified form misestimates PAO₂."
+      },
+      "barrier": {
+        "name": "Across the air–blood barrier",
+        "ms": "In a flash, the molecule slips through the wall of the air sac and into the blood.",
+        "hs": "The barrier is less than a thousandth of a millimetre thick. Oxygen moves across by diffusion, from higher pressure in the air to lower pressure in the blood, in well under a millisecond.",
+        "college": "Fick’s law: diffusion ∝ area × (P₁ − P₂) / thickness. With a barrier of about 0.5 µm, blood arriving at 40 mmHg equilibrates with alveolar gas in about 0.25 s, a third of the time it spends in the capillary.",
+        "phd": "Diffusing capacity (DLCO) has a membrane component and a blood component (θ·Vc); in health, the uptake reaction with haemoglobin limits transfer about as much as the membrane does (Roughton–Forster)."
+      },
+      "haemoglobin": {
+        "name": "Onto haemoglobin",
+        "ms": "The molecule jumps into a red blood cell and sticks to haemoglobin, the red protein that carries oxygen.",
+        "hs": "Each haemoglobin carries up to four oxygen molecules. Once one binds, the others bind more easily, so blood fills up with oxygen quickly in the lungs.",
+        "college": "Cooperative binding gives the sigmoid dissociation curve: at 100 mmHg haemoglobin is about 97% saturated. Over 98% of the oxygen in blood rides on haemoglobin, less than 2% is dissolved.",
+        "phd": "Allosteric T→R transitions explain cooperativity (Monod–Wyman–Changeux). Loss of CO₂ and H⁺ in the lung shifts the curve left, aiding loading: the Bohr effect working in reverse."
+      },
+      "toLeftHeart": {
+        "name": "Pulmonary vein → left heart",
+        "ms": "Riding in its red cell, the molecule travels back to the heart, this time to the strong left side.",
+        "hs": "Blood leaving the lungs is about 97% saturated. A little oxygen-poor blood mixes in on the way, so arterial PO₂ ends up near 95 mmHg.",
+        "college": "Bronchial and Thebesian veins add a small physiological shunt, and V̇/Q̇ mismatch lowers PaO₂ further, giving the normal alveolar–arterial gradient of 5–15 mmHg.",
+        "phd": "Intrapulmonary arteriovenous anastomoses may open during exercise and hypoxia (Lovering et al.), though their contribution to gas exchange is debated."
+      },
+      "toThigh": {
+        "name": "Aorta → thigh artery",
+        "ms": "The left side of the heart pumps the molecule out into the aorta and down the leg to a thigh muscle.",
+        "hs": "In the run the legs get most of the heart’s output, so our molecule is quite likely to end up in a working thigh muscle.",
+        "college": "Oxygen delivery = cardiac output × arterial O₂ content ≈ 5 L/min × 200 mL/L ≈ 1 L/min at rest, rising about fourfold in hard exercise.",
+        "phd": "Convective delivery to muscle is regulated by local vasodilators (NO, ATP from desaturating red cells, adenosine, K⁺) that override sympathetic constriction in working muscle."
+      },
+      "unload": {
+        "name": "Let go in a muscle capillary",
+        "ms": "In a tiny blood vessel inside the muscle, the haemoglobin lets go of our molecule.",
+        "hs": "Working muscle is warmer and more acidic and has more carbon dioxide. All three make haemoglobin let go of oxygen more easily (the Bohr effect).",
+        "college": "End-capillary PO₂ is about 40 mmHg at rest and can fall near 20 mmHg in exercising muscle, where extraction exceeds 80%. Rightward shift of the dissociation curve lets more O₂ unload at the same PO₂.",
+        "phd": "Capillary transit time, recruitment and red cell spacing set diffusive O₂ conductance in muscle (DmO₂); training raises capillary density and DmO₂, which limits VO₂max as much as delivery does (Wagner)."
+      },
+      "myoglobin": {
+        "name": "Handed along by myoglobin",
+        "ms": "Inside the muscle cell, a cousin of haemoglobin called myoglobin passes the molecule along.",
+        "hs": "Myoglobin is a red protein in muscle that grabs oxygen even at very low pressure and helps carry it to where it is used.",
+        "college": "Myoglobin is half-saturated at about 2–3 mmHg, so it stores and shuttles O₂ across the cell. Intracellular PO₂ in working muscle is only a few mmHg.",
+        "phd": "Magnetic resonance spectroscopy shows that intracellular PO₂ falls rapidly to about 3–4 mmHg at exercise onset and then stays flat, so the steep gradient is across the capillary wall, not inside the fibre (Richardson et al., 1995)."
+      },
+      "cytochrome": {
+        "name": "Mitochondrion: turned into water",
+        "ms": "Our molecule reaches a mitochondrion, the cell’s power station. There it is used to make energy, and it ends up as water.",
+        "hs": "At the end of the electron transport chain, oxygen grabs electrons and hydrogen ions and becomes water. The energy released is used to make ATP, the cell’s fuel.",
+        "college": "Cytochrome c oxidase (complex IV) reduces O₂ to 2 H₂O with four electrons and four protons, pumping more protons that drive ATP synthase. About 2.5 ATP are made per pair of electrons from NADH.",
+        "phd": "Complex IV’s high O₂ affinity (Km below 1 mmHg) lets mitochondria work at very low PO₂. Nitric oxide competes with O₂ at this site, linking blood flow signals to oxygen use."
+      },
+      "krebs": {
+        "name": "Made in a mitochondrion",
+        "ms": "A muscle cell burns fuel for energy. Carbon dioxide is left over, like smoke from a fire.",
+        "hs": "Mitochondria break down sugar and fat in the Krebs cycle and release carbon dioxide. A hard-working muscle makes a lot of it, so its partial pressure is highest here.",
+        "college": "CO₂ comes from decarboxylation steps in pyruvate dehydrogenase and the citric acid cycle. Burning glucose makes one CO₂ per O₂ (RQ = 1); fat makes about 0.7.",
+        "phd": "During heavy exercise extra non-metabolic CO₂ is released as bicarbonate buffers lactic acid, raising the respiratory exchange ratio above 1 and stimulating ventilation."
+      },
+      "carbonicAnhydrase": {
+        "name": "Into a red cell: bicarbonate",
+        "ms": "The carbon dioxide slips into a red blood cell, where it is changed into a form that dissolves easily in blood.",
+        "hs": "Inside red cells, the enzyme carbonic anhydrase turns CO₂ and water into bicarbonate and hydrogen ions. About 70% of CO₂ travels in the blood this way.",
+        "college": "CO₂ + H₂O ⇌ H₂CO₃ ⇌ HCO₃⁻ + H⁺. Bicarbonate leaves the cell in exchange for chloride (the chloride shift, through band 3), and haemoglobin buffers the H⁺. About 20% rides on haemoglobin as carbamino compounds.",
+        "phd": "Carbonic anhydrase II is one of the fastest enzymes known (about 10⁶ reactions a second). Band 3 also anchors glycolytic enzymes and links red-cell metabolism to oxygenation state."
+      },
+      "venousReturn": {
+        "name": "Veins → right heart",
+        "ms": "Hidden as bicarbonate, it rides up the leg veins back to the right side of the heart.",
+        "hs": "Venous blood has a partial pressure of CO₂ of about 46 mmHg, compared with 40 in arterial blood. It looks dark because it has given up much of its oxygen.",
+        "college": "Venous blood carries about 520 mL CO₂ per litre, only about 40 mL/L more than arterial blood; most CO₂ is a buffer store that is never exchanged.",
+        "phd": "The steep CO₂ dissociation curve (much steeper than for O₂) means small PCO₂ changes move large CO₂ volumes, which is why PaCO₂ is so tightly linked to ventilation."
+      },
+      "toLungs": {
+        "name": "Pulmonary artery → lungs",
+        "ms": "The right side of the heart pumps the blood to the lungs.",
+        "hs": "The pulmonary artery carries oxygen-poor, CO₂-rich blood to the lung capillaries at low pressure.",
+        "college": "Mixed venous blood reaching the lungs has PCO₂ about 46 mmHg and PO₂ about 40 mmHg at rest; in hard exercise PvO₂ can fall below 25 mmHg.",
+        "phd": "Mixed venous PCO₂ rises in exercise but arterial PCO₂ is held constant, so the alveolar-capillary gradient driving CO₂ out widens in step with production."
+      },
+      "haldane": {
+        "name": "Set free in the lung",
+        "ms": "In the lung, oxygen jumps on to haemoglobin and pushes the carbon dioxide off. It turns back into CO₂ gas.",
+        "hs": "As haemoglobin picks up oxygen it holds less CO₂ and fewer hydrogen ions (the Haldane effect). Carbonic anhydrase now works in reverse, and CO₂ gas diffuses out.",
+        "college": "Bicarbonate re-enters red cells in exchange for chloride, combines with H⁺ released by oxygenated haemoglobin, and carbonic anhydrase converts it back to CO₂ within the 0.75 s capillary transit.",
+        "phd": "The Haldane effect accounts for nearly half of CO₂ exchange at rest. CO₂ diffuses about 20 times faster than O₂ through tissue, so CO₂ exchange is rarely diffusion-limited."
+      },
+      "intoAlveolus": {
+        "name": "Into the alveolus",
+        "ms": "The CO₂ slips out of the blood into an air sac. Now it has to wait for a breath out.",
+        "hs": "Alveolar air holds CO₂ at about 40 mmHg. The CO₂ stays in the alveolus until the next out-breath carries it away.",
+        "college": "Alveolar PCO₂ ≈ 0.863 × VCO₂ / VA: double the alveolar ventilation and PACO₂ halves. This is why CO₂ is controlled so precisely by breathing.",
+        "phd": "Alveolar PCO₂ oscillates through the breath, rising during expiration and the pause; at slow rates these oscillations are a signal the carotid bodies can sense."
+      },
+      "bronchiOut": {
+        "name": "Out through the bronchial tree",
+        "ms": "Now the lungs spring back and push the air out. The CO₂ rides out with it.",
+        "hs": "Breathing out at rest is passive: the stretched lungs simply recoil. The air from the alveoli comes out last, after the dead-space air from the airways.",
+        "college": "A capnogram plots CO₂ through the out-breath: dead-space gas first (no CO₂), then a rising mix, then an alveolar plateau whose end value (end-tidal CO₂) tracks PaCO₂.",
+        "phd": "The slope of the capnographic alveolar plateau reflects sequential emptying of units with different V̇/Q̇ ratios; it steepens in COPD and asthma."
+      },
+      "windpipeOut": {
+        "name": "Up the windpipe",
+        "ms": "Up the windpipe it goes, back the way the fresh air came in.",
+        "hs": "Exhaled air is warm and wet and holds about 4% carbon dioxide, a hundred times more than fresh air.",
+        "college": "Mixed expired PCO₂ (about 28 mmHg) is lower than alveolar PCO₂ because dead-space gas dilutes it; the ratio gives the dead-space fraction (Bohr–Enghoff equation).",
+        "phd": "Physiological dead space fraction (VD/VT) is about 0.3 at rest and falls in exercise as tidal volume grows; a high VD/VT predicts mortality in ARDS."
+      },
+      "noseOut": {
+        "name": "Out of the nose",
+        "ms": "And out it goes through the nose, in a warm breath.",
+        "hs": "Breathing out through the nose lets it recapture some heat and moisture from the air, saving water.",
+        "college": "The nose acts as a counter-current heat and moisture exchanger, recovering about a third of the water added on inspiration.",
+        "phd": "Respiratory water loss is about 250–400 mL a day at rest and rises steeply with ventilation, especially in cold, dry air."
+      },
+      "mouthOut": {
+        "name": "Out of the mouth",
+        "ms": "Puffing hard, the runner blows the CO₂ out of the mouth.",
+        "hs": "In hard exercise the body makes ten times as much CO₂ as at rest, and fast, deep breaths blow it all away.",
+        "college": "VCO₂ can exceed 3 L/min in hard exercise; ventilation follows it closely, so arterial PCO₂ hardly changes until the respiratory compensation point.",
+        "phd": "Above respiratory compensation, ventilation outpaces VCO₂ and PaCO₂ falls, partly compensating the metabolic acidosis of heavy exercise."
+      },
+      "co2Brain": {
+        "name": "CO₂ rides to the brain",
+        "ms": "Breathing has slowed a little, so some extra carbon dioxide builds up in the blood and flows up to the brain.",
+        "hs": "When you breathe a little too little, CO₂ in the blood rises. Brain blood vessels widen as CO₂ rises, so more of it reaches the brain.",
+        "college": "Cerebral blood flow rises about 3–4% per mmHg increase in PaCO₂. A rise of just 1–2 mmHg is enough to drive a measurable increase in ventilation.",
+        "phd": "Cerebrovascular CO₂ reactivity also stabilises breathing: by washing CO₂ out of the brain, it damps the central chemoreflex; when reactivity is low, loop gain rises and periodic breathing is more likely."
+      },
+      "bbb": {
+        "name": "Through the blood–brain barrier",
+        "ms": "Carbon dioxide slips easily into the fluid around the brain and makes it slightly more acidic.",
+        "hs": "Hydrogen ions can’t cross the blood–brain barrier, but CO₂ can. Inside, it forms acid again, so the brain fluid’s acidity tracks the CO₂ in the blood.",
+        "college": "CSF has little protein to buffer acid, so a given rise in PCO₂ changes CSF pH more than blood pH. It takes tens of seconds for brain tissue PCO₂ to follow a step in PaCO₂.",
+        "phd": "Over days, active bicarbonate transport resets CSF pH, which is why chronic CO₂ retainers lose much of their CO₂ drive and rely on hypoxic drive."
+      },
+      "chemoreceptors": {
+        "name": "Central chemoreceptors",
+        "ms": "Special sensing cells in the brainstem notice the acid and raise the alarm: breathe more!",
+        "hs": "Chemoreceptors near the surface of the medulla sense acidity from CO₂. They do most of the work of keeping CO₂ steady, much more than the sensors in your neck.",
+        "college": "The retrotrapezoid nucleus (RTN) and medullary raphe neurons are the main central CO₂ sensors, providing about two thirds of the steady-state ventilatory response to CO₂.",
+        "phd": "RTN neurons express the proton-sensing TASK-2 channel and GPR4 receptor; loss of PHOX2B-expressing RTN neurons causes congenital central hypoventilation syndrome (Guyenet)."
+      },
+      "preBotC": {
+        "name": "Breathing centre",
+        "ms": "The brainstem’s rhythm-maker gets the message and makes the next breath bigger.",
+        "hs": "A small group of neurons in the medulla, the pre-Bötzinger complex, sets the rhythm of every breath. Input from the chemoreceptors makes it fire harder.",
+        "college": "The pre-Bötzinger complex generates the inspiratory rhythm; premotor neurons in the ventral respiratory group relay the drive down the spinal cord to motor neurons of the diaphragm and intercostals.",
+        "phd": "Rhythm generation in the preBötC relies on recurrent excitation among Dbx1-derived glutamatergic neurons, with burst amplitude set by a distinct pattern-forming layer (Del Negro et al., 2018)."
+      },
+      "bulbospinal": {
+        "name": "Down the spinal cord",
+        "ms": "The ‘breathe in’ command races down the top of the spinal cord to the neck.",
+        "hs": "Nerve fibres from the brainstem carry the command to motor neurons in the neck, at spinal levels C3 to C5.",
+        "college": "Bulbospinal premotor neurons in the rostral ventral respiratory group project to the phrenic motor nucleus at C3–C5 through the ventrolateral spinal cord.",
+        "phd": "Spinal cord injury above C3 abolishes diaphragm drive; partial injuries can recover through crossed phrenic pathways, a target for intermittent-hypoxia therapy (Mitchell)."
+      },
+      "phrenicNerve": {
+        "name": "The phrenic nerve",
+        "ms": "The phrenic nerve carries the signal down past the heart to the diaphragm, in a few thousandths of a second.",
+        "hs": "There are two phrenic nerves, one for each half of the diaphragm. They run down through the chest beside the heart.",
+        "college": "Phrenic motor axons are large myelinated Aα fibres conducting at about 50–60 m/s, so the 30 cm trip takes about 6 ms.",
+        "phd": "Phrenic nerve conduction studies and diaphragm ultrasound help diagnose diaphragm paralysis; pacing the phrenic nerves can free some high-tetraplegic patients from ventilators."
+      },
+      "diaphragmFires": {
+        "name": "The diaphragm contracts",
+        "ms": "The diaphragm tightens and moves down, like a piston, and the chest gets bigger.",
+        "hs": "When the diaphragm contracts it flattens, making the chest taller. The pressure in the lungs falls below the air outside, and air flows in.",
+        "college": "Diaphragm descent of 1–2 cm at rest (up to 10 cm in a deep breath) lowers pleural pressure. Alveolar pressure dips about 1 cmH₂O below atmospheric, enough to drive the tidal flow.",
+        "phd": "The diaphragm’s zone of apposition lets it lift the lower ribs as well as descend; hyperinflation in COPD shortens this zone and flattens the dome, weakening each contraction."
+      },
+      "deepBreath": {
+        "name": "A deeper breath in",
+        "ms": "A bigger breath of fresh air rushes in. It dilutes the carbon dioxide in the lungs, and the levels return to normal.",
+        "hs": "More fresh air in the alveoli means CO₂ diffuses out of the blood faster, so blood CO₂ falls back towards 40 mmHg. That is negative feedback.",
+        "college": "Ventilation rises about 2–3 L/min for every 1 mmHg rise in PaCO₂. Because alveolar PCO₂ is inversely proportional to alveolar ventilation, a modest increase corrects the error.",
+        "phd": "The gain and delay of this loop determine stability: high chemoreflex gain or long circulation delay (as in heart failure) produce Cheyne–Stokes breathing."
+      },
+      "dustIn": {
+        "name": "Breathed in",
+        "ms": "A tiny speck of dust floats in with an in-breath. It is too small to be caught by the hairs in the nose.",
+        "hs": "Large particles stick in the nose and throat, but particles of a few thousandths of a millimetre can be carried deeper into the airways.",
+        "college": "Particles above about 10 µm impact in the nose; 2–10 µm particles deposit by impaction in the bronchi; below about 2 µm they settle by sedimentation and diffusion in small airways and alveoli.",
+        "phd": "Fine particulate matter (PM2.5) reaching the alveoli is cleared by macrophages, not cilia, and is linked to cardiovascular and respiratory mortality at population level."
+      },
+      "dustLands": {
+        "name": "Lands in a bronchus",
+        "ms": "Where the airway bends, the speck can’t turn as quickly as the air, so it crashes into the wall.",
+        "hs": "At each branch the air turns but heavy particles keep going straight and hit the airway wall. This is called impaction.",
+        "college": "Inertial impaction is greatest where flow is fast and changes direction, at the carina and the large bronchial branchings.",
+        "phd": "Deposition models (such as ICRP) predict regional dose from particle size, density and breathing pattern; mouth breathing in exercise shifts more deposition into the lungs."
+      },
+      "mucusTrap": {
+        "name": "Stuck in mucus",
+        "ms": "The wall is covered with a thin layer of sticky mucus, and the speck is trapped.",
+        "hs": "Goblet cells and glands make a layer of mucus that floats on a thinner watery layer. Dust, pollen and germs stick to it.",
+        "college": "Airway mucus is a gel of mucins (MUC5AC and MUC5B) about 5–10 µm thick, resting on a periciliary layer in which cilia beat.",
+        "phd": "The periciliary layer is a dense brush of tethered mucins that keeps mucus from penetrating; when it dehydrates, the brush compresses cilia and clearance fails (Button et al., 2012)."
+      },
+      "ciliaBeat": {
+        "name": "Cilia start sweeping",
+        "ms": "Under the mucus, millions of tiny hairs called cilia beat back and forth and push the mucus along.",
+        "hs": "Each cell has about 200 cilia. They beat together in waves, about 10–15 times a second, always pushing towards the throat.",
+        "college": "The effective stroke is fast and upright, contacting the mucus; the recovery stroke is low and slow inside the watery layer. Neighbouring cilia coordinate into metachronal waves.",
+        "phd": "Primary ciliary dyskinesia, from mutations in dynein arm genes, abolishes this clearance and causes chronic bronchiectasis; half of patients also have situs inversus."
+      },
+      "escalator": {
+        "name": "Up the mucus escalator",
+        "ms": "Very slowly, the mucus carries the speck up the windpipe, like a moving walkway.",
+        "hs": "The mucus moves about a centimetre a minute, so it takes about 15–20 minutes to get from the bronchi to the throat. This is called the mucociliary escalator.",
+        "college": "Tracheal mucus velocity is about 5–10 mm/min. Cough clears mucus when cilia can’t keep up, using high-velocity airflow to shear it off the walls.",
+        "phd": "Cigarette smoke shortens cilia and slows beating; e-cigarette aerosols also impair mucociliary transport in airway cultures, though long-term human data are limited."
+      },
+      "swallowDust": {
+        "name": "Reaches the throat",
+        "ms": "At the top of the windpipe the mucus spills into the throat. You swallow it without even noticing.",
+        "hs": "We swallow about a litre of airway mucus a day without realising it. A throat-clearing or cough helps if there is a lot.",
+        "college": "Mucus delivered to the larynx triggers swallowing; the epiglottis and vocal cords close to keep it out of the airway on the way down.",
+        "phd": "Laryngeal sensory input (through the superior laryngeal nerve) triggers both swallowing and coughing; its impairment raises the risk of silent aspiration."
+      },
+      "toStomach": {
+        "name": "Down to the stomach",
+        "ms": "The speck slides down the food pipe into the stomach, where strong acid destroys any germs it was carrying.",
+        "hs": "Waves of muscle squeezing (peristalsis) carry the mucus down the oesophagus in about 8 seconds. Stomach acid kills most bacteria.",
+        "college": "Gastric pH of 1–2 inactivates most swallowed microbes, completing the airway’s defence system that began in the nose.",
+        "phd": "Airway and gut immunity are linked: swallowed airway antigens are sampled in the gut, and the gut–lung axis may shape allergic airway disease."
+      }
+    }
   }
 }
 </script>
@@ -1978,7 +2352,23 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "DPP-4": { "def": "An enzyme on blood vessel walls that quickly breaks down GLP-1.", "match": ["DPP-4"] },
   "CBG": { "def": "Cortisol-binding globulin: the blood protein that carries most of the cortisol.", "match": ["CBG", "cortisol-binding globulin"] },
   "AANAT": { "def": "The enzyme that sets how fast the pineal gland turns serotonin into melatonin.", "match": ["AANAT"] },
-  "HIF": { "def": "Hypoxia-inducible factor: a protein that switches on genes, such as the one for EPO, when oxygen is low.", "match": ["HIF-2α", "HIF"] }
+  "HIF": { "def": "Hypoxia-inducible factor: a protein that switches on genes, such as the one for EPO, when oxygen is low.", "match": ["HIF-2α", "HIF"] },
+  "dead space": { "def": "Airway volume where no gas exchange happens: about 150 mL of each breath just fills the tubes.", "match": ["dead space", "dead-space"] },
+  "partial pressure": { "def": "The share of a gas mixture’s pressure due to one gas. Gases diffuse from higher to lower partial pressure.", "match": ["partial pressure", "partial pressures"] },
+  "pleura": { "def": "The thin, slippery double layer that wraps each lung and lines the inside of the chest wall.", "match": ["pleura", "pleural"] },
+  "chemoreceptors": { "def": "Sensors that detect chemicals. In breathing, they sense CO₂, acidity and oxygen in the blood and brain fluid.", "match": ["chemoreceptors", "chemoreceptor", "central chemoreceptors"] },
+  "carotid bodies": { "def": "Tiny sensors at the fork of each carotid artery in the neck that detect low oxygen and high CO₂.", "match": ["carotid bodies", "carotid body"] },
+  "carbonic anhydrase": { "def": "An enzyme in red cells that turns CO₂ and water into bicarbonate and back, extremely fast.", "match": ["carbonic anhydrase"] },
+  "bicarbonate": { "def": "HCO₃⁻, the form in which most carbon dioxide travels in the blood. It is also the body’s main acid buffer.", "match": ["bicarbonate", "HCO₃⁻"] },
+  "haemoglobin": { "def": "The iron-containing protein in red blood cells that carries oxygen. Each molecule holds up to four O₂.", "match": ["haemoglobin"] },
+  "Haldane effect": { "def": "Oxygen binding to haemoglobin makes it release CO₂ and H⁺, which helps unload CO₂ in the lungs.", "match": ["Haldane effect"] },
+  "Bohr effect": { "def": "CO₂, acid and heat make haemoglobin let go of oxygen more easily, so working tissues get more.", "match": ["Bohr effect"] },
+  "myoglobin": { "def": "A red, oxygen-binding protein in muscle cells that stores oxygen and passes it to the mitochondria.", "match": ["myoglobin"] },
+  "cytochrome c oxidase": { "def": "The last enzyme of the electron transport chain in mitochondria. It turns oxygen into water.", "match": ["cytochrome c oxidase", "complex IV"] },
+  "mucociliary escalator": { "def": "The layer of mucus that beating cilia sweep up the airways to the throat, carrying trapped dust and germs.", "match": ["mucociliary escalator", "mucociliary clearance", "mucociliary transport"] },
+  "phrenic nerve": { "def": "The nerve from the neck (spinal levels C3–C5) that makes the diaphragm contract.", "match": ["phrenic nerve", "phrenic nerves", "phrenic"] },
+  "ventilatory threshold": { "def": "The exercise intensity above which breathing rises faster than oxygen use, as extra CO₂ from buffered lactic acid is breathed out.", "match": ["ventilatory threshold"] },
+  "pre-Bötzinger complex": { "def": "A small cluster of neurons in the medulla that generates the rhythm of breathing in.", "match": ["pre-Bötzinger complex", "preBötC"] }
 }
 </script>
 
@@ -2088,16 +2478,18 @@ const SYSTEMS = [
     legend: [["#f2c230", "Motor: commands out to muscles"], ["#4fb8d0", "Sensory: signals back to the brain"],
              ["#5fb37a", "Vagus: rest and digest"], ["#ef7d3c", "Sympathetic: fight or flight"], ["#d97bb6", "Gut nerves"]] },
   { id: "endocrine", short: "Hormones", color: "#8a5cc4",
-    legend: [] /* filled from HORMONES below */ }
+    legend: [] /* filled from HORMONES below */ },
+  { id: "respiratory", short: "Air", color: "#3f8fe0",
+    legend: [["#5cb6f2", "Fresh air: oxygen in"], ["#98a0ae", "Used air: carbon dioxide out"], ["#e0705a", "Diaphragm and breathing muscles"]] }
 ];
 const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
 /* which systems each organ topic belongs to (shown as "Part of" chips) */
 const ORGAN_SYSTEMS = {
-  brain: ["nervous", "endocrine"], heart: ["circulatory", "nervous"], lungs: ["circulatory"],
+  brain: ["nervous", "endocrine", "respiratory"], heart: ["circulatory", "nervous"], lungs: ["respiratory", "circulatory"],
   gut: ["nervous", "endocrine", "circulatory"], liver: ["circulatory", "endocrine"],
-  pancreas: ["endocrine"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory"],
+  pancreas: ["endocrine"], kidneys: ["endocrine", "circulatory"], muscles: ["nervous", "circulatory", "respiratory"],
   skin: ["circulatory", "nervous"], bones: ["circulatory", "endocrine"],
-  eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["nervous", "endocrine"]
+  eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "nervous", "endocrine"]
 };
 
 /* The day plan. Anything not listed is "rest". */
@@ -2113,7 +2505,7 @@ function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.fr
 
 const STRINGS = {
   introTitle: "A day in the life of your body",
-  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves and hormones. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
+  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones and air. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
   schedule: "Today’s plan: tap to jump",
   explore: "Look closer",
   hint: "Tip: dotted words have short definitions. Hover or tap them. Values are typical for a healthy adult.",
@@ -2169,7 +2561,19 @@ const STRINGS = {
   sped: f => `time-lapse ×${f >= 1000 ? Math.round(f / 100) * 100 : f >= 100 ? Math.round(f / 10) * 10 : f >= 10 ? Math.round(f) : f.toFixed(1)}`.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
   day: n => `day ${n}`,
   cascadeDone: t => `Done after ${t} of real time`,
-  legKind: { blood: "riding the blood", nerve: "nerve signal", local: "short hop", step: "cells at work" }
+  legKind: { blood: "riding the blood", nerve: "nerve signal", local: "short hop", step: "cells at work" },
+  followBreath: "Follow a breath",
+  followingBreath: "Breath ride · in step with the breath",
+  breathTitle: "Journey of a breath",
+  breathLede: "Ride along with the body’s own breathing. Air moves only while the lungs move it, in real time, so you wait for the next in-breath or out-breath, and in the run everything comes faster. The quick leaps across the air–blood barrier are slowed down; the slow trip up the mucus escalator is sped up.",
+  breathHint: "Tip: with the respiratory system live, tap the nose, the windpipe, the lungs, the diaphragm or a moving air dot to start a ride.",
+  breathJourneys: "Pick a journey",
+  anotherBreath: "Another journey",
+  waitIn: "Waiting for the next in-breath…",
+  waitOut: "Waiting for the next out-breath…",
+  inStep: "real time, in step with the breath",
+  breathDone: t => `Done after ${t} of real time`,
+  breathKind: { air: "carried by the air", step: "cells at work", blood: "riding the blood", nerve: "nerve signal", local: "diffusing", mucus: "on the mucus" }
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -2215,6 +2619,8 @@ const PHYSIO = {
   /* thyroid hormone: steady through the day */
   thyroid:    [[0,.35],[12,.35]]
 };
+/* PO₂ (mmHg) on the oxygen–haemoglobin curve for a saturation in % (Hill, n ≈ 2.7, P50 ≈ 26.8) */
+const hillPO2 = sat => { const s = clamp(sat / 100, .05, .995); return 26.8 * Math.pow(s / (1 - s), 1 / 2.7); };
 /* Oxygen content: 1.34 mL O₂ per g of haemoglobin × ~14.5 g/dL ≈ 194 mL O₂ per L of blood when fully saturated */
 const O2_CAP = 194;
 
@@ -2309,6 +2715,13 @@ const Physio = {
     out.vagal = clamp(1.1 - (out.heartRate - 50) / 70) * (1 + .15 * pp);
     out.sympathetic = clamp(.12 + .8 * out.muscle + .15 * out.cortisol + .2 * out.adrenaline + .15 * sl.rem);
     out.vagal = clamp(out.vagal - .15 * sl.rem);
+    /* blood gases, mmHg: CO₂ rises a few mmHg asleep (blunted drive) and dips a little
+       in the hard run (respiratory compensation); CO₂ output = RQ × O₂ uptake */
+    out.paco2 = 40 + 4 * clamp(1 - out.awake) + 1.5 * sl.rem - 3 * clamp((out.muscle - .6) / .4);
+    out.pao2 = 150 - out.paco2 / .8 - 6;                        /* alveolar gas equation − A–a gradient */
+    out.pvo2 = hillPO2(out.svo2);
+    out.rq = .8 + .15 * out.muscle;
+    out.vco2 = out.rq * out.vo2;
     return out;
   }
 };
@@ -2327,7 +2740,7 @@ function createStore(initial){
 const now = new Date();
 const savedLevel = storage.get("humanphysiology.level");
 function loadSystems(){
-  const shown = { circulatory: true, nervous: false, endocrine: false };
+  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false };
   let live = "circulatory";
   try {
     const s = JSON.parse(storage.get("humanphysiology.shown") || "null");
@@ -2349,8 +2762,12 @@ const store = createStore({
   impulseSeg: null, /* which leg of that journey the impulse is on */
   cascade: null,    /* id of the hormone cascade being followed, or null */
   cascadeSeg: null, /* which leg of that cascade the signal is on */
+  breath: null,     /* id of the breath journey being followed, or null */
+  breathSeg: null,  /* which leg of that journey the molecule is on */
   ...loadSystems()
 });
+/* is the camera riding along with something (a red cell, an impulse, a cascade or a breath)? */
+const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null;
 /* System switches. Switching a system on makes it live; switching off the
    live one hands "live" to another shown system (or to none). */
 function setSystem(id, on){
@@ -2572,7 +2989,7 @@ const MESSENGERS = Object.assign(Object.fromEntries(HORMONES.map(h => [h.id, [h.
   trh: ["#4fa894", "TRH"], tsh: ["#3f8f9e", "TSH"], t4: ["#b98258", "Thyroxine (T4)"], t3: ["#d6703a", "T3"],
   epo: ["#cf6f9e", "EPO"], rbc: ["#d63340", "New red cells"]
 });
-const cD = d => ({ d }), cV = (r, from = 0, to = 1) => ({ r, p: "v", from, to }), cA = (r, from = 0, to = 1) => ({ r, p: "a", from, to });
+const cD = (d, rev = false) => ({ d, rev }), cV = (r, from = 0, to = 1) => ({ r, p: "v", from, to }), cA = (r, from = 0, to = 1) => ({ r, p: "a", from, to });
 /* CIRC route indices */
 const RT = { brain: 0, gut: 3, kidL: 4, kidR: 5, legL: 6, lung: 8 };
 const LUNGS = [cA(RT.lung), cV(RT.lung)];
@@ -2659,6 +3076,103 @@ function defaultCascade(h){
   return p === "exercise" ? "adrenaline" : p === "meal" ? "insulin" : w >= 6 && w < 8 ? "stress" : w >= 20 || w < 6 ? "melatonin" : "thyroid";
 }
 
+/* Respiratory system (design coordinates, mapped like NERV). Air comes in at
+   the nostrils (or the mouth when running), runs down the pharynx and trachea
+   and fans out through the bronchi to alveolar clusters (ALV_ENDS, mirrored
+   for the other lung). The diaphragm is a double dome under the lungs, driven
+   by the two phrenic nerves from the neck (C3–C5). */
+const NOSE_UP = "M598 203 C593 197 593 189 598 186 C603 184 606 190 604 198 C603 206 601 214 600 222";
+const MOUTH_UP = "M600 211 C601 215 601 219 600 222";
+const TRACHEA_D = "M600 222 L600 296";
+const ALV_ENDS = [[540, 300], [518, 338], [522, 392], [552, 420], [560, 352], [530, 368]];
+/* the bronchus from the carina to an alveolar cluster at (ex, ey), on either lung */
+function bronchusTo(ex, ey){
+  const s = ex < 600 ? 1 : -1, bx = 600 - 26 * s;
+  return `M600 296 Q${600 - 14 * s} 304 ${bx} 318 Q${f1(bx + (ex - bx) * .2)} ${f1(318 + (ey - 318) * .7)} ${ex} ${ey}`;
+}
+const airRoute = (up, ex, ey) => (up === "mouth" ? MOUTH_UP : NOSE_UP) + " L600 296" + bronchusTo(ex, ey).slice("M600 296".length);
+const DIAPHRAGM_D = "M494 452 C506 436 540 432 566 436 C584 439 594 444 600 446 C606 444 616 439 634 436 C660 432 694 436 706 452";
+const PHRENIC = ["M594 236 C584 270 572 320 566 370 C563 400 560 425 558 438", "M606 236 C620 280 646 330 652 372 C655 400 652 425 650 438"];
+const RIBS_D = [300, 326, 352, 378, 404].map(y => `M594 ${y} C570 ${y - 12} 524 ${y - 8} 508 ${y + 14} M606 ${y} C630 ${y - 12} 676 ${y - 8} 692 ${y + 14}`).join(" ");
+const ABS_D = "M566 548 Q600 560 634 548 M566 572 Q600 584 634 572";
+/* Breath journeys (BREATH RIDE), followed in step with the body's breathing. A
+   leg has stop (its text in CONTENT.breath.stops), m (the molecule: colour and
+   name in MOLECULES) and p, its partial pressure in mmHg (a number or a
+   function of the hour's physiology; left out = unchanged). An air leg has
+   gate "in" or "out" and frac, its share of one in- or out-breath: it moves only
+   while the lungs move air that way, in real time, so it waits for the next
+   breath. Other legs are timed like CASCADES: t real seconds, step = cells at
+   work in one place, b = a blood ride scaled by cardiac output; their screen
+   time sets the slow motion or time-lapse. alt replaces stop/path when the
+   body breathes through the mouth (the run); jump = start the path afresh. */
+const MOLECULES = {
+  o2: ["#5cb6f2", "Oxygen (O₂)"], co2: ["#98a0ae", "Carbon dioxide (CO₂)"], hco3: ["#a07cc9", "Bicarbonate (HCO₃⁻)"],
+  h: ["#e0709b", "Acid (H⁺)"], h2o: ["#4fc1c9", "Water"], nerve: [NERVE_COLOR.motor, "Nerve signal"],
+  muscle: ["#e0473c", "Diaphragm muscle"], dust: ["#9a7a52", "Dust speck"], mucus: ["#b3a83c", "Mucus"]
+};
+const cP = (...pts) => ({ pts });                  /* a straight hop between world points */
+const QUAD = [552, 740], MITO = [560, 746], ALV = [530, 368], LUNG_CAP = [540, 368];
+const BRONCH_RIDE = bronchusTo(...ALV);
+const legPO2 = ph => hillPO2(ph.spo2 * (1 - ph.extract.legs));
+const BREATHS = [
+  { id: "oxygenIn", gas: "o2", effect: "atp", legs: [
+    { stop: "nose", m: "o2", p: 149, gate: "in", frac: .2, path: [cD(NOSE_UP)], alt: { stop: "mouth", path: [cD(MOUTH_UP)] } },
+    { stop: "windpipe", m: "o2", p: 149, gate: "in", frac: .3, path: [cD(TRACHEA_D)] },
+    { stop: "bronchialTree", m: "o2", p: 106, gate: "in", frac: .5, path: [cD(BRONCH_RIDE)] },
+    { stop: "alveolarAir", m: "o2", p: ph => 150 - ph.paco2 / .8, t: .5, step: true },
+    { stop: "barrier", m: "o2", t: .006, path: [cP(ALV, LUNG_CAP)] },
+    { stop: "haemoglobin", m: "o2", p: ph => ph.pao2 + 4, t: .3, step: true },
+    { stop: "toLeftHeart", m: "o2", p: ph => ph.pao2, t: 4, b: 1, path: [cV(RT.lung)] },
+    { stop: "toThigh", m: "o2", t: 8, b: 1, path: [cA(RT.legL, 0, QUAD)] },
+    { stop: "unload", m: "o2", p: legPO2, t: 1, step: true },
+    { stop: "myoglobin", m: "o2", p: 5, t: .1, path: [cP(QUAD, MITO)] },
+    { stop: "cytochrome", m: "h2o", p: 1, t: .5, step: true }
+  ] },
+  { id: "co2Out", gas: "co2", effect: "puff", legs: [
+    { stop: "krebs", m: "co2", p: ph => 46 + 14 * ph.muscle, t: 1, step: true, at: MITO },
+    { stop: "carbonicAnhydrase", m: "hco3", p: ph => 45 + 8 * ph.muscle, t: .5, path: [cP(MITO, [540, 760])] },
+    { stop: "venousReturn", m: "hco3", p: 46, t: 14, b: 1, path: [cV(RT.legL, [540, 760])] },
+    { stop: "toLungs", m: "hco3", t: 3, b: 1, path: [cA(RT.lung)] },
+    { stop: "haldane", m: "co2", p: 45, t: .3, step: true },
+    { stop: "intoAlveolus", m: "co2", p: ph => ph.paco2, t: .003, path: [cP(LUNG_CAP, ALV)] },
+    { stop: "bronchiOut", m: "co2", p: 34, gate: "out", frac: .5, path: [cD(BRONCH_RIDE, true)] },
+    { stop: "windpipeOut", m: "co2", p: 30, gate: "out", frac: .3, path: [cD(TRACHEA_D, true)] },
+    { stop: "noseOut", m: "co2", p: 28, gate: "out", frac: .2, path: [cD(NOSE_UP, true)], alt: { stop: "mouthOut", path: [cD(MOUTH_UP, true)] } }
+  ] },
+  { id: "chemoreflex", gas: "co2", effect: "sigh", legs: [
+    { stop: "co2Brain", m: "co2", p: ph => ph.paco2 + 2, t: 5, b: 1, path: [cA(RT.brain, [610, 240])] },
+    { stop: "bbb", m: "h", p: ph => ph.paco2 + 7, t: 20, path: [cD("M607 160 C605 166 602 172 600 178")] },
+    { stop: "chemoreceptors", m: "h", t: 6, step: true },
+    { stop: "preBotC", m: "nerve", t: .4, step: true },
+    { stop: "bulbospinal", m: "nerve", t: .003, path: [cD("M600 178 L600 236")] },
+    { stop: "phrenicNerve", m: "nerve", t: .006, path: [cD(PHRENIC[0])] },
+    { stop: "diaphragmFires", m: "muscle", t: .3, step: true },
+    { stop: "deepBreath", m: "o2", p: ph => ph.paco2 - 3, gate: "in", frac: 1, jump: true, sigh: .6,
+      path: [cD(NOSE_UP), cD(TRACHEA_D), cD(BRONCH_RIDE)], alt: { path: [cD(MOUTH_UP), cD(TRACHEA_D), cD(BRONCH_RIDE)] } }
+  ] },
+  { id: "dust", effect: "acid", legs: [
+    { stop: "dustIn", m: "dust", gate: "in", frac: .4, path: [cD(NOSE_UP), cD("M600 222 L600 260")], alt: { path: [cD(MOUTH_UP), cD("M600 222 L600 260")] } },
+    { stop: "dustLands", m: "dust", gate: "in", frac: .6, path: [cD("M600 260 L600 296 Q586 304 576 316")] },
+    { stop: "mucusTrap", m: "dust", t: 3, step: true },
+    { stop: "ciliaBeat", m: "mucus", t: 20, step: true },
+    { stop: "escalator", m: "mucus", t: 1200, path: [cD("M576 316 Q586 304 600 296 L600 236")] },
+    { stop: "swallowDust", m: "mucus", t: 3, step: true },
+    { stop: "toStomach", m: "mucus", t: 8, path: [cD("M600 236 L600 300 C600 370 612 410 630 444")] }
+  ] }
+];
+const BREATH_BY_ID = Object.fromEntries(BREATHS.map(b => [b.id, b]));
+/* organ panels offer the breath journey that passes through */
+const BREATH_FOR_TOPIC = { lungs: "oxygenIn", throat: "dust", brain: "chemoreflex", muscles: "oxygenIn", heart: "co2Out" };
+/* tapping the airways, the diaphragm or a moving air dot on the body */
+function tapBreath(id){
+  return { nose: "oxygenIn", "air-in": "oxygenIn", "air-out": "co2Out", lungs: "co2Out", trachea: "dust",
+           diaphragm: "chemoreflex", phrenic: "chemoreflex" }[id] || null;
+}
+function defaultBreath(h){
+  const p = phaseAt(h);
+  return p === "sleep" ? "chemoreflex" : p === "meal" ? "co2Out" : "oxygenIn";
+}
+
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
   let out = `<path d="M${f1(x)} ${f1(y)}L${f1(x2)} ${f1(y2)}" stroke-width="${f1(w)}"/>`;
@@ -2687,7 +3201,10 @@ function breathShape(f, ti){ /* f = breath phase → {vol 0–1, psi} */
   return { vol: (Math.exp(-k * x) - Math.exp(-k)) / (1 - Math.exp(-k)), psi: .5 + x / 2 };
 }
 const Rhythm = {
-  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0, lung: 0, insp: 0, ti: .4, bj: 0, bjT: 0, bjN: 0, kickK: 0, kickT: 0, kickD: 1,
+  beat: 0, breath: 0, hrNow: 60, jit: 0, jitT: 0, lung: 0, vol: 0, insp: 0, ti: .4, bj: 0, bjT: 0, bjN: 0, kickK: 0, kickT: 0, kickD: 1,
+  sighK: 0, sighNext: 0,
+  /* the next whole breath is k times deeper (a sigh: the chemoreflex answering extra CO₂) */
+  sigh(k){ this.sighNext = k; },
   /* a nerve's push on the pacemaker for d seconds: k < 0 is a vagal brake that acts at once
      and wears off; k > 0 is a sympathetic push that builds over seconds and then fades */
   kick(k, d){ this.kickK = k; this.kickT = this.kickD = d; },
@@ -2700,9 +3217,12 @@ const Rhythm = {
     this.bj += (this.bjT - this.bj) * clamp(dt * 1.5);
     const br = ph.breathRate * (1 + this.bj * rem);
     this.ti = .4 + .09 * clamp((br - 14) / 22);
+    const n0 = Math.floor(this.breath);
     this.breath += dt * br / 60;
+    if (Math.floor(this.breath) !== n0){ this.sighK = this.sighNext; this.sighNext = 0; }
     const b = breathShape(this.breath, this.ti);
-    this.lung = b.vol; this.insp = Math.sin(2 * Math.PI * b.psi);
+    /* vol = share of this breath's air moved so far (0–1); lung = drawn size, bigger in a sigh */
+    this.vol = b.vol; this.lung = b.vol * (1 + this.sighK); this.insp = Math.sin(2 * Math.PI * b.psi);
     /* beat-to-beat wander: damped in deep sleep, bigger surges in REM */
     const lim = .015 * (1 - .7 * sws) + .035 * rem;
     this.jitT += (Math.random() - .5) * .012 * (1 + 2 * rem) - this.jitT * dt * .5;
@@ -2892,6 +3412,17 @@ const Scene = (() => {
         <g id="s-hormones"></g>
         <g id="s-cascade"></g>
       </g>
+      <g id="s-respiratory" class="sys sys-respiratory">
+        <path id="s-ribs" d="${RIBS_D}" class="resp-mus" opacity="0"/>
+        <path id="s-abs" d="${ABS_D}" class="resp-mus" opacity="0"/>
+        <path d="${mapD(NOSE_UP)}" class="airway upper"/><path d="${mapD(MOUTH_UP)}" class="airway upper mouth"/>
+        <path d="${mapD(TRACHEA_D)}" class="airway"/>
+        ${ALV_ENDS.flatMap(([x, y]) => [[x, y], [1200 - x, y]]).map(([x, y]) => `<path d="${mapD(bronchusTo(x, y))}" class="airway bronchus"/><circle cx="${x}" cy="${y}" r="5.5" class="alv"/>`).join("")}
+        ${PHRENIC.map(d => `<path d="${mapD(d)}" class="phrenic"/>`).join("")}
+        <g id="s-diaphragm"><path d="${mapD(DIAPHRAGM_D)}" class="diaphragm"/></g>
+        <g id="s-air"></g>
+        <g id="s-breathRide"></g>
+      </g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
       <g id="s-eyesShut" class="face"><path d="M571 189 Q578 194 585 189"/><path d="M615 189 Q622 194 629 189"/></g>
@@ -2904,7 +3435,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -3504,6 +4035,37 @@ const Hormones = (() => {
   return { init, tick, setRates, nearest };
 })();
 
+/* Path pieces shared by the CASCADE and BREATH RIDE: a polyline sampled by arc
+   length, and piece(), which turns cD (design path, rev = backwards), cP (world
+   points) and cA / cV (part of a CIRC route) into world points. */
+function poly(P){
+  const cum = [0];
+  for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  const L = cum[cum.length - 1];
+  return { L, at(t){
+    if (!L) return P[P.length - 1];
+    const s = clamp(t) * L; let lo = 0, hi = cum.length - 1;
+    while (hi - lo > 1){ const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+    const k = cum[hi] > cum[lo] ? (s - cum[lo]) / (cum[hi] - cum[lo]) : 0;
+    return [lerp(P[lo][0], P[hi][0], k), lerp(P[lo][1], P[hi][1], k)];
+  } };
+}
+function frac(S, v){
+  if (typeof v === "number") return v;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i <= 200; i++){ const [x, y] = S.at(i / 200), d = Math.hypot(x - v[0], y - v[1]); if (d < bd){ bd = d; best = i / 200; } }
+  return best;
+}
+function piece(p){
+  const out = [];
+  if (p.pts) return p.pts.map(q => [...q]);
+  if (p.d){ const S = sampler(Scene.svg, mapD(p.d), 80); for (let i = 0; i <= 40; i++) out.push(S.at(i / 40)); return p.rev ? out.reverse() : out; }
+  const r = CIRC[p.r], S = sampler(Scene.svg, p.p === "a" ? r.a : r.v, 200);
+  const u0 = frac(S, p.from), u1 = frac(S, p.to), n = Math.max(4, Math.round(Math.abs(u1 - u0) * 100));
+  for (let i = 0; i <= n; i++) out.push(S.at(lerp(u0, u1, i / n)));
+  return out;
+}
+
 /* =========================================================================
    CASCADE — one hormone signal followed in time-lapse, the mirror image of
    IMPULSE. Each leg plays for a few seconds on screen, so the speed-up changes
@@ -3523,33 +4085,6 @@ const Cascade = (() => {
     halo = el("circle", { r: 11, class: "imp-halo" }, g);
     rider = el("path", { d: "M0 -6 L6 0 L0 6 L-6 0Z", class: "cas-dot" }, g);
     g.style.display = "none";
-  }
-  /* a polyline sampled by arc length */
-  function poly(P){
-    const cum = [0];
-    for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
-    const L = cum[cum.length - 1];
-    return { L, at(t){
-      if (!L) return P[P.length - 1];
-      const s = clamp(t) * L; let lo = 0, hi = cum.length - 1;
-      while (hi - lo > 1){ const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
-      const k = cum[hi] > cum[lo] ? (s - cum[lo]) / (cum[hi] - cum[lo]) : 0;
-      return [lerp(P[lo][0], P[hi][0], k), lerp(P[lo][1], P[hi][1], k)];
-    } };
-  }
-  function frac(S, v){
-    if (typeof v === "number") return v;
-    let best = 0, bd = Infinity;
-    for (let i = 0; i <= 200; i++){ const [x, y] = S.at(i / 200), d = Math.hypot(x - v[0], y - v[1]); if (d < bd){ bd = d; best = i / 200; } }
-    return best;
-  }
-  function piece(p){
-    const out = [];
-    if (p.d){ const S = sampler(Scene.svg, mapD(p.d), 80); for (let i = 0; i <= 40; i++) out.push(S.at(i / 40)); return out; }
-    const r = CIRC[p.r], S = sampler(Scene.svg, p.p === "a" ? r.a : r.v, 200);
-    const u0 = frac(S, p.from), u1 = frac(S, p.to), n = Math.max(4, Math.round(Math.abs(u1 - u0) * 100));
-    for (let i = 0; i <= n; i++) out.push(S.at(lerp(u0, u1, i / n)));
-    return out;
   }
   /* lay the cascade out: positions, real time and screen time per leg */
   function build(c){
@@ -3671,6 +4206,283 @@ const Cascade = (() => {
              real: done ? total : pre[li] + clamp(u) * L.real, factor: L.real / L.screen };
   }
   return { init, start, stop, next, tick, info, pos, timeScale: () => C ? scale : 1, startHour: () => hour0 };
+})();
+
+/* =========================================================================
+   AIRWAYS — air moved by the lungs. Fresh-air dots enter at the nose (the
+   mouth in the run) on each in-breath and fan out to the alveoli; used-air
+   dots leave on each out-breath. A dot's place follows the share of the
+   breath moved so far (Rhythm.vol), so only the first ~70% of each breath
+   reaches the alveoli and the last part stays in the dead space, to be
+   breathed straight back out. The diaphragm descends with the breath, the
+   phrenic nerves fire as each in-breath starts, and in the run the rib and
+   belly muscles join in. Runs only while the respiratory system is live.
+   ========================================================================= */
+const Airways = (() => {
+  const NP = 110, DS = .7, routes = { nose: [], mouth: [] }, pool = [], phr = [];
+  let ph = null, wasIn = false, accIn = 0, accOut = 0, pulse = 0, dia = null, still = "";
+  function init(){
+    const svg = Scene.svg, R = Scene.refs;
+    for (const up in routes) ALV_ENDS.forEach(([x, y]) => [x, 1200 - x].forEach(ex => routes[up].push(sampler(svg, mapD(airRoute(up, ex, y)), 100))));
+    for (let i = 0; i < NP; i++) pool.push({ c: el("circle", { r: 3, class: "air", opacity: 0 }, R.air), on: false });
+    PHRENIC.forEach(d => phr.push({ S: sampler(svg, mapD(d), 60), c: el("circle", { r: 2.6, class: "pulse", fill: NERVE_COLOR.motor, opacity: 0 }, R.air) }));
+    dia = sampler(svg, mapD(DIAPHRAGM_D), 60);
+  }
+  function spawn(kind, up, u0, v0){
+    const d = pool.find(q => !q.on); if (!d) return;
+    const list = routes[up];
+    Object.assign(d, { on: true, kind, S: list[Math.floor(Math.random() * list.length)], u0, v0, fade: 0, u: u0 });
+    d.c.setAttribute("fill", MOLECULES[kind][0]);
+  }
+  const depthOf = p => .022 + .058 * clamp((p.tidalVol - 420) / 1500);
+  function muscles(p, insp, lung){
+    const dy = 260 * depthOf(p) * lung;
+    Scene.refs.diaphragm.setAttribute("transform", dy > .05 ? `translate(0 ${f1(dy)})` : "");
+    Scene.refs.diaphragm.firstChild.setAttribute("stroke-width", f1(3.2 + 2.2 * Math.max(0, insp)));
+    const run = clamp((p.muscle - .2) / .6);
+    Scene.refs.ribs.setAttribute("opacity", f1(run * (.15 + .55 * Math.max(0, insp))));
+    Scene.refs.abs.setAttribute("opacity", f1(run * .7 * Math.max(0, -insp)));
+  }
+  function tick(dt, p){
+    ph = p; still = "";
+    const insp = Rhythm.insp, nowIn = insp > 0, vol = Rhythm.vol;
+    const per = 60 / Math.max(6, p.breathRate), Ti = Rhythm.ti * per, Te = per - Ti;
+    const N = 18 + 12 * clamp((p.tidalVol - 450) / 1400); /* dots per breath, more in deep breaths */
+    const up = p.muscle > .5 ? "mouth" : "nose";
+    if (nowIn){ accIn += dt * N / Ti; while (accIn >= 1){ accIn--; spawn("o2", up, 0, vol); } } else accIn = 0;
+    if (!nowIn && vol > .25){ accOut += dt * N * .8 / (Te * .4); while (accOut >= 1){ accOut--; spawn("co2", up, 1, vol); } } else accOut = 0;
+    if (nowIn && !wasIn) pulse = .001;
+    wasIn = nowIn;
+    for (const d of pool){
+      if (!d.on) continue;
+      if (d.fade > 0){
+        d.fade -= dt * 2.4;
+        if (d.fade <= 0){ d.on = false; d.c.setAttribute("opacity", 0); }
+        else d.c.setAttribute("opacity", f1(d.fade * .9));
+        continue;
+      }
+      /* air moves with the volume breathed: in on the in-breath, back out on the out-breath */
+      d.u = d.u0 + (vol - d.v0) / DS;
+      if (d.u >= 1 || d.u <= 0){ d.u = clamp(d.u); d.fade = 1; }  /* reached the alveoli, or left the body */
+      const [x, y] = d.S.at(d.u);
+      d.c.setAttribute("cx", f1(x)); d.c.setAttribute("cy", f1(y));
+      d.c.setAttribute("opacity", f1(.9 * clamp(Math.min(d.u, 1 - d.u) * 30 + (d.u < .02 && d.kind === "o2" ? .5 : 0))));
+    }
+    if (pulse > 0){
+      pulse += dt / .3;
+      phr.forEach(q => { const [x, y] = q.S.at(pulse); q.c.setAttribute("cx", f1(x)); q.c.setAttribute("cy", f1(y)); q.c.setAttribute("opacity", f1(pulse < 1 ? .95 : 0)); });
+      if (pulse >= 1) pulse = 0;
+    }
+    muscles(p, insp, Rhythm.lung);
+  }
+  /* a still picture: the diaphragm at rest (reduced motion, or not live) */
+  function setRates(p){
+    ph = p;
+    const k = `${p.tidalVol | 0}|${p.muscle.toFixed(2)}`;
+    if (k !== still){ still = k; muscles(p, 0, 0); }
+  }
+  /* what a tap at (x, y) hits: an air dot, else the nose, windpipe, phrenic nerve, diaphragm or lungs */
+  function nearest(x, y, maxD){
+    let best = null, bd = maxD;
+    for (const d of pool){
+      if (!d.on || d.fade > 0) continue;
+      const [px, py] = d.S.at(d.u), dd = Math.hypot(px - x, py - y);
+      if (dd < bd){ bd = dd; best = d.kind === "o2" ? "air-in" : "air-out"; }
+    }
+    if (best) return best;
+    if (Math.hypot(x - 600, y - 200) < maxD * 1.4) return "nose";
+    if (Math.abs(x - 600) < maxD * .8 && y > 222 && y < 300) return "trachea";
+    const near = (S, n) => { for (let i = 0; i <= n; i++){ const [px, py] = S.at(i / n); if (Math.hypot(px - x, py - y) < maxD * .8) return true; } return false; };
+    if (phr.some(q => near(q.S, 40))) return "phrenic";
+    if (dia && near(dia, 60)) return "diaphragm";
+    if (ALV_ENDS.some(([ax, ay]) => Math.hypot(x - ax, y - ay) < 28 || Math.hypot(x - (1200 - ax), y - ay) < 28)) return "lungs";
+    return null;
+  }
+  return { init, tick, setRates, nearest };
+})();
+
+/* =========================================================================
+   BREATH RIDE — one molecule followed in step with the breath. Air legs are
+   locked to the body's own breathing (real time): the molecule's place is the
+   share of the in- or out-breath moved so far, so it waits for the next breath
+   in the right direction and moves faster as breathing speeds up. Other legs
+   are timed like CASCADE: slow motion for the quick leaps across membranes,
+   time-lapse for blood rides and the slow mucus escalator. timeScale() is fed
+   to the body like IMPULSE's (and is 1 on air legs, so the breath stays real).
+   ========================================================================= */
+const BreathRide = (() => {
+  const SPEED = 120, MIN_LEG = 1.3, STEP_S = 2.2, LONG_S = 3.2;
+  let g, rider, halo, trail; const puff = [], fx = [];
+  let B = null, legs = [], li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0;
+  let armed = false, prevIn = null, legReal = 0, realDone = 0, total = 0, mouth = false;
+  function init(){
+    g = Scene.refs.breathRide;
+    trail = el("polyline", { class: "imp-trail", points: "" }, g);
+    for (let i = 0; i < 9; i++) puff.push(el("circle", { r: 1.8, opacity: 0 }, g));
+    halo = el("circle", { r: 10, class: "imp-halo" }, g);
+    rider = el("circle", { r: 4.8, class: "cas-dot" }, g);
+    g.style.display = "none";
+  }
+  /* the leg as ridden right now: through the mouth in the run */
+  const variant = (l, m) => l.alt && m ? { ...l, ...l.alt } : l;
+  /* lay the journey out: positions, partial pressures, real and screen time per leg */
+  function build(b, ph){
+    const per = 60 / Math.max(6, ph.breathRate), Ti = Rhythm.ti * per, Te = per - Ti;
+    let at = null, p = null, f = 0, gate = null;
+    return b.legs.map(l0 => {
+      const l = variant(l0, mouth), o = { ...l };
+      o.p0 = p; if (l.p != null) p = typeof l.p === "function" ? l.p(ph) : l.p; o.p = p; if (o.p0 == null) o.p0 = p;
+      if (l.step){
+        o.at = l.at || at; o.real = l.t; o.screen = l.t >= 600 ? LONG_S : STEP_S; o.kind = "step";
+      } else {
+        const P = [].concat(...l.path.map(piece));
+        if (at && !l.jump) P.unshift(at);
+        o.S = poly(P);
+        if (l.gate){
+          o.kind = "air";
+          if (gate !== l.gate) f = 0;
+          o.f0 = f; f += l.frac; o.f1 = f;
+          o.real = l.frac * (l.gate === "in" ? Ti : Te); o.screen = o.real;
+        } else {
+          o.real = l.b ? l.t * 5 / ph.co : l.t;
+          o.screen = Math.max(MIN_LEG, o.S.L / SPEED);
+          o.kind = l.path.some(q => q.r != null) ? "blood" : l.m === "nerve" ? "nerve" : l.m === "mucus" ? "mucus" : "local";
+        }
+      }
+      gate = l.gate || null;
+      at = o.S ? o.S.at(1) : o.at;
+      return o;
+    });
+  }
+  function start(id, h){
+    const fresh = !B, ph = Physio.at(h);
+    B = BREATH_BY_ID[id]; mouth = ph.muscle > .5;
+    legs = build(B, ph); total = legs.reduce((a, l) => a + l.real, 0);
+    li = 0; u = 0; done = false; pts = []; acc = 0; armed = false; prevIn = null; legReal = 0; realDone = 0;
+    if (fresh) scale = 1;
+    fx.splice(0).forEach(f => f.e.remove());
+    g.style.display = "";
+    trail.setAttribute("points", "");
+    enter();
+    draw();
+  }
+  function stop(){
+    B = null; scale = 1;
+    g.style.display = "none";
+    fx.splice(0).forEach(f => f.e.remove());
+  }
+  const pos = () => {
+    if (!B) return { x: 600, y: 300 };
+    const L = legs[li], [x, y] = L.S ? L.S.at(clamp(u)) : L.at;
+    return { x, y };
+  };
+  /* a leg begins: a sigh leg makes the breath it rides a deep one */
+  function enter(){ const L = legs[li]; if (L.sigh) Rhythm.sigh(L.sigh); }
+  function advance(){
+    realDone += legs[li].gate ? legReal : legs[li].real; legReal = 0;
+    const was = legs[li];
+    li++; u = 0;
+    /* the next air leg of the same breath carries straight on; anything else waits */
+    if (!(legs[li].gate && was.gate === legs[li].gate)) armed = false;
+    enter();
+  }
+  /* skip to the next leg (or, after arrival, start again) */
+  function next(){
+    if (!B) return;
+    if (done){ startBreath(B.id); return; }
+    if (legs[li].gate) legReal = legs[li].real * (1 - clamp(u)) + legReal;
+    if (li < legs.length - 1){ advance(); armed = false; pts = []; trail.setAttribute("points", ""); }
+    else arrive();
+    draw();
+  }
+  function arrive(){
+    done = true; u = 1; realDone += legs[li].gate ? legReal : legs[li].real; legReal = 0;
+    const p = pos(), col = MOLECULES[legs[legs.length - 1].m][0];
+    ring(p.x, p.y, col, 30);
+    switch (B.effect){
+      case "atp": dots(p.x, p.y, "#f2c230", 14, false); ring(p.x, p.y, "#f2c230", 20, .3); break;
+      case "puff": dots(p.x, p.y, MOLECULES.co2[0], 10, false); ring(p.x, p.y, MOLECULES.co2[0], 24, .25); break;
+      case "sigh": ring(p.x, p.y, col, 40, .2); ring(p.x, p.y, col, 56, .55); break;
+      case "acid": dots(p.x, p.y, "#7fbf4d", 12, true); ring(p.x, p.y, "#7fbf4d", 26, .3); break;
+    }
+  }
+  function ring(x, y, col, r, delay = 0){
+    const e = el("circle", { cx: f1(x), cy: f1(y), r: 3, fill: "none", stroke: col, "stroke-width": 2, opacity: 0, "vector-effect": "non-scaling-stroke" }, g);
+    fx.push({ e, age: -delay, life: 1.3, kind: "ring", r });
+  }
+  function dots(x, y, col, n, inward){
+    for (let i = 0; i < n; i++){
+      const e = el("circle", { r: 2.2, fill: col, opacity: 0 }, g);
+      const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 22;
+      fx.push({ e, age: -i * .07, life: 2, kind: "drift", x, y, dx: Math.cos(a) * r, dy: Math.sin(a) * r, inward });
+    }
+  }
+  const waiting = () => !!(B && !done && legs[li].gate && !armed);
+  function draw(){
+    if (!B) return;
+    const L = legs[li], p = pos(), col = MOLECULES[L.m][0], k = L.step && !done ? Math.sin(Math.PI * clamp(u)) : 0, w = waiting();
+    rider.setAttribute("cx", f1(p.x)); rider.setAttribute("cy", f1(p.y)); rider.setAttribute("fill", col);
+    halo.setAttribute("cx", f1(p.x)); halo.setAttribute("cy", f1(p.y)); halo.setAttribute("fill", col);
+    /* waiting for the breath: the halo pulses gently */
+    halo.setAttribute("r", f1(done ? 7 : w ? 10 + 3 * Math.sin(performance.now() / 260) : 10 + 5 * k));
+    trail.setAttribute("stroke", col);
+    puff.forEach((c, i) => {
+      const a = i / puff.length * Math.PI * 2 + u * 5, r = 6 + 8 * k;
+      c.setAttribute("cx", f1(p.x + Math.cos(a) * r)); c.setAttribute("cy", f1(p.y + Math.sin(a) * r));
+      c.setAttribute("fill", col); c.setAttribute("opacity", f1(k * .85));
+    });
+  }
+  function tick(dt){
+    if (!B) return;
+    const nowIn = Rhythm.insp > 0;
+    if (!done && !reducedMotion){
+      let L = legs[li];
+      if (L.gate){
+        /* air legs: wait for a fresh breath in the right direction, then ride its volume */
+        const want = L.gate === "in";
+        if (!armed && prevIn !== null && prevIn !== want && nowIn === want) armed = true;
+        if (armed){
+          legReal += dt * scale;
+          const flipped = nowIn !== want, P = flipped ? 1 : want ? Rhythm.vol : 1 - Rhythm.vol;
+          u = clamp((P - L.f0) / (L.f1 - L.f0));
+          while (u >= 1 && !done){
+            if (li < legs.length - 1){ advance(); L = legs[li]; u = L.gate && armed ? clamp((P - L.f0) / (L.f1 - L.f0)) : 0; }
+            else arrive();
+          }
+        } else legReal += dt * scale;
+      } else {
+        u += dt / L.screen;
+        if (u >= 1){ if (li < legs.length - 1) advance(); else arrive(); }
+      }
+      acc += dt;
+      if (acc > .03 && legs[li].S){ acc = 0; const p = pos(); pts.push(`${f1(p.x)},${f1(p.y)}`); if (pts.length > 60) pts.shift(); trail.setAttribute("points", pts.join(" ")); }
+    }
+    prevIn = nowIn;
+    /* real time on air legs; slow motion or time-lapse on the others; back to real time after arrival */
+    const L = legs[li], target = done || L.gate ? 1 : L.real / L.screen;
+    scale = Math.exp(lerp(Math.log(scale), Math.log(target), clamp(dt * (done || L.gate ? 3 : 3.5))));
+    for (let i = fx.length - 1; i >= 0; i--){
+      const f = fx[i]; f.age += dt;
+      if (f.age < 0) continue;
+      const t = clamp(f.age / f.life);
+      if (f.kind === "ring"){ f.e.setAttribute("r", f1(3 + f.r * smooth(t))); f.e.setAttribute("opacity", f1(1 - t)); }
+      else {
+        const m = f.inward ? 1 - smooth(t) : smooth(t);
+        f.e.setAttribute("cx", f1(f.x + f.dx * m)); f.e.setAttribute("cy", f1(f.y + f.dy * m)); f.e.setAttribute("opacity", f1(Math.sin(Math.PI * t)));
+      }
+      if (t >= 1){ f.e.remove(); fx.splice(i, 1); }
+    }
+    draw();
+  }
+  function info(){
+    if (!B) return null;
+    const L = legs[li], k = done ? 1 : clamp(u);
+    return { id: B.id, gas: B.gas, li, n: legs.length, leg: L, done, total, waiting: waiting(),
+             real: realDone + (done ? 0 : L.gate ? legReal : k * L.real),
+             p: L.p == null ? null : lerp(L.p0, L.p, L.step ? smooth(k) : k),
+             factor: L.gate ? 1 : L.real / L.screen };
+  }
+  return { init, start, stop, next, tick, info, pos, timeScale: () => B ? scale : 1, mouth: () => mouth };
 })();
 
 /* =========================================================================
@@ -5299,11 +6111,11 @@ const Pins = (() => {
   let key = "", restore = () => {};
   const atLevel = (o, level) => { for (let i = LEVEL_INDEX[level]; i >= 0; i--){ const t = o[LEVELS[i].id]; if (t) return t; } return ""; };
   function render(s){
-    const k = `${s.live}|${s.level}|${!!s.topic}|${s.follow == null && s.impulse == null && s.cascade == null}`;
+    const k = `${s.live}|${s.level}|${!!s.topic}|${!riding(s)}`;
     if (k === key) return;
     if (key.split("|")[0] !== String(s.live)) state.i = 0;
     key = k;
-    const pins = !s.topic && s.follow == null && s.impulse == null && s.cascade == null && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
+    const pins = !s.topic && !riding(s) && s.live ? CONTENT.systems[s.live]?.pins || [] : [];
     g().innerHTML = pins.map((p, n) => {
       const i = n + 1, { x, y } = Scene.place(p.x, p.y);
       return `<g class="mk" data-i="${i}" tabindex="0" role="button" aria-label="${i}: ${esc(p.title)}"><circle cx="${f1(x)}" cy="${f1(y)}" r="10.5"/><text x="${f1(x)}" y="${f1(y + 4.2)}">${i}</text></g>`;
@@ -5508,6 +6320,7 @@ const Panel = (() => {
         ${id === "circulatory" ? `<button type="button" class="chip primary follow-btn" data-follow>${esc(STRINGS.followCell)}</button>` : ""}
         ${id === "nervous" ? `<button type="button" class="chip primary follow-btn" data-impulse="">${esc(STRINGS.followImpulse)}</button>` : ""}
         ${id === "endocrine" ? `<button type="button" class="chip primary follow-btn" data-cascade="">${esc(STRINGS.followCascade)}</button>` : ""}
+        ${id === "respiratory" ? `<button type="button" class="chip primary follow-btn" data-breath="">${esc(STRINGS.followBreath)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -5540,6 +6353,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
     root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
     root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
+    root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -5579,7 +6393,8 @@ const Panel = (() => {
       ${partOf ? `<div class="related"><p>${esc(STRINGS.partOf)}</p><div class="depth">${partOf}</div></div>` : ""}
       ${id === "heart" || id === "lungs" ? `<div class="related"><p>${esc(STRINGS.journeyTitle)}</p><div class="depth"><button type="button" class="chip" data-follow>${esc(STRINGS.followCell)}</button></div></div>` : ""}
       ${IMPULSE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.impulseTitle)}</p><div class="depth"><button type="button" class="chip" data-impulse="${IMPULSE_FOR_TOPIC[id]}">${esc(STRINGS.followImpulse)}: ${esc(CONTENT.impulse.journeys[IMPULSE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
-      ${CASCADE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.cascadeTitle)}</p><div class="depth"><button type="button" class="chip" data-cascade="${CASCADE_FOR_TOPIC[id]}">${esc(STRINGS.followCascade)}: ${esc(CONTENT.cascade.journeys[CASCADE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
+      ${CASCADE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.cascadeTitle)}</p><div class="depth"><button type="button" class="chip" data-cascade="${CASCADE_FOR_TOPIC[id]}">${esc(STRINGS.followCascade)}: ${esc(CONTENT.cascade.journeys[CASCADE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
+      ${BREATH_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.breathTitle)}</p><div class="depth"><button type="button" class="chip" data-breath="${BREATH_FOR_TOPIC[id]}">${esc(STRINGS.followBreath)}: ${esc(CONTENT.breath.journeys[BREATH_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -5594,6 +6409,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-follow]").forEach(b => b.addEventListener("click", () => startFollow()));
     root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse || null)));
     root.querySelectorAll("[data-cascade]").forEach(b => b.addEventListener("click", () => startCascade(b.dataset.cascade || null)));
+    root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -5714,10 +6530,54 @@ const Panel = (() => {
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
+  /* while following a breath: the journey's legs as numbered stops, the current one explained */
+  function renderBreath(s){
+    const C = CONTENT.breath, b = BREATH_BY_ID[s.breath], jc = C.journeys[b.id], seg = s.breathSeg || 0, li = LEVEL_INDEX[s.level];
+    const legs = b.legs.map(l => l.alt && BreathRide.mouth() ? { ...l, ...l.alt } : l);
+    const text = levelText(C.stops[legs[seg].stop], s.level);
+    const steps = legs.map((l, i) => `<li style="--c:${MOLECULES[l.m][0]}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(C.stops[l.stop].name)}</li>`).join("");
+    const groups = {};
+    BREATHS.forEach(x => (groups[C.journeys[x.id].group] ||= []).push(x.id));
+    const list = Object.entries(groups).map(([g, ids]) => `<p class="imp-group">${esc(g)}</p><div class="depth">${ids.map(id =>
+      `<button type="button" class="chip${id === b.id ? " primary" : ""}" data-br="${id}"${id === b.id ? ` aria-pressed="true"` : ""}>${esc(C.journeys[id].name)}</button>`).join("")}</div>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.breathTitle)}</h2>
+      <p class="lede">${esc(STRINGS.breathLede)}</p>
+      <section class="sys-card" style="--sc:${MOLECULES[legs[0].m][0]}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <p class="follow-label imp-paths">${esc(STRINGS.breathJourneys)}</p>
+      ${list}
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopImpulse)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.breathHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopBreath);
+    root.querySelector("[data-stop]").addEventListener("click", stopBreath);
+    root.querySelectorAll("[data-br]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.br)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic;
-    const key = lapse ? `cascade:${s.cascade}|${s.level}|${s.cascadeSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic;
+    const key = breathing ? `breath:${s.breath}|${s.level}|${s.breathSeg}`
+              : lapse ? `cascade:${s.cascade}|${s.level}|${s.cascadeSeg}`
               : riding ? `impulse:${s.impulse}|${s.level}|${s.impulseSeg}`
               : following ? `follow:${s.follow}|${s.level}|${s.followSeg}`
                           : `${s.topic}|${s.level}|${s.live}|${phaseAt(s.hour)}${s.topic ? Math.floor(s.hour * 2) : ""}|${stage}`;
@@ -5725,7 +6585,7 @@ const Panel = (() => {
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -5782,10 +6642,10 @@ const Controls = (() => {
     hourBtns.addEventListener("click", e => { const b = e.target.closest("[data-h]"); if (b) store.set({ hour: +b.dataset.h, playing: false }); });
     range.addEventListener("input", () => store.set({ hour: +range.value, playing: false }));
     play.addEventListener("click", () => store.set({ playing: !store.get().playing }));
-    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); } });
+    back.addEventListener("click", () => { if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); } });
     document.addEventListener("keydown", e => {
       if (e.key !== "Escape") return;
-      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); }
+      if (store.get().topic) store.set({ topic: null }); else { stopFollow(); stopImpulse(); stopCascade(); stopBreath(); }
     });
   }
   function sync(s){
@@ -5806,9 +6666,9 @@ const Controls = (() => {
     const hn = $("#hypnoNow");
     hn.classList.toggle("on", inSleep);
     if (inSleep){ hn.style.left = (hh / 24 * 100).toFixed(2) + "%"; hn.style.top = (HYPNO_Y[sl.stage] / 15 * 100).toFixed(1) + "%"; }
-    const riding = s.follow != null || s.impulse != null || s.cascade != null;
-    back.classList.toggle("on", !!s.topic || riding);
-    $(".moment").classList.toggle("off", !!s.topic || riding);
+    const ride = riding(s);
+    back.classList.toggle("on", !!s.topic || ride);
+    $(".moment").classList.toggle("off", !!s.topic || ride);
     const t = fmtTime(hh);
     if ($("#mTime").textContent !== t) $("#mTime").textContent = t;
     const pl = inSleep ? `${phase.label} · ${STRINGS.stage[sl.stage]}` : phase.label;
@@ -5891,7 +6751,7 @@ const Journey = (() => {
 
 /* Start following a red cell (a given one, or one just leaving the heart) */
 function startFollow(i){
-  stopImpulse(); stopCascade();
+  stopImpulse(); stopCascade(); stopBreath();
   const s = store.get();
   if (s.live !== "circulatory") setLive("circulatory");
   const idx = i == null ? Particles.pickCell() : i;
@@ -5975,7 +6835,7 @@ const ImpulseCard = (() => {
 /* Start following a nerve impulse (a given journey, or one that suits the hour).
    mirror = run it on the other side of the body. */
 function startImpulse(id, mirror = false){
-  stopFollow(); stopCascade();
+  stopFollow(); stopCascade(); stopBreath();
   if (store.get().live !== "nervous") setLive("nervous");
   id = id || defaultImpulse(store.get().hour);
   Impulse.start(id, mirror); ImpulseCard.reset();
@@ -6062,7 +6922,7 @@ const CascadeCard = (() => {
    The clock jumps to the hour the cascade naturally starts, unless it is
    already there; replay = start again from the same hour. */
 function startCascade(id, replay = false){
-  stopFollow(); stopImpulse();
+  stopFollow(); stopImpulse(); stopBreath();
   if (store.get().live !== "endocrine") setLive("endocrine");
   const s = store.get();
   id = id || defaultCascade(s.hour);
@@ -6082,17 +6942,105 @@ function stopCascade(){
 }
 
 /* =========================================================================
+   BREATH CARD — over the body while a breath journey is followed: where the
+   molecule is, its partial pressure, whether it is waiting for the breath,
+   and the time factor (real time on air legs)
+   ========================================================================= */
+const BreathCard = (() => {
+  const box = $("#breathCard");
+  let els = null, last = {}, li = -1, arrived = false;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingBreath)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span></span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="another">${esc(STRINGS.anotherBreath)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), label: box.querySelector(".j-sat span"), bar: box.querySelector(".j-bar i"), val: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopBreath();
+      else if (b.dataset.j === "another"){
+        const i = BREATHS.findIndex(x => x.id === store.get().breath);
+        startBreath(BREATHS[(i + 1) % BREATHS.length].id);
+      }
+      else { BreathRide.next(); tick(); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function tick(){
+    const s = store.get(); if (s.breath == null) return;
+    const q = BreathRide.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.breathSeg !== li) store.set({ breathSeg: li }); }
+    const L = q.leg, col = MOLECULES[L.m][0];
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("where", CONTENT.breath.stops[L.stop].name, v => els.where.textContent = v);
+    /* the bar: the molecule's partial pressure, or (for the dust speck) real time */
+    const gas = q.gas && q.p != null;
+    set("label", gas ? (q.gas === "o2" ? "PO₂" : "PCO₂") : STRINGS.realTime, v => els.label.textContent = v);
+    set("val", gas ? `${Math.round(q.p)} mmHg` : fmtDur(q.real), v => els.val.textContent = v);
+    const w = gas ? q.p / (q.gas === "o2" ? 160 : 60) : q.real / q.total;
+    set("bar", Math.round(clamp(w) * 200), v => els.bar.style.width = v / 2 + "%");
+    const f = q.factor, speed = L.gate ? STRINGS.inStep : f < 1 ? STRINGS.slowed(1 / f) : STRINGS.sped(f);
+    const meta = q.done ? STRINGS.breathDone(fmtDur(q.real))
+      : q.waiting ? (L.gate === "in" ? STRINGS.waitIn : STRINGS.waitOut)
+      : `${MOLECULES[L.m][1]} · ${STRINGS.breathKind[L.kind]} · ${speed}${gas ? " · " + fmtDur(q.real) : ""}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.breath.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.breath != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following a breath journey (a given one, or one that suits the hour) */
+function startBreath(id){
+  stopFollow(); stopImpulse(); stopCascade();
+  if (store.get().live !== "respiratory") setLive("respiratory");
+  const s = store.get();
+  id = id || defaultBreath(s.hour);
+  BreathRide.start(id, s.hour); BreathCard.reset();
+  store.set({ breath: id, breathSeg: 0, topic: null });
+  BreathCard.tick();
+  showScene();
+}
+function stopBreath(){
+  if (store.get().breath == null) return;
+  BreathRide.stop();
+  store.set({ breath: null, breathSeg: null });
+}
+
+/* =========================================================================
    WIRING
    ========================================================================= */
 const FOLLOW_W = 230; /* world units across while following a cell */
 const IMPULSE_W = 200; /* … and a nerve impulse */
 const CASCADE_W = 240; /* … and a hormone cascade */
+const BREATH_W = 220;  /* … and a breath */
 const BODY_MAX = 4;     /* in time-lapse, the heart, breath and blood run at most this much faster… */
 const CLOCK_MAX = 3 * 3600; /* …and the day clock at most 3 h per second, so the sky doesn't strobe */
 function cameraFor(s){
   if (s.follow != null && !s.topic) return Camera.focusView(Scene.toView(Particles.cellInfo(s.follow)), FOLLOW_W);
   if (s.impulse != null && !s.topic) return Camera.focusView(Scene.toView(Impulse.pos()), IMPULSE_W);
   if (s.cascade != null && !s.topic) return Camera.focusView(Scene.toView(Cascade.pos()), CASCADE_W);
+  if (s.breath != null && !s.topic) return Camera.focusView(Scene.toView(BreathRide.pos()), BREATH_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -6106,15 +7054,17 @@ store.subscribe((s, prev) => {
     applySystems(s);
   }
   Pins.render(s);
-  const free = !s.topic && s.follow == null && s.impulse == null && s.cascade == null;
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  const free = !s.topic && !riding(s);
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
   if (s.cascade != null && (s.topic || s.live !== "endocrine")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "endocrine") stopCascade(); });
+  if (s.breath != null && (s.topic || s.live !== "respiratory")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "respiratory") stopBreath(); });
   Journey.sync(s);
   ImpulseCard.sync(s);
   CascadeCard.sync(s);
+  BreathCard.sync(s);
   if (s.topic !== prev.topic){
     Camera.go(cameraFor(s)); Hotspots.setVisible(free); Scene.focus(s.topic);
     if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
@@ -6140,11 +7090,14 @@ function init(){
   Impulse.init();
   Hormones.init();
   Cascade.init();
+  Airways.init();
+  BreathRide.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
   ImpulseCard.build();
   CascadeCard.build();
+  BreathCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
@@ -6160,6 +7113,11 @@ function init(){
     if (s.live === "endocrine"){
       const id = tapCascade(Hormones.nearest(pt.x, pt.y, tol), s.hour);
       if (id){ startCascade(id); return; }
+    }
+    /* airways live: tap the nose, windpipe, lungs, diaphragm or an air dot to follow a breath */
+    if (s.live === "respiratory"){
+      const id = tapBreath(Airways.nearest(pt.x, pt.y, tol));
+      if (id){ startBreath(id); return; }
     }
     if (!s.shown.circulatory) return;
     const i = Particles.nearestCell(pt.x, pt.y, tol);
@@ -6184,7 +7142,7 @@ function init(){
     /* bullet time: while an impulse is followed the body (and the clock) run slowed down.
        Time-lapse: while a hormone cascade is followed the clock runs at the real
        time of the signal (capped), and the body faster (capped harder) */
-    const k = st.impulse != null ? Impulse.timeScale() : st.cascade != null ? Cascade.timeScale() : 1;
+    const k = st.impulse != null ? Impulse.timeScale() : st.cascade != null ? Cascade.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
     const sdt = dt * Math.min(k, BODY_MAX);
     if (st.cascade == null){ lastReal = 0; clockDebt = 0; }
     if (st.cascade != null && !st.topic){
@@ -6198,7 +7156,7 @@ function init(){
       if (step > 0){ clockDebt -= step; store.set({ hour: (st.hour + step / 3600) % 24 }); }
     }
     else if (st.playing) store.set({ hour: (st.hour + sdt * CONFIG.hoursPerSecond) % 24 });
-    if ((st.follow != null || st.impulse != null || st.cascade != null) && !st.topic) Camera.track(cameraFor(st), dt);
+    if (riding(st) && !st.topic) Camera.track(cameraFor(st), dt);
     else if (Camera.tick(t)) Hotspots.place();
     if (!document.hidden){
       const ph = Physio.at(store.get().hour);
@@ -6209,12 +7167,15 @@ function init(){
       const live = store.get().live;
       if (!reducedMotion && live === "nervous") Nerves.tick(sdt, ph);
       if (!reducedMotion && live === "endocrine") Hormones.tick(sdt, ph); else Hormones.setRates(ph);
+      if (!reducedMotion && live === "respiratory") Airways.tick(sdt, ph); else Airways.setRates(ph);
       Panel.tick(sdt, ph);
       Journey.tick(sdt);
       Impulse.tick(dt);
       ImpulseCard.tick();
       Cascade.tick(dt);
       CascadeCard.tick();
+      BreathRide.tick(dt);
+      BreathCard.tick();
     }
     requestAnimationFrame(frame);
   }

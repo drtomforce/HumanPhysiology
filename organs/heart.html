@@ -299,6 +299,7 @@ canvas.trace{ display:block; width:100%; }
       <p class="kicker" data-meta="kicker"></p>
       <h1 data-meta="name"></h1>
       <p class="lede" data-meta="blurb"></p>
+      <div class="chips" data-see></div>
     </div>
     <div class="now" data-now></div>
   </div>
@@ -478,7 +479,8 @@ canvas.trace{ display:block; width:100%; }
     { "id": "sv", "label": "Stroke volume", "unit": "mL" },
     { "id": "co", "label": "Cardiac output", "unit": "L/min" },
     { "id": "ef", "label": "Ejection fraction", "unit": "%" }
-  ]
+  ],
+  "see": [{ "href": "lungs.html", "label": "The lungs" }]
 }
 </script>
 <script type="application/json" id="organ-content">
@@ -676,12 +678,12 @@ canvas.trace{ display:block; width:100%; }
       "hs": "The aorta arches over the heart and gives off arteries to the head and arms before running down to the belly. Its stretchy wall stores some of each beat and keeps blood flowing between beats.",
       "college": "The elastic aorta is the Windkessel: it stores ~50% of stroke volume in systole and releases it in diastole. Baroreceptors in the arch (and carotid sinus) sense pressure and reflexly adjust heart rate and vascular tone.",
       "phd": "Aortic stiffening with age raises pulse-wave velocity, so reflected waves return in systole, raise systolic pressure and afterload, and lower diastolic coronary perfusion pressure: the basis of isolated systolic hypertension." },
-    "pulmonaryTrunk": { "name": "Pulmonary trunk and arteries", "kind": "Artery", "systems": ["circulatory", "respiratory"], "related": ["pulmonaryValve", "rv"],
+    "pulmonaryTrunk": { "name": "Pulmonary trunk and arteries", "kind": "Artery", "systems": ["circulatory", "respiratory"], "related": ["pulmonaryValve", "rv"], "link": { "href": "lungs.html#exchange", "label": "Follow the blood into the lungs" },
       "ms": "These arteries carry blue, oxygen-poor blood to the lungs to pick up oxygen. They are the only arteries with oxygen-poor blood.",
       "hs": "The pulmonary trunk splits into right and left pulmonary arteries that carry oxygen-poor blood to the lungs at low pressure (about 25/10 mmHg).",
       "college": "The pulmonary circulation is a low-pressure, low-resistance, high-compliance circuit; recruitment and distension of capillaries let it take a 3–5-fold rise in flow with little rise in pressure.",
       "phd": "Hypoxic pulmonary vasoconstriction matches perfusion to ventilation; when global (altitude, COPD) it raises pulmonary artery pressure and RV afterload, leading to cor pulmonale." },
-    "pulmonaryVeins": { "name": "Pulmonary veins", "kind": "Vein", "systems": ["circulatory", "respiratory"], "related": ["la"],
+    "pulmonaryVeins": { "name": "Pulmonary veins", "kind": "Vein", "systems": ["circulatory", "respiratory"], "related": ["la"], "link": { "href": "lungs.html#exchange", "label": "See where this blood picks up oxygen" },
       "ms": "Four veins that bring fresh, red, oxygen-rich blood from the lungs back to the heart.",
       "hs": "Usually four pulmonary veins, two from each lung, carry oxygen-rich blood to the left atrium. They are the only veins that carry oxygen-rich blood.",
       "college": "They have no valves, so LA pressure is transmitted back to the pulmonary capillaries; above ~20 mmHg fluid leaks into the lungs (pulmonary oedema).",
@@ -1090,12 +1092,14 @@ function renderInspectors(){
     const sys = (p.systems || []).filter(s => SYSTEM_BY_ID[s]).map(s => `<a class="chip" href="#lens-${s}" style="--c:${SYSTEM_BY_ID[s].color}"><i></i>${esc(SYSTEM_BY_ID[s].name)}</a>`).join("");
     const rel = (p.related || []).filter(r => CONTENT.parts[r]).map(r => `<button type="button" class="chip" data-goto="${esc(r)}">${esc(CONTENT.parts[r].name)}</button>`).join("");
     const extra = box.__extra ? box.__extra(id, p) : "";
+    const link = p.link ? `<div class="chips"><a class="chip on" href="${esc(p.link.href)}">${esc(p.link.label)} ›</a></div>` : "";
     box.innerHTML = `
       ${p.kind ? `<p class="insp-kind">${esc(p.kind)}</p>` : ""}
       <h3>${esc(p.name)}</h3>
       <p class="lvl">${pips(li)}${esc(LEVELS[li].label)}</p>
       <p class="prose">${text(p)}</p>
       ${extra}
+      ${link}
       ${rel ? `<div class="chips">${rel}</div>` : ""}
       ${sys ? `<div class="chips">${sys}</div>` : ""}`;
     $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
@@ -1195,6 +1199,14 @@ function renderLens(){
     }));
   });
 }
+/* links to other organ pages: META.see = [{href, label}] */
+function renderSee(){
+  $$("[data-see]").forEach(n => {
+    const see = META.see || [];
+    n.innerHTML = see.map(x => `<a class="chip" href="${esc(x.href)}">${esc(x.label)} ›</a>`).join("");
+    n.hidden = !see.length;
+  });
+}
 function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: META.mainTopic || "" }); }); }
 
 /* ---------- animation loop ---------- */
@@ -1229,7 +1241,7 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow();
+  buildControls(); buildNav(); buildNow(); renderSee();
   bindParts(); bindGlossary();
   const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); };
   subscribe((s, p) => {

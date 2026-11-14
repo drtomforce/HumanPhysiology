@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The lungs · HumanPhysiology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&family=Schibsted+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+================================================================================
+ HUMANPHYSIOLOGY — THE LUNGS (organ deep-dive page)
+================================================================================
+ Built on the organ-page pattern: see the notes at the top of
+ organs/_template.html. The ENGINE blocks below are copied from there by
+ `node organs/sync-engine.mjs`; don't edit them here.
+
+ Lung-specific layers (in the organ script at the bottom):
+   LUNG      One simulated respiratory system that every section reads.
+             Control: ventilation is set by central command (proportional to
+             CO₂ output, which rises in exercise), the CO₂ chemoreflex and the
+             hypoxic drive of the carotid bodies, or overridden by a breath-hold
+             or voluntary hyperventilation. Alveolar CO₂ and O₂ move with their
+             body stores (CO₂ slowly, O₂ quickly).
+             Mechanics: the breathing muscles' pressure inflates a single
+             compartment with compliance C and airway resistance R; the muscle
+             drive adapts breath by breath to reach the tidal volume the
+             controller asks for. Gives pleural and alveolar pressure, flow and
+             volume.
+             Gas exchange: three zones (apex, middle, base) with their own V/Q,
+             solved by O₂ mass balance against the haemoglobin curve, plus a
+             small shunt; diffusion along the capillary (equilibration time
+             versus transit time) adds a deficit when the membrane is thick or
+             blood rushes through. CONDITIONS change C, R, diffusion, V/Q,
+             dead space and lung volumes.
+   FIGURES   Frontal view of the airways and lungs (breathing), acinus and
+             airway-wall close-ups, breathing traces, spirometry, the
+             alveolar capillary transit, the O₂ cascade, the O₂–haemoglobin
+             curve, the V/Q zones, the control circuit and its chemoreflex chart.
+================================================================================
+-->
+<style>
+/* ===== ORGAN ENGINE CSS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+:root{
+  --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
+  --line:#DCD2C9; --line-strong:#A99B91;
+  --skin:#EBCDB6; --skin-line:#C9A186; --vessel:#C2414B; --vein:#4F5FB0; --nerve:#C99318;
+  --accent:#2f8f83; --sel:#d9a21b;
+  --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans:"Schibsted Grotesk", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+    --line:#342B26; --line-strong:#5A4B42;
+    --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0; --nerve:#E8BC45;
+    --accent:#4fb3a6; --sel:#f0c040;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+  --line:#342B26; --line-strong:#5A4B42;
+  --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0; --nerve:#E8BC45;
+  --accent:#4fb3a6; --sel:#f0c040;
+  color-scheme: dark;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-padding-top:120px; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+button{ font:inherit; color:inherit; }
+a{ color:inherit; }
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:4px; }
+.wrap{ max-width:1240px; margin:0 auto; padding:0 24px; }
+
+/* header */
+.op-top{ position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.op-bar{ display:flex; align-items:center; gap:14px; padding-top:10px; padding-bottom:10px; flex-wrap:wrap; }
+.op-back{ display:inline-flex; align-items:center; gap:6px; text-decoration:none; border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 13px 6px 10px; font-size:13px; font-weight:500; white-space:nowrap; }
+.op-back:hover{ background:var(--surface-2); }
+.op-name{ font-family:var(--serif); font-size:19px; font-weight:500; margin:0; letter-spacing:-.01em; white-space:nowrap; }
+.op-ctrls{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.op-ctl{ display:flex; align-items:center; gap:7px; }
+.op-ctl > span{ font-size:12px; color:var(--muted); }
+.seg{ display:inline-flex; background:var(--surface-2); border-radius:999px; padding:3px; flex-wrap:wrap; }
+.seg button{ border:0; background:transparent; padding:5px 11px; border-radius:999px; cursor:pointer; font-size:12.5px; font-weight:500; color:var(--muted); white-space:nowrap; transition:background .2s, color .2s; }
+.seg button[aria-checked="true"]{ background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--line); }
+.seg .s{ display:none; }
+.op-play{ border:1px solid var(--line); background:var(--surface); border-radius:999px; width:32px; height:32px; display:grid; place-items:center; cursor:pointer; padding:0; }
+.op-nav{ display:flex; gap:4px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+.op-nav::-webkit-scrollbar{ display:none; }
+.op-nav a{ text-decoration:none; font-size:13px; font-weight:500; color:var(--muted); padding:5px 11px; border-radius:999px; white-space:nowrap; }
+.op-nav a:hover{ color:var(--ink); background:var(--surface-2); }
+.op-nav a[aria-current="true"]{ color:var(--ink); background:var(--surface); box-shadow:0 0 0 1px var(--line); }
+
+/* hero */
+.hero{ padding-top:36px; padding-bottom:12px; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:32px; align-items:end; }
+.kicker{ margin:0 0 6px; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.hero h1{ font-family:var(--serif); font-weight:400; font-size:clamp(34px, 5vw, 58px); line-height:1.02; letter-spacing:-.025em; margin:0 0 12px; text-wrap:balance; }
+.hero .lede{ font-family:var(--serif); font-size:18px; line-height:1.5; margin:0; color:var(--ink); max-width:62ch; text-wrap:pretty; }
+.now{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
+.now-head{ display:flex; align-items:center; gap:8px; margin:0 0 6px; font-size:13px; font-weight:600; }
+.now-head i{ width:9px; height:9px; border-radius:50%; background:var(--pc, var(--accent)); }
+.now p.t{ margin:0 0 12px; font-size:14px; color:var(--muted); }
+.stats{ display:grid; grid-template-columns:repeat(auto-fit, minmax(96px, 1fr)); gap:8px; }
+.stat{ background:var(--bg); border-radius:10px; padding:8px 10px; min-width:0; }
+.stat .l{ font-size:11px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat .v{ font-family:var(--serif); font-size:22px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.stat .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:3px; }
+.stat .u{ font-size:11px; color:var(--muted); }
+
+/* sections */
+.sec{ padding-top:44px; padding-bottom:20px; border-top:1px solid var(--line); margin-top:28px; }
+.sec-head{ max-width:760px; margin-bottom:20px; }
+.sec h2{ font-family:var(--serif); font-weight:400; font-size:clamp(26px, 3.4vw, 38px); line-height:1.1; letter-spacing:-.02em; margin:0 0 10px; }
+.sec h3{ font-size:14px; font-weight:600; margin:0 0 6px; }
+.prose{ font-family:var(--serif); font-size:16.5px; line-height:1.6; margin:0; text-wrap:pretty; }
+.prose + .prose{ margin-top:10px; }
+.muted{ color:var(--muted); }
+.small{ font-size:13px; }
+.sec-grid{ display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,1fr); gap:24px; align-items:start; }
+.sec-grid.wide{ grid-template-columns:minmax(0,1fr); }
+.panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; min-width:0; }
+.panel + .panel{ margin-top:14px; }
+.side{ position:sticky; top:116px; min-width:0; }
+.fig{ position:relative; min-width:0; }
+.fig svg{ display:block; width:100%; height:auto; }
+.fig-tools{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+.fig-tools > span{ font-size:12px; color:var(--muted); }
+.cap{ font-size:12.5px; color:var(--muted); margin:8px 2px 0; }
+
+/* parts: anything tagged data-part in a figure */
+[data-part]{ cursor:pointer; transition:filter .2s, opacity .2s; }
+[data-part]:hover{ filter:brightness(1.12) saturate(1.15); }
+[data-part]:focus{ outline:none; }
+[data-part]:focus-visible{ filter:drop-shadow(0 0 3px var(--sel)); }
+.is-sel{ filter:drop-shadow(0 0 2.5px var(--sel)) drop-shadow(0 0 2px var(--sel)) !important; }
+.tip{ position:fixed; z-index:50; pointer-events:none; background:var(--ink); color:var(--surface); font-size:12.5px; line-height:1.35; padding:6px 9px; border-radius:8px; max-width:260px; opacity:0; transform:translateY(4px); transition:opacity .15s, transform .15s; }
+.tip.on{ opacity:1; transform:none; }
+.tip b{ font-weight:600; }
+
+/* inspector */
+.insp-kind{ margin:0 0 2px; font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.insp h3{ font-family:var(--serif); font-size:22px; font-weight:400; margin:0 0 8px; letter-spacing:-.01em; }
+.insp .prose{ font-size:15.5px; }
+.insp-empty{ color:var(--muted); font-size:14px; margin:0; }
+.chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.chip{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:5px 11px; font-size:12.5px; font-weight:500; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.chip:hover{ background:var(--surface-2); }
+.chip[aria-pressed="true"], .chip.on{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.chip i{ width:8px; height:8px; border-radius:50%; background:var(--c, var(--muted)); flex:none; }
+.lvl{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); margin:0 0 8px; }
+.pips{ display:inline-flex; gap:3px; }
+.pips b{ width:6px; height:6px; border-radius:50%; background:var(--line-strong); }
+.pips b.on{ background:var(--ink); }
+
+/* body-systems lens */
+.lens{ display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:12px; }
+.lens-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 14px; border-top:4px solid var(--c); display:flex; flex-direction:column; }
+.lens-card h3{ display:flex; align-items:center; gap:8px; font-size:15px; margin:0 0 6px; }
+.lens-card .prose{ font-size:15px; flex:1; }
+.lens-card .chips{ margin-top:12px; }
+
+/* glossary terms */
+.term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
+.term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
+
+.foot{ border-top:1px solid var(--line); margin-top:40px; padding-top:20px; padding-bottom:40px; color:var(--muted); font-size:13px; display:flex; gap:16px; flex-wrap:wrap; justify-content:space-between; }
+
+@media (max-width: 980px){
+  .hero{ grid-template-columns:minmax(0,1fr); gap:18px; }
+  .sec-grid{ grid-template-columns:minmax(0,1fr); }
+  .side{ position:static; }
+}
+@media (max-width: 640px){
+  .wrap{ padding:0 16px; }
+  .op-top{ position:static; }
+  .op-name{ display:none; }
+  .op-ctrls{ margin-left:0; width:100%; }
+  .seg .s{ display:inline; } .seg .f{ display:none; }
+  .op-ctl > span{ display:none; }
+  .hero{ padding-top:22px; }
+  html{ scroll-padding-top:12px; }
+}
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+/* ===== ORGAN ENGINE CSS · END ===== */
+</style>
+<style>
+/* ---------- lung-specific styles ---------- */
+:root{
+  --lung:#efb3ad; --lung-2:#e39a94; --lung-line:#b8625b; --airway:#f7ecdc; --airway-line:#b9a586;
+  --pleura:#cfe3ea; --diaphragm:#c46a5e; --dia-line:#8e4239; --rib:#e9dfcf; --rib-line:#bfae92;
+  --blood-o2:#d9464f; --blood-co2:#6f72bf; --air:#3f8fe0; --air-used:#98a0ae;
+  --muscle:#c46a5e; --cartilage:#dfe7ef; --mucus:#d9cf7a; --cilia:#7a6b5a; --goblet:#f3f0e6;
+  --nerve-c:#d9a21b; --chemo:#8a5cc4; --consol:#a8805e; --clot:#3b2321;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --paper:#fbefee; --paper-line:#efc9c6; --paper-bold:#e3a9a5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --lung:#8a4f4a; --lung-2:#7a433f; --lung-line:#d48f87; --airway:#d9ccb6; --airway-line:#8f7d62;
+    --pleura:#2f454d; --diaphragm:#9c4c43; --dia-line:#d07a6e; --rib:#5a5145; --rib-line:#7d705c;
+    --blood-o2:#e0606a; --blood-co2:#8090e0; --air:#5ea6f0; --air-used:#a8aebb;
+    --muscle:#9c4c43; --cartilage:#4a5560; --mucus:#a39a4a; --cilia:#c9b9a3; --goblet:#3a3630;
+    --nerve-c:#e8bc45; --chemo:#a98ae0; --consol:#7d6046; --clot:#f0d8d5;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c;
+  }
+}
+:root[data-theme="dark"]{
+  --lung:#8a4f4a; --lung-2:#7a433f; --lung-line:#d48f87; --airway:#d9ccb6; --airway-line:#8f7d62;
+  --pleura:#2f454d; --diaphragm:#9c4c43; --dia-line:#d07a6e; --rib:#5a5145; --rib-line:#7d705c;
+  --blood-o2:#e0606a; --blood-co2:#8090e0; --air:#5ea6f0; --air-used:#a8aebb;
+  --muscle:#9c4c43; --cartilage:#4a5560; --mucus:#a39a4a; --cilia:#c9b9a3; --goblet:#3a3630;
+  --nerve-c:#e8bc45; --chemo:#a98ae0; --consol:#7d6046; --clot:#f0d8d5;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c;
+}
+#anatomyFig{ max-height:620px; margin:0 auto; }
+#controlFig{ max-height:460px; margin:0 auto; }
+.l-lobe{ stroke:var(--lung-line); stroke-width:1; }
+.l-out{ fill:none; stroke:var(--lung-line); stroke-width:2; }
+.l-pleura{ fill:none; stroke:var(--pleura); stroke-width:14; stroke-linejoin:round; }
+.l-fissure{ fill:none; stroke:var(--lung-line); stroke-width:2; stroke-dasharray:6 4; }
+.l-air{ fill:none; stroke:var(--airway-line); stroke-linecap:round; }
+.l-air-in{ fill:none; stroke:var(--airway); stroke-linecap:round; }
+.l-ring{ stroke:var(--airway-line); stroke-width:1.5; opacity:.7; }
+.l-dia{ fill:none; stroke:var(--diaphragm); stroke-width:12; stroke-linecap:round; }
+.l-rib{ fill:none; stroke:var(--rib); stroke-width:8; stroke-linecap:round; opacity:.5; }
+.l-rib-line{ fill:none; stroke:var(--rib-line); stroke-width:1; opacity:.6; }
+.v-o2{ fill:none; stroke:var(--blood-o2); stroke-linecap:round; }
+.v-co2{ fill:none; stroke:var(--blood-co2); stroke-linecap:round; }
+.l-heart{ fill:var(--lung-line); opacity:.22; }
+.l-label{ font:500 12px var(--sans); fill:var(--muted); pointer-events:none; }
+.l-label.in{ fill:var(--ink); font-weight:600; }
+.hide-labels .l-label{ display:none; }
+.hide-vessels .l-vessels{ display:none; }
+.hide-ribs .l-ribs{ display:none; }
+.hide-air .l-airdots{ display:none; }
+.c-nerve{ fill:none; stroke:var(--nerve-c); stroke-width:3; stroke-linecap:round; }
+.c-hit{ fill:none; stroke:transparent; stroke-width:16; stroke-linecap:round; }
+.c-node{ stroke:var(--surface); stroke-width:2; }
+.c-label{ font:500 11.5px var(--sans); fill:var(--muted); pointer-events:none; }
+.legend{ display:flex; gap:12px; flex-wrap:wrap; font-size:12.5px; color:var(--ink); margin-top:8px; }
+.legend span{ display:inline-flex; align-items:center; gap:6px; }
+.legend i{ width:14px; height:4px; border-radius:2px; background:var(--c); }
+.legend i.dot{ width:9px; height:9px; border-radius:50%; }
+canvas.trace{ display:block; width:100%; }
+.readouts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(92px,1fr)); gap:8px; margin-top:12px; }
+.ro{ background:var(--bg); border-radius:10px; padding:7px 10px; }
+.ro .l{ font-size:11px; color:var(--muted); }
+.ro .v{ font-family:var(--serif); font-size:19px; font-variant-numeric:tabular-nums; }
+.ro .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:2px; }
+.sliders{ display:grid; gap:12px; margin-top:4px; }
+.sl label{ display:flex; justify-content:space-between; font-size:13px; font-weight:500; margin-bottom:3px; gap:8px; }
+.sl label output{ color:var(--muted); font-weight:400; font-variant-numeric:tabular-nums; }
+.sl input{ width:100%; accent-color:var(--ink); }
+.sl .ends{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+.steps{ list-style:none; margin:10px 0 0; padding:0; counter-reset:st; display:grid; gap:6px; }
+.steps li{ counter-increment:st; display:grid; grid-template-columns:24px 1fr; gap:8px; padding:8px 10px; border-radius:10px; border:1px solid transparent; transition:background .25s, border-color .25s; }
+.steps li::before{ content:counter(st); width:22px; height:22px; border-radius:50%; background:var(--surface-2); display:grid; place-items:center; font-size:12px; font-weight:600; }
+.steps li.on{ background:var(--bg); border-color:var(--line-strong); }
+.steps li.on::before{ background:var(--ink); color:var(--surface); }
+.steps b{ display:block; font-size:13.5px; }
+.steps span{ font-size:13.5px; color:var(--muted); font-family:var(--serif); }
+.cond-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:0 0 16px; }
+.cond-row > span{ font-size:12.5px; color:var(--muted); font-weight:500; }
+.note{ font-size:13px; color:var(--muted); margin:10px 0 0; }
+.btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.btn{ border:1px solid var(--ink); background:var(--ink); color:var(--surface); border-radius:999px; padding:6px 13px; font-size:13px; font-weight:500; cursor:pointer; }
+.btn.ghost{ background:transparent; color:var(--ink); border-color:var(--line-strong); }
+.btn[aria-pressed="true"]{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn:disabled{ opacity:.45; cursor:default; }
+.alert{ margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--bg); border-left:3px solid var(--ink); font-size:13.5px; }
+.alert b{ display:block; margin-bottom:2px; }
+.two{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-top:14px; }
+.two figure{ margin:0; }
+.two svg{ display:block; width:100%; height:auto; background:var(--bg); border-radius:12px; }
+.two figcaption{ font-size:12.5px; color:var(--muted); margin-top:6px; }
+@media (max-width: 640px){ .two{ grid-template-columns:minmax(0,1fr); } }
+</style>
+</head>
+<body>
+<header class="op-top">
+  <div class="wrap op-bar">
+    <a class="op-back" data-back href="../index.html"><svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>The whole body</a>
+    <p class="op-name" data-organ-name></p>
+    <div class="op-ctrls" data-controls></div>
+  </div>
+  <nav class="wrap op-nav" data-nav aria-label="Sections"></nav>
+</header>
+
+<main>
+  <div class="wrap hero" data-hero>
+    <div>
+      <p class="kicker" data-meta="kicker"></p>
+      <h1 data-meta="name"></h1>
+      <p class="lede" data-meta="blurb"></p>
+      <div class="chips" data-see></div>
+    </div>
+    <div class="now" data-now></div>
+  </div>
+
+  <!-- ANATOMY -->
+  <section class="sec wrap" id="anatomy" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.anatomy.intro"></p>
+    </div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <div class="fig-tools" data-tools></div>
+        <svg id="anatomyFig" viewBox="0 0 560 560" role="img" aria-label="The airways and lungs seen from the front, breathing"></svg>
+        <div class="two">
+          <figure><svg id="acinusFig" viewBox="0 0 260 190" role="img" aria-label="Close-up of the end of an airway and its alveoli"></svg><figcaption>Zoom in: where air meets blood (about 0.3 mm across)</figcaption></figure>
+          <figure><svg id="airwayFig" viewBox="0 0 260 190" role="img" aria-label="Cross-section through the wall of a bronchus"></svg><figcaption>Zoom in: a slice through a bronchus</figcaption></figure>
+        </div>
+      </div>
+      <aside class="side"><div class="panel insp" data-inspector></div></aside>
+    </div>
+  </section>
+
+  <!-- MECHANICS -->
+  <section class="sec wrap" id="mechanics" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.mechanics.intro"></p>
+    </div>
+    <div class="cond-row" data-conditions><span>The lungs are</span></div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <h3>Pressures, flow and volume in each breath</h3>
+        <canvas class="trace" id="breathTraces" height="420" aria-label="Pleural and alveolar pressure, airflow and lung volume over the last few breaths"></canvas>
+        <p class="cap">Air flows in only while the pressure in the alveoli is below the pressure at the mouth (zero), and out while it is above.</p>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>One breath</h3>
+          <ol class="steps" id="breathSteps"></ol>
+        </div>
+        <div class="panel">
+          <h3>Change the lungs</h3>
+          <div class="sliders" id="mechSliders"></div>
+          <div class="readouts" id="mechRO"></div>
+        </div>
+      </aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px">
+      <div class="panel fig">
+        <h3>Spirometry: lung volumes and a forced breath out</h3>
+        <div class="two" style="margin-top:6px">
+          <div><canvas class="trace" id="spiro" height="300" aria-label="Lung volume over time with the lung volumes marked"></canvas></div>
+          <div><canvas class="trace" id="flowVol" height="300" aria-label="Flow–volume loop of a forced breath out and in"></canvas></div>
+        </div>
+        <div class="btn-row"><button type="button" class="btn" id="spiroBtn">Take the test: breathe all the way in, then blow out hard</button></div>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3 id="condTitle"></h3>
+          <p class="prose" id="condText"></p>
+          <div class="readouts" id="spiroRO"></div>
+          <p class="prose small muted" style="margin-top:12px" data-text="sections.mechanics.spiroNote"></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- GAS EXCHANGE -->
+  <section class="sec wrap" id="exchange" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.exchange.intro"></p>
+    </div>
+    <div class="cond-row" data-conditions><span>The lungs are</span></div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <h3>One red cell crossing one alveolus</h3>
+        <svg id="capFig" viewBox="0 0 600 150" role="img" aria-label="A red blood cell travelling along a capillary under an alveolus, loading oxygen"></svg>
+        <canvas class="trace" id="transit" height="230" aria-label="Oxygen and carbon dioxide pressure in the blood along the capillary"></canvas>
+        <div class="legend"><span><i style="--c:var(--blood-o2)"></i>O₂ in the blood</span><span><i style="--c:var(--blood-co2)"></i>CO₂ in the blood</span></div>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>Altitude</h3>
+          <div class="sliders" data-altitude></div>
+          <canvas class="trace" id="cascade" height="210" style="margin-top:12px" aria-label="The oxygen cascade from the air to the tissues"></canvas>
+          <p class="prose small muted" style="margin-top:10px" data-text="sections.exchange.cascadeNote"></p>
+        </div>
+      </aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px">
+      <div class="panel fig">
+        <h3>How haemoglobin loads and unloads oxygen</h3>
+        <canvas class="trace" id="odc" height="330" aria-label="Oxygen–haemoglobin dissociation curve"></canvas>
+        <div class="legend"><span><i style="--c:var(--blood-o2)"></i>The curve now</span><span><i style="--c:var(--line-strong)"></i>Standard curve</span><span><i class="dot" style="--c:var(--blood-o2)"></i>Arterial blood</span><span><i class="dot" style="--c:var(--blood-co2)"></i>Venous blood</span></div>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>Shift the curve</h3>
+          <div class="sliders" id="odcSliders"></div>
+          <div class="btn-row"><button type="button" class="btn ghost" id="fetalBtn" aria-pressed="false">Fetal haemoglobin</button></div>
+          <div class="readouts" id="odcRO"></div>
+          <p class="prose small muted" style="margin-top:12px" data-text="sections.exchange.odcNote"></p>
+        </div>
+      </aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px">
+      <div class="panel fig">
+        <h3>Matching air to blood, from top to bottom</h3>
+        <canvas class="trace" id="vq" height="300" aria-label="Ventilation, blood flow and their ratio at the top, middle and bottom of the lungs"></canvas>
+        <div class="legend"><span><i style="--c:var(--air)"></i>Ventilation (air)</span><span><i style="--c:var(--blood-o2)"></i>Blood flow</span></div>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>Arterial blood gas</h3>
+          <div class="readouts" id="abgRO"></div>
+          <p class="prose small muted" style="margin-top:12px" data-text="sections.exchange.vqNote"></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- CONTROL -->
+  <section class="sec wrap" id="control" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.control.intro"></p>
+    </div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <svg id="controlFig" viewBox="0 0 560 430" role="img" aria-label="The control circuit of breathing: brainstem, chemoreceptors, nerves and breathing muscles"></svg>
+        <div class="legend"><span><i style="--c:var(--nerve-c)"></i>Nerves (dots are signals)</span><span><i class="dot" style="--c:var(--chemo)"></i>Chemoreceptors (glow = how hard they are firing)</span></div>
+      </div>
+      <aside class="side"><div class="panel insp" data-inspector></div></aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px">
+      <div class="panel fig">
+        <h3>The chemoreflex at work: the last three minutes</h3>
+        <canvas class="trace" id="chemo" height="360" aria-label="Arterial oxygen and carbon dioxide and ventilation over the last three minutes"></canvas>
+        <div class="legend"><span><i style="--c:var(--blood-o2)"></i>Arterial O₂</span><span><i style="--c:var(--blood-co2)"></i>Arterial CO₂</span><span><i style="--c:var(--air)"></i>Ventilation</span></div>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>Try it</h3>
+          <div class="btn-row" id="ctlBtns" style="margin-top:0"></div>
+          <div id="ctlMsg"></div>
+          <div class="sliders" style="margin-top:14px" data-altitude></div>
+          <div class="btn-row"><button type="button" class="btn ghost" id="ffBtn" aria-pressed="false">Speed up the blood gases ×10</button></div>
+          <div class="readouts" id="ctlRO"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- BODY SYSTEMS LENS -->
+  <section class="sec wrap" id="systems" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.systems.intro"></p>
+    </div>
+    <div class="lens" data-lens></div>
+  </section>
+
+  <footer class="wrap foot">
+    <span>Values are typical for a healthy adult and simplified for teaching. This is not medical advice.</span>
+    <a data-back href="../index.html">Back to the whole body</a>
+  </footer>
+</main>
+
+<script type="application/json" id="organ-meta">
+{
+  "id": "lungs",
+  "name": "The lungs",
+  "mainTopic": "lungs",
+  "kicker": "Organ deep dive",
+  "blurb": "Two spongy bags of 300 million tiny air sacs with a surface the size of a tennis court, where every drop of your blood meets fresh air a few hundredths of a millimetre away. Watch them breathe, test them like a doctor, follow oxygen into a red cell and see how your brainstem decides how hard to breathe.",
+  "stats": [
+    { "id": "rr", "label": "Breathing rate", "unit": "/min" },
+    { "id": "vt", "label": "Tidal volume", "unit": "mL" },
+    { "id": "ve", "label": "Ventilation", "unit": "L/min" },
+    { "id": "pao2", "label": "Arterial O₂", "unit": "mmHg" },
+    { "id": "paco2", "label": "Arterial CO₂", "unit": "mmHg" },
+    { "id": "spo2", "label": "O₂ saturation", "unit": "%" }
+  ],
+  "see": [{ "href": "heart.html", "label": "The heart" }]
+}
+</script>
+<script type="application/json" id="organ-content">
+{
+  "phases": {
+    "sleep": {
+      "ms": "You’re asleep. You breathe slowly and a little less deeply, so a bit more carbon dioxide builds up in your blood. That’s normal.",
+      "hs": "In sleep, breathing slows to about 12 breaths a minute and the brainstem becomes less sensitive to CO₂, so arterial CO₂ rises a few mmHg. The throat muscles relax, which is why some people snore.",
+      "college": "Non-REM sleep removes the ‘wakefulness drive’ to breathe and blunts the CO₂ response by roughly a third: ventilation falls ~15% and PaCO₂ rises 3–5 mmHg. In REM, breathing becomes irregular and the intercostal and upper-airway muscles are inhibited.",
+      "phd": "Loss of upper-airway dilator tone (genioglossus) in sleep underlies obstructive sleep apnoea; a high loop gain of the chemoreflex predisposes to central apnoea and periodic breathing, especially at altitude and in heart failure."
+    },
+    "rest": {
+      "ms": "Sitting still, you breathe about 14 times a minute, half a litre each time. That’s 7 litres of air a minute, without even thinking about it.",
+      "hs": "At rest: about 14 breaths a minute of ~500 mL each, so minute ventilation is ~7 L/min. Only ~350 mL of each breath reaches the alveoli; the rest stays in the airways (dead space).",
+      "college": "Resting minute ventilation ~7 L/min (alveolar ventilation ~4.2 L/min) clears ~200 mL/min of CO₂ and takes up ~250 mL/min of O₂, holding PaCO₂ near 40 and PaO₂ near 95 mmHg. Quiet expiration is passive.",
+      "phd": "Alveolar ventilation is tightly regulated around PaCO₂ (± 2–3 mmHg) by a chemoreflex loop whose gain and delays determine stability; the work of quiet breathing costs only ~2% of resting O₂ uptake."
+    },
+    "meal": {
+      "ms": "After a meal you breathe a tiny bit more, because digesting food uses energy and makes a little extra carbon dioxide.",
+      "hs": "Digesting a meal raises the body’s O₂ use and CO₂ output by about 10%, so breathing increases slightly to keep blood gases steady.",
+      "college": "The thermic effect of food raises VO₂ and VCO₂; a high-carbohydrate meal raises the respiratory quotient towards 1, so CO₂ output rises proportionally more than O₂ uptake.",
+      "phd": "Carbohydrate loading can raise VCO₂ enough to precipitate hypercapnia in patients with limited ventilatory reserve, the rationale (now debated) for high-fat feeds in ventilated patients."
+    },
+    "exercise": {
+      "ms": "You’re running! You breathe about 38 times a minute and much more deeply, moving ten times as much air as at rest.",
+      "hs": "In the run, breathing rises to ~38/min and almost 2 L per breath, about 70 L/min. Breathing out becomes active, using the belly muscles. Blood oxygen stays high even though muscles use eight times more.",
+      "college": "Exercise hyperpnoea is matched to CO₂ production (central command, muscle afferents and the chemoreflex), so PaCO₂ barely changes in moderate exercise and falls above the lactate threshold. Recruiting apical lung units and capillaries keeps PaO₂ up as cardiac output triples.",
+      "phd": "Some highly trained athletes develop exercise-induced arterial hypoxaemia: capillary transit time falls below the time needed for diffusion equilibrium at very high cardiac outputs. The mechanism of exercise hyperpnoea remains debated."
+    }
+  },
+  "sections": {
+    "anatomy": {
+      "nav": "Anatomy", "kicker": "Structure", "title": "A tree of airways ending in 300 million air sacs",
+      "intro": {
+        "ms": "Air goes down your windpipe, which splits into two tubes, one for each lung. These split again and again, like an upside-down tree, until they end in tiny bubbles called alveoli. Tap any part to learn more.",
+        "hs": "The trachea divides into two main bronchi, then into smaller and smaller bronchi and bronchioles, about 23 generations in all, ending in grape-like clusters of alveoli. The right lung has three lobes and the left two. Tap a part to explore it.",
+        "college": "The conducting zone (generations 0–16: trachea to terminal bronchioles) warms, humidifies and filters air but exchanges no gas; the respiratory zone (17–23: respiratory bronchioles, alveolar ducts, sacs) holds ~300 million alveoli with ~70 m² of surface. Select a structure for detail.",
+        "phd": "Total airway cross-section increases exponentially with generation, so bulk flow slows to near zero in the acinus and gas moves by diffusion. Airway resistance sits mostly in the medium bronchi (generations 2–7), not the small airways, the ‘quiet zone’ where disease can hide. Select a structure for detail."
+      },
+      "hint": { "ms": "Tap a lobe, an airway, the diaphragm or something in the close-ups to find out what it does." }
+    },
+    "mechanics": {
+      "nav": "Breathing", "kicker": "How it works", "title": "Breathing: a bellows driven by the diaphragm",
+      "intro": {
+        "ms": "Your lungs have no muscles of their own. When the diaphragm under them pulls down, the chest gets bigger, the pressure inside drops and air rushes in. When it relaxes, the stretchy lungs spring back and push the air out.",
+        "hs": "Breathing in is active: the diaphragm contracts and flattens, the ribs lift, and the pressure around the lungs (pleural pressure) becomes more negative, so the lungs expand and the pressure in the alveoli falls below air pressure. Breathing out at rest is passive elastic recoil. Pick a lung disease to see how it changes each breath.",
+        "college": "A single-compartment model: muscle pressure inflates a lung of compliance C through an airway resistance R. Flow = (Pmus − V/C)/R, so the time constant τ = RC sets how quickly the lung fills and empties. Obstruction raises R (slow emptying, air trapping); fibrosis lowers C (small, stiff lungs).",
+        "phd": "The equation of motion of the respiratory system, Pmus + Paw = V/C + R·V̇ (+ PEEPi), underlies ventilator waveforms. In obstruction, expiration is flow-limited: dynamic airway compression at an equal-pressure point means more effort cannot raise flow. Here the muscle drive adapts breath by breath to deliver the tidal volume the chemoreflex asks for."
+      },
+      "steps": [
+        { "name": "Breathing in", "ms": "The diaphragm pulls down and the lungs stretch. Air rushes in.", "hs": "The diaphragm and outer intercostals contract. Pleural pressure falls from about −5 to −8 cmH₂O, alveolar pressure dips just below zero, and air flows in.", "college": "Muscle pressure exceeds elastic recoil: alveolar pressure goes negative (≈ −1 cmH₂O), driving flow through the airway resistance. Flow peaks mid-inspiration.", "phd": "The pleural pressure swing is the sum of the elastic (ΔV/C) and resistive (R·V̇) components; at the end of inspiration flow is zero and Ppl reflects elastic recoil alone." },
+        { "name": "Breathing out", "ms": "The diaphragm relaxes and the stretchy lungs spring back, pushing air out.", "hs": "At rest, breathing out is passive: the lungs’ elastic recoil raises alveolar pressure slightly above zero, so air flows out. In exercise the belly muscles help push.", "college": "Passive expiration decays exponentially with time constant RC (~0.4 s). If expiration is too short for the time constant, as in obstruction with a fast rate, air is trapped (dynamic hyperinflation).", "phd": "Intrinsic PEEP from incomplete emptying must be overcome by the inspiratory muscles before flow can start, a major load in COPD exacerbations; applied PEEP can offset it." }
+      ],
+      "spiroNote": {
+        "ms": "Doctors test lungs by asking you to breathe all the way in and then blow out as hard and fast as you can.",
+        "hs": "FEV₁ is how much you can blow out in the first second; FVC is everything you can blow out. Narrow airways (asthma, COPD) lower FEV₁ much more than FVC. Stiff lungs (fibrosis) lower both.",
+        "college": "Obstruction: FEV₁/FVC below ~0.7 (or the lower limit of normal), a scooped flow–volume curve, and raised residual volume. Restriction: both reduced with a normal or high ratio and a small TLC.",
+        "phd": "Maximal expiratory flow over most of the vital capacity is effort-independent (wave-speed limitation), so the curve’s shape reflects airway mechanics rather than effort; this is why spirometry is so reproducible."
+      }
+    },
+    "exchange": {
+      "nav": "Gas exchange", "kicker": "Where air meets blood", "title": "Gas exchange: oxygen in, carbon dioxide out",
+      "intro": {
+        "ms": "In the alveoli, oxygen slips through a wall thinner than a soap bubble into your blood, and carbon dioxide slips out. Red blood cells carry the oxygen away, stuck to a molecule called haemoglobin.",
+        "hs": "Gases move by diffusion, from high partial pressure to low. Alveolar O₂ (~100 mmHg) is far higher than in the blood arriving from the body (~40), so O₂ moves into the blood; CO₂ goes the other way. Change the altitude or the lung disease and watch what happens.",
+        "college": "Diffusion across ~0.5 µm of membrane follows Fick’s law; a red cell normally reaches equilibrium in a third of its ~0.75 s capillary transit, a large reserve. Arterial O₂ also depends on matching ventilation to perfusion (V/Q) and on the O₂–haemoglobin curve.",
+        "phd": "Hypoxaemia has five mechanisms: low inspired PO₂, hypoventilation, diffusion limitation, V/Q mismatch and shunt. The A–a gradient separates the first two from the rest, and the response to 100% O₂ separates shunt from V/Q mismatch. The model shows each one."
+      },
+      "cascadeNote": {
+        "ms": "Oxygen pressure falls at each step from the air to your muscles, like water flowing downhill.",
+        "hs": "The O₂ cascade: dry air ~160 mmHg, humidified in the airways ~150, alveoli ~100, arterial blood ~95, mixed venous blood ~40, and only a few mmHg in a working muscle’s mitochondria.",
+        "college": "Higher up, barometric pressure falls, so every step of the cascade falls. Hyperventilation (driven by the carotid bodies) lowers alveolar CO₂ and so raises alveolar O₂ via the alveolar gas equation PAO₂ = FiO₂(PB − 47) − PaCO₂/0.8.",
+        "phd": "On the summit of Everest (PB ~253 mmHg) climbers survive with PaO₂ ~30 mmHg only because extreme hyperventilation drives PaCO₂ to ~13 mmHg and the resulting alkalosis left-shifts the O₂ curve (West et al. 1983; Grocott et al. 2009)."
+      },
+      "odcNote": {
+        "ms": "Haemoglobin grabs oxygen in the lungs and lets go of it in busy muscles that are warm and full of carbon dioxide.",
+        "hs": "The S-shaped curve means haemoglobin stays almost full even if O₂ falls a bit, but unloads a lot in the steep part. Heat, acid, CO₂ and 2,3-BPG shift it right, helping muscles get more O₂ (the Bohr effect).",
+        "college": "Cooperative binding gives a sigmoid curve with P50 ≈ 27 mmHg. Right shifts (↑H⁺, ↑PCO₂, ↑temperature, ↑2,3-BPG) lower affinity and favour unloading; fetal haemoglobin binds 2,3-BPG poorly, so its curve is left-shifted.",
+        "phd": "The Hill coefficient (~2.7) reflects the T→R allosteric transition (Monod–Wyman–Changeux). 2,3-BPG rises within hours at altitude and in anaemia; the Haldane effect is the reciprocal: deoxygenated haemoglobin carries more CO₂."
+      },
+      "vqNote": {
+        "ms": "Air and blood have to meet in the same place. Standing up, the bottom of your lungs gets more blood and more air than the top.",
+        "hs": "Gravity sends more blood (and somewhat more air) to the bases, so the top of the lungs gets more air than blood and the bottom more blood than air. Diseases that block air (pneumonia) or blood (a clot) upset this matching and lower blood oxygen.",
+        "college": "V/Q runs from ~3 at the apex to ~0.6 at the base. Low-V/Q units and shunt lower PaO₂ and raise the A–a gradient; high-V/Q units (dead space) waste ventilation. Hypoxic pulmonary vasoconstriction diverts blood from poorly ventilated units.",
+        "phd": "Arterial O₂ content is the flow-weighted mean of end-capillary contents, not of partial pressures; because the O₂ curve is flat at the top, high-V/Q units cannot compensate for low-V/Q units, while CO₂ (with a near-linear content curve) can be compensated by extra ventilation."
+      }
+    },
+    "control": {
+      "nav": "Control", "kicker": "Who decides how hard to breathe", "title": "Control of breathing: the brainstem’s autopilot",
+      "intro": {
+        "ms": "You don’t have to remember to breathe. A part of your brain called the brainstem does it for you, all day and all night. It mostly listens for carbon dioxide: when there’s too much, you breathe harder.",
+        "hs": "A rhythm generator in the medulla sends bursts down the phrenic nerves to the diaphragm. Chemoreceptors tell it how you’re doing: central ones in the brainstem sense CO₂ (via acidity), and the carotid bodies in the neck sense low O₂. Hold your breath, hyperventilate or go up a mountain and watch the loop respond.",
+        "college": "The preBötzinger complex generates the rhythm; dorsal and ventral respiratory groups shape it; pontine centres smooth the switch between in and out. Central chemoreceptors provide ~70% of the CO₂ drive; the carotid bodies add a fast CO₂ response and the hypoxic drive, which increases steeply below ~60 mmHg and multiplies the CO₂ response.",
+        "phd": "The model: ventilation = central command (∝ CO₂ output) + G·(PaCO₂ − 40)·(1 + hypoxia) + hypoxic drive, with CO₂ and O₂ body stores giving slow and fast time constants. Loop gain = controller gain × plant gain; high loop gain (altitude, heart failure) causes periodic breathing."
+      }
+    },
+    "systems": {
+      "nav": "Body systems", "kicker": "Connections", "title": "The lungs through the lens of every body system",
+      "intro": {
+        "ms": "The lungs supply oxygen to every cell in your body and get rid of carbon dioxide, and they work with almost every other system.",
+        "hs": "Every system depends on the lungs for O₂, and the lungs depend on the heart, the brain, the muscles and the blood. Here is how each one connects. Six of them can be watched live on the main body page.",
+        "college": "The lungs are a gas exchanger, an acid–base regulator, a filter, a metabolic organ and an immune barrier. Each card summarises the key couplings.",
+        "phd": "Each card notes the main physiological couplings and a clinically important example of their failure."
+      }
+    }
+  },
+  "conditions": {
+    "healthy": { "name": "Healthy",
+      "ms": "Healthy lungs: stretchy, with wide-open airways.",
+      "hs": "Normal lungs: compliance about 0.2 L per cmH₂O and low airway resistance. FEV₁ is about 80% of FVC.",
+      "college": "Normal: TLC ~6 L, FRC ~2.4 L, RV ~1.2 L; FEV₁/FVC ~0.8; PaO₂ ~95 mmHg with an A–a gradient under 15 mmHg.",
+      "phd": "Reference values vary with age, height, sex and ancestry; GLI-2022 race-neutral equations are now recommended for spirometry." },
+    "asthma": { "name": "Asthma attack",
+      "ms": "In an asthma attack the airway muscles squeeze and the airways fill with sticky mucus, so it’s hard to blow air out. You may wheeze.",
+      "hs": "Airway smooth muscle constricts, the lining swells and mucus builds up, so airway resistance rises, especially when breathing out. FEV₁ falls and air gets trapped in the lungs. Inhalers relax the muscle and calm the inflammation.",
+      "college": "Reversible obstruction from type-2 inflammation (IL-4/5/13, eosinophils, mast cells): bronchospasm, mucosal oedema and mucus plugs. Air trapping raises RV and FRC; V/Q mismatch lowers PaO₂; early on, PaCO₂ is low from hyperventilation, so a ‘normal’ PaCO₂ in an attack is a warning sign.",
+      "phd": "Biologics targeting IL-5, IL-4Rα, IgE and TSLP cut exacerbations in severe asthma; airway remodelling (smooth-muscle hypertrophy, subepithelial fibrosis) can make obstruction partly fixed." },
+    "copd": { "name": "COPD (emphysema)",
+      "ms": "In emphysema, years of smoke break down the walls of the alveoli. The lungs get floppy and baggy, and air gets stuck inside.",
+      "hs": "Destroyed alveolar walls mean less surface for gas exchange and less elastic recoil to hold small airways open, so they collapse when you breathe out. The lungs become over-inflated and the diaphragm flattens.",
+      "college": "Loss of elastic recoil increases compliance and removes the radial traction that holds airways open: expiratory flow limitation, high RV and TLC, low FEV₁/FVC and reduced diffusing capacity. Hyperinflation flattens the diaphragm, which then works at a mechanical disadvantage.",
+      "phd": "Protease–antiprotease imbalance (neutrophil elastase vs α1-antitrypsin) and oxidative stress drive emphysema; severe α1-antitrypsin deficiency (PiZZ) causes panacinar disease at a young age. Lung-volume reduction (valves, surgery) improves mechanics in selected patients." },
+    "fibrosis": { "name": "Pulmonary fibrosis",
+      "ms": "In fibrosis the lungs fill with scar tissue and become stiff and small, so each breath takes more effort and oxygen has a thicker wall to cross.",
+      "hs": "Scarring makes the lungs stiff (low compliance), so lung volumes shrink and breathing becomes fast and shallow. The thickened wall slows oxygen diffusion, so blood oxygen drops, especially on exercise.",
+      "college": "Restrictive defect: reduced TLC, FVC and FEV₁ with a normal or raised FEV₁/FVC (more recoil holds airways open). Diffusion limitation shows as exertional desaturation: the shorter transit time leaves no reserve.",
+      "phd": "Idiopathic pulmonary fibrosis involves aberrant repair of repeatedly injured alveolar epithelium (short telomeres, MUC5B variants) with myofibroblast activation; nintedanib and pirfenidone slow the decline in FVC." },
+    "pneumonia": { "name": "Pneumonia (right lower lobe)",
+      "ms": "In pneumonia, an infection fills some alveoli with fluid and pus, so air can’t get in there. Blood still flows past them and comes back without enough oxygen.",
+      "hs": "Infected alveoli fill with fluid and white cells (consolidation). Blood passing through that part of the lung can’t pick up oxygen, a ‘shunt’, so arterial oxygen falls and breathing speeds up.",
+      "college": "Consolidation creates very low V/Q units and true shunt; hypoxic pulmonary vasoconstriction partly diverts blood away. Shunt responds poorly to extra oxygen because blood never meets the alveolar gas.",
+      "phd": "In lobar pneumonia, failure of hypoxic pulmonary vasoconstriction (sepsis, vasodilators) worsens shunt; prone positioning in ARDS improves oxygenation by redistributing ventilation more evenly with perfusion." },
+    "pe": { "name": "Pulmonary embolism",
+      "ms": "A blood clot has blocked an artery in the lung. Air still gets in, but no blood comes to pick up the oxygen there, so that part of the lung is wasted.",
+      "hs": "A clot (usually from a leg vein) blocks part of the pulmonary arteries. Those alveoli are ventilated but not perfused: dead space. Blood is pushed to the rest of the lung, causing mismatch and lower oxygen; you breathe faster.",
+      "college": "Dead space raises the ventilation needed to clear CO₂; overperfused regions develop low V/Q and arterial O₂ falls, while PaCO₂ is usually low from hyperventilation. A large clot loads the right ventricle.",
+      "phd": "Hypoxaemia in PE arises mainly from V/Q mismatch in overperfused units, low mixed-venous O₂ from reduced cardiac output, and sometimes shunt through a patent foramen ovale; risk stratification uses RV strain and troponin." }
+  },
+  "control": {
+    "hold": { "ms": "Holding your breath: CO₂ builds up and O₂ falls until your brainstem forces you to breathe.", "hs": "Breath-hold: with no ventilation, CO₂ rises and O₂ falls. The urge to breathe comes mainly from rising CO₂; the ‘break point’ usually comes after about a minute.", "college": "During apnoea, alveolar PO₂ falls quickly (small O₂ store) while PCO₂ rises slowly (large CO₂ store). The break point is set mostly by CO₂ and chemoreceptor input; pre-oxygenation or hyperventilation prolongs it.", "phd": "Hyperventilating before a dive delays the CO₂ break point while O₂ keeps falling, risking shallow-water blackout from hypoxia without warning." },
+    "hyper": { "ms": "Breathing fast and deep on purpose blows off CO₂. You might feel tingly or dizzy.", "hs": "Voluntary hyperventilation lowers CO₂ well below 40 mmHg. Blood becomes alkaline, which narrows brain blood vessels (dizziness) and lowers free calcium (tingling). Afterwards breathing slows until CO₂ builds back up.", "college": "Hypocapnia causes respiratory alkalosis, cerebral vasoconstriction and reduced ionised Ca²⁺. After stopping, ventilation is depressed until CO₂ recovers, sometimes with a short apnoea (post-hyperventilation apnoea).", "phd": "The apnoeic threshold sits only a few mmHg below eupnoeic PaCO₂ in sleep, which is why hyperventilation during sleep (arousals, altitude) can trigger central apnoeas." },
+    "co2": { "ms": "Breathing air with extra CO₂ makes you breathe harder, even though there’s plenty of oxygen.", "hs": "Breathing 5% CO₂ raises arterial CO₂, and the chemoreceptors drive ventilation up 2–3-fold: proof that CO₂, not O₂, is the main signal.", "college": "The ventilatory response to CO₂ is roughly linear, ~2 L/min per mmHg, and is steeper when O₂ is low (hypoxic–hypercapnic interaction).", "phd": "Rebreathing tests measure central chemosensitivity; blunted CO₂ responses occur in obesity hypoventilation and with opioids, which act on μ-receptors in the preBötzinger complex." }
+  },
+  "parts": {
+    "trachea": { "name": "Trachea (windpipe)", "kind": "Airway", "systems": ["respiratory", "immune"], "related": ["carina", "cartilage", "cilia"],
+      "ms": "The windpipe is a tube about 12 cm long, held open by rings of cartilage so it never collapses.",
+      "hs": "About 12 cm long and 2 cm wide, held open by 16–20 C-shaped cartilage rings, with muscle at the back. Its sticky, hairy lining traps dust and sweeps it up toward the throat.",
+      "college": "Generation 0 of the airway tree. Air is warmed to 37 °C and fully humidified by the time it reaches the lower trachea. The posterior wall of trachealis muscle lets the oesophagus bulge during swallowing.",
+      "phd": "Tracheal flow is turbulent at rest (Reynolds number > 2,000), which is why breathing a low-density helium–oxygen mix lowers resistance in large-airway obstruction." },
+    "carina": { "name": "Carina", "kind": "Airway", "systems": ["respiratory", "nervous"], "related": ["trachea", "mainBronchi"],
+      "ms": "The carina is the ridge where the windpipe splits in two. Touching it makes you cough very hard.",
+      "hs": "The ridge at the split of the trachea, at about the level of the 4th–5th thoracic vertebra. It is one of the most sensitive spots for the cough reflex.",
+      "college": "Its mucosa is densely innervated by rapidly adapting (irritant) receptors carried in the vagus. Widening of the carinal angle on imaging suggests enlarged lymph nodes or a big left atrium.",
+      "phd": "Airway irritant receptors and C-fibres (TRPV1, TRPA1) mediate cough; their sensitisation underlies chronic refractory cough, now treated with P2X3 antagonists." },
+    "mainBronchi": { "name": "Main bronchi", "kind": "Airway", "systems": ["respiratory"], "related": ["carina", "bronchi"],
+      "ms": "Two big tubes, one for each lung. The right one is wider and steeper, so swallowed things often go that way.",
+      "hs": "The right main bronchus is shorter, wider and more vertical than the left, so inhaled objects and food usually end up in the right lung.",
+      "college": "The right main bronchus gives the upper-lobe bronchus within 2–3 cm; the left is longer, passing under the aortic arch. Aspiration in an upright person favours the right lower lobe.",
+      "phd": "Aspiration pneumonia in a supine patient favours the posterior segment of the upper lobes and superior segments of the lower lobes." },
+    "bronchi": { "name": "Bronchi", "kind": "Airways", "systems": ["respiratory", "nervous", "immune"], "related": ["mainBronchi", "bronchioles", "smoothMuscle", "cartilage"],
+      "ms": "The bronchi branch again and again inside the lungs, carrying air to every part.",
+      "hs": "Lobar bronchi go to each lobe, then segmental bronchi to each of 18–20 bronchopulmonary segments. They have cartilage plates, smooth muscle and mucus glands.",
+      "college": "Generations 1–~11. Medium-sized bronchi contribute most of the airway resistance. Parasympathetic (M3) tone constricts them; β2-adrenergic stimulation (adrenaline, salbutamol) relaxes them.",
+      "phd": "Each bronchopulmonary segment has its own segmental bronchus and artery, so it can be resected surgically on its own; veins run between segments." },
+    "bronchioles": { "name": "Bronchioles", "kind": "Small airways", "systems": ["respiratory", "immune"], "related": ["bronchi", "terminalBronchiole"],
+      "ms": "The smallest tubes, thinner than a pencil lead, with no cartilage.",
+      "hs": "Bronchioles are under 1 mm wide and have no cartilage; they are held open by the pull of the surrounding lung. In asthma their muscle can squeeze them almost shut.",
+      "college": "Club cells in their lining secrete surfactant-like proteins and detoxify inhaled compounds. Their patency depends on radial traction from alveolar walls, which is lost in emphysema.",
+      "phd": "Small airways (< 2 mm) carry ~10–20% of total resistance despite their tiny size because there are so many in parallel, so substantial disease can exist with near-normal spirometry." },
+    "rul": { "name": "Right upper lobe", "kind": "Lobe", "systems": ["respiratory", "circulatory"], "related": ["rml", "rll", "fissures"],
+      "ms": "The top part of the right lung.",
+      "hs": "The right upper lobe sits above the horizontal fissure. Its apex rises just above the collarbone.",
+      "college": "Three segments (apical, posterior, anterior). Higher V/Q and higher alveolar PO₂ at the apex favour reactivation tuberculosis here.",
+      "phd": "A Pancoast tumour at the apex can invade the brachial plexus and sympathetic chain, causing arm pain and Horner syndrome." },
+    "rml": { "name": "Right middle lobe", "kind": "Lobe", "systems": ["respiratory"], "related": ["rul", "rll"],
+      "ms": "The middle part of the right lung. Only the right lung has one.",
+      "hs": "The middle lobe lies between the horizontal and oblique fissures, against the heart’s right border.",
+      "college": "Two segments (lateral and medial). Middle-lobe pneumonia blurs the right heart border on a chest X-ray (silhouette sign).",
+      "phd": "Its long, narrow bronchus surrounded by lymph nodes predisposes to recurrent collapse (middle-lobe syndrome)." },
+    "rll": { "name": "Right lower lobe", "kind": "Lobe", "systems": ["respiratory"], "related": ["rml", "diaphragm"],
+      "ms": "The bottom part of the right lung, sitting on the diaphragm. It gets the most air and blood.",
+      "hs": "The largest lobe sits on the diaphragm. Gravity sends the most blood here, and inhaled food or drink usually ends up here too.",
+      "college": "Five segments. Lower zones receive the most ventilation and the most perfusion (lowest V/Q). It is the most common site of aspiration pneumonia, shown here when you pick pneumonia.",
+      "phd": "Dependent regions also collapse first under anaesthesia and with low lung volumes (atelectasis), a major cause of post-operative hypoxaemia." },
+    "lul": { "name": "Left upper lobe and lingula", "kind": "Lobe", "systems": ["respiratory", "circulatory"], "related": ["lll", "heart"],
+      "ms": "The top part of the left lung, with a little tongue-shaped bit that wraps round the heart.",
+      "hs": "The left lung has only two lobes, because the heart takes up space. The upper lobe includes the lingula, the left equivalent of the middle lobe, next to the cardiac notch.",
+      "college": "The lingula (superior and inferior lingular segments) borders the left heart; lingular consolidation blurs the left heart border.",
+      "phd": "Left lung volume is ~10% smaller than right; the cardiac notch and impression reflect the heart’s leftward position." },
+    "lll": { "name": "Left lower lobe", "kind": "Lobe", "systems": ["respiratory"], "related": ["lul", "diaphragm"],
+      "ms": "The bottom part of the left lung.",
+      "hs": "Sits behind the heart on the diaphragm, below the oblique fissure.",
+      "college": "Collapse of the left lower lobe hides behind the heart on an X-ray (the ‘sail sign’).",
+      "phd": "Left lower lobe collapse is common after cardiac surgery, partly from phrenic nerve cooling and compression by the heart." },
+    "fissures": { "name": "Fissures", "kind": "Lobe borders", "systems": ["respiratory"], "related": ["rul", "rml", "rll", "pleura"],
+      "ms": "Deep grooves that divide the lungs into lobes.",
+      "hs": "The oblique fissures divide both lungs into upper and lower lobes; the right lung has a horizontal fissure too, which makes the middle lobe.",
+      "college": "Fissures are lined by visceral pleura, so lobes slide on one another; incomplete fissures allow collateral ventilation between lobes.",
+      "phd": "Fissure completeness determines whether endobronchial valves can collapse a hyperinflated lobe in emphysema: collateral flow across an incomplete fissure defeats them." },
+    "pleura": { "name": "Pleura", "kind": "Membranes", "systems": ["respiratory", "musculoskeletal", "immune"], "related": ["diaphragm", "ribs"],
+      "ms": "Two thin slippery layers that cover the lungs and line the chest, with a thin film of fluid between them that sticks them together.",
+      "hs": "Visceral pleura covers the lungs and parietal pleura lines the chest wall. The fluid between them is under negative pressure (about −5 cmH₂O), so the lungs stay stuck to the chest wall and follow it out. If air gets in (a pneumothorax), the lung collapses.",
+      "college": "Pleural pressure is negative because the lungs recoil inward while the chest wall springs outward. It is more negative at the apex (about −8) than the base (about −2) when upright, so apical alveoli are more inflated and less compliant.",
+      "phd": "Only the parietal pleura has pain fibres, hence pleuritic pain. Pleural fluid (~0.3 mL/kg) turns over via parietal lymphatic stomata; Light’s criteria separate exudates from transudates." },
+    "diaphragm": { "name": "Diaphragm", "kind": "Muscle", "systems": ["musculoskeletal", "nervous", "respiratory"], "related": ["phrenic", "pleura", "ribs"],
+      "ms": "The diaphragm is a dome-shaped muscle under your lungs. When it pulls down you breathe in. It’s what jumps when you hiccup.",
+      "hs": "The main breathing muscle. When it contracts it flattens and moves down 1–2 cm at rest (up to 10 cm in a deep breath), enlarging the chest. It is driven by the phrenic nerves from the neck (C3–C5).",
+      "college": "Contraction lowers pleural pressure and raises abdominal pressure, which also lifts the lower ribs via the zone of apposition. It does ~70% of quiet breathing; mostly fatigue-resistant type I and IIa fibres.",
+      "phd": "In hyperinflation the diaphragm shortens and flattens, losing its zone of apposition (Laplace: a flatter dome converts tension to pressure poorly) and may even pull the lower ribs inward (Hoover sign)." },
+    "ribs": { "name": "Ribs and intercostal muscles", "kind": "Chest wall", "systems": ["musculoskeletal", "respiratory", "nervous"], "related": ["diaphragm", "pleura"],
+      "ms": "Your ribs protect your lungs. Small muscles between them lift them up when you breathe in, like lifting a bucket handle.",
+      "hs": "External intercostals lift the ribs up and out (bucket-handle and pump-handle movements), widening the chest. Internal intercostals and belly muscles help force air out in exercise or coughing.",
+      "college": "Accessory inspiratory muscles (scalenes, sternocleidomastoids) join at high ventilation. Expiratory muscles (abdominals, internal intercostals) make expiration active above ~40 L/min, as in the run.",
+      "phd": "Chest-wall compliance is similar to lung compliance (~0.2 L/cmH₂O), so total respiratory compliance is ~0.1 L/cmH₂O; obesity and kyphoscoliosis reduce chest-wall compliance and cause restrictive physiology." },
+    "pulmonaryArteries": { "name": "Pulmonary arteries", "kind": "Blood vessels", "systems": ["circulatory", "respiratory"], "related": ["pulmonaryVeins", "capillary"], "link": { "href": "heart.html#anatomy", "label": "See them leave the heart" },
+      "ms": "These bring oxygen-poor blood from the heart to the lungs. They are the only arteries with dark, oxygen-poor blood.",
+      "hs": "The pulmonary arteries branch alongside the airways all the way to the alveoli. They carry the whole cardiac output at a low pressure (about 25/10 mmHg).",
+      "college": "A low-resistance, high-compliance circuit: recruitment and distension let flow triple in exercise with little pressure rise. Uniquely, low alveolar O₂ constricts them (hypoxic pulmonary vasoconstriction).",
+      "phd": "HPV is mediated by mitochondrial redox sensing and closure of O₂-sensitive K⁺ channels in pulmonary artery smooth muscle; chronic global hypoxia causes pulmonary hypertension and RV hypertrophy." },
+    "pulmonaryVeins": { "name": "Pulmonary veins", "kind": "Blood vessels", "systems": ["circulatory", "respiratory"], "related": ["pulmonaryArteries"], "link": { "href": "heart.html#anatomy", "label": "Follow them into the left atrium" },
+      "ms": "These carry bright red, oxygen-rich blood from the lungs back to the heart.",
+      "hs": "Four pulmonary veins carry oxygenated blood to the left atrium. They run between lung segments rather than with the airways.",
+      "college": "Pulmonary venous blood has a PO₂ close to alveolar; the small fall to arterial PO₂ comes from bronchial and Thebesian venous admixture and V/Q mismatch.",
+      "phd": "Raised pulmonary venous pressure (left heart failure, mitral stenosis) causes interstitial then alveolar oedema; Kerley B lines on X-ray are distended interlobular lymphatics." },
+    "heart": { "name": "The heart", "kind": "Neighbour", "systems": ["circulatory"], "related": ["lul", "pulmonaryArteries"], "link": { "href": "heart.html", "label": "Open the heart page" },
+      "ms": "The heart sits between the lungs and pumps blood through them with every beat.",
+      "hs": "The heart sits in the middle of the chest, tilted to the left, which is why the left lung is smaller. Its right side pumps blood through the lungs; its left side receives it back.",
+      "college": "Heart and lungs are coupled in series and mechanically: intrathoracic pressure swings change venous return and left ventricular afterload with each breath.",
+      "phd": "Cardiopulmonary interactions explain pulsus paradoxus, the haemodynamic effects of positive-pressure ventilation and the use of pulse-pressure variation to predict fluid responsiveness." },
+
+    "terminalBronchiole": { "name": "Terminal bronchiole", "kind": "Small airway", "systems": ["respiratory"], "related": ["bronchioles", "respBronchiole"],
+      "ms": "The last pure air tube before the air sacs begin.",
+      "hs": "The last airway of the conducting zone (about generation 16). Everything before it is dead space: air there never meets blood.",
+      "college": "Anatomical dead space (~150 mL, ~2 mL/kg) is the volume from the mouth to the terminal bronchioles; it is breathed in and out unchanged each breath.",
+      "phd": "Fowler’s single-breath nitrogen washout measures anatomical dead space; Bohr’s method (using CO₂) measures physiological dead space, which includes alveolar dead space." },
+    "respBronchiole": { "name": "Respiratory bronchiole and alveolar duct", "kind": "Gas-exchange zone", "systems": ["respiratory"], "related": ["terminalBronchiole", "alveolarSac"],
+      "ms": "Here the tubes start to have little air sacs bulging from their walls.",
+      "hs": "Respiratory bronchioles have a few alveoli in their walls and lead to alveolar ducts lined entirely with alveoli. This is where gas exchange begins.",
+      "college": "One terminal bronchiole and everything beyond it forms an acinus (~4 mm, ~10,000 alveoli). Gas moves here mainly by diffusion, as bulk flow slows to almost nothing.",
+      "phd": "Centriacinar emphysema (smokers) destroys respiratory bronchioles first; panacinar emphysema (α1-antitrypsin deficiency) affects the whole acinus uniformly." },
+    "alveolarSac": { "name": "Alveolar sacs", "kind": "Gas-exchange zone", "systems": ["respiratory"], "related": ["alveolus", "respBronchiole"],
+      "ms": "Bunches of tiny bubbles at the very end, like grapes.",
+      "hs": "Clusters of alveoli at the end of each alveolar duct. Small pores between neighbouring alveoli let air pass from one to another.",
+      "college": "Pores of Kohn and canals of Lambert provide collateral ventilation, which helps prevent collapse distal to a blocked airway.",
+      "phd": "Interdependence: neighbouring alveoli share walls, so a collapsing alveolus is held open by the tension of its neighbours, which stabilises the lung beyond what surfactant alone achieves." },
+    "alveolus": { "name": "Alveolus", "kind": "Air sac", "systems": ["respiratory", "circulatory"], "related": ["typeI", "typeII", "capillary"],
+      "ms": "An alveolus is a tiny air bubble, a third of a millimetre wide. You have about 300 million of them, wrapped in blood vessels.",
+      "hs": "Each alveolus is about 0.2–0.3 mm across and is wrapped in capillaries. Together they give ~70 m² of surface, and the barrier between air and blood is only ~0.5 µm thick.",
+      "college": "The blood–gas barrier is type I cell, fused basement membrane and capillary endothelium. Surface tension of the liquid lining would collapse small alveoli (Laplace: P = 2T/r) without surfactant.",
+      "phd": "The barrier’s thin side (fused basement membranes) is optimised for gas exchange, the thick side (with interstitium) for fluid handling; stress failure of the thin side causes haemorrhage in racehorses and high-altitude oedema." },
+    "typeI": { "name": "Type I alveolar cells", "kind": "Cell", "systems": ["respiratory"], "related": ["alveolus", "typeII"],
+      "ms": "Very thin, flat cells that make the walls of the air sacs. Oxygen passes straight through them.",
+      "hs": "Type I cells are extremely thin, flat cells covering ~95% of the alveolar surface. Gas diffuses across them easily.",
+      "college": "Thin squamous cells (~0.2 µm) that cannot divide; after injury, type II cells proliferate and differentiate to replace them.",
+      "phd": "Type I cells also express aquaporin-5 and Na⁺/K⁺-ATPase, contributing to alveolar fluid clearance." },
+    "typeII": { "name": "Type II alveolar cells", "kind": "Cell", "systems": ["respiratory", "immune"], "related": ["typeI", "alveolus"],
+      "ms": "Little cells that make surfactant, a soapy liquid that stops the air sacs from sticking shut.",
+      "hs": "Type II cells make surfactant, which lowers surface tension so alveoli don’t collapse when you breathe out, and they repair the lining. Premature babies may lack surfactant and struggle to breathe.",
+      "college": "Surfactant (dipalmitoylphosphatidylcholine plus proteins SP-A to SP-D) lowers surface tension more as the alveolus shrinks, stabilising small alveoli and increasing compliance. Production matures from ~34 weeks’ gestation; antenatal steroids speed it.",
+      "phd": "Type II cells are the alveolar stem cells (Barkauskas et al. 2013). SP-A and SP-D are collectins that opsonise pathogens; SP-B deficiency is lethal at birth." },
+    "macrophage": { "name": "Alveolar macrophage", "kind": "Immune cell", "systems": ["immune", "respiratory"], "related": ["alveolus", "cilia"],
+      "ms": "A cleaner cell that crawls around the air sacs eating dust and germs.",
+      "hs": "Alveolar macrophages patrol the alveoli and engulf dust, bacteria and old surfactant. They can’t be swept out by cilia from here, so they eat whatever gets this far.",
+      "college": "Self-renewing, embryonic-derived macrophages that clear surfactant (GM-CSF-dependent) and keep inflammation in check; when overwhelmed they recruit neutrophils.",
+      "phd": "Defective GM-CSF signalling (autoantibodies) causes pulmonary alveolar proteinosis, treated by whole-lung lavage or inhaled GM-CSF. Silica and asbestos kill macrophages and drive fibrosis." },
+    "capillary": { "name": "Pulmonary capillaries", "kind": "Blood vessels", "systems": ["circulatory", "respiratory"], "related": ["alveolus", "pulmonaryArteries"],
+      "ms": "Tiny blood vessels wrapped around each air sac. Red blood cells squeeze through them one at a time.",
+      "hs": "Capillaries form a dense sheet around the alveoli. A red cell spends about three-quarters of a second passing one alveolus, but loads its oxygen in the first quarter.",
+      "college": "Capillary blood volume is ~70 mL at rest, rising to ~200 mL in exercise by recruitment. Transit time = capillary volume / cardiac output.",
+      "phd": "Diffusing capacity has a membrane component and a blood component (θ·Vc) (Roughton–Forster); it is measured with carbon monoxide (DLCO)." },
+    "cartilage": { "name": "Cartilage", "kind": "Airway wall", "systems": ["musculoskeletal", "respiratory"], "related": ["trachea", "bronchi"],
+      "ms": "Tough rings and plates that hold the big airways open.",
+      "hs": "C-shaped rings in the trachea and irregular plates in the bronchi stop the airways collapsing when pressure around them rises, such as during a cough.",
+      "college": "Cartilage disappears at about 1 mm diameter; beyond that, airway patency depends on lung recoil, which is why small airways close at low volumes (closing volume).",
+      "phd": "Tracheobronchomalacia (weak cartilage) causes dynamic collapse; relapsing polychondritis attacks airway cartilage directly." },
+    "smoothMuscle": { "name": "Airway smooth muscle", "kind": "Airway wall", "systems": ["musculoskeletal", "nervous", "immune"], "related": ["bronchi", "bronchioles"],
+      "ms": "A ring of muscle around each airway. In asthma it squeezes too hard and the tube gets narrow.",
+      "hs": "The vagus nerve tightens it and adrenaline relaxes it. Because resistance depends on the radius to the fourth power, halving an airway’s radius makes it 16 times harder to breathe through.",
+      "college": "M3 (acetylcholine) contracts it; β2 receptors relax it via cAMP. Mast-cell histamine and leukotrienes trigger bronchospasm. Watch the close-up narrow when you pick asthma.",
+      "phd": "Poiseuille’s law applies only to laminar flow, but the steep radius dependence holds generally; muscle shortening is amplified by a thickened wall in asthma (geometric amplification)." },
+    "cilia": { "name": "Ciliated epithelium", "kind": "Airway lining", "systems": ["immune", "respiratory"], "related": ["goblet", "mucus", "trachea"],
+      "ms": "The airways are lined with tiny hairs that wave about 15 times a second, sweeping mucus and dirt up to your throat.",
+      "hs": "Each cell has ~200 cilia that beat in waves, carrying the mucus layer up at a few mm a minute: the mucociliary escalator. You swallow it without noticing. Smoking paralyses the cilia.",
+      "college": "Cilia beat in the thin periciliary liquid and tip the mucus layer above; airway surface liquid depth is set by CFTR (Cl⁻ secretion) and ENaC (Na⁺ absorption).",
+      "phd": "In cystic fibrosis, loss of CFTR dehydrates the airway surface so mucus collapses onto the cilia; CFTR modulators (elexacaftor–tezacaftor–ivacaftor) restore it. Primary ciliary dyskinesia causes bronchiectasis and situs inversus." },
+    "goblet": { "name": "Goblet cells", "kind": "Airway lining", "systems": ["immune", "respiratory"], "related": ["mucus", "cilia"],
+      "ms": "Cells shaped like wine glasses that make mucus.",
+      "hs": "Goblet cells and deeper glands make mucus, which traps dust and germs. In asthma and in smokers they multiply and make too much.",
+      "college": "They secrete gel-forming mucins MUC5AC and MUC5B; IL-13 drives goblet-cell hyperplasia in asthma.",
+      "phd": "The MUC5B promoter variant, which raises MUC5B expression, is the strongest genetic risk factor for idiopathic pulmonary fibrosis." },
+    "mucus": { "name": "Mucus layer", "kind": "Airway lining", "systems": ["immune"], "related": ["goblet", "cilia"],
+      "ms": "A thin sticky blanket that catches dust and germs.",
+      "hs": "About 10–100 mL of mucus is made each day, carried up by the cilia and swallowed. In an asthma attack thick plugs can block small airways.",
+      "college": "A gel layer over a watery sol layer; it contains antimicrobials (lysozyme, lactoferrin, defensins) and IgA.",
+      "phd": "Mucus plugs on CT predict poor lung function and mortality in asthma and COPD; mucolytics and anti-IL-5/IL-4Rα biologics reduce them." },
+
+    "cortex": { "name": "Cerebral cortex", "kind": "Voluntary control", "systems": ["nervous"], "related": ["medulla"],
+      "ms": "The thinking part of your brain lets you hold your breath, sing or blow out candles.",
+      "hs": "The cortex can override the brainstem for speaking, singing, holding your breath or hyperventilating, but only for a while: the brainstem always wins in the end.",
+      "college": "Corticospinal fibres bypass the brainstem rhythm generator to reach respiratory motor neurons directly; emotional and limbic inputs also modulate breathing.",
+      "phd": "Dissociation of voluntary and automatic control shows in locked-in syndrome (automatic preserved) and Ondine’s curse (automatic lost, voluntary preserved)." },
+    "pons": { "name": "Pontine respiratory group", "kind": "Brainstem", "systems": ["nervous"], "related": ["medulla"],
+      "ms": "A part of the brainstem that smooths out breathing.",
+      "hs": "Centres in the pons fine-tune the switch from breathing in to breathing out, keeping breathing smooth.",
+      "college": "The Kölliker–Fuse and parabrachial nuclei regulate the inspiratory–expiratory phase switch; with them and the vagi cut, apneustic breathing results.",
+      "phd": "Kölliker–Fuse dysfunction is implicated in the breathing irregularities of Rett syndrome and in opioid-induced respiratory depression." },
+    "medulla": { "name": "Medullary rhythm generator", "kind": "Brainstem", "systems": ["nervous"], "related": ["pons", "phrenic", "centralChemo"],
+      "ms": "The part of the brainstem that sets the beat of your breathing, like a drummer.",
+      "hs": "Neurons in the medulla fire in rhythmic bursts that make each breath. They adjust the rate and depth from what the chemoreceptors and lung stretch sensors tell them.",
+      "college": "The preBötzinger complex generates inspiratory rhythm; the parafacial group drives active expiration; dorsal and ventral respiratory groups integrate inputs and project to phrenic and intercostal motor neurons.",
+      "phd": "PreBötzinger neurons expressing neurokinin-1 receptors and Dbx1 are necessary for breathing (Gray et al. 2001); their sensitivity to μ-opioids explains fatal opioid respiratory depression." },
+    "centralChemo": { "name": "Central chemoreceptors", "kind": "Sensor", "systems": ["nervous"], "related": ["medulla", "carotidBody"],
+      "ms": "Sensors in the brainstem that measure carbon dioxide. When there’s too much, they make you breathe harder.",
+      "hs": "Near the surface of the medulla, they sense the acidity of the brain fluid, which rises when blood CO₂ rises (CO₂ crosses into the brain easily). They provide most of the drive to breathe.",
+      "college": "CO₂ diffuses across the blood–brain barrier and forms H⁺ in poorly buffered CSF; neurons in the retrotrapezoid nucleus respond. They provide ~70% of the steady-state CO₂ response, with a delay of ~1–2 min.",
+      "phd": "RTN neurons (Phox2b-positive) are lost in congenital central hypoventilation syndrome (PHOX2B mutations), in which ventilation fails in sleep." },
+    "carotidBody": { "name": "Carotid bodies", "kind": "Sensor", "systems": ["nervous", "circulatory", "endocrine"], "related": ["aorticBody", "centralChemo"],
+      "ms": "Tiny sensors in your neck that sense when oxygen is low and shout ‘breathe more!’.",
+      "hs": "At the fork of each carotid artery, these rice-grain-sized organs sense low O₂ (and high CO₂ and acid) in arterial blood. They are why you breathe harder at altitude. Signals travel in the glossopharyngeal nerve.",
+      "college": "Glomus (type I) cells sense hypoxia via O₂-sensitive K⁺ channels and mitochondria, depolarise and release ATP and dopamine onto afferent fibres. The response rises steeply below PaO₂ ~60 mmHg and is fast (seconds).",
+      "phd": "Carotid body sensitisation drives sympathetic overactivity in heart failure, sleep apnoea and some hypertension; the 2019 Nobel Prize recognised the HIF pathway of O₂ sensing." },
+    "aorticBody": { "name": "Aortic bodies", "kind": "Sensor", "systems": ["nervous", "circulatory"], "related": ["carotidBody"],
+      "ms": "More oxygen sensors, on the aorta near the heart.",
+      "hs": "Small chemoreceptors on the aortic arch that send signals in the vagus nerve. They matter much less for breathing than the carotid bodies.",
+      "college": "They respond more to falls in O₂ content (anaemia, CO) than to PaO₂ and mainly influence circulation rather than ventilation.",
+      "phd": "After bilateral carotid body resection, hypoxic ventilatory response is largely abolished, showing the minor role of aortic bodies in humans." },
+    "stretch": { "name": "Lung stretch receptors", "kind": "Sensor", "systems": ["nervous", "respiratory"], "related": ["medulla", "bronchi"],
+      "ms": "Sensors in the airways that tell the brain when the lungs are full.",
+      "hs": "Slowly adapting stretch receptors in the airway muscle fire as the lungs inflate and help end each breath in (the Hering–Breuer reflex), especially with big breaths.",
+      "college": "Afferents in the vagus; in adult humans the Hering–Breuer reflex is weak at normal tidal volumes but important in infants and during exercise. Rapidly adapting receptors and C-fibres mediate cough and the sensation of breathlessness.",
+      "phd": "The mismatch between motor command and afferent feedback (neuromechanical dissociation) is thought to underlie the sensation of dyspnoea." },
+    "phrenic": { "name": "Phrenic nerves", "kind": "Motor nerve", "systems": ["nervous", "musculoskeletal"], "related": ["diaphragm", "medulla"],
+      "ms": "The nerves from your neck that tell the diaphragm to pull down. ‘C3, 4, 5 keep the diaphragm alive.’",
+      "hs": "Each phrenic nerve comes from spinal nerves C3–C5 in the neck and runs down past the heart to the diaphragm. The dots show its bursts, one with each breath in.",
+      "college": "Phrenic discharge ramps up during inspiration (recruiting more motor units and higher firing rates), then stops abruptly. A spinal cord injury above C3 stops breathing; below C5 the diaphragm still works.",
+      "phd": "Phrenic nerve stimulation and diaphragm pacing can free high cervical injury patients from ventilators; the phrenic is also at risk during cardiac surgery and AF ablation." }
+  },
+  "lens": {
+    "circulatory": {
+      "ms": "The whole of your blood passes through your lungs every minute to pick up oxygen. The right side of the heart pumps it there.",
+      "hs": "The lungs receive the entire cardiac output through the pulmonary arteries. Blood picks up O₂ and drops CO₂, then returns to the left heart. Breathing in helps suck blood back to the heart.",
+      "college": "The pulmonary circulation is a low-pressure filter that also converts angiotensin I to II (ACE on its endothelium), clears serotonin and bradykinin, and catches small clots before they reach the brain.",
+      "phd": "Pulmonary vascular resistance is lowest at FRC: at high volumes alveolar vessels are compressed, at low volumes extra-alveolar vessels narrow. Pulmonary hypertension of any cause ends in right heart failure." },
+    "nervous": {
+      "ms": "Your brainstem keeps you breathing automatically, even when you’re asleep, and your thinking brain can take over when you want to sing or hold your breath.",
+      "hs": "The brainstem sets the rhythm, chemoreceptors and stretch receptors give feedback, and the phrenic and intercostal nerves drive the muscles. The vagus also controls airway width and the cough reflex.",
+      "college": "Automatic control (brainstem) and voluntary control (cortex) use separate pathways. Parasympathetic tone constricts airways; there is little direct sympathetic innervation of airway muscle, so circulating adrenaline acts on β2 receptors.",
+      "phd": "Dyspnoea is processed in the insula and anterior cingulate, much like pain, and is modulated by expectation and anxiety; opioids relieve it partly through central effects." },
+    "endocrine": {
+      "ms": "The lungs help make a hormone that controls blood pressure, and adrenaline opens up your airways.",
+      "hs": "Lung blood vessels contain ACE, the enzyme that turns angiotensin I into angiotensin II, a hormone that raises blood pressure and tells the adrenal glands to release aldosterone. Adrenaline widens the airways.",
+      "college": "Pulmonary ACE activates angiotensin and inactivates bradykinin (hence ACE-inhibitor cough). Neuroendocrine cells in the airways release serotonin and peptides; small-cell lung cancer derives from them and can secrete ADH or ACTH.",
+      "phd": "SARS-CoV-2 enters through ACE2, which degrades angiotensin II; its loss may tilt the lung towards inflammation and injury." },
+    "respiratory": {
+      "ms": "The lungs are the heart of the respiratory system, but the nose, throat, windpipe and breathing muscles are part of it too.",
+      "hs": "The respiratory system includes the nose and sinuses (warming and filtering), the throat and larynx, the airway tree, the lungs, and the muscles and nerves that move air.",
+      "college": "Four processes: ventilation, diffusion, perfusion and control. A failure of any one causes respiratory failure: type 1 (low O₂) or type 2 (high CO₂, ventilatory failure).",
+      "phd": "Respiratory failure is classified by mechanism (lung failure vs pump failure); non-invasive ventilation unloads the pump and is most effective in hypercapnic COPD exacerbations." },
+    "digestive": {
+      "ms": "You can’t breathe and swallow at the same time: a little flap stops food going into your windpipe. The diaphragm also helps you poo.",
+      "hs": "The airway and food tube share the throat; the epiglottis and vocal cords close to protect the lungs during swallowing. Taking a breath and bearing down with the diaphragm raises belly pressure for vomiting and passing stools.",
+      "college": "Aspiration of gastric contents causes chemical pneumonitis and infection; reflux can trigger cough and asthma. The lungs can also stop food fat going to the brain because chylomicrons pass the lungs first.",
+      "phd": "Microaspiration of gastric contents is linked to IPF progression and lung transplant rejection; the gut–lung axis (microbiome metabolites like short-chain fatty acids) modulates allergic airway inflammation." },
+    "urinary": {
+      "ms": "The lungs and kidneys work together to keep your blood from getting too acidic.",
+      "hs": "The lungs remove acid fast by breathing out CO₂; the kidneys remove it slowly by excreting acid and keeping bicarbonate. If one fails, the other tries to compensate.",
+      "college": "pH = 6.1 + log(HCO₃⁻ / 0.03·PaCO₂). The lungs change PaCO₂ within minutes; the kidneys change HCO₃⁻ over days. Metabolic acidosis triggers deep, fast Kussmaul breathing; chronic CO₂ retention triggers renal bicarbonate retention.",
+      "phd": "Winter’s formula (expected PaCO₂ = 1.5·HCO₃⁻ + 8 ± 2) tests whether respiratory compensation for metabolic acidosis is appropriate; at altitude renal bicarbonate loss allows ventilation to keep rising over days (ventilatory acclimatisation)." },
+    "immune": {
+      "ms": "Every breath brings in dust and germs. Sticky mucus, sweeping hairs and cleaner cells keep your lungs clean.",
+      "hs": "Defences include nose hairs, the cough reflex, the mucociliary escalator, antibodies (IgA) in mucus and alveolar macrophages. Allergies and asthma happen when the immune system overreacts to harmless things.",
+      "college": "Lymphoid tissue (BALT) and lymph nodes at the hila sample inhaled antigens. Type-2 immunity drives allergic asthma; neutrophilic inflammation drives COPD exacerbations.",
+      "phd": "Trained immunity in alveolar macrophages after infection, and tissue-resident memory T cells in the airways, shape protection against later respiratory infections and are targets for mucosal vaccines." },
+    "musculoskeletal": {
+      "ms": "Your diaphragm and rib muscles do the work of breathing, and your ribs protect your lungs.",
+      "hs": "The diaphragm, intercostals and, in hard breathing, neck and belly muscles move air. Working leg muscles in the run make the CO₂ that drives your breathing up.",
+      "college": "Respiratory muscles can use up to 10–15% of total O₂ uptake in maximal exercise; their metaboreflex can steal blood flow from the legs. Bone marrow makes the red cells that carry O₂.",
+      "phd": "Respiratory muscle unloading (proportional assist ventilation) raises leg blood flow and endurance in COPD, evidence for a respiratory–locomotor blood-flow competition." },
+    "integumentary": {
+      "ms": "If your blood has too little oxygen, your lips and fingertips can look blue.",
+      "hs": "Low blood oxygen can cause cyanosis, a blue tinge to the lips, tongue and nail beds. Long-term low oxygen can cause clubbing of the fingertips. A finger clip measures O₂ saturation through the skin.",
+      "college": "Central cyanosis appears when deoxygenated haemoglobin exceeds ~5 g/dL in capillary blood, so it is harder to see in anaemia. Pulse oximetry compares red and infrared absorption.",
+      "phd": "Pulse oximeters overestimate saturation in people with darker skin, leading to missed hypoxaemia (Sjoding et al. 2020); regulators now require more diverse validation." },
+    "reproductive": {
+      "ms": "Before birth a baby doesn’t breathe air; it gets oxygen from its mother. Its first breath at birth opens the lungs.",
+      "hs": "In pregnancy, progesterone makes the mother breathe more, lowering her CO₂ so the baby’s CO₂ can cross the placenta. At birth, the first breaths inflate the lungs, blood flow to them jumps and the baby’s circulation switches to its adult pattern.",
+      "college": "Maternal minute ventilation rises ~40% (PaCO₂ ~30 mmHg); the growing uterus lowers FRC. Fetal haemoglobin’s left-shifted curve helps it take O₂ from maternal blood. Surfactant matures late in gestation.",
+      "phd": "Lung liquid is cleared at birth by ENaC-mediated Na⁺ absorption triggered by adrenaline and O₂; failure causes transient tachypnoea of the newborn, more common after caesarean section." }
+  }
+}
+</script>
+<script type="application/json" id="organ-glossary">
+{
+  "alveoli": { "def": "Tiny air sacs at the end of the airways where gas exchange happens.", "match": ["alveoli", "alveolar"] },
+  "bronchi": { "def": "The large airways that branch from the trachea into the lungs.", "match": ["bronchi", "bronchus"] },
+  "bronchioles": { "def": "Small airways (under 1 mm) without cartilage.", "match": ["bronchioles"] },
+  "diaphragm": { "def": "The dome-shaped muscle under the lungs; the main muscle of breathing.", "match": ["diaphragm"] },
+  "pleural pressure": { "def": "The pressure in the thin fluid layer between the lungs and the chest wall, normally below air pressure.", "match": ["pleural pressure"] },
+  "compliance": { "def": "How easily the lungs stretch: the change in volume for a change in pressure.", "match": ["compliance"] },
+  "dead space": { "def": "Air that is breathed in but never reaches gas exchange (airways, or alveoli without blood).", "match": ["dead space"] },
+  "tidal volume": { "def": "The amount of air breathed in or out in one normal breath, about 500 mL at rest.", "match": ["tidal volume"] },
+  "minute ventilation": { "def": "Total air breathed per minute: breathing rate × tidal volume.", "match": ["minute ventilation"] },
+  "FEV₁": { "def": "Forced expiratory volume in 1 second: how much you can blow out in the first second.", "match": ["FEV₁"] },
+  "FVC": { "def": "Forced vital capacity: everything you can blow out after a full breath in.", "match": ["FVC"] },
+  "partial pressure": { "def": "The share of the total gas pressure due to one gas; gases diffuse from high to low partial pressure.", "match": ["partial pressure"] },
+  "diffusion": { "def": "Movement of molecules from where they are concentrated to where they are not.", "match": ["diffusion"] },
+  "haemoglobin": { "def": "The iron-containing protein in red cells that carries oxygen.", "match": ["haemoglobin"] },
+  "surfactant": { "def": "A soapy mix of fats and proteins that lowers surface tension in the alveoli.", "match": ["surfactant"] },
+  "shunt": { "def": "Blood that passes through the lungs without meeting any air.", "match": ["shunt"] },
+  "V/Q": { "def": "Ventilation/perfusion ratio: how much air an area gets compared with how much blood.", "match": ["V/Q"] },
+  "chemoreceptors": { "def": "Sensors that detect chemicals: here O₂, CO₂ and acid in the blood or brain fluid.", "match": ["chemoreceptors", "chemoreflex"] },
+  "phrenic nerves": { "def": "Nerves from C3–C5 in the neck that drive the diaphragm.", "match": ["phrenic nerves", "phrenic"] },
+  "brainstem": { "def": "The base of the brain (midbrain, pons, medulla) that runs automatic functions like breathing.", "match": ["brainstem"] },
+  "carotid bodies": { "def": "Tiny O₂ sensors at the fork of each carotid artery in the neck.", "match": ["carotid bodies"] },
+  "Bohr effect": { "def": "Acid and CO₂ make haemoglobin release oxygen more easily.", "match": ["Bohr effect"] },
+  "cilia": { "def": "Tiny beating hairs on airway cells that move mucus.", "match": ["cilia"] },
+  "A–a gradient": { "def": "The difference between alveolar and arterial O₂; a high value means gas exchange is impaired.", "match": ["A–a gradient"] }
+}
+</script>
+
+<script>
+/* ===== ORGAN ENGINE JS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+window.OrganPage = (() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function el(tag, attrs = {}, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const readJSON = id => { const n = document.getElementById(id); return n ? JSON.parse(n.textContent) : {}; };
+const storage = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wrapH = h => ((h % 24) + 24) % 24;
+
+const META = readJSON("organ-meta"), CONTENT = readJSON("organ-content"), GLOSSARY = readJSON("organ-glossary");
+
+/* shared with ../index.html: the same levels, phases and day plan */
+const LEVELS = [
+  { id: "ms", label: "Middle school", short: "Middle" },
+  { id: "hs", label: "High school", short: "High" },
+  { id: "college", label: "College", short: "College" },
+  { id: "phd", label: "PhD / MD", short: "PhD" }
+];
+const LEVEL_INDEX = Object.fromEntries(LEVELS.map((l, i) => [l.id, i]));
+/* typical vitals in each phase of the main page's day (its PHYSIO keyframes at rep) */
+const PHASES = [
+  { id: "sleep", label: "Sleep", rep: 3, color: "#5b62b3", vitals: { hr: 52, sbp: 105, dbp: 63, rr: 11.5, sv: 74, temp: 36.5 } },
+  { id: "rest", label: "Rest", rep: 10.5, color: "#2f8f83", vitals: { hr: 68, sbp: 118, dbp: 76, rr: 14, sv: 69, temp: 36.9 } },
+  { id: "meal", label: "Meal", rep: 12.75, color: "#d08a26", vitals: { hr: 74, sbp: 117, dbp: 76, rr: 14, sv: 69, temp: 37 } },
+  { id: "exercise", label: "Exercise", rep: 17.5, color: "#d9473a", vitals: { hr: 152, sbp: 165, dbp: 76, rr: 38, sv: 106, temp: 37.9 } }
+];
+const PHASE_BY_ID = Object.fromEntries(PHASES.map(p => [p.id, p]));
+const SCHEDULE = [
+  { phase: "sleep", from: 23, to: 6.5 }, { phase: "meal", from: 7.25, to: 8.5 }, { phase: "meal", from: 12.25, to: 13.5 },
+  { phase: "exercise", from: 17, to: 18.25 }, { phase: "meal", from: 19, to: 20.25 }
+];
+const inRange = (h, a, b) => a <= b ? h >= a && h < b : h >= a || h < b;
+function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.from, e.to)) return e.phase; return "rest"; }
+
+/* every body system; main = it can be animated on the main page (same id there) */
+const SYSTEMS = [
+  { id: "circulatory", name: "Circulatory", color: "#c2414b", main: true },
+  { id: "nervous", name: "Nervous", color: "#d9a21b", main: true },
+  { id: "endocrine", name: "Endocrine", color: "#8a5cc4", main: true },
+  { id: "respiratory", name: "Respiratory", color: "#3f8fe0", main: true },
+  { id: "digestive", name: "Digestive", color: "#c4702e", main: true },
+  { id: "urinary", name: "Urinary", color: "#1597a8", main: true },
+  { id: "immune", name: "Immune & lymphatic", color: "#5f9e4b" },
+  { id: "musculoskeletal", name: "Muscles & skeleton", color: "#b0603a" },
+  { id: "integumentary", name: "Skin", color: "#c98a6b" },
+  { id: "reproductive", name: "Reproductive", color: "#c2569a" }
+];
+const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
+
+/* ---------- store ---------- */
+const params = new URLSearchParams(location.search);
+const urlLevel = params.get("level"), savedLevel = storage.get("humanphysiology.level");
+const urlHour = parseFloat(params.get("hour"));
+const startHour = Number.isFinite(urlHour) ? wrapH(urlHour) : PHASE_BY_ID.rest.rep;
+let state = {
+  level: LEVEL_INDEX[urlLevel] !== undefined ? urlLevel : LEVEL_INDEX[savedLevel] !== undefined ? savedLevel : "hs",
+  hour: startHour, phase: phaseAt(startHour),
+  speed: 1, paused: reducedMotion, sel: {}
+};
+const subs = new Set();
+function set(patch){
+  const prev = state; state = { ...state, ...patch };
+  if (patch.hour !== undefined && patch.phase === undefined) state.phase = phaseAt(state.hour);
+  subs.forEach(f => f(state, prev));
+}
+const subscribe = f => (subs.add(f), () => subs.delete(f));
+
+/* ---------- content ---------- */
+function get(path, root = CONTENT){ return String(path).split(".").reduce((o, k) => o == null ? undefined : o[k], root); }
+function levelText(v, level = state.level){
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  /* keyed by phase first? take the current phase, else rest, else the first one */
+  if (!LEVELS.some(l => v[l.id] !== undefined) && PHASES.some(p => v[p.id] !== undefined))
+    v = v[state.phase] ?? v.rest ?? v[PHASES.find(p => v[p.id] !== undefined).id];
+  if (typeof v === "string") return v;
+  if (!v) return "";
+  const li = LEVEL_INDEX[level];
+  for (let i = li; i >= 0; i--) if (v[LEVELS[i].id]) return v[LEVELS[i].id];
+  for (let i = li + 1; i < LEVELS.length; i++) if (v[LEVELS[i].id]) return v[LEVELS[i].id];
+  return "";
+}
+/* glossary: link the first use of each term in a block of text */
+const TERMS = Object.entries(GLOSSARY).flatMap(([k, g]) => (g.match || [k]).map(m => [m, k])).sort((a, b) => b[0].length - a[0].length);
+const termRe = TERMS.length ? new RegExp("\\b(" + TERMS.map(t => t[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b", "gi") : null;
+const termKey = Object.fromEntries(TERMS.map(([m, k]) => [m.toLowerCase(), k]));
+function linkify(s){
+  const out = esc(s);
+  if (!termRe) return out;
+  const used = new Set();
+  return out.replace(termRe, m => {
+    const k = termKey[m.toLowerCase()];
+    if (!k || used.has(k)) return m;
+    used.add(k);
+    return `<span class="term" tabindex="0" data-term="${esc(k)}">${m}</span>`;
+  });
+}
+const text = v => linkify(levelText(v));
+const pips = li => `<span class="pips" aria-hidden="true">${LEVELS.map((_, i) => `<b class="${i <= li ? "on" : ""}"></b>`).join("")}</span>`;
+
+/* ---------- links back into the main page ---------- */
+function href(extra = {}){
+  const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString(), ...extra });
+  for (const [k, v] of [...p]) if (v === "" || v === "null" || v === "undefined") p.delete(k);
+  return "../index.html?" + p.toString();
+}
+
+/* ---------- theme-aware colours ---------- */
+let colorCache = {};
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { colorCache = {}; set({}); });
+function color(name){
+  if (!(name in colorCache)) colorCache[name] = getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
+  return colorCache[name];
+}
+
+/* ---------- tooltip (glossary terms and parts) ---------- */
+const tip = document.createElement("div"); tip.className = "tip"; tip.setAttribute("role", "tooltip");
+let tipFor = null;
+function showTip(target, html, x, y){
+  tipFor = target; tip.innerHTML = html; tip.classList.add("on");
+  const r = target.getBoundingClientRect();
+  const px = x ?? r.left + r.width / 2, py = y ?? r.top;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, px - w / 2)) + "px";
+  tip.style.top = (py - h - 10 < 8 ? py + 18 : py - h - 10) + "px";
+}
+function hideTip(target){ if (!target || tipFor === target){ tip.classList.remove("on"); tipFor = null; } }
+
+/* ---------- parts ---------- */
+function partName(id){ const p = CONTENT.parts && CONTENT.parts[id]; return p ? p.name : id; }
+function sectionOf(node){ const s = node.closest("[data-section]"); return s ? s.id : ""; }
+function bindParts(root = document){
+  $$("[data-part]", root).forEach(n => {
+    if (n.__bound) return; n.__bound = true;
+    n.setAttribute("tabindex", "0"); n.setAttribute("role", "button");
+    n.setAttribute("aria-label", partName(n.dataset.part));
+    n.addEventListener("pointermove", e => { if (e.pointerType === "mouse") showTip(n, `<b>${esc(partName(n.dataset.part))}</b>`, e.clientX, e.clientY); });
+    n.addEventListener("pointerleave", () => hideTip(n));
+    n.addEventListener("click", e => { e.stopPropagation(); select(sectionOf(n), n.dataset.part); });
+    n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); select(sectionOf(n), n.dataset.part); } });
+  });
+  markSelected();
+}
+function select(section, part){ set({ sel: { ...state.sel, [section]: part } }); }
+function markSelected(){
+  $$(".is-sel").forEach(n => n.classList.remove("is-sel"));
+  for (const [sec, part] of Object.entries(state.sel)){
+    const root = document.getElementById(sec); if (!root || !part) continue;
+    $$(`[data-part="${CSS.escape(part)}"]`, root).forEach(n => n.classList.add("is-sel"));
+  }
+}
+function renderInspectors(){
+  $$("[data-inspector]").forEach(box => {
+    const sec = sectionOf(box), id = state.sel[sec], p = id && CONTENT.parts[id];
+    const hint = box.dataset.hint || get(`sections.${sec}.hint`);
+    if (!p){ box.innerHTML = `<p class="insp-empty">${esc(levelText(hint) || "Tap or hover over a part of the figure to learn about it.")}</p>`; return; }
+    const li = LEVEL_INDEX[state.level];
+    const sys = (p.systems || []).filter(s => SYSTEM_BY_ID[s]).map(s => `<a class="chip" href="#lens-${s}" style="--c:${SYSTEM_BY_ID[s].color}"><i></i>${esc(SYSTEM_BY_ID[s].name)}</a>`).join("");
+    const rel = (p.related || []).filter(r => CONTENT.parts[r]).map(r => `<button type="button" class="chip" data-goto="${esc(r)}">${esc(CONTENT.parts[r].name)}</button>`).join("");
+    const extra = box.__extra ? box.__extra(id, p) : "";
+    const link = p.link ? `<div class="chips"><a class="chip on" href="${esc(p.link.href)}">${esc(p.link.label)} ›</a></div>` : "";
+    box.innerHTML = `
+      ${p.kind ? `<p class="insp-kind">${esc(p.kind)}</p>` : ""}
+      <h3>${esc(p.name)}</h3>
+      <p class="lvl">${pips(li)}${esc(LEVELS[li].label)}</p>
+      <p class="prose">${text(p)}</p>
+      ${extra}
+      ${link}
+      ${rel ? `<div class="chips">${rel}</div>` : ""}
+      ${sys ? `<div class="chips">${sys}</div>` : ""}`;
+    $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
+      const target = b.dataset.goto, home = document.getElementById(sec).querySelector(`[data-part="${CSS.escape(target)}"]`);
+      if (home) select(sec, target);
+      else { const other = document.querySelector(`[data-part="${CSS.escape(target)}"]`); if (other){ const s2 = sectionOf(other); select(s2, target); document.getElementById(s2).scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); } }
+    }));
+  });
+}
+
+/* ---------- controls ---------- */
+function choice(host, { options, value, onChange, label }){
+  const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "radiogroup");
+  if (label) seg.setAttribute("aria-label", label);
+  seg.innerHTML = options.map(([v, l, s]) => `<button type="button" role="radio" data-v="${esc(v)}" aria-checked="${v === value}"><span class="f">${esc(l)}</span><span class="s">${esc(s || l)}</span></button>`).join("");
+  const sync = v => $$("button", seg).forEach(b => b.setAttribute("aria-checked", String(b.dataset.v === String(v))));
+  seg.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; sync(b.dataset.v); onChange(b.dataset.v); });
+  host.appendChild(seg);
+  return { el: seg, set: sync };
+}
+const PLAY = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z" fill="currentColor"/></svg>';
+const PAUSE = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg>';
+function buildControls(){
+  const host = $("[data-controls]"); if (!host) return;
+  const ctl = (label) => { const d = document.createElement("div"); d.className = "op-ctl"; d.innerHTML = `<span>${esc(label)}</span>`; host.appendChild(d); return d; };
+  const lv = choice(ctl("Reading level"), { label: "Reading level", options: LEVELS.map(l => [l.id, l.label, l.short]), value: state.level, onChange: v => set({ level: v }) });
+  const ph = choice(ctl("Part of the day"), { label: "Part of the day", options: PHASES.map(p => [p.id, p.label]), value: state.phase, onChange: v => set({ hour: PHASE_BY_ID[v].rep, phase: v }) });
+  const sp = ctl("Speed");
+  const play = document.createElement("button"); play.type = "button"; play.className = "op-play";
+  sp.appendChild(play);
+  const spd = choice(sp, { label: "Speed", options: [["1", "Real time", "1×"], ["0.25", "¼ speed", "¼×"], ["0.1", "1⁄10", "⅒×"]], value: String(state.speed), onChange: v => set({ speed: +v, paused: false }) });
+  play.addEventListener("click", () => set({ paused: !state.paused }));
+  const sync = s => {
+    lv.set(s.level); ph.set(s.phase); spd.set(String(s.speed));
+    play.innerHTML = s.paused ? PLAY : PAUSE; play.setAttribute("aria-label", s.paused ? "Play" : "Pause");
+  };
+  subscribe(sync); sync(state);
+}
+function buildNav(){
+  const nav = $("[data-nav]"); if (!nav) return;
+  const secs = $$("[data-section]");
+  nav.innerHTML = secs.map(s => `<a href="#${s.id}">${esc(get(`sections.${s.id}.nav`) || get(`sections.${s.id}.title`) || s.id)}</a>`).join("");
+  const links = $$("a", nav);
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting){ links.forEach(a => a.setAttribute("aria-current", String(a.getAttribute("href") === "#" + e.target.id))); } });
+  }, { rootMargin: "-40% 0px -55% 0px" });
+  secs.forEach(s => io.observe(s));
+}
+
+/* ---------- hero: phase note and live stats ---------- */
+function buildNow(){
+  const box = $("[data-now]"); if (!box) return;
+  const stats = (META.stats || []).map(s => `<div class="stat" data-stat="${esc(s.id)}"><div class="l">${esc(s.label)}</div><div class="v">–<small>${esc(s.unit || "")}</small></div><div class="u"></div></div>`).join("");
+  box.innerHTML = `<p class="now-head"><i></i><span data-now-title></span></p><p class="t" data-now-text></p>${stats ? `<div class="stats">${stats}</div>` : ""}`;
+}
+function renderNow(){
+  const box = $("[data-now]"); if (!box) return;
+  const p = PHASE_BY_ID[state.phase];
+  box.style.setProperty("--pc", p.color);
+  $("[data-now-title]", box).textContent = `Right now: ${p.label.toLowerCase()}`;
+  $("[data-now-text]", box).innerHTML = text(get("phases"));
+}
+function setStat(id, value, sub){
+  const n = document.querySelector(`[data-stat="${CSS.escape(id)}"]`); if (!n) return;
+  const v = n.querySelector(".v"), unit = (META.stats.find(s => s.id === id) || {}).unit || "";
+  const html = `${esc(value)}<small>${esc(unit)}</small>`;
+  if (v.__h !== html){ v.innerHTML = html; v.__h = html; }
+  if (sub !== undefined){ const u = n.querySelector(".u"); if (u.textContent !== sub) u.textContent = sub; }
+}
+
+/* ---------- text slots and the lens ---------- */
+function renderText(){
+  $$("[data-meta]").forEach(n => { n.textContent = META[n.dataset.meta] || ""; });
+  $$("[data-section]").forEach(s => {
+    const k = $("[data-kicker]", s), t = $("[data-title]", s);
+    if (k) k.textContent = get(`sections.${s.id}.kicker`) || "";
+    if (t) t.textContent = get(`sections.${s.id}.title`) || "";
+  });
+  $$("[data-text]").forEach(n => { n.innerHTML = text(get(n.dataset.text)); });
+}
+function renderLens(){
+  $$("[data-lens]").forEach(box => {
+    const lens = CONTENT.lens || {};
+    box.innerHTML = SYSTEMS.filter(s => lens[s.id]).map(s => {
+      const parts = Object.entries(CONTENT.parts || {}).filter(([, p]) => (p.systems || []).includes(s.id)).slice(0, 6)
+        .map(([id, p]) => `<button type="button" class="chip" data-goto="${esc(id)}">${esc(p.name)}</button>`).join("");
+      const watch = s.main ? `<a class="chip" href="${esc(href({ live: s.id }))}" style="--c:${s.color}"><i></i>Watch it in the body</a>` : "";
+      return `<article class="lens-card" id="lens-${s.id}" style="--c:${s.color}">
+        <h3><span class="chip" style="--c:${s.color};padding:0;border:0;pointer-events:none"><i></i></span>${esc(s.name)}</h3>
+        <p class="prose">${text(lens[s.id])}</p>
+        ${parts || watch ? `<div class="chips">${parts}${watch}</div>` : ""}</article>`;
+    }).join("");
+    $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
+      const n = document.querySelector(`[data-part="${CSS.escape(b.dataset.goto)}"]`); if (!n) return;
+      const sec = sectionOf(n); select(sec, b.dataset.goto);
+      document.getElementById(sec).scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+    }));
+  });
+}
+/* links to other organ pages: META.see = [{href, label}] */
+function renderSee(){
+  $$("[data-see]").forEach(n => {
+    const see = META.see || [];
+    n.innerHTML = see.map(x => `<a class="chip" href="${esc(x.href)}">${esc(x.label)} ›</a>`).join("");
+    n.hidden = !see.length;
+  });
+}
+function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: META.mainTopic || "" }); }); }
+
+/* ---------- animation loop ---------- */
+const ticks = [];
+const onTick = f => ticks.push(f);
+const seen = new WeakMap();
+const vio = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: "120px" });
+function visible(node){ if (!seen.has(node)){ seen.set(node, true); vio.observe(node); } return seen.get(node) && !document.hidden; }
+function loop(){
+  let last = performance.now();
+  function frame(t){
+    const real = Math.min(.05, (t - last) / 1000); last = t;
+    const dt = state.paused ? 0 : real * state.speed;
+    for (const f of ticks) f(dt, real);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- glossary tooltips ---------- */
+function bindGlossary(){
+  const show = n => { const g = GLOSSARY[n.dataset.term]; if (g) showTip(n, `<b>${esc(n.dataset.term)}</b> · ${esc(g.def)}`); };
+  document.addEventListener("pointerover", e => { const n = e.target.closest(".term"); if (n) show(n); });
+  document.addEventListener("pointerout", e => { const n = e.target.closest(".term"); if (n) hideTip(n); });
+  document.addEventListener("focusin", e => { const n = e.target.closest(".term"); if (n) show(n); });
+  document.addEventListener("focusout", e => { const n = e.target.closest(".term"); if (n) hideTip(n); });
+  document.addEventListener("click", e => { const n = e.target.closest(".term"); if (n){ tipFor === n ? hideTip(n) : show(n); } else if (tipFor && tipFor.classList && tipFor.classList.contains("term")) hideTip(); });
+  window.addEventListener("scroll", () => hideTip(), { passive: true });
+}
+
+function start(){
+  document.title = `${META.name} · HumanPhysiology`;
+  document.body.appendChild(tip);
+  $$("[data-organ-name]").forEach(n => n.textContent = META.name);
+  buildControls(); buildNav(); buildNow(); renderSee();
+  bindParts(); bindGlossary();
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); };
+  subscribe((s, p) => {
+    if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
+    if (s.level !== p.level || s.phase !== p.phase) all();
+    else { if (s.sel !== p.sel){ renderInspectors(); markSelected(); } if (s.hour !== p.hour) renderBack(); }
+  });
+  all();
+  loop();
+  if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }
+}
+
+return {
+  META, CONTENT, GLOSSARY, LEVELS, PHASES, SYSTEMS, SYSTEM_BY_ID, reducedMotion,
+  state: () => state, set, subscribe, get, levelText, text, linkify, esc, el, $, $$,
+  href, color, choice, bindParts, select, setStat, onTick, visible, start,
+  tip: showTip, untip: hideTip,
+  vitals: () => PHASE_BY_ID[state.phase].vitals,
+  inspector: (node, extra) => { node.__extra = extra; }
+};
+})();
+/* ===== ORGAN ENGINE JS · END ===== */
+</script>
+<script>
+/* =============================================================================
+   THE LUNGS: organ script (figures, simulation and controls)
+   ============================================================================= */
+(() => {
+"use strict";
+const O = OrganPage, { el, esc, $, $$ } = O;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+const seeded = (s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(97);
+
+/* =========================================================================
+   CONDITIONS: mechanics (C L/cmH₂O, R cmH₂O·s/L, expiratory R factor),
+   diffusion factor, lung volumes (L), spirometry, dead space and V/Q
+   multipliers for the apex, middle and base, plus shunt fraction
+   ========================================================================= */
+const CONDITIONS = {
+  healthy:   { C: .2,  R: 2,   Rex: 1,   D: 1,   tlc: 6,   frc: 2.4, rv: 1.2, ratio: .81, pef: 9.5, pif: 6,   vd: .15, V: [1, 1, 1],     Q: [1, 1, 1],      shunt: .01, drive: 0 },
+  asthma:    { C: .17, R: 7,   Rex: 1.7, D: .95, tlc: 6.4, frc: 3.2, rv: 2.2, ratio: .55, pef: 4.5, pif: 4.5, vd: .18, V: [1.15, 1, .55], Q: [1, 1, 1],      shunt: .03, drive: 3 },
+  copd:      { C: .36, R: 6,   Rex: 2,   D: .45, tlc: 7.4, frc: 4.0, rv: 3.6, ratio: .45, pef: 3.2, pif: 4,   vd: .25, V: [1.3, 1, .6],  Q: [.5, .9, 1],    shunt: .03, drive: 2 },
+  fibrosis:  { C: .08, R: 1.8, Rex: 1,   D: .3,  tlc: 3.8, frc: 1.7, rv: 1.0, ratio: .88, pef: 7,   pif: 5,   vd: .17, V: [1, 1, .9],    Q: [1, 1, 1],      shunt: .04, drive: 3 },
+  pneumonia: { C: .15, R: 2.4, Rex: 1,   D: .9,  tlc: 5.4, frc: 2.2, rv: 1.2, ratio: .8,  pef: 8.5, pif: 5.5, vd: .15, V: [1, 1, .15],   Q: [1, 1, .8],     shunt: .06, drive: 4 },
+  pe:        { C: .19, R: 2.1, Rex: 1,   D: .9,  tlc: 6,   frc: 2.4, rv: 1.2, ratio: .8,  pef: 9,   pif: 6,   vd: .3,  V: [1, 1, 1],     Q: [2.2, .2, 1.25], shunt: .05, drive: 5 }
+};
+const COND_IDS = Object.keys(CONDITIONS);
+const ZONES = [{ name: "Top (apex)", V: .22, Q: .07 }, { name: "Middle", V: .33, Q: .35 }, { name: "Bottom (base)", V: .45, Q: .58 }];
+/* the body in each part of the day: O₂ use (mL/min), respiratory quotient,
+   cardiac output (L/min), breathing rate, core temperature */
+const BODY = { sleep: { vo2: 215, rq: .82, co: 4.6, f: 11.5, temp: 36.5 }, rest: { vo2: 265, rq: .82, co: 5.2, f: 14, temp: 36.9 },
+  meal: { vo2: 290, rq: .9, co: 5.6, f: 14, temp: 37 }, exercise: { vo2: 2000, rq: .95, co: 16, f: 38, temp: 37.9 } };
+
+/* haemoglobin: Hill curve with a shifting P50 */
+const HB = 150, N_HILL = 2.7;
+const sat = (P, p50) => { P = Math.max(0, P); const a = Math.pow(P, N_HILL); return a / (a + Math.pow(p50, N_HILL)); };
+const invSat = (S, p50) => p50 * Math.pow(clamp(S, 1e-4, .9999) / (1 - clamp(S, 1e-4, .9999)), 1 / N_HILL);
+const content = (P, p50) => 1.34 * HB * sat(P, p50) + .03 * P;   /* mL O₂ per L of blood */
+
+/* =========================================================================
+   LUNG: control → mechanics → gas exchange
+   ========================================================================= */
+const MDT = .002, REC_N = 3000, CHEM_N = 800;
+const Lung = (() => {
+  const S = {
+    t: 0, cond: "healthy", user: { C: 1, R: 1 }, alt: 0, co2: false, mode: null, modeT: 0, ff: false, msg: "",
+    temp: 37, bpg: 5, fetal: false, tempTouched: false,
+    PACO2: 40, PAO2: 100, VE: 7, PaO2: 95, PaCO2: 40, SaO2: .97, PvO2: 40, SvO2: .75, pH: 7.4, p50: 26.8, Aa: 6, diff: 0, vqParts: null,
+    /* mechanics */
+    V: 0, flow: 0, tb: 0, T: 4.3, Ti: 1.7, A: 4, VTt: .5, f: 14, vmax: 0, vmin: 0, vtLast: .5, Pmus: 0, Ppl: -5, Palv: 0, airS: 0,
+    man: null /* spirometry manoeuvre */
+  };
+  const rec = { i: 0, n: 0, t: new Float64Array(REC_N), ppl: new Float32Array(REC_N), palv: new Float32Array(REC_N), flow: new Float32Array(REC_N), v: new Float32Array(REC_N), vabs: new Float32Array(REC_N) };
+  const chem = { i: 0, n: 0, t: new Float64Array(CHEM_N), o2: new Float32Array(CHEM_N), co2: new Float32Array(CHEM_N), ve: new Float32Array(CHEM_N) };
+  let recAcc = 0, chemAcc = 0, gasAcc = 9;
+  const cond = () => CONDITIONS[S.cond];
+  const body = () => BODY[O.state().phase];
+  const PB = () => 760 * Math.exp(-S.alt / 7990);
+  const PIO2 = () => .2093 * (PB() - 47);
+  const PICO2 = () => S.co2 ? .05 * (PB() - 47) : 0;
+  const vco2 = () => body().vo2 * body().rq;
+  const VEphase = () => ({ sleep: 6.2, rest: 7, meal: 7.6, exercise: 70 })[O.state().phase];
+
+  /* --- control: what ventilation the brainstem asks for (L/min) --- */
+  function hypoxia(){ return clamp(14 / Math.max(1, S.PaO2 - 25) - .19, 0, 3); }
+  function command(){
+    const ph = O.state().phase, G = 2 * (ph === "sleep" ? .6 : 1) * (S.cond === "copd" ? .6 : 1), hyp = hypoxia();
+    let ve = 28 * vco2() / 1000 * (ph === "exercise" ? 1.12 : 1) + G * (S.PaCO2 - 40) * (1 + hyp) + 5 * hyp + cond().drive;
+    return Math.max(0, ve);
+  }
+  function control(dt){
+    if (S.mode){ S.modeT += dt; }
+    if (S.mode === "hold"){
+      S.VE = 0;
+      if (S.PaCO2 > 52 || S.PaO2 < 50 || S.modeT > 120){ S.mode = null; S.vmax = S.vmin = S.V; S.tb = S.T; S.msg = `Break point after ${Math.round(S.modeT)} s: your brainstem takes over and you gasp.`; }
+      return;
+    }
+    let target = command();
+    if (S.mode === "hyper"){ target = Math.max(target * 3, 30); if (S.modeT > 60){ S.mode = null; S.msg = "Done. Now watch breathing slow down until CO₂ builds back up."; } }
+    S.VE += (target - S.VE) * clamp(dt / (S.mode === "hyper" ? 3 : 8));
+  }
+  /* --- gas stores: CO₂ slow (20 L), O₂ fast (6 L) --- */
+  function gases(dt){
+    const VA = Math.max(0, S.VE - S.f * cond().vd) / 60;   /* L/s */
+    const k = S.ff ? 10 : 1;
+    S.PACO2 += (.863 * vco2() / 60 + VA * PICO2() - VA * S.PACO2) / 20 * dt * k;
+    S.PAO2 += (VA * (PIO2() - S.PAO2) - .863 * body().vo2 / 60) / 6 * dt * k;
+    S.PAO2 = clamp(S.PAO2, 8, PIO2()); S.PACO2 = clamp(S.PACO2, 5, 120);
+    S.PaCO2 = S.PACO2 + (S.cond === "pe" ? 2 : 0) + (S.cond === "copd" ? 3 : 0);
+    S.PaO2 = Math.max(15, S.PAO2 - S.Aa - S.diff);
+    S.SaO2 = sat(S.PaO2, S.p50);
+  }
+  /* --- V/Q and diffusion: an A–a gradient from three zones and a shunt --- */
+  function exchange(){
+    const ph = O.state().phase, c = cond();
+    const hco3 = 24 - (ph === "exercise" ? 4 : 0);
+    S.pH = 6.1 + Math.log10(hco3 / (.03 * S.PaCO2));
+    if (!S.tempTouched) S.temp = body().temp;
+    S.p50 = 26.8 * Math.pow(10, .48 * (7.4 - S.pH)) * Math.exp(.024 * (S.temp - 37)) * Math.pow(S.bpg / 5, .3) * (S.fetal ? .71 : 1);
+    const VA = Math.max(1, S.VE - S.f * c.vd), Q = body().co, vo2 = body().vo2, pio2 = PIO2();
+    if (S.mode === "hold") return;
+    /* ventilation and blood flow per zone (totals preserved) */
+    const vw = ZONES.map((z, i) => z.V * c.V[i]), qw = ZONES.map((z, i) => z.Q * c.Q[i]);
+    const vs = vw.reduce((a, b) => a + b), qs = qw.reduce((a, b) => a + b);
+    const Qlung = Q * (1 - c.shunt);
+    const zones = ZONES.map((z, i) => ({ VA: VA * vw[i] / vs, Q: Qlung * qw[i] / qs }));
+    let Ca = content(95, S.p50), Cv = 0, Pv = 40;
+    for (let it = 0; it < 5; it++){
+      Cv = Ca - vo2 / Q; Pv = invSat((Cv - .03 * 40) / (1.34 * HB), S.p50);
+      let sum = Q * c.shunt * Cv;
+      for (const z of zones){
+        let lo = Pv, hi = pio2;
+        for (let k = 0; k < 32; k++){ const m = (lo + hi) / 2, f = z.VA * (pio2 - m) / .863 - z.Q * (content(m, S.p50) - Cv); if (f > 0) lo = m; else hi = m; }
+        z.P = (lo + hi) / 2; z.C = content(z.P, S.p50); sum += z.Q * z.C;
+      }
+      Ca = sum / Q;
+    }
+    const PaVQ = invSat((Ca - .03 * 90) / (1.34 * HB), S.p50), ideal = pio2 - .863 * vo2 / VA;
+    S.Aa = clamp(ideal - PaVQ, 3, 90);
+    /* diffusion: equilibration time constant vs capillary transit time */
+    const tau = .08 / c.D * (1 + Math.max(0, 80 - S.PAO2) / 50), transit = .75 * Math.pow(5.2 / Q, .85);
+    S.tau = tau; S.transit = transit; S.Pv = Pv;
+    S.diff = Math.max(0, (S.PAO2 - S.Aa - Pv)) * Math.exp(-transit / tau);
+    S.PvO2 = Pv; S.SvO2 = sat(Pv, S.p50);
+    S.zones = zones.map((z, i) => ({ ...z, vq: z.VA / Math.max(.01, z.Q), name: ZONES[i].name }));
+    S.shuntQ = Q * c.shunt;
+  }
+  /* --- mechanics: muscle pressure inflates compliance C through resistance R --- */
+  function newBreath(){
+    const vt = S.vmax - S.vmin;
+    if (vt > .02 && !S.man) S.A *= clamp(S.VTt / vt, .6, 1.6);
+    S.vtLast = vt; S.vmax = S.V; S.vmin = S.V;
+    const ph = O.state().phase, f0 = body().f;
+    const ve = Math.max(.5, S.VE);
+    S.f = f0 * clamp(Math.pow(ve / VEphase(), .35), .5, 2.4) * (S.cond === "fibrosis" ? 1.4 : 1);
+    S.VTt = ve / S.f; S.T = 60 / S.f; S.Ti = S.T * (S.f > 25 ? .45 : .4); S.tb = 0;
+  }
+  function mechanics(dt){
+    const c = cond(), C = c.C * S.user.C, R = c.R * S.user.R;
+    if (S.man){ manoeuvre(dt); return; }
+    S.tb += dt;
+    if (S.mode === "hold"){ S.flow = 0; S.Pmus = S.V / C; S.Palv = 0; S.Ppl = -(5 * Math.sqrt(.2 / C)) - S.V / C; if (S.tb > S.T) { S.tb = 0; } return; }
+    if (S.tb >= S.T) newBreath();
+    const tb = S.tb, active = S.VE > 35;
+    S.Pmus = tb < S.Ti ? S.A * Math.sin(Math.PI / 2 * tb / S.Ti) : S.A * Math.exp(-(tb - S.Ti) / .28) - (active ? S.A * .35 * Math.sin(Math.PI * (tb - S.Ti) / (S.T - S.Ti)) : 0);
+    let fl = (S.Pmus - S.V / C) / R;
+    if (fl < 0) fl = (S.Pmus - S.V / C) / (R * c.Rex);
+    S.flow = fl; S.V += fl * dt;
+    S.vmax = Math.max(S.vmax, S.V); S.vmin = Math.min(S.vmin, S.V);
+    S.Palv = -fl * (fl < 0 ? R * c.Rex : R);
+    S.Ppl = S.Palv - (5 * Math.sqrt(.2 / C) + S.V / C);
+    S.airS += fl * dt;
+  }
+  /* spirometry: full breath in to TLC, blow out hard to RV, back to FRC */
+  let FORCED = null;
+  function forcedCurve(c){
+    const fvc = c.tlc - c.rv;
+    const shape = (v, k) => (1 - Math.exp(-v / (.03 * fvc + .03))) * Math.pow(1 - v / fvc, k);
+    const run = k => { let v = 0, t = 0; const pts = [[0, 0, 0]]; let fev1 = null, mx = 0;
+      for (let j = 1; j < 200; j++) mx = Math.max(mx, shape(fvc * j / 200, k));
+      while (v < fvc - 1e-3 && t < 15){ const fl = Math.max(.06, c.pef / mx * shape(v, k)); const dv = Math.min(.004, fvc - v); t += dv / fl; v += dv; pts.push([v, fl, t]); if (fev1 == null && t >= 1) fev1 = v; }
+      return { pts, fev1: fev1 ?? fvc, t };
+    };
+    let lo = .2, hi = 4, best = run(1);
+    for (let i = 0; i < 26; i++){ const m = (lo + hi) / 2, r = run(m); best = r; if (r.fev1 / fvc > c.ratio) lo = m; else hi = m; }
+    best.fvc = fvc; best.pef = Math.max(...best.pts.map(p => p[1]));
+    return best;
+  }
+  function manoeuvre(dt){
+    const c = cond(), m = S.man; m.t += dt;
+    const frc = c.frc, tlc = c.tlc - frc, rv = c.rv - frc;  /* relative to FRC */
+    let V = S.V, fl = 0;
+    if (m.stage === 0){ const k = clamp(m.t / 2.4); V = lerp(m.v0, tlc, smooth(0, 1, k)); if (k >= 1){ m.stage = 1; m.t = 0; } }
+    else if (m.stage === 1){ V = tlc; if (m.t > .6){ m.stage = 2; m.t = 0; } }
+    else if (m.stage === 2){
+      const P = FORCED.pts; let j = P.findIndex(p => p[2] >= m.t); if (j < 1) j = j < 0 ? P.length - 1 : 1;
+      const a = P[j - 1], b = P[j], k = clamp((m.t - a[2]) / Math.max(1e-6, b[2] - a[2]));
+      V = tlc - lerp(a[0], b[0], k); m.fl = -lerp(a[1], b[1], k);
+      if (m.t > FORCED.t + .2){ m.stage = 3; m.t = 0; }
+    }
+    else { const k = clamp(m.t / 2.5); V = lerp(rv, 0, smooth(0, 1, k)); if (k >= 1){ S.man = null; S.vmax = S.vmin = 0; S.tb = S.T; $("#spiroBtn").disabled = false; } }
+    fl = m.stage === 2 ? m.fl : (V - S.V) / dt; S.flow = fl; S.V = V;
+    const C = c.C * S.user.C, R = c.R * S.user.R;
+    S.Palv = -fl * R * (fl < 0 ? c.Rex : 1) * (m.stage === 2 ? .25 : 1); S.Ppl = S.Palv - (5 * Math.sqrt(.2 / C) + S.V / C) + (m.stage === 2 ? 40 : 0);
+    S.airS += fl * dt;
+  }
+  function record(){
+    const i = rec.i;
+    rec.t[i] = S.t; rec.ppl[i] = S.Ppl; rec.palv[i] = S.Palv; rec.flow[i] = S.flow; rec.v[i] = S.V; rec.vabs[i] = cond().frc + S.V;
+    rec.i = (i + 1) % REC_N; rec.n = Math.min(REC_N, rec.n + 1);
+  }
+  function recChem(){
+    const i = chem.i; chem.t[i] = S.t; chem.o2[i] = S.PaO2; chem.co2[i] = S.PaCO2; chem.ve[i] = S.VE;
+    chem.i = (i + 1) % CHEM_N; chem.n = Math.min(CHEM_N, chem.n + 1);
+  }
+  function advance(dt){
+    if (dt <= 0) return;
+    let n = Math.ceil(dt / MDT); const h = dt / n;
+    while (n--){
+      mechanics(h); S.t += h;
+      recAcc += h; if (recAcc >= .02){ recAcc -= .02; record(); }
+    }
+    control(dt); gases(dt);
+    gasAcc += dt; if (gasAcc > .25){ gasAcc = 0; exchange(); }
+    chemAcc += dt; if (chemAcc >= .25){ chemAcc = 0; recChem(); }
+  }
+  function setCond(id){
+    S.cond = id; FORCED = forcedCurve(CONDITIONS[id]); exchange();
+    /* a first guess of the muscle effort the new lungs need */
+    const c = CONDITIONS[id]; S.A = 1.1 * S.VTt / c.C + .6 * c.R * S.VTt / S.Ti;
+  }
+  /* settle the gases to a steady state for the current conditions */
+  function settle(){
+    for (let i = 0; i < 400; i++){ control(.5); gases(.5); exchange(); }
+    /* start the chemoreflex chart with three steady minutes */
+    chem.n = 0; chem.i = 0; for (let k = 720; k > 0; k--){ const tt = S.t - k * .25; chem.t[chem.i] = tt; chem.o2[chem.i] = S.PaO2; chem.co2[chem.i] = S.PaCO2; chem.ve[chem.i] = S.VE; chem.i = (chem.i + 1) % CHEM_N; chem.n++; }
+  }
+  FORCED = forcedCurve(CONDITIONS.healthy);
+  return { S, rec, chem, cond, body, PB, PIO2, advance, setCond, settle, exchange, forced: () => FORCED, hypoxia,
+    startSpiro(){ if (S.man || S.mode === "hold") return; S.man = { stage: 0, t: 0, v0: S.V }; } };
+})();
+
+/* =========================================================================
+   CANVAS HELPERS
+   ========================================================================= */
+function makeCanvas(node){
+  const baseH = +node.getAttribute("height") || 300, c = { node, ctx: node.getContext("2d"), w: 0, h: 0 };
+  const fit = () => {
+    const cw = Math.max(200, node.getBoundingClientRect().width || 300), h = Math.round(Math.min(baseH, Math.max(baseH * .62, cw * .9)));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    node.style.height = h + "px"; node.width = Math.round(cw * dpr); node.height = Math.round(h * dpr);
+    c.w = cw; c.h = h; c.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  new ResizeObserver(fit).observe(node); fit();
+  return c;
+}
+const FONT = '500 11px "Schibsted Grotesk", system-ui, sans-serif', FONT_B = '600 11px "Schibsted Grotesk", system-ui, sans-serif';
+function txt(ctx, s, x, y, col, align = "left", font = FONT){ ctx.font = font; ctx.fillStyle = col; ctx.textAlign = align; ctx.fillText(s, x, y); }
+function eachRec(R, N, t0, t1, f){ for (let j = 0; j < R.n; j++){ const i = (R.i - R.n + j + N) % N, t = R.t[i]; if (t >= t0 && t <= t1) f(i, t); } }
+function line(ctx, x0, y0, x1, y1, col, w = 1, dash){ ctx.strokeStyle = col; ctx.lineWidth = w; if (dash) ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); if (dash) ctx.setLineDash([]); }
+const C = n => O.color(n);
+
+/* =========================================================================
+   ANATOMY FIGURE
+   ========================================================================= */
+const LUNG_R = "M250 92 C222 70 172 80 142 140 C112 210 92 320 88 420 C86 470 102 498 142 498 C182 494 232 474 262 460 C266 380 262 300 258 232 C256 172 262 112 250 92 Z";
+const LUNG_L = "M310 94 C338 72 388 82 418 140 C448 210 468 320 472 430 C474 480 458 504 420 504 C390 500 352 490 330 478 C334 446 344 424 352 404 C330 384 312 362 306 332 C300 282 302 222 304 172 C304 132 300 110 310 94 Z";
+const LOBES = {
+  rul: ["r", "M40 30 L300 30 L300 290 L260 290 C210 292 150 296 94 304 L40 304 Z"],
+  rml: ["r", "M94 304 C150 296 210 292 260 290 L300 290 L300 600 L210 600 L200 486 C160 420 120 360 92 300 Z"],
+  rll: ["r", "M40 304 L94 304 L92 300 C120 360 160 420 200 486 L210 600 L40 600 Z"],
+  lul: ["l", "M300 30 L520 30 L520 262 L470 262 C440 340 410 420 372 498 L360 600 L300 600 Z"],
+  lll: ["l", "M470 262 L520 262 L520 600 L360 600 L372 498 C410 420 440 340 470 262 Z"]
+};
+const FISSURES = ["M92 300 C120 360 160 420 200 486", "M94 304 C150 296 210 292 260 290", "M470 262 C440 340 410 420 372 498"];
+const DIA = { healthy: "M80 462 C84 500 112 510 146 508 C190 504 236 484 264 470 C282 484 302 488 326 484 C360 498 392 512 424 514 C462 514 478 498 482 466",
+  flat: "M80 486 C86 512 112 520 146 520 C190 520 236 512 264 506 C282 512 302 514 326 512 C360 516 392 522 424 522 C462 522 478 512 482 490" };
+const HEART = "M300 336 C270 330 236 348 226 380 C214 420 240 462 290 478 C340 488 372 464 376 430 C380 392 356 352 300 336 Z";
+const anat = { svg: $("#anatomyFig") };
+(() => {
+  const svg = anat.svg, defs = el("defs", {}, svg);
+  const cr = el("clipPath", { id: "clipR" }, defs); el("path", { d: LUNG_R }, cr);
+  const cl = el("clipPath", { id: "clipL" }, defs); el("path", { d: LUNG_L }, cl);
+  const pat = el("pattern", { id: "fib", width: 9, height: 9, patternUnits: "userSpaceOnUse" }, defs);
+  el("path", { d: "M0 4 Q2 0 4 4 T9 4 M4 0 Q8 4 4 9", fill: "none", stroke: "var(--lung-line)", "stroke-width": 1.1, opacity: .8 }, pat);
+  /* heart behind */
+  el("path", { d: HEART, class: "l-heart", "data-part": "heart" }, svg);
+  /* lungs (transformed as they breathe) */
+  const lungs = el("g", {}, svg); anat.lungs = lungs;
+  el("path", { d: LUNG_R, class: "l-pleura", "data-part": "pleura" }, lungs);
+  el("path", { d: LUNG_L, class: "l-pleura", "data-part": "pleura" }, lungs);
+  const gR = el("g", { "clip-path": "url(#clipR)" }, lungs), gL = el("g", { "clip-path": "url(#clipL)" }, lungs);
+  anat.lobes = {};
+  for (const [id, [side, d]] of Object.entries(LOBES)) anat.lobes[id] = el("path", { d, class: "l-lobe", fill: id === "rml" || id === "lll" ? "var(--lung-2)" : "var(--lung)", "data-part": id }, side === "r" ? gR : gL);
+  anat.consol = el("path", { d: "M92 330 C130 380 170 440 196 482 L130 498 C100 480 90 440 92 330 Z", fill: "var(--consol)", opacity: 0, "pointer-events": "none" }, gR);
+  anat.fib = [el("rect", { x: 40, y: 60, width: 260, height: 460, fill: "url(#fib)", opacity: 0, "pointer-events": "none" }, gR), el("rect", { x: 300, y: 60, width: 220, height: 460, fill: "url(#fib)", opacity: 0, "pointer-events": "none" }, gL)];
+  anat.bullae = el("g", { opacity: 0, "pointer-events": "none" }, lungs);
+  [[170, 130, 16], [200, 170, 11], [380, 135, 15], [408, 180, 10], [140, 210, 9], [430, 230, 9]].forEach(([x, y, r]) => el("circle", { cx: x, cy: y, r, fill: "var(--bg)", stroke: "var(--lung-line)", "stroke-width": 1 }, anat.bullae));
+  FISSURES.forEach(d => el("path", { d, class: "l-fissure", "data-part": "fissures" }, d.startsWith("M470") ? gL : gR));
+  el("path", { d: LUNG_R, class: "l-out" }, lungs); el("path", { d: LUNG_L, class: "l-out" }, lungs);
+  /* blood vessels: pulmonary trunk from the heart to each hilum, branching */
+  const vs = el("g", { class: "l-vessels" }, lungs); anat.vessels = vs;
+  const art = ["M298 344 C296 312 290 290 280 280 C266 274 248 276 236 284", "M280 280 C300 270 320 274 334 286",
+    "M236 284 C210 300 180 330 160 380 M236 284 C214 270 190 246 176 210 M236 284 C224 320 220 360 226 420",
+    "M334 286 C360 300 390 330 410 380 M334 286 C356 270 380 250 394 214 M334 286 C350 330 360 370 360 420"];
+  const vein = ["M310 352 C290 330 264 320 244 318 C220 320 196 342 178 400 M244 318 C220 300 200 280 186 250",
+    "M318 350 C330 330 340 322 350 322 C376 330 398 360 416 410 M350 322 C374 300 392 282 404 256"];
+  art.forEach(d => { el("path", { d, class: "v-co2", "stroke-width": d.startsWith("M298") ? 9 : 5, opacity: .85, "data-part": "pulmonaryArteries" }, vs); });
+  vein.forEach(d => { el("path", { d, class: "v-o2", "stroke-width": 4.5, opacity: .85, "data-part": "pulmonaryVeins" }, vs); });
+  anat.clot = el("circle", { cx: 214, cy: 336, r: 8, fill: "var(--clot)", stroke: "var(--surface)", "stroke-width": 2, opacity: 0, "pointer-events": "none" }, vs);
+  /* airway tree */
+  const tree = el("g", {}, lungs); anat.tree = tree;
+  const segs = [];
+  const add = (x0, y0, x1, y1, w, part, clip) => segs.push({ x0, y0, x1, y1, w, part, clip });
+  add(280, 30, 280, 206, 18, "trachea");
+  add(278, 204, 228, 262, 13, "mainBronchi"); add(282, 204, 338, 266, 11, "mainBronchi");
+  const lobar = [[228, 262, 178, 210, "r"], [228, 262, 214, 318, "r"], [214, 318, 238, 372, "r"], [214, 318, 172, 386, "r"],
+    [338, 266, 386, 212, "l"], [338, 266, 366, 330, "l"], [366, 330, 340, 392, "l"], [366, 330, 404, 392, "l"]];
+  const grow = (x, y, ang, len, w, gen, side) => {
+    if (gen > 4) return;
+    const x1 = x + Math.cos(ang) * len, y1 = y + Math.sin(ang) * len;
+    add(x, y, x1, y1, w, gen < 2 ? "bronchi" : "bronchioles", side);
+    const spread = .5 - gen * .05;
+    grow(x1, y1, ang - spread + (seeded() - .5) * .2, len * .74, w * .72, gen + 1, side);
+    grow(x1, y1, ang + spread + (seeded() - .5) * .2, len * .74, w * .72, gen + 1, side);
+  };
+  lobar.forEach(([x0, y0, x1, y1, side], i) => {
+    const w = i % 2 === 1 && i < 4 ? 9 : 7;
+    add(x0, y0, x1, y1, w, "bronchi", side);
+    if ((side === "r" && (i === 0 || i === 2 || i === 3)) || (side === "l" && i !== 5)) grow(x1, y1, Math.atan2(y1 - y0, x1 - x0), 34, w * .75, 1, side);
+  });
+  const airG = { r: el("g", { "clip-path": "url(#clipR)" }, tree), l: el("g", { "clip-path": "url(#clipL)" }, tree), n: el("g", {}, tree) };
+  for (const pass of [0, 1]) segs.forEach(s => {
+    const g = s.clip ? airG[s.clip] : airG.n, d = `M${s.x0.toFixed(1)} ${s.y0.toFixed(1)} L${s.x1.toFixed(1)} ${s.y1.toFixed(1)}`;
+    el("path", { d, class: pass ? "l-air-in" : "l-air", "stroke-width": pass ? s.w : s.w + 2.5, "data-part": s.part }, g);
+  });
+  for (let y = 44; y < 196; y += 11) el("line", { x1: 272, x2: 288, y1: y, y2: y + 2, class: "l-ring", "pointer-events": "none" }, airG.n);
+  el("circle", { cx: 280, cy: 206, r: 8, fill: "transparent", "data-part": "carina" }, airG.n);
+  /* air dots ride six routes from the mouth to a lobe */
+  const routes = [[[280, 30], [280, 206], [228, 262], [178, 210], [150, 180]], [[280, 30], [280, 206], [228, 262], [214, 318], [238, 372], [250, 410]],
+    [[280, 30], [280, 206], [228, 262], [214, 318], [172, 386], [150, 430]], [[280, 30], [280, 206], [338, 266], [386, 212], [410, 186]],
+    [[280, 30], [280, 206], [338, 266], [366, 330], [340, 392], [338, 430]], [[280, 30], [280, 206], [338, 266], [366, 330], [404, 392], [420, 430]]];
+  const dg = el("g", { class: "l-airdots", "pointer-events": "none" }, lungs);
+  anat.dots = [];
+  routes.forEach((pts, r) => {
+    const len = []; let tot = 0; for (let i = 1; i < pts.length; i++){ const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); len.push(l); tot += l; }
+    for (let k = 0; k < 6; k++) anat.dots.push({ pts, len, tot, off: (k / 6 + r * .07) % 1, c: el("circle", { r: 3.6, "stroke-width": 1 }, dg) });
+  });
+  /* diaphragm, ribs */
+  anat.dia = el("path", { d: DIA.healthy, class: "l-dia", "data-part": "diaphragm" }, svg);
+  const ribs = el("g", { class: "l-ribs" }, svg); anat.ribs = [];
+  for (let k = 0; k < 7; k++){
+    const y = 110 + k * 50, g = el("g", {}, ribs);
+    el("path", { d: `M268 ${y} C200 ${y - 34} 110 ${y - 18} 76 ${y + 46}`, class: "l-rib", "data-part": "ribs" }, g);
+    el("path", { d: `M292 ${y} C360 ${y - 34} 450 ${y - 18} 484 ${y + 46}`, class: "l-rib", "data-part": "ribs" }, g);
+    anat.ribs.push({ g, y });
+  }
+  /* labels */
+  for (const [t, x, y, cls] of [["Trachea", 300, 60, ""], ["Right lung", 60, 120, ""], ["Left lung", 500, 120, ""], ["Diaphragm", 500, 540, ""], ["Heart", 300, 450, "in"]]){
+    const n = el("text", { x, y, class: "l-label " + cls, "text-anchor": x > 400 ? "end" : x < 100 ? "start" : "middle" }, svg); n.textContent = t;
+  }
+  O.bindParts(svg);
+  const tools = $("#anatomy [data-tools]");
+  const s = document.createElement("span"); s.textContent = "Show"; tools.appendChild(s);
+  const mk = (label, cls) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = label; b.setAttribute("aria-pressed", "true"); b.onclick = () => { const v = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", String(v)); svg.classList.toggle(cls, !v); }; tools.appendChild(b); };
+  mk("Air", "hide-air"); mk("Blood vessels", "hide-vessels"); mk("Ribs", "hide-ribs"); mk("Labels", "hide-labels");
+})();
+function animateAnatomy(){
+  const S = Lung.S, c = Lung.cond();
+  const base = Math.cbrt(c.tlc / 6), sy = base * (1 + .055 * S.V), sx = base * (1 + .02 * S.V);
+  anat.lungs.setAttribute("transform", `translate(280 80) scale(${sx.toFixed(4)} ${sy.toFixed(4)}) translate(-280 -80)`);
+  const dy = (470 - 80) * (sy - 1);
+  anat.dia.setAttribute("transform", `translate(0 ${dy.toFixed(1)})`);
+  anat.ribs.forEach(({ g, y }) => g.setAttribute("transform", `translate(0 ${((y - 80) * (sy - 1) * .3).toFixed(1)})`));
+  /* air: dots shuttle in and out with the volume of the lungs */
+  const vt = Math.max(.3, S.VTt), fresh = S.flow > 0;
+  for (const d of anat.dots){
+    let u = (d.off + .55 * S.V / vt * .5) % 1; if (u < 0) u += 1;
+    let s = u * d.tot, i = 0; while (i < d.len.length - 1 && s > d.len[i]){ s -= d.len[i]; i++; }
+    const a = d.pts[i], b = d.pts[i + 1], k = clamp(s / d.len[i]);
+    const x = lerp(a[0], b[0], k), y = lerp(a[1], b[1], k);
+    d.c.setAttribute("cx", x.toFixed(1)); d.c.setAttribute("cy", y.toFixed(1));
+    d.c.setAttribute("fill", fresh ? "var(--air)" : "var(--air-used)"); d.c.setAttribute("stroke", "var(--surface)");
+  }
+}
+function renderAnatomyCondition(){
+  const id = Lung.S.cond;
+  anat.consol.setAttribute("opacity", id === "pneumonia" ? .85 : 0);
+  anat.fib.forEach(r => r.setAttribute("opacity", id === "fibrosis" ? .9 : 0));
+  anat.bullae.setAttribute("opacity", id === "copd" ? 1 : 0);
+  anat.clot.setAttribute("opacity", id === "pe" ? 1 : 0);
+  anat.dia.setAttribute("d", id === "copd" ? DIA.flat : DIA.healthy);
+  renderAcinus(); renderAirway();
+}
+
+/* ---- acinus close-up ---- */
+const acin = { svg: $("#acinusFig") };
+(() => {
+  const svg = acin.svg;
+  const g = el("g", {}, svg); acin.g = g;
+  el("path", { d: "M0 95 L72 95", class: "l-air", "stroke-width": 20, "data-part": "terminalBronchiole" }, g);
+  el("path", { d: "M0 95 L72 95", class: "l-air-in", "stroke-width": 16, "data-part": "terminalBronchiole" }, g);
+  el("path", { d: "M70 95 L130 95", class: "l-air", "stroke-width": 15, "data-part": "respBronchiole" }, g);
+  el("path", { d: "M70 95 L130 95", class: "l-air-in", "stroke-width": 11, "data-part": "respBronchiole" }, g);
+  [[92, 82], [110, 108]].forEach(([x, y]) => el("circle", { cx: x, cy: y, r: 7, fill: "var(--lung)", stroke: "var(--lung-line)", "data-part": "respBronchiole" }, g));
+  acin.sacs = el("g", {}, g);
+  acin.cells = [[150, 60, 20], [150, 128, 20], [168, 95, 18], [196, 44, 18], [196, 146, 18], [232, 60, 18], [232, 132, 16]].map(([x, y, r]) =>
+    el("circle", { cx: x, cy: y, r, fill: "var(--lung)", stroke: "var(--lung-line)", "stroke-width": 1.5, "data-part": "alveolarSac" }, acin.sacs));
+  acin.big = el("circle", { cx: 208, cy: 95, r: 32, fill: "var(--lung)", stroke: "var(--lung-line)", "stroke-width": 1.5, "data-part": "alveolus" }, g);
+  const cap = el("g", { "data-part": "capillary" }, g);
+  ["M178 80 C190 70 210 66 226 72 C236 76 240 86 238 96", "M180 112 C192 122 214 126 230 118", "M176 96 C196 92 216 100 240 104"]
+    .forEach((d, i) => { el("path", { d, fill: "none", stroke: "transparent", "stroke-width": 8 }, cap); el("path", { d, class: i === 1 ? "v-co2" : "v-o2", "stroke-width": 3 }, cap); });
+  el("ellipse", { cx: 208, cy: 63.5, rx: 9, ry: 2.6, fill: "var(--lung-line)", "data-part": "typeI" }, g);
+  const t2 = el("g", { "data-part": "typeII" }, g);
+  el("rect", { x: 236, y: 82, width: 12, height: 12, rx: 3, fill: "var(--goblet)", stroke: "var(--lung-line)" }, t2);
+  [[240, 86], [244, 90], [240, 91]].forEach(([x, y]) => el("circle", { cx: x, cy: y, r: 1.3, fill: "var(--lung-line)" }, t2));
+  acin.mac = el("path", { d: "M0 0 C6 -8 14 -4 12 2 C16 6 8 12 2 9 C-4 12 -8 6 -6 2 C-10 -2 -4 -6 0 0 Z", fill: "var(--chemo)", opacity: .85, "data-part": "macrophage" }, g);
+  for (const [t, x, y] of [["Terminal bronchiole", 4, 76], ["Alveoli", 150, 182], ["Capillaries", 196, 182]]){ const n = el("text", { x, y, class: "l-label", "font-size": 10 }, svg); n.textContent = t; }
+  O.bindParts(svg);
+})();
+function renderAcinus(){
+  const id = Lung.S.cond;
+  const fill = id === "pneumonia" ? "var(--consol)" : "var(--lung)", sw = id === "fibrosis" ? 4.5 : 1.5, stroke = id === "fibrosis" ? "var(--consol)" : "var(--lung-line)";
+  acin.cells.forEach((c, i) => { c.setAttribute("fill", fill); c.setAttribute("stroke-width", sw); c.setAttribute("stroke", stroke); c.setAttribute("opacity", id === "copd" && i % 2 ? 0 : 1); });
+  acin.big.setAttribute("fill", id === "pneumonia" ? "var(--consol)" : "var(--lung)"); acin.big.setAttribute("stroke-width", sw); acin.big.setAttribute("stroke", stroke);
+  acin.big.setAttribute("r", id === "copd" ? 44 : 32);
+}
+function animateAcinus(t){
+  const S = Lung.S, k = 1 + .05 * S.V / Math.max(.3, S.VTt) * (Lung.cond().C / .2);
+  acin.sacs.setAttribute("transform", `translate(190 95) scale(${k.toFixed(3)}) translate(-190 -95)`);
+  acin.mac.setAttribute("transform", `translate(${(200 + 8 * Math.sin(t * .4)).toFixed(1)} ${(100 + 5 * Math.cos(t * .3)).toFixed(1)})`);
+}
+
+/* ---- airway wall close-up ---- */
+const aw = { svg: $("#airwayFig") };
+(() => {
+  const svg = aw.svg, cx = 130, cy = 95;
+  el("circle", { cx, cy, r: 86, fill: "var(--surface-2)" }, svg);
+  aw.cart = el("g", { "data-part": "cartilage" }, svg);
+  for (let k = 0; k < 4; k++){ const a0 = k * Math.PI / 2 + .25, a1 = a0 + 1.05, r0 = 70, r1 = 80;
+    const P = (r, a) => `${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+    el("path", { d: `M${P(r1, a0)} A${r1} ${r1} 0 0 1 ${P(r1, a1)} L${P(r0, a1)} A${r0} ${r0} 0 0 0 ${P(r0, a0)} Z`, fill: "var(--cartilage)", stroke: "var(--line-strong)" }, aw.cart); }
+  aw.muscle = el("circle", { cx, cy, r: 56, fill: "none", stroke: "var(--muscle)", "stroke-width": 7, "data-part": "smoothMuscle" }, svg);
+  aw.epi = el("circle", { cx, cy, r: 44, fill: "var(--goblet)", stroke: "var(--line-strong)", "stroke-width": 1 }, svg);
+  aw.lumenG = el("g", {}, svg);
+  aw.mucus = el("circle", { cx, cy, r: 36, fill: "none", stroke: "var(--mucus)", "stroke-width": 3, "data-part": "mucus" }, svg);
+  aw.lumen = el("circle", { cx, cy, r: 34, fill: "var(--bg)" }, svg);
+  aw.cilia = []; const ciliaG = el("g", { "data-part": "cilia" }, svg);
+  for (let k = 0; k < 44; k++){ const a = k / 44 * Math.PI * 2; aw.cilia.push({ a, l: el("line", { stroke: "var(--cilia)", "stroke-width": 1.4, "stroke-linecap": "round" }, ciliaG) }); }
+  aw.gob = []; const gobG = el("g", { "data-part": "goblet" }, svg);
+  for (let k = 0; k < 5; k++){ const a = k / 5 * Math.PI * 2 + .3; aw.gob.push({ a, e: el("ellipse", { rx: 4, ry: 6, fill: "var(--surface)", stroke: "var(--mucus)", "stroke-width": 1.5 }, gobG) }); }
+  aw.plugs = el("g", { opacity: 0, "pointer-events": "none" }, svg);
+  [[cx - 6, cy + 4, 9], [cx + 8, cy - 6, 6]].forEach(([x, y, r]) => el("circle", { cx: x, cy: y, r, fill: "var(--mucus)" }, aw.plugs));
+  for (const [t, x, y] of [["Cartilage", 4, 16], ["Muscle", 4, 30], ["Lumen (air)", 256, 186]]){ const n = el("text", { x, y, class: "l-label", "font-size": 10, "text-anchor": x > 200 ? "end" : "start" }, svg); n.textContent = t; }
+  O.bindParts(svg);
+})();
+function renderAirway(){ aw.k = Lung.S.cond === "asthma" ? .55 : Lung.S.cond === "copd" ? .8 : 1; }
+function animateAirway(t){
+  const k = aw.k || 1, cx = 130, cy = 95, asthma = Lung.S.cond === "asthma";
+  const rE = 44 * (asthma ? .78 : 1), rL = 34 * k, rM = asthma ? 48 : 56;
+  aw.muscle.setAttribute("r", rM); aw.muscle.setAttribute("stroke-width", asthma ? 13 : 7);
+  aw.epi.setAttribute("r", rE); aw.lumen.setAttribute("r", rL); aw.mucus.setAttribute("r", rL + (asthma ? 3 : 1.5)); aw.mucus.setAttribute("stroke-width", asthma ? 6 : 3);
+  aw.plugs.setAttribute("opacity", asthma ? 1 : 0);
+  const r0 = rL + 2.5;
+  aw.cilia.forEach(({ a, l }, i) => {
+    const beat = Math.sin(t * 2 * Math.PI * 2 - i * .5) * .35, x0 = cx + r0 * Math.cos(a), y0 = cy + r0 * Math.sin(a);
+    l.setAttribute("x1", x0.toFixed(1)); l.setAttribute("y1", y0.toFixed(1));
+    l.setAttribute("x2", (x0 - 6 * Math.cos(a + beat)).toFixed(1)); l.setAttribute("y2", (y0 - 6 * Math.sin(a + beat)).toFixed(1));
+  });
+  aw.gob.forEach(({ a, e }) => { const r = (rE + rL) / 2 + 2; e.setAttribute("cx", (cx + r * Math.cos(a)).toFixed(1)); e.setAttribute("cy", (cy + r * Math.sin(a)).toFixed(1)); e.setAttribute("transform", `rotate(${(a * 180 / Math.PI + 90).toFixed(0)} ${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)})`); });
+}
+
+/* =========================================================================
+   CONDITIONS, sliders, readouts
+   ========================================================================= */
+function buildConditions(){
+  $$("[data-conditions]").forEach(host => {
+    host.insertAdjacentHTML("beforeend", COND_IDS.map(id => `<button type="button" class="chip" data-cond="${id}" aria-pressed="${id === Lung.S.cond}">${esc(O.get(`conditions.${id}.name`))}</button>`).join(""));
+    host.addEventListener("click", e => { const b = e.target.closest("[data-cond]"); if (b) setCondition(b.dataset.cond); });
+  });
+}
+function setCondition(id){
+  Lung.setCond(id);
+  $$("[data-cond]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cond === id)));
+  renderAnatomyCondition(); renderCondText();
+}
+function renderCondText(){
+  const c = O.get(`conditions.${Lung.S.cond}`);
+  $("#condTitle").textContent = c.name; $("#condText").innerHTML = O.text(c);
+}
+const MECH = [["C", "Lung compliance (stretchiness)", .4, 2, "Stiff", "Floppy"], ["R", "Airway resistance", .5, 4, "Wide airways", "Narrow airways"]];
+$("#mechSliders").innerHTML = MECH.map(([k, label, lo, hi, a, b]) => `<div class="sl"><label for="m-${k}">${label}<output id="mo-${k}">×1.00</output></label>
+  <input id="m-${k}" type="range" min="${lo}" max="${hi}" step="0.05" value="1"><div class="ends"><span>${a}</span><span>${b}</span></div></div>`).join("") +
+  `<div class="btn-row" style="margin-top:0"><button type="button" class="btn ghost" id="mechReset">Reset</button></div>`;
+MECH.forEach(([k]) => $(`#m-${k}`).addEventListener("input", e => { Lung.S.user[k] = +e.target.value; $(`#mo-${k}`).textContent = "×" + (+e.target.value).toFixed(2); }));
+$("#mechReset").addEventListener("click", () => MECH.forEach(([k]) => { Lung.S.user[k] = 1; $(`#m-${k}`).value = 1; $(`#mo-${k}`).textContent = "×1.00"; }));
+function readouts(host, list){ $(host).innerHTML = list.map(([k, l]) => `<div class="ro"><div class="l">${l}</div><div class="v" data-ro="${k}">–</div></div>`).join(""); }
+readouts("#mechRO", [["rr", "Rate"], ["vt", "Tidal volume"], ["ve", "Ventilation"], ["tau", "Time constant RC"]]);
+readouts("#spiroRO", [["fev1", "FEV₁"], ["fvc", "FVC"], ["ratio", "FEV₁/FVC"], ["pef", "Peak flow"], ["tlc", "Total capacity"], ["rv", "Residual vol."]]);
+readouts("#odcRO", [["p50", "P50"], ["ph", "pH"], ["sa", "Arterial sat."], ["sv", "Venous sat."], ["unload", "O₂ unloaded"]]);
+readouts("#abgRO", [["pao2", "PaO₂"], ["paco2", "PaCO₂"], ["aa", "A–a gradient"], ["sao2", "SaO₂"], ["ph2", "pH"], ["shunt", "Shunt"]]);
+readouts("#ctlRO", [["ve2", "Ventilation"], ["pao2b", "PaO₂"], ["paco2b", "PaCO₂"], ["drive", "Hypoxic drive"]]);
+function ro(k, v, u){ $$(`[data-ro="${k}"]`).forEach(n => { const h = `${v}${u ? `<small>${u}</small>` : ""}`; if (n.__h !== h){ n.innerHTML = h; n.__h = h; } }); }
+/* altitude sliders (two, kept in step) */
+$$("[data-altitude]").forEach((host, i) => {
+  host.innerHTML = `<div class="sl"><label for="alt${i}">Altitude <output data-alt-out></output></label><input id="alt${i}" data-alt type="range" min="0" max="8848" step="50" value="0">
+    <div class="ends"><span>Sea level</span><span>Everest</span></div></div>`;
+});
+$$("[data-alt]").forEach(inp => inp.addEventListener("input", e => { Lung.S.alt = +e.target.value; $$("[data-alt]").forEach(x => { if (x !== e.target) x.value = e.target.value; }); }));
+/* O₂ curve sliders */
+$("#odcSliders").innerHTML = `<div class="sl"><label for="tempIn">Temperature <output id="tempOut"></output></label><input id="tempIn" type="range" min="34" max="41" step="0.1" value="37"><div class="ends"><span>Cold</span><span>Fever or hard exercise</span></div></div>
+  <div class="sl"><label for="bpgIn">2,3-BPG in red cells <output id="bpgOut"></output></label><input id="bpgIn" type="range" min="2" max="9" step="0.1" value="5"><div class="ends"><span>Low (stored blood)</span><span>High (altitude, anaemia)</span></div></div>`;
+$("#tempIn").addEventListener("input", e => { Lung.S.temp = +e.target.value; Lung.S.tempTouched = true; });
+$("#bpgIn").addEventListener("input", e => { Lung.S.bpg = +e.target.value; });
+$("#fetalBtn").addEventListener("click", e => { Lung.S.fetal = !Lung.S.fetal; e.currentTarget.setAttribute("aria-pressed", String(Lung.S.fetal)); });
+/* control buttons */
+const CTL = [["hold", "Hold your breath"], ["hyper", "Hyperventilate (1 min)"], ["co2", "Breathe 5% CO₂"], ["reset", "Back to normal"]];
+$("#ctlBtns").innerHTML = CTL.map(([k, l]) => `<button type="button" class="btn ghost" data-ctl="${k}" aria-pressed="false">${l}</button>`).join("");
+$("#ctlBtns").addEventListener("click", e => {
+  const b = e.target.closest("[data-ctl]"); if (!b) return; const S = Lung.S, k = b.dataset.ctl;
+  S.msg = "";
+  if (k === "hold"){ if (S.mode === "hold"){ S.mode = null; S.msg = `You breathed again after ${Math.round(S.modeT)} s.`; S.vmax = S.vmin = S.V; S.tb = S.T; } else { S.mode = "hold"; S.modeT = 0; S.man = null; $("#spiroBtn").disabled = false; } }
+  else if (k === "hyper"){ S.mode = S.mode === "hyper" ? null : "hyper"; S.modeT = 0; }
+  else if (k === "co2"){ S.co2 = !S.co2; }
+  else { S.mode = null; S.co2 = false; S.alt = 0; $$("[data-alt]").forEach(x => x.value = 0); Lung.settle(); }
+  renderCtl();
+});
+$("#ffBtn").addEventListener("click", e => { Lung.S.ff = !Lung.S.ff; e.currentTarget.setAttribute("aria-pressed", String(Lung.S.ff)); });
+let lastCtlKey = "";
+function renderCtl(){
+  const S = Lung.S;
+  $$("[data-ctl]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.ctl === S.mode || (b.dataset.ctl === "co2" && S.co2))));
+  $$('[data-ctl="hold"]').forEach(b => b.textContent = S.mode === "hold" ? `Breathe again (${Math.round(S.modeT)} s)` : "Hold your breath");
+  const key = (S.mode || (S.co2 ? "co2" : "")) + "|" + S.msg + "|" + O.state().level;
+  if (key === lastCtlKey) return; lastCtlKey = key;
+  const which = S.mode || (S.co2 ? "co2" : null);
+  $("#ctlMsg").innerHTML = (S.msg ? `<div class="alert"><b>${esc(S.msg)}</b></div>` : "") + (which ? `<p class="prose small" style="margin-top:10px">${O.text(O.get(`control.${which}`))}</p>` : "");
+}
+$("#spiroBtn").addEventListener("click", () => { $("#spiroBtn").disabled = true; Lung.startSpiro(); });
+function renderSteps(){ $("#breathSteps").innerHTML = (O.get("sections.mechanics.steps") || []).map((s, i) => `<li data-st="${i}"><div><b>${esc(s.name)}</b><span>${O.text(s)}</span></div></li>`).join(""); }
+
+/* =========================================================================
+   MECHANICS CHARTS
+   ========================================================================= */
+const btC = makeCanvas($("#breathTraces")), spC = makeCanvas($("#spiro")), fvC = makeCanvas($("#flowVol"));
+let btHover = null;
+$("#breathTraces").addEventListener("pointermove", e => { const r = e.target.getBoundingClientRect(); btHover = (e.clientX - r.left) / r.width; });
+$("#breathTraces").addEventListener("pointerleave", () => { btHover = null; O.untip(); });
+function drawBreath(){
+  const { ctx, w, h } = btC, S = Lung.S, R = Lung.rec, now = S.t, W = clamp(2.3 * S.T, 7, 16), t0 = now - W;
+  ctx.clearRect(0, 0, w, h);
+  const ink = C("--ink"), muted = C("--muted"), lineC = C("--line");
+  const L = 40, gw = w - L - 8, X = t => L + (t - t0) / W * gw;
+  /* inspiration bands */
+  let s0 = null; ctx.fillStyle = "rgba(63,143,224,.08)";
+  eachRec(R, REC_N, t0, now, (i, t) => { const ins = R.flow[i] > .005; if (ins && s0 == null) s0 = t; if (!ins && s0 != null){ ctx.fillRect(X(s0), 6, X(t) - X(s0), h - 12); s0 = null; } });
+  if (s0 != null) ctx.fillRect(X(s0), 6, X(now) - X(s0), h - 12);
+  const rows = [["Pleural pressure (cmH₂O)", R.ppl, C("--blood-co2")], ["Alveolar pressure (cmH₂O)", R.palv, C("--s2")], ["Airflow (L/s, + = in)", R.flow, C("--air")], ["Volume above FRC (L)", R.v, ink]];
+  const rh = (h - 12) / 4;
+  rows.forEach(([label, arr, col], r) => {
+    let lo = 1e9, hi = -1e9; eachRec(R, REC_N, t0, now, i => { lo = Math.min(lo, arr[i]); hi = Math.max(hi, arr[i]); });
+    if (r === 1 || r === 2){ const m = Math.max(Math.abs(lo), Math.abs(hi), r === 1 ? 1 : .5) * 1.15; lo = -m; hi = m; }
+    else { const pad = Math.max(.2, (hi - lo) * .15); lo -= pad; hi += pad; if (r === 0) hi = Math.min(hi, 2); }
+    const y0 = 6 + r * rh + 14, gh = rh - 22, Y = v => y0 + gh - (v - lo) / (hi - lo) * gh;
+    txt(ctx, label, L, y0 - 3, muted, "left", FONT_B);
+    line(ctx, L, y0 + gh + .5, L + gw, y0 + gh + .5, lineC);
+    if (lo < 0 && hi > 0){ line(ctx, L, Y(0), L + gw, Y(0), C("--line-strong"), 1, [3, 4]); txt(ctx, "0", L - 5, Y(0) + 4, muted, "right"); }
+    txt(ctx, hi.toFixed(1), L - 5, y0 + 8, muted, "right"); txt(ctx, lo.toFixed(1), L - 5, y0 + gh, muted, "right");
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); let f = true;
+    eachRec(R, REC_N, t0, now, (i, t) => { const y = Y(arr[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; }); ctx.stroke();
+  });
+  if (btHover != null){
+    const x = L + clamp((btHover * w - L) / gw) * gw, t = t0 + (x - L) / gw * W; let best = null;
+    eachRec(R, REC_N, t - .015, t + .015, i => best = i);
+    line(ctx, x, 6, x, h - 6, ink);
+    if (best != null){ const r = $("#breathTraces").getBoundingClientRect();
+      O.tip($("#breathTraces"), `<b>${R.flow[best] > .005 ? "Breathing in" : R.flow[best] < -.005 ? "Breathing out" : "No flow"}</b><br>Pleural ${R.ppl[best].toFixed(1)} · alveolar ${R.palv[best].toFixed(1)} cmH₂O<br>Flow ${R.flow[best].toFixed(2)} L/s · volume +${(R.v[best] * 1000).toFixed(0)} mL`, r.left + x, r.top + 30); }
+  }
+}
+function drawSpiro(){
+  const { ctx, w, h } = spC, S = Lung.S, R = Lung.rec, c = Lung.cond(), now = S.t, W = 20, t0 = now - W;
+  ctx.clearRect(0, 0, w, h);
+  const ink = C("--ink"), muted = C("--muted"), lineC = C("--line");
+  const L = 30, br = 92, gw = w - L - br, T = 14, gh = h - T - 22, vmax = 8, Y = v => T + gh - v / vmax * gh, X = t => L + (t - t0) / W * gw;
+  for (let v = 0; v <= vmax; v += 2){ line(ctx, L, Y(v) + .5, L + gw, Y(v) + .5, lineC); txt(ctx, v + " L", L - 4, Y(v) + 4, muted, "right"); }
+  ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.beginPath(); let f = true;
+  eachRec(R, REC_N, t0, now, (i, t) => { const y = Y(R.vabs[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; }); ctx.stroke();
+  /* lung-volume brackets */
+  const vt = Math.max(.3, S.vtLast || S.VTt), top = c.frc + vt;
+  const bar = (x, a, b, label, col) => { line(ctx, x, Y(a), x, Y(b), col, 3); line(ctx, x - 3, Y(a), x + 3, Y(a), col, 1.5); line(ctx, x - 3, Y(b), x + 3, Y(b), col, 1.5); ctx.save(); ctx.translate(x + 8, (Y(a) + Y(b)) / 2); txt(ctx, label, 0, 4, ink, "left", FONT_B); ctx.restore(); };
+  const xb = L + gw + 10;
+  bar(xb, c.tlc, top, "IRV", C("--s1")); bar(xb, top, c.frc, "VT", C("--s3")); bar(xb, c.frc, c.rv, "ERV", C("--s2")); bar(xb, c.rv, 0, "RV", muted);
+  bar(xb + 44, c.tlc, c.rv, "VC", ink);
+  line(ctx, L, Y(c.tlc), L + gw, Y(c.tlc), C("--line-strong"), 1, [2, 4]); txt(ctx, `TLC ${c.tlc.toFixed(1)} L`, L + 4, Y(c.tlc) - 4, muted);
+  line(ctx, L, Y(c.frc), L + gw, Y(c.frc), C("--line-strong"), 1, [2, 4]); txt(ctx, `FRC ${c.frc.toFixed(1)} L`, L + 4, Y(c.frc) + 13, muted);
+  txt(ctx, "Last 20 s", L + gw, h - 6, muted, "right");
+}
+function drawFlowVol(){
+  const { ctx, w, h } = fvC, S = Lung.S, c = Lung.cond(), F = Lung.forced(), hc = CONDITIONS.healthy;
+  ctx.clearRect(0, 0, w, h);
+  const ink = C("--ink"), muted = C("--muted"), lineC = C("--line");
+  const L = 34, gw = w - L - 10, T = 14, gh = h - T - 26, vmax = 8, fmax = 10, fmin = -7;
+  /* x: lung volume, high (TLC) on the left as is usual */
+  const X = v => L + (vmax - v) / vmax * gw, Y = f => T + (fmax - f) / (fmax - fmin) * gh;
+  for (let f = -6; f <= 10; f += 2){ line(ctx, L, Y(f) + .5, L + gw, Y(f) + .5, f === 0 ? C("--line-strong") : lineC); txt(ctx, String(f), L - 4, Y(f) + 4, muted, "right"); }
+  txt(ctx, "Flow (L/s)", L + 4, T + 8, muted); txt(ctx, "← more air in the lungs   Volume (L)", L + gw, h - 6, muted, "right");
+  const loop = (cc, FF, col, lw, alpha) => {
+    ctx.globalAlpha = alpha; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+    FF.pts.forEach((p, i) => { const x = X(cc.tlc - p[0]), y = Y(p[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    for (let k = 0; k <= 40; k++){ const v = cc.rv + (cc.tlc - cc.rv) * k / 40; ctx.lineTo(X(v), Y(-cc.pif * Math.pow(Math.sin(Math.PI * k / 40), .8))); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+  };
+  if (S.cond !== "healthy"){ loop(hc, FV_HEALTHY, muted, 1.5, .55); txt(ctx, "Healthy", X(hc.tlc - .8), Y(hc.pef) - 6, muted, "left"); }
+  loop(c, F, C("--s1"), 2.2, 1);
+  /* tidal loop from the live recording */
+  const R = Lung.rec; ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.beginPath(); let f = true;
+  eachRec(R, REC_N, S.t - S.T * 1.05, S.t, i => { const x = X(R.vabs[i]), y = Y(-R.flow[i]); f ? ctx.moveTo(x, y) : ctx.lineTo(x, y); f = false; }); ctx.stroke();
+  const x = X(c.frc + S.V), y = Y(-S.flow);
+  ctx.fillStyle = C("--surface"); ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.fillStyle = C("--s2"); ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill();
+  txt(ctx, "Forced breath", X(c.tlc - F.fvc * .3) + 6, Y(F.pef * .8), C("--s1"), "left", FONT_B);
+  txt(ctx, "Normal breath", X(c.frc - .1), Y(.8) - 4, ink, "left", FONT);
+}
+let FV_HEALTHY = Lung.forced();
+
+/* =========================================================================
+   GAS EXCHANGE CHARTS
+   ========================================================================= */
+const capSvg = $("#capFig"), capR = {};
+(() => {
+  const svg = capSvg;
+  el("path", { d: "M20 10 L580 10 L580 64 C500 74 100 74 20 64 Z", fill: "var(--lung)", opacity: .55 }, svg);
+  const t = el("text", { x: 30, y: 30, class: "l-label in" }, svg); t.textContent = "Alveolus (air)";
+  capR.pa = el("text", { x: 570, y: 30, class: "l-label", "text-anchor": "end" }, svg);
+  el("path", { d: "M20 70 C100 78 500 78 580 70", fill: "none", stroke: "var(--lung-line)", "stroke-width": 2 }, svg);
+  el("rect", { x: 20, y: 86, width: 560, height: 38, rx: 19, fill: "var(--surface-2)", stroke: "var(--line-strong)" }, svg);
+  const t2 = el("text", { x: 30, y: 142, class: "l-label" }, svg); t2.textContent = "Capillary: blood from the right heart →";
+  const t3 = el("text", { x: 570, y: 142, class: "l-label", "text-anchor": "end" }, svg); t3.textContent = "→ to the left heart";
+  capR.rbc = el("ellipse", { cx: 40, cy: 105, rx: 18, ry: 13, stroke: "var(--surface)", "stroke-width": 2 }, svg);
+  capR.dots = []; for (let k = 0; k < 10; k++) capR.dots.push({ c: el("circle", { r: 3, fill: "var(--air)" }, svg), x: 40 + k * 55, p: seeded() });
+  capR.u = 0;
+})();
+const trC = makeCanvas($("#transit")), csC = makeCanvas($("#cascade")), odC = makeCanvas($("#odc")), vqC = makeCanvas($("#vq"));
+function capPO2(t){ const S = Lung.S, PA = S.PAO2 - S.Aa * .3; return PA - (PA - S.PvO2) * Math.exp(-t / Math.max(.01, S.tau || .08)); }
+function animateCap(dt){
+  const S = Lung.S, tr = S.transit || .75;
+  capR.u += dt / tr; if (capR.u > 1.25) capR.u = 0;
+  const u = Math.min(1, capR.u), x = 40 + u * 520, p = capPO2(u * tr), s = sat(p, S.p50);
+  capR.rbc.setAttribute("cx", x.toFixed(1));
+  const mix = (a, b, k) => { const A = a.match(/\w\w/g).map(h => parseInt(h, 16)), B = b.match(/\w\w/g).map(h => parseInt(h, 16)); return "#" + A.map((v, i) => Math.round(lerp(v, B[i], k)).toString(16).padStart(2, "0")).join(""); };
+  capR.rbc.setAttribute("fill", mix("6f72bf", "d9464f", clamp((s - .7) / .28)));
+  capR.pa.textContent = `Alveolar O₂ ${Math.round(S.PAO2)} mmHg · CO₂ ${Math.round(S.PACO2)} mmHg`;
+  capR.dots.forEach(d => { d.p += dt * 1.6; if (d.p > 1) d.p -= 1; const y = 40 + d.p * 60; d.c.setAttribute("cx", d.x); d.c.setAttribute("cy", y.toFixed(1)); d.c.setAttribute("opacity", (Math.abs(d.x - x) < 120 ? 1 : .25) * (1 - d.p * .6)); });
+}
+function drawTransit(){
+  const { ctx, w, h } = trC, S = Lung.S, tr = S.transit || .75;
+  ctx.clearRect(0, 0, w, h);
+  const ink = C("--ink"), muted = C("--muted"), lineC = C("--line");
+  const L = 36, gw = w - L - 10, T = 12, gh = h - T - 30, tmax = 1, pmax = Math.max(110, Math.ceil(S.PAO2 / 20) * 20 + 10);
+  const X = t => L + t / tmax * gw, Y = p => T + gh - p / pmax * gh;
+  for (let p = 0; p <= pmax; p += 20){ line(ctx, L, Y(p) + .5, L + gw, Y(p) + .5, lineC); txt(ctx, String(p), L - 4, Y(p) + 4, muted, "right"); }
+  for (let t = 0; t <= 1.001; t += .25) txt(ctx, t.toFixed(2) + " s", X(t), h - 14, muted, "center");
+  txt(ctx, "Time in the capillary", L + gw, h - 2, muted, "right"); txt(ctx, "mmHg", L + 2, T + 8, muted);
+  ctx.fillStyle = C("--surface-2"); ctx.fillRect(X(tr), T, X(tmax) - X(tr), gh);
+  line(ctx, X(tr), T, X(tr), T + gh, ink, 1.5); txt(ctx, `Red cell leaves (${tr.toFixed(2)} s)`, X(tr) + (X(tr) > w * .7 ? -4 : 4), T + 14, ink, X(tr) > w * .7 ? "right" : "left", FONT_B);
+  const PA = S.PAO2 - S.Aa * .3;
+  line(ctx, L, Y(PA), L + gw, Y(PA), C("--blood-o2"), 1, [4, 4]); txt(ctx, `Alveolar O₂`, L + gw - 2, Y(PA) - 4, muted, "right");
+  ctx.strokeStyle = C("--blood-o2"); ctx.lineWidth = 2.2; ctx.beginPath();
+  for (let k = 0; k <= 100; k++){ const t = k / 100 * tr, y = Y(capPO2(t)); k ? ctx.lineTo(X(t), y) : ctx.moveTo(X(t), y); } ctx.stroke();
+  ctx.strokeStyle = C("--blood-co2"); ctx.lineWidth = 2.2; ctx.beginPath();
+  for (let k = 0; k <= 100; k++){ const t = k / 100 * tr, p = S.PACO2 + 6 * Math.exp(-t / .03 / (Lung.cond().D > .5 ? 1 : 1.5)), y = Y(p); k ? ctx.lineTo(X(t), y) : ctx.moveTo(X(t), y); } ctx.stroke();
+  const end = capPO2(tr); txt(ctx, `O₂ leaving: ${Math.round(end)} mmHg`, X(tr) - 6, Y(end) + 16, ink, "right", FONT_B);
+  /* the red cell's position */
+  const u = Math.min(1, capR.u) * tr; ctx.fillStyle = C("--blood-o2"); ctx.beginPath(); ctx.arc(X(u), Y(capPO2(u)), 5, 0, 7); ctx.fill();
+}
+function drawCascade(){
+  const { ctx, w, h } = csC, S = Lung.S, PB = Lung.PB();
+  ctx.clearRect(0, 0, w, h);
+  const muted = C("--muted"), ink = C("--ink");
+  const steps = [["Air (dry)", .2093 * PB], ["Airways", Lung.PIO2()], ["Alveoli", S.PAO2], ["Arteries", S.PaO2], ["Veins", S.PvO2], ["Mitochondria", O.state().phase === "exercise" ? 2 : 4]];
+  const L = 82, gw = w - L - 46, rowH = (h - 8) / steps.length, max = 160;
+  steps.forEach(([label, v], i) => {
+    const y = 4 + i * rowH, bh = Math.min(18, rowH - 8), bw = Math.max(2, v / max * gw);
+    txt(ctx, label, L - 8, y + bh / 2 + 4, muted, "right");
+    ctx.fillStyle = C("--blood-o2"); ctx.globalAlpha = .35 + .65 * (1 - i / steps.length);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(L, y, bw, bh, [0, 4, 4, 0]) : ctx.rect(L, y, bw, bh); ctx.fill(); ctx.globalAlpha = 1;
+    txt(ctx, String(Math.round(v)), L + bw + 6, y + bh / 2 + 4, ink, "left", FONT_B);
+  });
+}
+function drawODC(){
+  const { ctx, w, h } = odC, S = Lung.S;
+  ctx.clearRect(0, 0, w, h);
+  const ink = C("--ink"), muted = C("--muted"), lineC = C("--line");
+  const L = 40, gw = w - L - 14, T = 12, gh = h - T - 32, pmax = 120, X = p => L + Math.min(p, pmax) / pmax * gw, Y = s => T + gh - s * gh;
+  for (let s = 0; s <= 1.001; s += .25){ line(ctx, L, Y(s) + .5, L + gw, Y(s) + .5, lineC); txt(ctx, Math.round(s * 100) + "%", L - 4, Y(s) + 4, muted, "right"); }
+  for (let p = 0; p <= pmax; p += 20) txt(ctx, String(p), X(p), h - 16, muted, "center");
+  txt(ctx, "PO₂ (mmHg)", L + gw, h - 2, muted, "right"); txt(ctx, "Haemoglobin saturation", L + 4, T + 10, muted);
+  const curve = (p50, col, lw, dash) => { ctx.strokeStyle = col; ctx.lineWidth = lw; if (dash) ctx.setLineDash(dash); ctx.beginPath(); for (let p = 0; p <= pmax; p += 1){ const y = Y(sat(p, p50)); p ? ctx.lineTo(X(p), y) : ctx.moveTo(X(p), y); } ctx.stroke(); ctx.setLineDash([]); };
+  curve(26.8, C("--line-strong"), 1.5, [5, 4]);
+  curve(S.p50, C("--blood-o2"), 2.4);
+  line(ctx, X(S.p50), Y(.5), X(S.p50), Y(0), muted, 1, [2, 3]); line(ctx, L, Y(.5), X(S.p50), Y(.5), muted, 1, [2, 3]);
+  txt(ctx, `P50 ${S.p50.toFixed(1)}`, X(S.p50) + 4, Y(.5) + 14, ink, "left", FONT_B);
+  const pt = (p, s, col, label, right) => { ctx.fillStyle = C("--surface"); ctx.beginPath(); ctx.arc(X(p), Y(s), 7.5, 0, 7); ctx.fill(); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(X(p), Y(s), 5.5, 0, 7); ctx.fill(); txt(ctx, label, X(p) + (right ? 10 : -10), Y(s) + (right ? 16 : -8), ink, right ? "left" : "right", FONT_B); };
+  pt(S.PvO2, S.SvO2, C("--blood-co2"), `Venous ${Math.round(S.SvO2 * 100)}%`, true);
+  pt(S.PaO2, S.SaO2, C("--blood-o2"), `Arterial ${Math.round(S.SaO2 * 100)}%`, false);
+}
+function drawVQ(){
+  const { ctx, w, h } = vqC, S = Lung.S, Z = S.zones;
+  ctx.clearRect(0, 0, w, h); if (!Z) return;
+  const ink = C("--ink"), muted = C("--muted"), lineC = C("--line");
+  const L = 96, gw = w - L - 80, rowH = (h - 30) / 3, max = Math.max(4, ...Z.map(z => Math.max(z.VA, z.Q))) * 1.05;
+  Z.forEach((z, i) => {
+    const y = 6 + i * rowH, bh = Math.min(16, (rowH - 18) / 2);
+    txt(ctx, z.name, L - 10, y + bh + 6, ink, "right", FONT_B);
+    const bars = [[z.VA, C("--air")], [z.Q, C("--blood-o2")]];
+    bars.forEach(([v, col], k) => { const yy = y + k * (bh + 3), bw = Math.max(2, v / max * gw); ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(L, yy, bw, bh, [0, 4, 4, 0]) : ctx.rect(L, yy, bw, bh); ctx.fill(); txt(ctx, `${v.toFixed(1)} L/min`, L + bw + 6, yy + bh - 3, muted); });
+    const vq = z.vq, tag = vq < .3 ? " · too little air" : vq > 3 ? " · too little blood" : "";
+    txt(ctx, `V/Q ${vq > 20 ? "∞" : vq.toFixed(2)}${tag}`, L, y + 2 * bh + 18, ink, "left", FONT);
+    txt(ctx, `O₂ leaving ${Math.round(z.P)} mmHg`, w - 6, y + 2 * bh + 18, muted, "right");
+  });
+  txt(ctx, `Plus ${S.shuntQ.toFixed(2)} L/min of shunted blood that meets no air`, L, h - 6, muted);
+}
+
+/* =========================================================================
+   CONTROL FIGURE and chemoreflex chart
+   ========================================================================= */
+const ctlSvg = $("#controlFig"), ctl = { nerves: {} };
+(() => {
+  const svg = ctlSvg;
+  el("circle", { cx: 140, cy: 92, r: 84, fill: "none", stroke: "var(--line-strong)", "stroke-width": 1.5 }, svg);
+  el("ellipse", { cx: 140, cy: 74, rx: 66, ry: 46, fill: "var(--surface-2)", stroke: "var(--line-strong)", "data-part": "cortex" }, svg);
+  el("path", { d: "M140 184 L140 410", stroke: "var(--surface-2)", "stroke-width": 14, "stroke-linecap": "round" }, svg);
+  el("path", { d: "M140 184 L140 410", stroke: "var(--line-strong)", "stroke-width": 1, fill: "none" }, svg);
+  el("rect", { x: 122, y: 126, width: 36, height: 24, rx: 9, fill: "var(--surface-2)", stroke: "var(--line-strong)", "data-part": "pons" }, svg);
+  el("rect", { x: 125, y: 152, width: 30, height: 32, rx: 9, fill: "var(--surface-2)", stroke: "var(--line-strong)", "data-part": "medulla" }, svg);
+  ctl.central = [el("circle", { cx: 122, cy: 172, r: 6, fill: "var(--chemo)", class: "c-node", "data-part": "centralChemo" }, svg)];
+  ctl.rhythm = el("circle", { cx: 140, cy: 168, r: 5, fill: "var(--nerve-c)", "pointer-events": "none" }, svg);
+  /* carotid and aorta */
+  el("path", { d: "M262 322 C256 280 246 230 236 140", class: "v-o2", "stroke-width": 8 }, svg);
+  el("path", { d: "M236 230 C232 200 222 170 214 140", class: "v-o2", "stroke-width": 5 }, svg);
+  el("path", { d: "M262 330 C262 296 312 290 330 330", class: "v-o2", "stroke-width": 12 }, svg);
+  ctl.carotid = el("circle", { cx: 238, cy: 226, r: 7, fill: "var(--chemo)", class: "c-node", "data-part": "carotidBody" }, svg);
+  ctl.aortic = el("circle", { cx: 282, cy: 300, r: 6, fill: "var(--chemo)", class: "c-node", "data-part": "aorticBody" }, svg);
+  /* lungs, trachea, diaphragm */
+  el("path", { d: "M440 150 L440 220 M440 220 L408 248 M440 220 L472 248", fill: "none", stroke: "var(--airway-line)", "stroke-width": 8, "stroke-linecap": "round" }, svg);
+  ctl.lungs = el("g", {}, svg);
+  el("path", { d: "M412 232 C380 236 356 290 352 350 C350 378 370 386 398 380 C420 376 432 370 432 344 C432 300 430 260 412 232 Z", fill: "var(--lung)", stroke: "var(--lung-line)" }, ctl.lungs);
+  el("path", { d: "M468 232 C500 236 524 290 528 350 C530 378 510 386 482 380 C460 376 448 370 448 344 C448 300 450 260 468 232 Z", fill: "var(--lung)", stroke: "var(--lung-line)" }, ctl.lungs);
+  ctl.stretch = [el("circle", { cx: 408, cy: 262, r: 5, fill: "var(--nerve-c)", class: "c-node", "data-part": "stretch" }, ctl.lungs), el("circle", { cx: 472, cy: 262, r: 5, fill: "var(--nerve-c)", class: "c-node", "data-part": "stretch" }, ctl.lungs)];
+  ctl.dia = el("path", { d: "M340 398 C380 368 430 376 440 384 C450 376 500 368 540 398", class: "l-dia", "data-part": "diaphragm" }, svg);
+  /* nerves */
+  const nerve = (id, d, part, dir) => { el("path", { d, class: "c-hit", "data-part": part }, svg); const p = el("path", { d, class: "c-nerve", "data-part": part }, svg); ctl.nerves[id] = { p, len: p.getTotalLength(), dir, dots: Array.from({ length: 10 }, () => ({ u: -1, c: el("circle", { r: 3.6, fill: "#fff", stroke: "var(--nerve-c)", "stroke-width": 1.5, opacity: 0, "pointer-events": "none" }, svg) })), acc: 0 }; };
+  nerve("phrenic", "M140 230 C220 236 300 290 340 340 C370 372 410 378 440 382", "phrenic", 1);
+  nerve("ix", "M238 226 C210 214 180 196 156 178", "carotidBody", 1);
+  nerve("vagusL", "M404 262 C340 230 230 200 156 172", "stretch", 1);
+  nerve("vagusA", "M282 300 C240 260 200 220 152 180", "aorticBody", 1);
+  nerve("cortex", "M140 118 L140 128", "cortex", 1);
+  for (const [t, x, y, a] of [["Cortex (voluntary)", 140, 64, "middle"], ["Pons", 166, 142, "start"], ["Medulla", 166, 172, "start"], ["Central chemoreceptors", 114, 196, "end"],
+    ["Carotid body", 250, 222, "start"], ["Aortic body", 296, 296, "start"], ["Stretch receptors", 440, 206, "middle"], ["Phrenic nerve (C3–C5)", 258, 326, "end"], ["Diaphragm", 540, 420, "end"], ["Spinal cord", 132, 410, "end"]]){
+    const n = el("text", { x, y, class: "c-label", "text-anchor": a }, svg); n.textContent = t;
+  }
+  O.bindParts(svg);
+})();
+function fireNerve(id, rate, dt){
+  const N = ctl.nerves[id]; N.acc += dt * rate;
+  while (N.acc >= 1){ N.acc -= 1; const d = N.dots.find(d => d.u < 0); if (d) d.u = 0; }
+  N.dots.forEach(d => { if (d.u < 0) return; d.u += dt / .5; if (d.u > 1){ d.u = -1; d.c.setAttribute("opacity", 0); return; } const pt = N.p.getPointAtLength(d.u * N.len); d.c.setAttribute("cx", pt.x); d.c.setAttribute("cy", pt.y); d.c.setAttribute("opacity", 1); });
+}
+function animateControl(real){
+  const S = Lung.S, insp = S.flow > .02 && S.mode !== "hold", hyp = Lung.hypoxia(), co2d = clamp((S.PaCO2 - 30) / 20);
+  fireNerve("phrenic", insp ? 6 + S.VE * .15 : 0, real);
+  fireNerve("vagusL", insp && S.V > .2 * S.VTt ? 5 : 0, real);
+  fireNerve("ix", 1 + hyp * 8 + co2d * 2, real);
+  fireNerve("vagusA", .6 + hyp * 2, real);
+  fireNerve("cortex", S.mode ? 6 : 0, real);
+  const glow = (n, k) => n.setAttribute("style", k > .05 ? `filter:drop-shadow(0 0 ${(2 + 8 * k).toFixed(1)}px var(--chemo))` : "");
+  ctl.central.forEach(n => glow(n, co2d)); glow(ctl.carotid, clamp(hyp + co2d * .3)); glow(ctl.aortic, clamp(hyp * .5));
+  ctl.rhythm.setAttribute("opacity", insp ? 1 : .25);
+  const k = 1 + .05 * S.V;
+  ctl.lungs.setAttribute("transform", `translate(440 230) scale(${(1 + .02 * S.V).toFixed(3)} ${k.toFixed(3)}) translate(-440 -230)`);
+  ctl.dia.setAttribute("transform", `translate(0 ${(150 * (k - 1)).toFixed(1)})`);
+}
+const chC = makeCanvas($("#chemo"));
+function drawChemo(){
+  const { ctx, w, h } = chC, S = Lung.S, Rr = Lung.chem, now = S.t, W = 180, t0 = now - W;
+  ctx.clearRect(0, 0, w, h);
+  const ink = C("--ink"), muted = C("--muted"), lineC = C("--line");
+  const L = 40, gw = w - L - 64, X = t => L + (t - t0) / W * gw;
+  const top = 10, gh1 = h * .55, top2 = top + gh1 + 26, gh2 = h - top2 - 22;
+  let pmax = 110; eachRec(Rr, CHEM_N, t0, now, i => { pmax = Math.max(pmax, Rr.o2[i] + 10, Rr.co2[i] + 10); });
+  const Y1 = p => top + gh1 - p / pmax * gh1;
+  for (let p = 0; p <= pmax; p += 20){ line(ctx, L, Y1(p) + .5, L + gw, Y1(p) + .5, lineC); txt(ctx, String(p), L - 4, Y1(p) + 4, muted, "right"); }
+  txt(ctx, "Arterial gases (mmHg)", L, top + 2, muted, "left", FONT_B);
+  let vmax = 20; eachRec(Rr, CHEM_N, t0, now, i => { vmax = Math.max(vmax, Rr.ve[i] * 1.1); });
+  const Y2 = v => top2 + gh2 - v / vmax * gh2;
+  line(ctx, L, Y2(0) + .5, L + gw, Y2(0) + .5, lineC); txt(ctx, Math.round(vmax) + "", L - 4, Y2(vmax) + 8, muted, "right"); txt(ctx, "0", L - 4, Y2(0) + 4, muted, "right");
+  txt(ctx, "Ventilation (L/min)", L, top2 - 6, muted, "left", FONT_B);
+  const ser = (arr, Y, col) => { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); let f = true, last = null; eachRec(Rr, CHEM_N, t0, now, (i, t) => { const y = Y(arr[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; last = y; }); ctx.stroke(); return last; };
+  const yo = ser(Rr.o2, Y1, C("--blood-o2")), yc = ser(Rr.co2, Y1, C("--blood-co2")), yv = ser(Rr.ve, Y2, C("--air"));
+  const lab = [[`O₂ ${Math.round(S.PaO2)}`, yo], [`CO₂ ${Math.round(S.PaCO2)}`, yc]].filter(x => x[1] != null).sort((a, b) => a[1] - b[1]);
+  if (lab.length === 2 && lab[1][1] - lab[0][1] < 14) lab[1][1] = lab[0][1] + 14;
+  lab.forEach(([s, y]) => txt(ctx, s, L + gw + 6, y + 4, ink, "left", FONT_B));
+  if (yv != null) txt(ctx, `${S.VE.toFixed(1)}`, L + gw + 6, yv + 4, ink, "left", FONT_B);
+  txt(ctx, S.ff ? "Last 30 min of blood gases (×10)" : "Last 3 minutes", L + gw, h - 4, muted, "right");
+}
+
+/* =========================================================================
+   FRAME LOOP and wiring
+   ========================================================================= */
+let roT = 0, simT = 0;
+O.onTick((dt, real) => {
+  Lung.advance(Math.min(dt, .05)); simT += dt;
+  if (O.visible(anat.svg)) animateAnatomy();
+  if (O.visible(acin.svg)){ animateAcinus(simT); }
+  if (O.visible(aw.svg)) animateAirway(simT);
+  if (O.visible($("#breathTraces"))) drawBreath();
+  if (O.visible($("#spiro"))) drawSpiro();
+  if (O.visible($("#flowVol"))) drawFlowVol();
+  if (O.visible(capSvg)) animateCap(dt);
+  if (O.visible($("#transit"))) drawTransit();
+  if (O.visible($("#cascade"))) drawCascade();
+  if (O.visible($("#odc"))) drawODC();
+  if (O.visible($("#vq"))) drawVQ();
+  if (O.visible(ctlSvg)) animateControl(dt);
+  if (O.visible($("#chemo"))) drawChemo();
+  const st = Lung.S.flow > .005 ? 0 : 1;
+  $$("#breathSteps li").forEach(li => li.classList.toggle("on", +li.dataset.st === st && Lung.S.mode !== "hold"));
+  roT += real;
+  if (roT > .25){
+    roT = 0;
+    const S = Lung.S, c = Lung.cond(), F = Lung.forced(), vt = S.mode === "hold" ? 0 : Math.round((S.vtLast || S.VTt) * 1000), rr = S.mode === "hold" ? 0 : S.f;
+    O.setStat("rr", S.mode === "hold" ? "0" : rr.toFixed(0), S.mode === "hold" ? "holding your breath" : undefined);
+    O.setStat("vt", String(vt)); O.setStat("ve", S.VE.toFixed(1)); O.setStat("pao2", String(Math.round(S.PaO2))); O.setStat("paco2", String(Math.round(S.PaCO2))); O.setStat("spo2", String(Math.round(S.SaO2 * 100)));
+    ro("rr", rr.toFixed(0), "/min"); ro("vt", vt, "mL"); ro("ve", S.VE.toFixed(1), "L/min"); ro("tau", (c.C * S.user.C * c.R * S.user.R).toFixed(2), "s");
+    ro("fev1", (F.fev1).toFixed(2), "L"); ro("fvc", F.fvc.toFixed(2), "L"); ro("ratio", Math.round(F.fev1 / F.fvc * 100), "%"); ro("pef", F.pef.toFixed(1), "L/s"); ro("tlc", c.tlc.toFixed(1), "L"); ro("rv", c.rv.toFixed(1), "L");
+    ro("p50", S.p50.toFixed(1), "mmHg"); ro("ph", S.pH.toFixed(2)); ro("sa", Math.round(S.SaO2 * 100), "%"); ro("sv", Math.round(S.SvO2 * 100), "%");
+    ro("unload", Math.round((S.SaO2 - S.SvO2) * 1.34 * HB), "mL/L");
+    ro("pao2", Math.round(S.PaO2), "mmHg"); ro("paco2", Math.round(S.PaCO2), "mmHg"); ro("aa", Math.round(S.Aa + S.diff), "mmHg"); ro("sao2", Math.round(S.SaO2 * 100), "%"); ro("ph2", S.pH.toFixed(2)); ro("shunt", Math.round(c.shunt * 100), "%");
+    ro("ve2", S.VE.toFixed(1), "L/min"); ro("pao2b", Math.round(S.PaO2), "mmHg"); ro("paco2b", Math.round(S.PaCO2), "mmHg"); ro("drive", Lung.hypoxia() > .05 ? "×" + (1 + Lung.hypoxia()).toFixed(1) : "none");
+    $$("[data-alt-out]").forEach(n => n.textContent = `${Lung.S.alt.toLocaleString()} m · ${Math.round(Lung.PB())} mmHg`);
+    $("#tempOut").textContent = S.temp.toFixed(1) + " °C"; $("#tempIn").value = S.temp; $("#bpgOut").textContent = S.bpg.toFixed(1) + " mM";
+    renderCtl();
+  }
+});
+O.subscribe((s, p) => {
+  if (s.level !== p.level){ renderSteps(); renderCondText(); lastCtlKey = ""; renderCtl(); }
+  if (s.phase !== p.phase){ Lung.S.tempTouched = false; Lung.S.vmax = Lung.S.vmin = Lung.S.V; }
+});
+buildConditions(); renderSteps(); renderCondText(); renderAnatomyCondition(); renderCtl();
+Lung.settle(); Lung.advance(6);
+window.__lung = Lung; /* for debugging in the console */
+O.start();
+})();
+</script>
+</body>
+</html>

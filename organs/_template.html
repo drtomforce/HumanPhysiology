@@ -21,10 +21,12 @@
     (`--check` only reports pages that are out of date).
 
  2. DATA (JSON blocks; the schema is the contract)
-    #organ-meta      {id, name, mainTopic, kicker, blurb, stats:[{id,label,unit}]}
+    #organ-meta      {id, name, mainTopic, kicker, blurb, stats:[{id,label,unit}],
+                      see:[{href, label}] (links to related organ pages)}
     #organ-content   {phases:{sleep|rest|meal|exercise: levels},
                       sections:{<id>:{nav, kicker, title, intro: levels, …}},
-                      parts:{<id>:{name, kind, systems:[sys], related:[part], …levels}},
+                      parts:{<id>:{name, kind, systems:[sys], related:[part],
+                             link?:{href, label}, …levels}},
                       lens:{<system id>: levels}, …anything the organ needs}
                      "levels" = {ms, hs, college, phd}. Missing levels fall back
                      to the nearest lower one (then the nearest higher).
@@ -238,6 +240,7 @@ a{ color:inherit; }
       <p class="kicker" data-meta="kicker"></p>
       <h1 data-meta="name"></h1>
       <p class="lede" data-meta="blurb"></p>
+      <div class="chips" data-see></div>
     </div>
     <div class="now" data-now></div>
   </div>
@@ -473,12 +476,14 @@ function renderInspectors(){
     const sys = (p.systems || []).filter(s => SYSTEM_BY_ID[s]).map(s => `<a class="chip" href="#lens-${s}" style="--c:${SYSTEM_BY_ID[s].color}"><i></i>${esc(SYSTEM_BY_ID[s].name)}</a>`).join("");
     const rel = (p.related || []).filter(r => CONTENT.parts[r]).map(r => `<button type="button" class="chip" data-goto="${esc(r)}">${esc(CONTENT.parts[r].name)}</button>`).join("");
     const extra = box.__extra ? box.__extra(id, p) : "";
+    const link = p.link ? `<div class="chips"><a class="chip on" href="${esc(p.link.href)}">${esc(p.link.label)} ›</a></div>` : "";
     box.innerHTML = `
       ${p.kind ? `<p class="insp-kind">${esc(p.kind)}</p>` : ""}
       <h3>${esc(p.name)}</h3>
       <p class="lvl">${pips(li)}${esc(LEVELS[li].label)}</p>
       <p class="prose">${text(p)}</p>
       ${extra}
+      ${link}
       ${rel ? `<div class="chips">${rel}</div>` : ""}
       ${sys ? `<div class="chips">${sys}</div>` : ""}`;
     $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
@@ -578,6 +583,14 @@ function renderLens(){
     }));
   });
 }
+/* links to other organ pages: META.see = [{href, label}] */
+function renderSee(){
+  $$("[data-see]").forEach(n => {
+    const see = META.see || [];
+    n.innerHTML = see.map(x => `<a class="chip" href="${esc(x.href)}">${esc(x.label)} ›</a>`).join("");
+    n.hidden = !see.length;
+  });
+}
 function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: META.mainTopic || "" }); }); }
 
 /* ---------- animation loop ---------- */
@@ -612,7 +625,7 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow();
+  buildControls(); buildNav(); buildNow(); renderSee();
   bindParts(); bindGlossary();
   const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); };
   subscribe((s, p) => {

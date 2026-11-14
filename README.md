@@ -1,5 +1,5 @@
 # HumanPhysiology
-A day in the life of the human body: a fun, standalone, single-file educational web app about human physiology.
+A day in the life of the human body: a fun, standalone educational web app about human physiology, with a deep-dive page for each organ.
 
 Open `index.html` in any modern browser. No build step and no dependencies (Google Fonts are optional).
 
@@ -40,6 +40,10 @@ Open `index.html` in any modern browser. No build step and no dependencies (Goog
   the pupil follows the light while rods, cones and the body-clock cells of the retina fire and the eyes dart in REM sleep,
   hair cells sway on the cochlea's travelling wave and balance fluid sloshes with each stride,
   and the throat swallows, snores and breathes while cilia sweep mucus up the windpipe.
+- **Organ deep dives**: each organ can get its own standalone page in `organs/`, opened from its card on the body ("Explore the heart in depth") and linking back to it at the same reading level and time of day.
+  Each page covers the organ's anatomy, physiology and what it means to every body system (circulatory, nervous, endocrine, respiratory, digestive, urinary, immune and lymphatic, muscles and skeleton, skin and reproductive), and six of those cards link back to the body with that system animated.
+  - **The heart** (`organs/heart.html`): a frontal section with chambers, valves, papillary muscles and wall layers, where the valves open and close and blood flows beat by beat. A live Wiggers diagram and pressure–volume loop come from a time-varying elastance model, with sliders for preload, afterload and contractility. The coronary arteries (LAD, diagonals, circumflex, marginals, RCA, PDA and the cardiac veins) can be set right-, co- or left-dominant; block any segment to see its territory on the 17-segment bull's-eye, the ST changes on a 12-lead ECG, slower coronary flow and a weaker pump. The conduction system (SA node, atrial pathways, Bachmann's bundle, AV node, bundle of His, bundle branches, Purkinje fibres) shows the electrical wave in slow motion, with pacemaker and muscle action potentials over the ECG. Pick a rhythm: AV blocks (first degree, Wenckebach, Mobitz II, complete), bundle branch blocks, atrial fibrillation or sinus arrest. One simulated heart drives every section, so a dropped beat is also a missing pulse.
+  - **Adding an organ**: copy `organs/_template.html` to `organs/<id>.html`, fill in its JSON blocks (text at four levels, parts, body-systems lens), draw its figures, and add it to `ORGAN_PAGES` in `index.html`. The shared engine sits between `ORGAN ENGINE` markers: edit it in the template and run `node organs/sync-engine.mjs` to copy it into every page (`--check` reports pages that are out of date).
 - **Four reading levels**: Middle school, High school, College and PhD / MD. A glossary links terms and shows their definitions as tooltips.
 
 Values are typical for a healthy adult and simplified for teaching. This is not medical advice.

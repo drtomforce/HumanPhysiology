@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The heart · HumanPhysiology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&family=Schibsted+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+================================================================================
+ HUMANPHYSIOLOGY — THE HEART (organ deep-dive page)
+================================================================================
+ Built on the organ-page pattern: see the notes at the top of
+ organs/_template.html. The ENGINE blocks below are copied from there by
+ `node organs/sync-engine.mjs`; don't edit them here.
+
+ Heart-specific layers (in the organ script at the bottom):
+   HEART     One simulated heart that every section reads.
+             Conduction: the SA node fires at a rate set by the part of the day
+             and the autonomic slider; RHYTHMS decide whether each P wave is
+             conducted, the PR interval, the QRS width and escape beats.
+             Mechanics: time-varying elastance for the left atrium and left
+             ventricle (Suga), a pulmonary-vein source (preload) and a two-element
+             Windkessel aorta (afterload). Electrical events trigger contraction,
+             so a dropped beat is also a missing pulse. Coronary flow is
+             aortic pressure minus the squeeze of the contracting wall.
+             ECG: P, QRS and T waves summed per lead (12 leads), widened for bundle
+             branch block and shifted by the ST pattern of a blocked artery.
+   CORONARY  The coronary tree (segments, dominance), the AHA 17-segment
+             territories each segment feeds, and each segment's ST signature.
+   FIGURES   Frontal section (anatomy, flow, conduction), Wiggers diagram and
+             pressure–volume loop, coronary surface view, bull's-eye, 12-lead
+             ECG and the stacked action-potential / ECG strip.
+================================================================================
+-->
+<style>
+/* ===== ORGAN ENGINE CSS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+:root{
+  --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
+  --line:#DCD2C9; --line-strong:#A99B91;
+  --skin:#EBCDB6; --skin-line:#C9A186; --vessel:#C2414B; --vein:#4F5FB0; --nerve:#C99318;
+  --accent:#2f8f83; --sel:#d9a21b;
+  --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans:"Schibsted Grotesk", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+    --line:#342B26; --line-strong:#5A4B42;
+    --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0; --nerve:#E8BC45;
+    --accent:#4fb3a6; --sel:#f0c040;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+  --line:#342B26; --line-strong:#5A4B42;
+  --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0; --nerve:#E8BC45;
+  --accent:#4fb3a6; --sel:#f0c040;
+  color-scheme: dark;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-padding-top:120px; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+button{ font:inherit; color:inherit; }
+a{ color:inherit; }
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:4px; }
+.wrap{ max-width:1240px; margin:0 auto; padding:0 24px; }
+
+/* header */
+.op-top{ position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.op-bar{ display:flex; align-items:center; gap:14px; padding-top:10px; padding-bottom:10px; flex-wrap:wrap; }
+.op-back{ display:inline-flex; align-items:center; gap:6px; text-decoration:none; border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 13px 6px 10px; font-size:13px; font-weight:500; white-space:nowrap; }
+.op-back:hover{ background:var(--surface-2); }
+.op-name{ font-family:var(--serif); font-size:19px; font-weight:500; margin:0; letter-spacing:-.01em; white-space:nowrap; }
+.op-ctrls{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.op-ctl{ display:flex; align-items:center; gap:7px; }
+.op-ctl > span{ font-size:12px; color:var(--muted); }
+.seg{ display:inline-flex; background:var(--surface-2); border-radius:999px; padding:3px; flex-wrap:wrap; }
+.seg button{ border:0; background:transparent; padding:5px 11px; border-radius:999px; cursor:pointer; font-size:12.5px; font-weight:500; color:var(--muted); white-space:nowrap; transition:background .2s, color .2s; }
+.seg button[aria-checked="true"]{ background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--line); }
+.seg .s{ display:none; }
+.op-play{ border:1px solid var(--line); background:var(--surface); border-radius:999px; width:32px; height:32px; display:grid; place-items:center; cursor:pointer; padding:0; }
+.op-nav{ display:flex; gap:4px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+.op-nav::-webkit-scrollbar{ display:none; }
+.op-nav a{ text-decoration:none; font-size:13px; font-weight:500; color:var(--muted); padding:5px 11px; border-radius:999px; white-space:nowrap; }
+.op-nav a:hover{ color:var(--ink); background:var(--surface-2); }
+.op-nav a[aria-current="true"]{ color:var(--ink); background:var(--surface); box-shadow:0 0 0 1px var(--line); }
+
+/* hero */
+.hero{ padding-top:36px; padding-bottom:12px; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:32px; align-items:end; }
+.kicker{ margin:0 0 6px; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.hero h1{ font-family:var(--serif); font-weight:400; font-size:clamp(34px, 5vw, 58px); line-height:1.02; letter-spacing:-.025em; margin:0 0 12px; text-wrap:balance; }
+.hero .lede{ font-family:var(--serif); font-size:18px; line-height:1.5; margin:0; color:var(--ink); max-width:62ch; text-wrap:pretty; }
+.now{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
+.now-head{ display:flex; align-items:center; gap:8px; margin:0 0 6px; font-size:13px; font-weight:600; }
+.now-head i{ width:9px; height:9px; border-radius:50%; background:var(--pc, var(--accent)); }
+.now p.t{ margin:0 0 12px; font-size:14px; color:var(--muted); }
+.stats{ display:grid; grid-template-columns:repeat(auto-fit, minmax(96px, 1fr)); gap:8px; }
+.stat{ background:var(--bg); border-radius:10px; padding:8px 10px; min-width:0; }
+.stat .l{ font-size:11px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat .v{ font-family:var(--serif); font-size:22px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.stat .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:3px; }
+.stat .u{ font-size:11px; color:var(--muted); }
+
+/* sections */
+.sec{ padding-top:44px; padding-bottom:20px; border-top:1px solid var(--line); margin-top:28px; }
+.sec-head{ max-width:760px; margin-bottom:20px; }
+.sec h2{ font-family:var(--serif); font-weight:400; font-size:clamp(26px, 3.4vw, 38px); line-height:1.1; letter-spacing:-.02em; margin:0 0 10px; }
+.sec h3{ font-size:14px; font-weight:600; margin:0 0 6px; }
+.prose{ font-family:var(--serif); font-size:16.5px; line-height:1.6; margin:0; text-wrap:pretty; }
+.prose + .prose{ margin-top:10px; }
+.muted{ color:var(--muted); }
+.small{ font-size:13px; }
+.sec-grid{ display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,1fr); gap:24px; align-items:start; }
+.sec-grid.wide{ grid-template-columns:minmax(0,1fr); }
+.panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; min-width:0; }
+.panel + .panel{ margin-top:14px; }
+.side{ position:sticky; top:116px; min-width:0; }
+.fig{ position:relative; min-width:0; }
+.fig svg{ display:block; width:100%; height:auto; }
+.fig-tools{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+.fig-tools > span{ font-size:12px; color:var(--muted); }
+.cap{ font-size:12.5px; color:var(--muted); margin:8px 2px 0; }
+
+/* parts: anything tagged data-part in a figure */
+[data-part]{ cursor:pointer; transition:filter .2s, opacity .2s; }
+[data-part]:hover{ filter:brightness(1.12) saturate(1.15); }
+[data-part]:focus{ outline:none; }
+[data-part]:focus-visible{ filter:drop-shadow(0 0 3px var(--sel)); }
+.is-sel{ filter:drop-shadow(0 0 2.5px var(--sel)) drop-shadow(0 0 2px var(--sel)) !important; }
+.tip{ position:fixed; z-index:50; pointer-events:none; background:var(--ink); color:var(--surface); font-size:12.5px; line-height:1.35; padding:6px 9px; border-radius:8px; max-width:260px; opacity:0; transform:translateY(4px); transition:opacity .15s, transform .15s; }
+.tip.on{ opacity:1; transform:none; }
+.tip b{ font-weight:600; }
+
+/* inspector */
+.insp-kind{ margin:0 0 2px; font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.insp h3{ font-family:var(--serif); font-size:22px; font-weight:400; margin:0 0 8px; letter-spacing:-.01em; }
+.insp .prose{ font-size:15.5px; }
+.insp-empty{ color:var(--muted); font-size:14px; margin:0; }
+.chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.chip{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:5px 11px; font-size:12.5px; font-weight:500; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.chip:hover{ background:var(--surface-2); }
+.chip[aria-pressed="true"], .chip.on{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.chip i{ width:8px; height:8px; border-radius:50%; background:var(--c, var(--muted)); flex:none; }
+.lvl{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); margin:0 0 8px; }
+.pips{ display:inline-flex; gap:3px; }
+.pips b{ width:6px; height:6px; border-radius:50%; background:var(--line-strong); }
+.pips b.on{ background:var(--ink); }
+
+/* body-systems lens */
+.lens{ display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:12px; }
+.lens-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 14px; border-top:4px solid var(--c); display:flex; flex-direction:column; }
+.lens-card h3{ display:flex; align-items:center; gap:8px; font-size:15px; margin:0 0 6px; }
+.lens-card .prose{ font-size:15px; flex:1; }
+.lens-card .chips{ margin-top:12px; }
+
+/* glossary terms */
+.term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
+.term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
+
+.foot{ border-top:1px solid var(--line); margin-top:40px; padding-top:20px; padding-bottom:40px; color:var(--muted); font-size:13px; display:flex; gap:16px; flex-wrap:wrap; justify-content:space-between; }
+
+@media (max-width: 980px){
+  .hero{ grid-template-columns:minmax(0,1fr); gap:18px; }
+  .sec-grid{ grid-template-columns:minmax(0,1fr); }
+  .side{ position:static; }
+}
+@media (max-width: 640px){
+  .wrap{ padding:0 16px; }
+  .op-top{ position:static; }
+  .op-name{ display:none; }
+  .op-ctrls{ margin-left:0; width:100%; }
+  .seg .s{ display:inline; } .seg .f{ display:none; }
+  .op-ctl > span{ display:none; }
+  .hero{ padding-top:22px; }
+  html{ scroll-padding-top:12px; }
+}
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+/* ===== ORGAN ENGINE CSS · END ===== */
+</style>
+<style>
+/* ---------- heart-specific styles ---------- */
+:root{
+  --myo:#c46a5e; --myo-2:#a9544a; --myo-line:#8e4239; --peri:#ecd9c4; --fat:#ecc97a;
+  --blood-o2:#d9464f; --blood-co2:#6f72bf; --valve:#f6ead3; --valve-line:#b49a72;
+  --cond:#f2b705; --cond-line:#8a6400; --wave-a:#ff9a3c; --wave-v:#ff7a2e;
+  --lad:#2a78d6; --lcx:#eb6834; --rca:#1baf7a; --ischemia:#4a2a2a; --vein-c:#5a62b8;
+  --paper:#fbefee; --paper-line:#efc9c6; --paper-bold:#e3a9a5; --trace:#261D1B;
+  --tr-lv:#261D1B; --tr-ao:#eb6834; --tr-la:#2a78d6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --myo:#9c4c43; --myo-2:#863f37; --myo-line:#d07a6e; --peri:#3a2f28; --fat:#8a7340;
+    --blood-o2:#d9555d; --blood-co2:#7b7fd0; --valve:#e9dcc4; --valve-line:#8f7a5a;
+    --cond:#ffd23f; --cond-line:#ffe9a0;
+    --lad:#3987e5; --lcx:#d95926; --rca:#199e70; --ischemia:#160c0c; --vein-c:#8a92e6;
+    --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c; --trace:#EEE6DE;
+    --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0;
+  }
+}
+:root[data-theme="dark"]{
+  --myo:#9c4c43; --myo-2:#863f37; --myo-line:#d07a6e; --peri:#3a2f28; --fat:#8a7340;
+  --blood-o2:#d9555d; --blood-co2:#7b7fd0; --valve:#e9dcc4; --valve-line:#8f7a5a;
+  --cond:#ffd23f; --cond-line:#ffe9a0;
+  --lad:#3987e5; --lcx:#d95926; --rca:#199e70; --ischemia:#160c0c; --vein-c:#8a92e6;
+  --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c; --trace:#EEE6DE;
+  --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0;
+}
+#anatomyFig, #conductionFig, #coronaryFig{ max-height:600px; margin:0 auto; }
+#bullseye{ max-width:260px; margin:6px auto 0; display:block; }
+.h-myo{ fill:var(--myo); stroke:var(--myo-line); stroke-width:1.5; }
+.h-septum{ fill:var(--myo-2); }
+.h-peri{ fill:none; stroke:var(--peri); stroke-width:18; stroke-linejoin:round; }
+.h-o2{ fill:var(--blood-o2); } .h-co2{ fill:var(--blood-co2); }
+.v-o2{ fill:none; stroke:var(--blood-o2); stroke-linecap:round; }
+.v-co2{ fill:none; stroke:var(--blood-co2); stroke-linecap:round; }
+.v-wall{ fill:none; stroke:var(--myo-line); stroke-linecap:round; opacity:.55; }
+.h-valve{ fill:none; stroke:var(--valve); stroke-width:4.5; stroke-linecap:round; }
+.h-valve-hit{ fill:transparent; stroke:transparent; }
+.h-chord{ stroke:var(--valve-line); stroke-width:1; opacity:.8; }
+.h-pap{ fill:var(--myo-2); stroke:var(--myo-line); stroke-width:1; }
+.h-band{ fill:none; stroke:var(--myo-2); stroke-width:7; stroke-linecap:round; }
+.h-label{ font:600 12px var(--sans); fill:#fff; pointer-events:none; paint-order:stroke; stroke:rgba(0,0,0,.18); stroke-width:2px; letter-spacing:.02em; }
+.h-label.out{ fill:var(--muted); stroke:none; font-weight:500; }
+.h-flow circle{ pointer-events:none; }
+.hide-labels .h-label{ display:none; }
+.cond-path{ fill:none; stroke:var(--cond); stroke-width:3.5; stroke-linecap:round; stroke-linejoin:round; }
+.cond-path.thin{ stroke-width:2; }
+.cond-hit{ fill:none; stroke:transparent; stroke-width:16; stroke-linecap:round; }
+.cond-node{ fill:var(--cond); stroke:var(--cond-line); stroke-width:1.5; }
+.cond-mode .h-myo, .cond-mode .h-septum, .cond-mode .h-pap, .cond-mode .h-band{ opacity:.55; }
+.cond-mode .h-o2, .cond-mode .h-co2{ opacity:.35; }
+.cond-mode .v-o2, .cond-mode .v-co2{ opacity:.45; }
+.wave{ pointer-events:none; mix-blend-mode:normal; }
+.cor-surface{ fill:var(--myo); stroke:var(--myo-line); stroke-width:1.5; }
+.cor-groove{ fill:none; stroke:var(--fat); stroke-width:9; stroke-linecap:round; opacity:.85; }
+.cor-art{ fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.cor-art.back{ stroke-dasharray:5 5; }
+.cor-hit{ fill:none; stroke:transparent; stroke-width:18; stroke-linecap:round; }
+.cor-vein{ fill:none; stroke:var(--vein-c); stroke-linecap:round; opacity:.9; }
+.cor-vein.back{ stroke-dasharray:4 5; }
+.hide-veins .cor-vein, .hide-veins .cor-vein-hit{ display:none; }
+.cor-occl .cor-art.down{ stroke:var(--line-strong) !important; stroke-dasharray:2 4; }
+.cor-zone{ pointer-events:none; }
+.clot{ fill:var(--ink); stroke:var(--surface); stroke-width:2; }
+.bull path{ stroke:var(--surface); stroke-width:2; cursor:default; }
+.bull text{ font:600 10.5px var(--sans); fill:var(--ink); pointer-events:none; }
+.bull .hit text{ fill:var(--surface); }
+.legend{ display:flex; gap:12px; flex-wrap:wrap; font-size:12.5px; color:var(--ink); margin-top:8px; }
+.legend span{ display:inline-flex; align-items:center; gap:6px; }
+.legend i{ width:14px; height:4px; border-radius:2px; background:var(--c); }
+.legend i.dot{ width:9px; height:9px; border-radius:50%; }
+canvas.trace{ display:block; width:100%; }
+.readouts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(92px,1fr)); gap:8px; margin-top:12px; }
+.ro{ background:var(--bg); border-radius:10px; padding:7px 10px; }
+.ro .l{ font-size:11px; color:var(--muted); }
+.ro .v{ font-family:var(--serif); font-size:19px; font-variant-numeric:tabular-nums; }
+.ro .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:2px; }
+.sliders{ display:grid; gap:12px; margin-top:4px; }
+.sl label{ display:flex; justify-content:space-between; font-size:13px; font-weight:500; margin-bottom:3px; gap:8px; }
+.sl label output{ color:var(--muted); font-weight:400; font-variant-numeric:tabular-nums; }
+.sl input{ width:100%; accent-color:var(--ink); }
+.sl .ends{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+.steps{ list-style:none; margin:10px 0 0; padding:0; counter-reset:st; display:grid; gap:6px; }
+.steps li{ counter-increment:st; display:grid; grid-template-columns:24px 1fr; gap:8px; padding:8px 10px; border-radius:10px; border:1px solid transparent; transition:background .25s, border-color .25s; }
+.steps li::before{ content:counter(st); width:22px; height:22px; border-radius:50%; background:var(--surface-2); display:grid; place-items:center; font-size:12px; font-weight:600; }
+.steps li.on{ background:var(--bg); border-color:var(--line-strong); }
+.steps li.on::before{ background:var(--ink); color:var(--surface); }
+.steps b{ display:block; font-size:13.5px; }
+.steps span{ font-size:13.5px; color:var(--muted); font-family:var(--serif); }
+.rhythm-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+.note{ font-size:13px; color:var(--muted); margin:10px 0 0; }
+.btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.btn{ border:1px solid var(--ink); background:var(--ink); color:var(--surface); border-radius:999px; padding:6px 13px; font-size:13px; font-weight:500; cursor:pointer; }
+.btn.ghost{ background:transparent; color:var(--ink); border-color:var(--line-strong); }
+.btn:hover{ opacity:.9; }
+.alert{ margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--bg); border-left:3px solid var(--ink); font-size:13.5px; }
+.alert b{ display:block; margin-bottom:2px; }
+.two{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
+@media (max-width: 640px){ .two{ grid-template-columns:minmax(0,1fr); } }
+</style>
+</head>
+<body>
+<header class="op-top">
+  <div class="wrap op-bar">
+    <a class="op-back" data-back href="../index.html"><svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>The whole body</a>
+    <p class="op-name" data-organ-name></p>
+    <div class="op-ctrls" data-controls></div>
+  </div>
+  <nav class="wrap op-nav" data-nav aria-label="Sections"></nav>
+</header>
+
+<main>
+  <div class="wrap hero" data-hero>
+    <div>
+      <p class="kicker" data-meta="kicker"></p>
+      <h1 data-meta="name"></h1>
+      <p class="lede" data-meta="blurb"></p>
+    </div>
+    <div class="now" data-now></div>
+  </div>
+
+  <!-- ANATOMY -->
+  <section class="sec wrap" id="anatomy" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.anatomy.intro"></p>
+    </div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <div class="fig-tools" data-tools></div>
+        <svg id="anatomyFig" viewBox="0 0 560 580" role="img" aria-label="Frontal section through the heart showing its four chambers, four valves and great vessels"></svg>
+        <p class="cap">Seen from the front, cut open. The heart’s right side is on your left. Blue = oxygen-poor blood, red = oxygen-rich.</p>
+      </div>
+      <aside class="side"><div class="panel insp" data-inspector></div></aside>
+    </div>
+  </section>
+
+  <!-- PHYSIOLOGY -->
+  <section class="sec wrap" id="physiology" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.physiology.intro"></p>
+    </div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <h3>One heartbeat after another: the Wiggers diagram</h3>
+        <canvas class="trace" id="wiggers" height="420" aria-label="Left ventricular, aortic and left atrial pressure, left ventricular volume and the ECG over the last few seconds"></canvas>
+        <div class="legend">
+          <span><i style="--c:var(--tr-lv)"></i>Left ventricle</span>
+          <span><i style="--c:var(--tr-ao)"></i>Aorta</span>
+          <span><i style="--c:var(--tr-la)"></i>Left atrium</span>
+        </div>
+        <p class="cap">Shading marks the four phases of the cycle. S1 and S2 are the two heart sounds, made by valves snapping shut.</p>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>The four phases</h3>
+          <ol class="steps" id="cycleSteps"></ol>
+        </div>
+      </aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px">
+      <div class="panel fig">
+        <h3>Pressure–volume loop of the left ventricle</h3>
+        <canvas class="trace" id="pvloop" height="380" aria-label="Pressure–volume loop of the left ventricle"></canvas>
+        <p class="cap">Each beat traces a loop: fill (bottom), squeeze with the valves shut (right), eject (top), relax (left). Its width is the stroke volume and its area the work of one beat.</p>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>Change the heart’s load</h3>
+          <div class="sliders" id="mechSliders"></div>
+          <div class="btn-row"><button type="button" class="btn ghost" id="mechReset">Reset to this part of the day</button></div>
+          <div class="readouts" id="mechRO"></div>
+          <p class="prose small muted" style="margin-top:12px" data-text="sections.physiology.loopNote"></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- CORONARY ARTERIES -->
+  <section class="sec wrap" id="coronary" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.coronary.intro"></p>
+    </div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <div class="fig-tools" data-tools></div>
+        <svg id="coronaryFig" viewBox="0 0 560 580" role="img" aria-label="The front of the heart with its coronary arteries and veins"></svg>
+        <div class="legend">
+          <span><i style="--c:var(--lad)"></i>Left anterior descending (LAD)</span>
+          <span><i style="--c:var(--lcx)"></i>Circumflex (LCx)</span>
+          <span><i style="--c:var(--rca)"></i>Right coronary (RCA)</span>
+          <span><i style="--c:var(--vein-c)"></i>Cardiac veins</span>
+        </div>
+        <p class="cap">Dashed vessels run over the back of the heart. Tap an artery, then block it to see what happens.</p>
+      </div>
+      <aside class="side">
+        <div class="panel insp" data-inspector></div>
+        <div class="panel">
+          <h3>Which wall each artery feeds</h3>
+          <svg id="bullseye" class="bull" viewBox="-34 -20 288 258" role="img" aria-label="Bull's-eye map of the 17 segments of the left ventricle, coloured by the artery that feeds them"></svg>
+          <div class="legend" id="bullLegend"></div>
+          <p class="note" data-text="sections.coronary.bullNote"></p>
+        </div>
+      </aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px">
+      <div class="panel fig">
+        <h3>12-lead ECG</h3>
+        <canvas class="trace" id="ecg12" height="330" aria-label="Twelve-lead ECG"></canvas>
+        <p class="cap" id="ecg12cap"></p>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>Flow in the coronary arteries through each beat</h3>
+          <canvas class="trace" id="corFlow" height="190" aria-label="Blood flow in the left and right coronary arteries"></canvas>
+          <div class="legend">
+            <span><i style="--c:var(--lad)"></i>Left coronary</span>
+            <span><i style="--c:var(--rca)"></i>Right coronary</span>
+          </div>
+          <p class="prose small muted" style="margin-top:10px" data-text="sections.coronary.flowNote"></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- CONDUCTION SYSTEM -->
+  <section class="sec wrap" id="conduction" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.conduction.intro"></p>
+    </div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <svg id="conductionFig" class="cond-mode" viewBox="0 0 560 580" role="img" aria-label="The heart's conduction system with the electrical wave spreading through it"></svg>
+        <div class="legend">
+          <span><i class="dot" style="--c:var(--cond)"></i>Conduction system</span>
+          <span><i class="dot" style="--c:var(--wave-a)"></i>Electrical wave (depolarised muscle)</span>
+        </div>
+        <p class="cap">Slow the speed (top bar) to ¼ or ⅒ to watch the wave travel.</p>
+      </div>
+      <aside class="side">
+        <div class="panel insp" data-inspector></div>
+      </aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px">
+      <div class="panel fig">
+        <h3>From pacemaker cell to ECG</h3>
+        <canvas class="trace" id="apStrip" height="380" aria-label="Action potentials of an SA node cell and a ventricular muscle cell above the ECG, on the same time axis"></canvas>
+        <p class="cap">Three recordings on one clock: the voltage inside a pacemaker cell, inside a ventricular muscle cell, and the ECG on the skin.</p>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>Rhythm</h3>
+          <div class="rhythm-chips" id="rhythmChips"></div>
+          <div id="rhythmText"></div>
+          <div class="sliders" style="margin-top:14px" id="toneSlider"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- BODY SYSTEMS LENS -->
+  <section class="sec wrap" id="systems" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.systems.intro"></p>
+    </div>
+    <div class="lens" data-lens></div>
+  </section>
+
+  <footer class="wrap foot">
+    <span>Values are typical for a healthy adult and simplified for teaching. This is not medical advice.</span>
+    <a data-back href="../index.html">Back to the whole body</a>
+  </footer>
+</main>
+
+<script type="application/json" id="organ-meta">
+{
+  "id": "heart",
+  "name": "The heart",
+  "mainTopic": "heart",
+  "kicker": "Organ deep dive",
+  "blurb": "A fist-sized double pump that beats about 100,000 times a day. Open it up, watch one beat in slow motion, follow its own blood supply and the electrical wiring that keeps it in time, then see how it works with every other system in the body.",
+  "stats": [
+    { "id": "hr", "label": "Heart rate", "unit": "/min" },
+    { "id": "bp", "label": "Blood pressure", "unit": "mmHg" },
+    { "id": "sv", "label": "Stroke volume", "unit": "mL" },
+    { "id": "co", "label": "Cardiac output", "unit": "L/min" },
+    { "id": "ef", "label": "Ejection fraction", "unit": "%" }
+  ]
+}
+</script>
+<script type="application/json" id="organ-content">
+{
+  "phases": {
+    "sleep": {
+      "ms": "You’re asleep. The vagus nerve holds the heart back to about 50 beats a minute, and each beat pushes out a little more blood because you are lying down.",
+      "hs": "Asleep, vagal tone is high and sympathetic tone low, so heart rate falls to about 50/min and blood pressure dips 10–15%. Lying flat brings more blood back to the heart, so each beat is slightly bigger.",
+      "college": "In non-REM sleep parasympathetic activity dominates: heart rate ~50/min, nocturnal BP dip of 10–20%, and a slightly larger stroke volume from supine venous return. REM brings bursts of sympathetic activity and heart-rate surges.",
+      "phd": "Loss of the nocturnal BP dip (‘non-dipping’) predicts cardiovascular events independently of daytime BP. Sleep-disordered breathing causes repeated hypoxic surges in sympathetic activity and afterload, and is linked to atrial fibrillation."
+    },
+    "rest": {
+      "ms": "Sitting still, your heart beats about 70 times a minute and pumps around 5 litres of blood a minute: all of your blood, once every minute.",
+      "hs": "At rest the heart beats ~70/min with a stroke volume of ~70 mL, so cardiac output is about 5 L/min. Blood pressure is around 120/75 mmHg.",
+      "college": "Resting cardiac output ≈ 5 L/min (HR 70 × SV 70 mL), with an ejection fraction of 55–65%. The SA node’s intrinsic rate (~100/min) is held down by tonic vagal activity.",
+      "phd": "At rest the heart is under net vagal restraint: atropine raises heart rate to ~100–110/min, the intrinsic rate (which declines with age, roughly 118 − 0.57 × age). Myocardial O₂ extraction is already ~70–75%, so any extra demand must be met by more flow."
+    },
+    "meal": {
+      "ms": "After eating, your heart beats a little faster to send extra blood to your gut to help digest the food.",
+      "hs": "After a meal, blood flow to the gut rises by up to a third, and heart rate and cardiac output rise a little to supply it without letting blood pressure fall.",
+      "college": "Postprandial splanchnic hyperaemia (mesenteric flow up 30–100%) is met by a modest rise in heart rate and cardiac output and by vasoconstriction elsewhere. In older people this can fail, causing postprandial hypotension.",
+      "phd": "Postprandial hypotension affects up to a third of older adults and is driven by splanchnic pooling, insulin-mediated vasodilation and blunted baroreflex compensation; slowing gastric emptying or glucose absorption (e.g. with acarbose) lessens it."
+    },
+    "exercise": {
+      "ms": "You’re running! Your heart beats about 150 times a minute and squeezes harder, pumping three times as much blood as at rest.",
+      "hs": "In the run, sympathetic nerves and adrenaline raise heart rate to ~150/min and make each beat stronger. Cardiac output triples to ~15 L/min, and systolic pressure climbs to ~165 mmHg while diastolic stays about the same.",
+      "college": "Exercise withdraws vagal tone and adds sympathetic drive: HR ~150/min, SV ~105 mL (stronger contraction plus more venous return), cardiac output ~15 L/min. Muscle vasodilation lowers total peripheral resistance, so diastolic pressure barely changes.",
+      "phd": "Cardiac output rises roughly linearly with VO₂ (about 5–6 L/min per L/min of O₂). Stroke volume plateaus at 40–50% of VO₂max in untrained people but may keep rising in endurance athletes. Coronary flow rises 3–5-fold, mostly via metabolic vasodilation (adenosine, K⁺-ATP and H₂O₂)."
+    }
+  },
+  "sections": {
+    "anatomy": {
+      "nav": "Anatomy", "kicker": "Structure", "title": "Four chambers, four valves, two pumps",
+      "intro": {
+        "ms": "The heart is a muscle with four rooms. The two on the right send blood to the lungs; the two on the left send it to the rest of the body. Doors called valves keep blood moving one way. Tap any part to learn more.",
+        "hs": "The heart is two pumps side by side. The right atrium and ventricle pump oxygen-poor blood to the lungs; the left atrium and ventricle pump oxygen-rich blood to the body. Four one-way valves keep the flow forward. Tap a part to explore it.",
+        "college": "Two pumps in series share one muscular organ: a low-pressure right heart (pulmonary circuit) and a high-pressure left heart (systemic circuit). Atrioventricular and semilunar valves, anchored in a fibrous skeleton, enforce one-way flow. Select a structure for detail.",
+        "phd": "The organ’s form follows its two pressure regimes: a thin, crescentic right ventricle wrapped around a thick, conical left ventricle, joined at the septum and the fibrous skeleton, which also electrically insulates atria from ventricles. Select a structure for detail."
+      },
+      "hint": { "ms": "Tap a chamber, a valve or a blood vessel to find out what it does." }
+    },
+    "physiology": {
+      "nav": "Physiology", "kicker": "How it works", "title": "One beat, in slow motion",
+      "intro": {
+        "ms": "Every heartbeat has two halves: squeezing (systole) and relaxing to fill up again (diastole). The traces below show the pressure in the heart and the arteries going up and down with each beat. Slow it down with the speed buttons at the top.",
+        "hs": "Each cardiac cycle has systole (contraction and ejection) and diastole (relaxation and filling). Valves open and close whenever the pressure on one side becomes higher than on the other. Use the sliders to change how full the heart is, how hard it pushes against the arteries, and how strongly it squeezes.",
+        "college": "The cycle is driven by pressure gradients: valves open passively when upstream pressure exceeds downstream. The Wiggers diagram and pressure–volume loop come from a time-varying elastance model of the left ventricle, coupled to the left atrium and a Windkessel aorta. Vary preload, afterload and contractility and watch the loop respond.",
+        "phd": "The model treats the ventricle as a time-varying elastance E(t) = P/(V − V₀) (Suga & Sagawa): its peak, Ees, is the slope of the end-systolic pressure–volume relation and a load-independent index of contractility. Arterial elastance Ea ≈ Pes/SV indexes afterload; ventricular–arterial coupling Ea/Ees ≈ 0.5–1 sets efficiency."
+      },
+      "loopNote": {
+        "ms": "Fill the heart more and it squeezes harder: that’s Starling’s law of the heart.",
+        "hs": "More filling (preload) stretches the muscle so the next beat is stronger: the Frank–Starling law. Higher afterload makes ejection harder and the beat smaller. Stronger contractility steepens the dashed line and empties the ventricle more.",
+        "college": "Preload shifts the loop’s right edge along the end-diastolic curve (Frank–Starling); afterload raises the ejection pressure and narrows the loop; contractility rotates the end-systolic line (dashed) upward. Stroke work is the loop’s area.",
+        "phd": "Preload-recruitable stroke work and the slope of ESPVR (Ees) are the most load-independent contractility indices. The ESPVR is in reality curvilinear and its V₀ is load-dependent; the linear model is a teaching approximation."
+      },
+      "steps": [
+        { "name": "Isovolumic contraction", "ms": "The ventricle starts to squeeze. All valves are shut, so pressure shoots up.", "hs": "The ventricle contracts with all four valves closed; volume stays the same while pressure rises steeply. The mitral valve closing makes the first heart sound (S1).", "college": "From mitral closure (S1) to aortic opening: pressure rises at maximal dP/dt (~1,500 mmHg/s) at constant volume.", "phd": "dP/dt max during isovolumic contraction is a classic, though preload-sensitive, index of contractility." },
+        { "name": "Ejection", "ms": "The pressure pushes the aortic valve open and blood rushes out into the body.", "hs": "When ventricular pressure exceeds aortic pressure, the aortic valve opens and about 70 mL of blood is ejected, fast at first and then more slowly.", "college": "Rapid then reduced ejection; ventricular and aortic pressures track each other, separated by a small gradient. Ends when the ventricle relaxes below aortic pressure.", "phd": "Late in ejection flow continues briefly against a reversed gradient owing to blood inertia; the dicrotic notch marks aortic closure." },
+        { "name": "Isovolumic relaxation", "ms": "The ventricle relaxes and the aortic valve snaps shut. All valves are closed again.", "hs": "The ventricle relaxes with all valves closed; pressure falls fast. The aortic valve shutting makes the second heart sound (S2) and the notch in the aortic trace.", "college": "From aortic closure (S2) to mitral opening; pressure decays roughly exponentially, with time constant τ ≈ 30–40 ms.", "phd": "τ (Weiss) quantifies active, energy-dependent relaxation (SERCA2a re-uptake of Ca²⁺); it lengthens with ischaemia, hypertrophy and ageing, an early sign of diastolic dysfunction." },
+        { "name": "Filling", "ms": "The mitral valve opens and blood pours in from the atrium. At the end the atrium gives a little extra push.", "hs": "When ventricular pressure falls below atrial pressure the mitral valve opens. Most filling is passive and early; atrial contraction (the ‘atrial kick’) adds the last 20% or so.", "college": "Rapid early filling (E wave), diastasis, then atrial systole (A wave, after the P wave). The atrial contribution rises at high heart rates and with stiff ventricles.", "phd": "The E/A ratio and tissue-Doppler e′ grade diastolic function; atrial fibrillation abolishes the A wave, which matters most when the ventricle is stiff." }
+      ]
+    },
+    "coronary": {
+      "nav": "Coronary arteries", "kicker": "The heart’s own blood supply", "title": "Coronary arteries: feeding the pump",
+      "intro": {
+        "ms": "The heart can’t use the blood inside it. It has its own arteries, the coronary arteries, that wrap around it like a crown. If one gets blocked, part of the heart muscle runs out of oxygen: that’s a heart attack.",
+        "hs": "Two coronary arteries leave the aorta just above the aortic valve. The left one splits into the left anterior descending (LAD) and the circumflex; the right one runs in the groove on the right. Tap an artery to see what it feeds, then block it to see what happens to the heart and the ECG.",
+        "college": "The left main splits into the LAD (anterior wall, anterior two-thirds of the septum, apex) and the circumflex (lateral wall); the RCA feeds the right ventricle and usually the inferior wall and the SA and AV nodes. Whichever artery gives the posterior descending artery is ‘dominant’. Block a segment to see its territory, ST changes and the effect on pumping.",
+        "phd": "Coronary anatomy is variable: ~70% right-dominant, ~10% left-dominant, ~20% co-dominant. ECG localisation by ST elevation is probabilistic and modified by dominance, collaterals and wraparound LADs. The model shows the textbook mapping onto the AHA 17-segment model."
+      },
+      "hint": {
+        "ms": "Tap one of the coloured arteries.",
+        "hs": "Tap an artery to learn what it feeds. You can then block it."
+      },
+      "bullNote": {
+        "ms": "This target is the left ventricle unrolled flat: the middle is the tip of the heart, the outside ring is near the valves.",
+        "hs": "The bull’s-eye flattens the left ventricle: the centre is the apex and the outer ring the base. Colours show which artery usually supplies each segment.",
+        "college": "AHA 17-segment model: basal (1–6), mid (7–12), apical (13–16) rings and the apex (17). Colours show the typical supply; dominance changes the inferior and inferoseptal segments.",
+        "phd": "Assignment of segments to arteries is the AHA 2002 standard; individual variation is large, especially for the apex (17) and the inferolateral wall."
+      },
+      "flowNote": {
+        "ms": "The heart muscle squeezes its own arteries shut when it beats, so it gets most of its blood between beats.",
+        "hs": "When the left ventricle contracts it squeezes its own arteries, so most left coronary flow happens in diastole. That’s why a very fast heart rate, which shortens diastole, can starve the heart of blood.",
+        "college": "Left coronary flow is phasic and mostly diastolic, because systolic intramyocardial pressure compresses vessels, most in the subendocardium. The right coronary artery, facing lower RV pressures, flows through both systole and diastole.",
+        "phd": "Subendocardial perfusion depends on the diastolic pressure–time index relative to the tension–time index (Buckberg ratio). Autoregulation holds flow constant from ~60 to ~140 mmHg; below that, the subendocardium is the first to become ischaemic."
+      }
+    },
+    "conduction": {
+      "nav": "Conduction system", "kicker": "The heart’s wiring", "title": "The conduction system: a beat starts with a spark",
+      "intro": {
+        "ms": "Each heartbeat starts with a tiny electrical spark in the heart’s own pacemaker, the SA node. The signal spreads over the top chambers, pauses at the AV node, then races down special wires to make the bottom chambers squeeze from the tip up.",
+        "hs": "The SA node fires on its own. The wave spreads across the atria (P wave), is delayed at the AV node so the atria can finish emptying, then speeds through the bundle of His, the bundle branches and the Purkinje fibres (QRS complex). Pick a rhythm to see what happens when part of the system fails.",
+        "college": "Pacemaker cells depolarise spontaneously (If, T-type and L-type Ca²⁺ currents); the AV node delays conduction ~100 ms (slow, Ca²⁺-dependent action potentials); the His–Purkinje system conducts at 2–4 m/s, activating the septum first, then endocardium to epicardium and apex to base.",
+        "phd": "Automaticity arises from a coupled ‘membrane clock’ (HCN4/If) and ‘Ca²⁺ clock’ (spontaneous RyR2 release driving NCX). Each pacemaker tier has a slower intrinsic rate (SA 60–100, junction 40–60, Purkinje 20–40/min), so hierarchy is maintained by overdrive suppression."
+      }
+    },
+    "systems": {
+      "nav": "Body systems", "kicker": "Connections", "title": "The heart through the lens of every body system",
+      "intro": {
+        "ms": "The heart doesn’t work alone. Every system in the body depends on it, and many of them help control it.",
+        "hs": "The heart serves every body system, and almost every system feeds back on the heart. Here is how each one connects. Six of them can be watched live on the main body page.",
+        "college": "Cardiac function is integrated with every organ system through shared circulation, autonomic and endocrine control, and mechanical coupling. Each card summarises the key interactions.",
+        "phd": "Integrative cardiology: each card notes the main physiological couplings and a clinically important example of their failure."
+      }
+    }
+  },
+  "parts": {
+    "ra": { "name": "Right atrium", "kind": "Chamber", "systems": ["circulatory", "nervous"], "related": ["svc", "ivc", "tricuspid", "saNode"],
+      "ms": "The right atrium is the first room blood enters. Oxygen-poor blood from the body flows in from two big veins and waits here before going down to the right ventricle.",
+      "hs": "The right atrium collects oxygen-poor blood from the body through the superior and inferior venae cavae and from the heart’s own veins through the coronary sinus. It holds the SA node, the heart’s pacemaker.",
+      "college": "A thin-walled, low-pressure reservoir (mean 2–6 mmHg). Its pressure waves (a, c, v) are visible in the neck veins. It contains the SA node, the AV node (in Koch’s triangle) and the coronary sinus ostium; stretch of its wall releases ANP.",
+      "phd": "Right atrial pressure is the back-pressure for venous return (Guyton) and approximates central venous pressure. Koch’s triangle (tendon of Todaro, septal tricuspid leaflet, coronary sinus ostium) is the landmark for slow-pathway ablation in AV nodal re-entrant tachycardia." },
+    "rv": { "name": "Right ventricle", "kind": "Chamber", "systems": ["circulatory", "respiratory"], "related": ["tricuspid", "pulmonaryValve", "moderator", "septum"],
+      "ms": "The right ventricle pumps blood a short way, to the lungs, so its wall is thin. It wraps around the left ventricle like a crescent moon.",
+      "hs": "The right ventricle pumps the same volume as the left, but only into the lungs, at about 25 mmHg instead of 120. Its wall is thin (3–5 mm) and it wraps around the left ventricle.",
+      "college": "A crescent-shaped, compliant chamber matched to the low-resistance pulmonary circulation (~25/10 mmHg). It ejects by a bellows-like motion of the free wall towards the septum and by shortening along its long axis.",
+      "phd": "The RV is exquisitely afterload-sensitive: an acute rise in pulmonary artery pressure (e.g. massive pulmonary embolism) dilates it, shifts the septum leftward and under-fills the LV (ventricular interdependence). TAPSE is a simple echo index of its function." },
+    "la": { "name": "Left atrium", "kind": "Chamber", "systems": ["circulatory", "respiratory", "endocrine"], "related": ["pulmonaryVeins", "mitral", "bachmann"],
+      "ms": "The left atrium receives fresh, oxygen-rich blood coming back from the lungs.",
+      "hs": "The left atrium receives oxygen-rich blood from the four pulmonary veins and passes it through the mitral valve. Its contraction tops up the left ventricle at the end of each filling phase.",
+      "college": "The LA acts as reservoir (during ventricular systole), conduit (early diastole) and booster pump (atrial systole). Mean pressure ~8–10 mmHg reflects LV filling pressure; stretch releases ANP.",
+      "phd": "Muscle sleeves that extend into the pulmonary veins are the usual source of the ectopic triggers of atrial fibrillation, hence pulmonary-vein isolation. The left atrial appendage is where most AF-related thrombi form." },
+    "lv": { "name": "Left ventricle", "kind": "Chamber", "systems": ["circulatory", "musculoskeletal"], "related": ["mitral", "aorticValve", "papillary", "septum"],
+      "ms": "The left ventricle is the strongest part of the heart. Its thick wall squeezes blood out to the whole body, from your head to your toes.",
+      "hs": "The left ventricle has the thickest wall (about 1 cm) because it pushes blood around the whole body at about 120 mmHg. At rest it ejects about 60% of the blood it holds with each beat.",
+      "college": "A thick-walled cone (wall 8–11 mm) that ejects by thickening, shortening and twisting. Its helically arranged fibres wring the cavity like a towel; ejection fraction is normally 55–70%.",
+      "phd": "LV torsion (base clockwise, apex counter-clockwise from the apex view) stores elastic energy released as early diastolic untwisting, aiding suction. Laplace’s law (wall stress ∝ P·r/2h) explains concentric hypertrophy in pressure overload and eccentric hypertrophy in volume overload." },
+    "septum": { "name": "Interventricular septum", "kind": "Muscle wall", "systems": ["circulatory", "nervous"], "related": ["his", "lbb", "rbb", "lad"],
+      "ms": "The septum is the wall down the middle that keeps the blue blood on the right and the red blood on the left from mixing.",
+      "hs": "The septum separates the two ventricles. The bundle branches of the conduction system run down each side of it, and it is the first part of the ventricles to be activated.",
+      "college": "Mostly muscular, with a small membranous part near the aortic valve. Septal perforators from the LAD feed its anterior two-thirds, the PDA its posterior third. It contracts with the LV and is activated left-to-right first (septal q waves in I, V5–V6).",
+      "phd": "Asymmetric septal hypertrophy in hypertrophic cardiomyopathy can obstruct LV outflow with systolic anterior motion of the mitral valve; alcohol septal ablation infarcts it deliberately via a septal perforator." },
+    "myocardium": { "name": "Heart wall (myocardium)", "kind": "Tissue", "systems": ["musculoskeletal", "circulatory", "nervous"], "related": ["septum", "lv", "lad"],
+      "ms": "The heart wall is a special muscle that never gets tired. It works your whole life without a rest.",
+      "hs": "Cardiac muscle is striated like skeletal muscle, but its cells branch and are joined by intercalated discs with gap junctions, so the electrical signal spreads from cell to cell and the heart contracts as one.",
+      "college": "Cardiomyocytes are packed with mitochondria (~30% of cell volume) and rely almost entirely on aerobic metabolism of fatty acids, glucose and lactate. A long refractory period prevents tetanus. The wall has three layers: endocardium, myocardium and epicardium.",
+      "phd": "Excitation–contraction coupling is Ca²⁺-induced Ca²⁺ release: L-type channel Ca²⁺ triggers RyR2. Force is graded by Ca²⁺ transient size and myofilament Ca²⁺ sensitivity (length-dependent activation underlies Frank–Starling). Adult cardiomyocyte renewal is ~1% per year (Bergmann et al. 2009)." },
+    "epicardium": { "name": "Epicardium", "kind": "Wall layer", "systems": ["circulatory", "immune"], "related": ["pericardium", "myocardium", "lad"],
+      "ms": "The epicardium is the thin outer skin of the heart. The coronary arteries run on it, cushioned in fat.",
+      "hs": "The epicardium is the outer layer of the heart wall (also the inner layer of the pericardium). The coronary arteries and veins run through it, padded by fat.",
+      "college": "The visceral layer of serous pericardium: mesothelium over connective tissue and epicardial fat, carrying the epicardial coronary arteries, veins, lymphatics and autonomic nerves.",
+      "phd": "Epicardial adipose tissue is metabolically active and shares the coronary microcirculation; its volume correlates with coronary atherosclerosis and atrial fibrillation, probably through paracrine inflammatory signalling." },
+    "endocardium": { "name": "Endocardium", "kind": "Wall layer", "systems": ["circulatory", "immune"], "related": ["myocardium", "purkinje", "mitral"],
+      "ms": "The endocardium is the smooth inner lining of the heart, so blood slides past without sticking.",
+      "hs": "A smooth lining of endothelial cells covers the inside of the chambers and the valves. The Purkinje fibres run just beneath it.",
+      "college": "Endothelium plus a thin subendocardial layer containing Purkinje fibres. Damage to it or to valve surfaces lets clots and bacteria stick (thrombus, infective endocarditis).",
+      "phd": "Endocardial endothelium modulates the contractility and relaxation of the myocardium beneath it via NO and endothelin. The subendocardium is the layer most vulnerable to ischaemia." },
+    "pericardium": { "name": "Pericardium", "kind": "Sac", "systems": ["immune", "musculoskeletal"], "related": ["myocardium"],
+      "ms": "The pericardium is a tough bag around the heart, with a little slippery fluid inside so the heart can beat without rubbing.",
+      "hs": "A double-layered sac. The tough outer fibrous layer anchors the heart and stops it overstretching; between the two thin serous layers about 20–50 mL of fluid lets the heart glide as it beats.",
+      "college": "Fibrous pericardium (attached to the diaphragm and great vessels) and serous pericardium (parietal and visceral; the visceral layer is the epicardium). It limits acute dilation and couples the filling of the two ventricles.",
+      "phd": "Because the pericardium is stiff, rapid effusion of even 150–200 mL can cause tamponade (equalised diastolic pressures, pulsus paradoxus), whereas slowly accumulating effusions of a litre may be tolerated. Constrictive pericarditis shows ventricular interdependence and Kussmaul’s sign." },
+    "tricuspid": { "name": "Tricuspid valve", "kind": "Valve", "systems": ["circulatory"], "related": ["ra", "rv", "papillary"],
+      "ms": "The tricuspid valve is a door with three flaps between the right atrium and right ventricle. It lets blood go down but not back up.",
+      "hs": "The tricuspid valve has three leaflets tethered by chordae tendineae to papillary muscles. It opens during filling and closes as the right ventricle contracts.",
+      "college": "An atrioventricular valve with anterior, posterior and septal leaflets. Closure contributes to S1. Its annulus is the least supported of the four and dilates with RV enlargement, causing functional regurgitation.",
+      "phd": "Functional tricuspid regurgitation is driven by annular dilation and leaflet tethering; it is often ‘silent’ but independently predicts mortality, prompting transcatheter edge-to-edge and annuloplasty devices." },
+    "pulmonaryValve": { "name": "Pulmonary valve", "kind": "Valve", "systems": ["circulatory", "respiratory"], "related": ["rv", "pulmonaryTrunk"],
+      "ms": "The pulmonary valve lets blood out of the right ventricle into the artery to the lungs, and stops it coming back.",
+      "hs": "A semilunar valve with three pocket-like cusps. It opens when the right ventricle pushes harder than the pulmonary artery and snaps shut at the start of relaxation.",
+      "college": "Semilunar valves have no chordae: cusps close passively as backflow fills their sinuses. Pulmonary closure (P2) follows aortic closure (A2); the gap widens on inspiration (physiological splitting of S2).",
+      "phd": "Inspiration delays P2 because increased venous return prolongs RV ejection and lower pulmonary impedance raises the ‘hang-out interval’. Fixed splitting suggests an atrial septal defect." },
+    "mitral": { "name": "Mitral valve", "kind": "Valve", "systems": ["circulatory"], "related": ["la", "lv", "papillary"],
+      "ms": "The mitral valve is a two-flap door between the left atrium and left ventricle. Its closing is part of the ‘lub’ of ‘lub-dub’.",
+      "hs": "The mitral valve has two leaflets, held by chordae tendineae to two papillary muscles so they don’t flip back into the atrium when the ventricle squeezes hard. Its closing makes most of the first heart sound.",
+      "college": "Anterior and posterior leaflets share fibrous continuity with the aortic valve. Papillary muscles contract in systole to keep the leaflets coapted. It opens when LV pressure falls below LA pressure in early diastole.",
+      "phd": "Mitral valve prolapse (2–3% of people) and ischaemic papillary muscle dysfunction are common causes of regurgitation. Posteromedial papillary muscle rupture is more common after MI because it usually has a single blood supply (the PDA)." },
+    "aorticValve": { "name": "Aortic valve", "kind": "Valve", "systems": ["circulatory"], "related": ["lv", "aorta", "rca", "lm"],
+      "ms": "The aortic valve lets blood out of the left ventricle into the body’s main artery. The coronary arteries start just above it.",
+      "hs": "Three cusps open as the left ventricle ejects and shut when it relaxes, making the ‘dub’ of the heartbeat. The coronary arteries branch off just above two of the cusps, in pockets called sinuses.",
+      "college": "Right, left and non-coronary cusps sit in the sinuses of Valsalva; the coronary ostia arise from the right and left sinuses. Vortices in the sinuses help close the cusps, and diastolic backpressure fills the coronaries.",
+      "phd": "Calcific aortic stenosis is an active, inflammatory, osteogenic process (lipoprotein(a) is a causal risk factor). A bicuspid valve (1–2%) accelerates it and associates with aortopathy. Transcatheter replacement (TAVI) now rivals surgery across risk groups." },
+    "papillary": { "name": "Papillary muscles and chordae", "kind": "Valve support", "systems": ["circulatory", "musculoskeletal"], "related": ["mitral", "tricuspid", "lv"],
+      "ms": "Little muscles inside the ventricles hold the valve flaps with strings, like a parachute, so the flaps don’t blow backwards.",
+      "hs": "Papillary muscles are finger-like muscles in the ventricles. Strong cords, the chordae tendineae, run from them to the edges of the AV valve leaflets and stop them flipping into the atria.",
+      "college": "The LV has anterolateral and posteromedial papillary muscles; they are activated early by the left bundle fascicles so they tense before peak ventricular pressure.",
+      "phd": "The anterolateral papillary muscle usually has dual supply (LAD diagonal and LCx marginal); the posteromedial typically depends on the PDA alone, explaining its vulnerability in inferior MI." },
+    "moderator": { "name": "Moderator band", "kind": "Muscle bridge", "systems": ["circulatory", "nervous"], "related": ["rbb", "rv", "septum"],
+      "ms": "A little bridge of muscle across the right ventricle that carries an electrical wire.",
+      "hs": "The moderator band crosses the right ventricle from the septum to the front wall. It carries the right bundle branch so the far wall of the right ventricle is activated quickly.",
+      "college": "The septomarginal trabecula carries the right bundle branch to the base of the anterior papillary muscle, shortening the conduction path to the RV free wall.",
+      "phd": "Purkinje fibres in the moderator band can trigger idiopathic ventricular fibrillation and are an ablation target." },
+    "svc": { "name": "Superior vena cava", "kind": "Vein", "systems": ["circulatory"], "related": ["ra", "saNode"],
+      "ms": "The big vein that brings used blood back from your head and arms.",
+      "hs": "Returns oxygen-poor blood from the head, neck and arms to the right atrium. The SA node sits where it joins the atrium.",
+      "college": "Formed by the two brachiocephalic veins; it receives the azygos vein and has no valve. The SA node lies in the sulcus terminalis at the cavo-atrial junction.",
+      "phd": "SVC obstruction (most often from tumour) causes facial swelling and venous collaterals; muscle sleeves in the SVC can trigger atrial fibrillation." },
+    "ivc": { "name": "Inferior vena cava", "kind": "Vein", "systems": ["circulatory", "digestive", "urinary"], "related": ["ra"],
+      "ms": "The biggest vein, bringing used blood back from your legs and tummy.",
+      "hs": "Returns blood from the legs, kidneys, liver and gut to the right atrium. Breathing in lowers chest pressure and sucks blood up it.",
+      "college": "Its diameter and inspiratory collapse on ultrasound estimate right atrial pressure. Hepatic veins join it just below the diaphragm.",
+      "phd": "Respiratory variation of IVC diameter predicts fluid responsiveness only in passive, mechanically ventilated patients; in spontaneous breathing it is unreliable." },
+    "aorta": { "name": "Aorta", "kind": "Artery", "systems": ["circulatory", "nervous"], "related": ["aorticValve", "lm", "rca"],
+      "ms": "The body’s biggest artery. It carries fresh blood from the left ventricle to everywhere else.",
+      "hs": "The aorta arches over the heart and gives off arteries to the head and arms before running down to the belly. Its stretchy wall stores some of each beat and keeps blood flowing between beats.",
+      "college": "The elastic aorta is the Windkessel: it stores ~50% of stroke volume in systole and releases it in diastole. Baroreceptors in the arch (and carotid sinus) sense pressure and reflexly adjust heart rate and vascular tone.",
+      "phd": "Aortic stiffening with age raises pulse-wave velocity, so reflected waves return in systole, raise systolic pressure and afterload, and lower diastolic coronary perfusion pressure: the basis of isolated systolic hypertension." },
+    "pulmonaryTrunk": { "name": "Pulmonary trunk and arteries", "kind": "Artery", "systems": ["circulatory", "respiratory"], "related": ["pulmonaryValve", "rv"],
+      "ms": "These arteries carry blue, oxygen-poor blood to the lungs to pick up oxygen. They are the only arteries with oxygen-poor blood.",
+      "hs": "The pulmonary trunk splits into right and left pulmonary arteries that carry oxygen-poor blood to the lungs at low pressure (about 25/10 mmHg).",
+      "college": "The pulmonary circulation is a low-pressure, low-resistance, high-compliance circuit; recruitment and distension of capillaries let it take a 3–5-fold rise in flow with little rise in pressure.",
+      "phd": "Hypoxic pulmonary vasoconstriction matches perfusion to ventilation; when global (altitude, COPD) it raises pulmonary artery pressure and RV afterload, leading to cor pulmonale." },
+    "pulmonaryVeins": { "name": "Pulmonary veins", "kind": "Vein", "systems": ["circulatory", "respiratory"], "related": ["la"],
+      "ms": "Four veins that bring fresh, red, oxygen-rich blood from the lungs back to the heart.",
+      "hs": "Usually four pulmonary veins, two from each lung, carry oxygen-rich blood to the left atrium. They are the only veins that carry oxygen-rich blood.",
+      "college": "They have no valves, so LA pressure is transmitted back to the pulmonary capillaries; above ~20 mmHg fluid leaks into the lungs (pulmonary oedema).",
+      "phd": "Pulmonary capillary wedge pressure estimates LA pressure. Myocardial sleeves extending 1–3 cm into the veins generate the triggers for paroxysmal AF." },
+
+    "lm": { "name": "Left main coronary artery", "kind": "Coronary artery", "systems": ["circulatory"], "related": ["lad", "lcx", "aorticValve"],
+      "ms": "The left main is the short trunk where the heart’s biggest blood supply starts. It quickly splits in two.",
+      "hs": "The left main coronary artery leaves the aorta behind the pulmonary trunk and, after 1–2 cm, divides into the LAD and the circumflex. Together they feed about three-quarters of the left ventricle.",
+      "college": "A short trunk (5–10 mm diameter) supplying LAD and LCx territories. Significant left main disease is a classic indication for revascularisation.",
+      "phd": "Acute left main occlusion often presents as cardiogenic shock or arrest; the ECG may show widespread ST depression with ST elevation in aVR. In ~30% of people a ramus intermedius trifurcation is present." },
+    "lad": { "name": "Left anterior descending (LAD)", "kind": "Coronary artery", "systems": ["circulatory", "nervous"], "related": ["lm", "septum", "d1"],
+      "ms": "The LAD runs down the front of the heart. It feeds more heart muscle than any other artery, so doctors call a block at its top ‘the widow-maker’.",
+      "hs": "The LAD runs down the groove between the ventricles on the front of the heart to the tip. Its diagonal branches feed the front wall and its septal branches feed most of the septum and the bundle branches.",
+      "college": "Supplies the anterior LV wall, anterior two-thirds of the septum (septal perforators, including the bundle branches) and usually the apex. Proximal occlusion causes anterior ST elevation (V1–V4) and may cause bundle branch block.",
+      "phd": "A ‘wraparound’ LAD that continues round the apex onto the inferior wall can give simultaneous anterior and inferior ST elevation. Myocardial bridging (the LAD diving into muscle) is seen in up to a third of autopsies and is usually benign." },
+    "d1": { "name": "Diagonal branches", "kind": "Coronary branch", "systems": ["circulatory"], "related": ["lad"],
+      "ms": "Branches off the LAD that cross the front of the left ventricle.",
+      "hs": "Diagonal branches leave the LAD at an angle and supply the front-side (anterolateral) wall of the left ventricle.",
+      "college": "D1 typically feeds the high anterolateral wall; isolated occlusion gives ST elevation in I, aVL and V2 with reciprocal change in III.",
+      "phd": "The ‘South African flag’ pattern (ST elevation in I, aVL and V2, depression in III) localises a first diagonal occlusion." },
+    "lcx": { "name": "Circumflex artery (LCx)", "kind": "Coronary artery", "systems": ["circulatory"], "related": ["lm", "om", "la"],
+      "ms": "The circumflex curls around the left side of the heart toward the back.",
+      "hs": "The circumflex runs in the left groove between the atrium and ventricle round to the back of the heart. Its marginal branches feed the side wall of the left ventricle.",
+      "college": "Supplies the lateral (and in left-dominant hearts the inferior) LV wall and the left atrium; in ~40% it gives the SA nodal artery. Its territory is ‘electrically silent’ on the standard ECG, so infarcts are missed more often.",
+      "phd": "Posterior-lateral infarction shows as ST depression and tall R waves in V1–V3 (the mirror image); posterior leads V7–V9 reveal the elevation. Up to half of acute LCx occlusions don’t meet STEMI criteria." },
+    "om": { "name": "Obtuse marginal branches", "kind": "Coronary branch", "systems": ["circulatory"], "related": ["lcx", "papillary"],
+      "ms": "Branches of the circumflex that run down the left side of the heart.",
+      "hs": "Obtuse marginal branches run down the left (obtuse) edge of the heart and feed the lateral wall.",
+      "college": "Supply the lateral wall and the anterolateral papillary muscle (shared with the diagonals).",
+      "phd": "OM occlusion gives lateral ST elevation (I, aVL, V5–V6) when it is seen at all; dual supply protects the anterolateral papillary muscle." },
+    "rca": { "name": "Right coronary artery (RCA)", "kind": "Coronary artery", "systems": ["circulatory", "nervous"], "related": ["aorticValve", "pda", "saNode", "avNode", "rv"],
+      "ms": "The right coronary artery runs around the right side of the heart. It also feeds the heart’s pacemaker.",
+      "hs": "The RCA runs in the right groove between atrium and ventricle. It feeds the right ventricle and, in most people, the bottom of the left ventricle and the SA and AV nodes, so a block can slow the heart.",
+      "college": "Branches: conus, SA nodal (~60%), acute marginals to the RV, and in right-dominant hearts (~70%) the PDA and AV nodal artery at the crux. Occlusion causes inferior ST elevation (II, III, aVF, III > II), bradycardia and AV block.",
+      "phd": "Proximal RCA occlusion can infarct the RV (ST elevation in V4R, hypotension with clear lungs, preload dependence: avoid nitrates). The Bezold–Jarisch reflex contributes to bradycardia and hypotension in inferior MI." },
+    "pda": { "name": "Posterior descending artery (PDA)", "kind": "Coronary branch", "systems": ["circulatory"], "related": ["rca", "lcx", "septum", "papillary"],
+      "ms": "An artery on the back of the heart. Whichever big artery gives it decides which side is ‘dominant’.",
+      "hs": "The PDA runs down the groove on the underside of the heart and feeds the back third of the septum and the bottom wall. If it comes from the RCA the heart is ‘right-dominant’ (most people).",
+      "college": "Supplies the inferior septum, inferior wall and posteromedial papillary muscle. Dominance is defined by its origin: right (~70%), left (~10%, from the LCx) or co-dominant (~20%).",
+      "phd": "Left dominance concentrates more myocardium on the left system, so left main disease carries a worse prognosis; it is also more frequent in bicuspid aortic valve." },
+    "gcv": { "name": "Great cardiac vein", "kind": "Cardiac vein", "systems": ["circulatory"], "related": ["lad", "cs"],
+      "ms": "Used blood from the heart muscle drains into veins on its surface. This one runs beside the LAD.",
+      "hs": "The great cardiac vein runs up beside the LAD and then round with the circumflex to the back of the heart, where it becomes the coronary sinus.",
+      "college": "Drains the territory of the left coronary artery into the coronary sinus; it runs alongside the LAD and then the LCx.",
+      "phd": "The coronary venous system is the route for left-ventricular leads in cardiac resynchronisation therapy and for retrograde cardioplegia in surgery." },
+    "cs": { "name": "Coronary sinus", "kind": "Cardiac vein", "systems": ["circulatory"], "related": ["gcv", "ra"],
+      "ms": "A wide vein on the back of the heart that empties the heart muscle’s used blood into the right atrium.",
+      "hs": "The coronary sinus collects most of the heart’s venous blood and empties into the right atrium. Its blood is the most oxygen-poor in the body.",
+      "college": "Coronary sinus blood has an O₂ saturation of only ~30%, because the myocardium extracts ~70% of delivered O₂ even at rest.",
+      "phd": "Because extraction is near-maximal, myocardial O₂ supply depends on flow; sampling the coronary sinus (lactate, O₂) was how myocardial metabolism was first measured in humans." },
+    "acv": { "name": "Anterior and small cardiac veins", "kind": "Cardiac vein", "systems": ["circulatory"], "related": ["rv", "ra"],
+      "ms": "Small veins that drain the right ventricle straight into the right atrium.",
+      "hs": "Anterior cardiac veins cross the right ventricle and empty straight into the right atrium; the small cardiac vein runs with the RCA.",
+      "college": "Some myocardial blood drains directly into the chambers via Thebesian veins, a small physiological shunt that slightly lowers arterial O₂.",
+      "phd": "Thebesian and bronchial venous drainage into the left heart make up part of the normal 2–5% anatomical shunt." },
+
+    "saNode": { "name": "Sinoatrial (SA) node", "kind": "Pacemaker", "systems": ["nervous", "endocrine", "circulatory"], "related": ["internodal", "bachmann", "rca", "svc"],
+      "ms": "The SA node is the heart’s own pacemaker. It makes a little electrical spark all by itself, 60 to 100 times a minute.",
+      "hs": "A small cluster of pacemaker cells where the superior vena cava joins the right atrium. Its cells slowly leak positive charge in between beats until they fire. Sympathetic nerves and adrenaline speed it up; the vagus slows it down.",
+      "college": "Pacemaker cells have no stable resting potential: the funny current (If, HCN4), T- and L-type Ca²⁺ currents drive diastolic depolarisation to threshold (~−40 mV). Noradrenaline (β1, cAMP) steepens the slope; acetylcholine (M2, IK,ACh) hyperpolarises and flattens it.",
+      "phd": "The SA node is a heterogeneous, insulated structure with exit pathways and a leading pacemaker site that shifts with autonomic tone. Ivabradine blocks If to slow the rate without affecting contractility. Its artery comes from the RCA in ~60% and the LCx in ~40%." },
+    "internodal": { "name": "Atrial conduction pathways", "kind": "Conduction", "systems": ["nervous"], "related": ["saNode", "avNode", "bachmann"],
+      "ms": "The spark spreads across the walls of the top chambers, making them squeeze.",
+      "hs": "The wave spreads across the atrial muscle to the AV node, faster along thicker muscle bundles. Atrial activation makes the P wave on the ECG.",
+      "college": "Preferential conduction along the crista terminalis and interatrial bands reaches the AV node in ~40 ms; whether discrete ‘internodal tracts’ exist is debated: they are muscle bundles, not insulated tracts.",
+      "phd": "Anisotropic conduction through the crista terminalis and cavotricuspid isthmus forms the circuit of typical atrial flutter, cured by isthmus ablation." },
+    "bachmann": { "name": "Bachmann’s bundle", "kind": "Conduction", "systems": ["nervous"], "related": ["saNode", "la"],
+      "ms": "A shortcut that carries the spark across to the left atrium.",
+      "hs": "Bachmann’s bundle carries the signal from the right atrium across to the left atrium so both atria contract almost together.",
+      "college": "The main interatrial connection; delay here widens and notches the P wave (P mitrale) and is called interatrial block.",
+      "phd": "Advanced interatrial block (Bayés syndrome: biphasic P in II, III, aVF) predicts atrial fibrillation and embolic stroke." },
+    "avNode": { "name": "Atrioventricular (AV) node", "kind": "Gatekeeper", "systems": ["nervous", "circulatory"], "related": ["his", "internodal", "rca", "pda"],
+      "ms": "The AV node is the gatekeeper. It holds the signal back for a moment so the top chambers can finish filling the bottom ones.",
+      "hs": "The AV node is the only electrical path from atria to ventricles. It slows the signal for about a tenth of a second (the PR interval) and protects the ventricles from beating too fast if the atria go haywire.",
+      "college": "Slow, Ca²⁺-dependent action potentials and few gap junctions produce ~100 ms of delay and decremental conduction. Its long refractory period limits the ventricular rate in atrial fibrillation; vagal tone and adenosine slow it.",
+      "phd": "Dual AV nodal pathways (fast and slow) are the substrate for AVNRT. Its blood supply comes from the dominant artery at the crux, so inferior MI often causes transient, vagally mediated AV block." },
+    "his": { "name": "Bundle of His", "kind": "Conduction", "systems": ["nervous"], "related": ["avNode", "lbb", "rbb"],
+      "ms": "A short cable that carries the signal through the heart’s insulating layer into the ventricles.",
+      "hs": "The bundle of His pierces the fibrous skeleton that insulates the atria from the ventricles and then splits into the left and right bundle branches.",
+      "college": "The only normal electrical connection through the fibrous skeleton; it then runs along the crest of the muscular septum. Damage here causes infranodal (Mobitz II or complete) block with slow, unreliable escape rhythms.",
+      "phd": "His-bundle pacing recruits the native conduction system for a narrow QRS and physiological activation; left bundle branch area pacing is an easier alternative." },
+    "rbb": { "name": "Right bundle branch", "kind": "Conduction", "systems": ["nervous"], "related": ["his", "moderator", "rv"],
+      "ms": "The wire that carries the signal down the right side.",
+      "hs": "The right bundle branch runs down the right side of the septum and through the moderator band to the right ventricle.",
+      "college": "A thin, cord-like branch; if blocked, the RV is activated late by spread from the LV, giving a wide QRS with rSR′ in V1 and a wide S in I and V6.",
+      "phd": "Right bundle branch block is common and often benign; with left axis deviation (bifascicular block) or in Brugada-like patterns it carries more risk." },
+    "lbb": { "name": "Left bundle branch and fascicles", "kind": "Conduction", "systems": ["nervous"], "related": ["his", "papillary", "lv", "lad"],
+      "ms": "The wire that carries the signal down the left side to the big left ventricle.",
+      "hs": "The left bundle branch fans out down the left side of the septum into front and back fascicles that reach the papillary muscles and the left ventricle wall.",
+      "college": "Divides into anterior and posterior fascicles (sometimes a septal one). Left bundle branch block delays LV activation: wide QRS, broad notched R in I and V6, deep QS in V1, and dyssynchronous contraction.",
+      "phd": "LBBB-induced dyssynchrony lowers LV efficiency and can cause cardiomyopathy; cardiac resynchronisation therapy benefits patients with LBBB and QRS ≥ 150 ms most." },
+    "purkinje": { "name": "Purkinje fibres", "kind": "Conduction", "systems": ["nervous", "musculoskeletal"], "related": ["lbb", "rbb"],
+      "ms": "Purkinje fibres are the fastest wires in the heart. They spread the signal everywhere in the bottom chambers in a flash, so they squeeze together, from the tip upwards.",
+      "hs": "Large, fast-conducting cells (up to 4 m/s) form a web under the inner lining of the ventricles, activating them from the apex upwards so blood is squeezed toward the valves.",
+      "college": "Wide cells with many gap junctions (Cx40) and a fast Na⁺ upstroke conduct at 2–4 m/s. Ventricular activation runs endocardium → epicardium, apex → base; the whole ventricle depolarises in ~80 ms (the QRS).",
+      "phd": "Purkinje cells have long action potentials and are prone to early and delayed afterdepolarisations, so they trigger torsades and some VF; their intrinsic rate (20–40/min) provides the last-resort escape rhythm." }
+  },
+  "rhythms": {
+    "sinus": { "name": "Normal sinus rhythm",
+      "ms": "Every beat starts in the SA node and follows the normal path. Each P wave is followed by a QRS.",
+      "hs": "Sinus rhythm: P before every QRS, PR interval 0.12–0.20 s, QRS under 0.12 s. The rate changes with the part of the day and the autonomic slider.",
+      "college": "Normal sinus rhythm with rate set by the balance of vagal and sympathetic tone. Notice the PR interval shorten at higher rates as sympathetic tone speeds AV conduction.",
+      "phd": "Heart rate variability, including respiratory sinus arrhythmia, reflects vagal modulation of the SA node and is reduced in heart failure, diabetes and ageing." },
+    "avb1": { "name": "First-degree AV block",
+      "ms": "The AV node holds the signal a bit too long, but every beat still gets through.",
+      "hs": "The PR interval is longer than 0.20 s, but every P wave is followed by a QRS. Usually harmless.",
+      "college": "Prolonged AV nodal conduction (PR > 200 ms) with 1:1 conduction. Causes: high vagal tone (athletes), drugs (β-blockers, calcium-channel blockers, digoxin), ageing of the conduction system.",
+      "phd": "Marked PR prolongation (> 300 ms) can cause ‘pseudo-pacemaker syndrome’: atrial contraction against closed AV valves and diastolic mitral regurgitation." },
+    "wenck": { "name": "Second-degree block, Mobitz I (Wenckebach)",
+      "ms": "The AV node gets more and more tired with each beat until it lets one signal drop, then starts over.",
+      "hs": "The PR interval gets longer each beat until one P wave isn’t followed by a QRS; then the cycle repeats. You can feel the pause as a skipped beat.",
+      "college": "Decremental AV nodal conduction: progressive PR prolongation, then a dropped QRS (here 4:3). Usually nodal and benign; common during sleep and in athletes.",
+      "phd": "The largest PR increment occurs on the second beat, so RR intervals shorten before the pause: the classic ‘group beating’. A wide QRS suggests infranodal Wenckebach, which carries more risk." },
+    "mobitz2": { "name": "Second-degree block, Mobitz II",
+      "ms": "Some signals are suddenly blocked without warning, so the heart misses beats.",
+      "hs": "The PR interval stays the same, but some P waves suddenly fail to conduct (here every third). This is more dangerous because it can turn into complete block.",
+      "college": "All-or-none conduction failure below the AV node (His–Purkinje), constant PR, often with a wide QRS. It usually needs a pacemaker.",
+      "phd": "Mobitz II reflects infranodal disease with an unstable escape mechanism; 2:1 block cannot be classified as type I or II from the surface ECG alone." },
+    "avb3": { "name": "Third-degree (complete) heart block",
+      "ms": "No signals get through. The top and bottom chambers beat on their own, out of step. The bottom ones beat very slowly.",
+      "hs": "P waves march along at the sinus rate, but none reach the ventricles. A backup pacemaker in the AV junction takes over at about 40/min. Cardiac output falls, especially in exercise.",
+      "college": "AV dissociation: atrial and ventricular rhythms are independent. A junctional escape gives a narrow QRS at 40–60/min; a ventricular escape (wide QRS, 20–40/min) is less reliable. Atrial contraction sometimes lands on a closed tricuspid valve (cannon a waves).",
+      "phd": "Escape rate cannot rise much with exercise, so stroke volume rises instead; long pauses can cause syncope (Stokes–Adams attacks). Treatment is pacing." },
+    "rbbb": { "name": "Right bundle branch block",
+      "ms": "The wire on the right side is broken, so the right ventricle gets the signal a little late.",
+      "hs": "The QRS becomes wide (≥ 0.12 s) because the right ventricle is activated late by spread from the left. Pumping is barely affected.",
+      "college": "Late RV activation adds a terminal component: rSR′ in V1–V2, wide S in I, aVL and V6. Septal activation is normal.",
+      "phd": "New RBBB with anterior MI implies proximal LAD occlusion (septal perforator ischaemia) and a large infarct." },
+    "lbbb": { "name": "Left bundle branch block",
+      "ms": "The wire on the left side is broken, so the big left ventricle gets the signal late and squeezes out of step.",
+      "hs": "The QRS is wide and the left ventricle is activated late and unevenly, so it pumps a little less well.",
+      "college": "The septum is activated right-to-left and the LV late through slow muscle-to-muscle conduction: wide QRS, broad notched R in I and V6, QS in V1, discordant ST–T. The model reduces LV efficiency for the dyssynchrony.",
+      "phd": "LBBB masks ischaemic ST changes (Sgarbossa criteria help). Dyssynchrony causes septal flash and stretches the late-activated lateral wall, wasting work." },
+    "afib": { "name": "Atrial fibrillation",
+      "ms": "The top chambers quiver instead of beating, so the heartbeat becomes completely irregular.",
+      "hs": "Chaotic electrical activity in the atria replaces the P waves with a wavy baseline. The AV node lets through signals at random, so the heartbeat is irregularly irregular, and the atria no longer give their extra push.",
+      "college": "Multiple re-entrant wavelets and pulmonary-vein triggers drive the atria at 350–600/min; AV nodal refractoriness filters this to an irregular ventricular rate. Loss of the atrial kick lowers stroke volume, and stasis in the left atrial appendage risks stroke.",
+      "phd": "Stroke risk is estimated with CHA₂DS₂-VA; anticoagulation cuts it by about two-thirds. Early rhythm control (EAST-AFNET 4) and catheter ablation in heart failure (CASTLE-AF) improve outcomes." },
+    "saArrest": { "name": "Sinus arrest with junctional escape",
+      "ms": "The main pacemaker stops. A backup pacemaker lower down takes over, but more slowly.",
+      "hs": "The SA node stops firing, so there are no P waves. After a pause, cells in the AV junction take over at about 45/min with normal-looking QRS complexes.",
+      "college": "Pacemaker hierarchy in action: when the SA node fails, the next fastest tissue (AV junction, 40–60/min) escapes. Causes include sick sinus syndrome, high vagal tone and drugs.",
+      "phd": "Sick sinus syndrome often alternates with atrial tachyarrhythmias (tachy–brady syndrome); overdrive suppression explains the long pause before escape after a fast run." }
+  },
+  "occlusions": {
+    "lm": { "ms": "The main trunk is blocked, so most of the left ventricle loses its blood. This is very dangerous.", "hs": "Left main occlusion cuts off both the LAD and circumflex territories: most of the left ventricle stops contracting and pumping collapses.", "college": "Massive anterior and lateral ischaemia: ST elevation across V1–V6, I and aVL, and in aVR; stroke volume collapses (cardiogenic shock)." },
+    "ladProx": { "ms": "The top of the LAD is blocked: the front wall and tip of the heart run out of oxygen.", "hs": "A proximal LAD block causes a large anterior heart attack: ST elevation in V1–V4, I and aVL. The front wall stops contracting and stroke volume falls.", "college": "Proximal LAD occlusion (before D1 and S1): anterior, anteroseptal, anterolateral and apical ischaemia, ST elevation V1–V4, I and aVL, reciprocal inferior depression." },
+    "ladMid": { "ms": "The middle of the LAD is blocked: the front wall below it runs out of oxygen.", "hs": "A mid-LAD block causes ST elevation in V2–V4 and stops part of the front wall and the tip of the heart.", "college": "Mid-LAD occlusion spares the first diagonal and septal branches: ST elevation V2–V4, less lateral involvement." },
+    "d1": { "ms": "A side branch is blocked: a small patch on the front-left side runs short of oxygen.", "hs": "A diagonal branch block affects the anterolateral wall: ST elevation in I, aVL and V2.", "college": "Isolated D1 occlusion: high lateral ST elevation (I, aVL) with V2, reciprocal ST depression in III." },
+    "lcx": { "ms": "The circumflex is blocked: the side wall of the heart runs out of oxygen. It can be hard to see on the ECG.", "hs": "A circumflex block affects the side (lateral) wall. ST elevation in I, aVL, V5–V6 may be small; ST depression in V1–V3 is the mirror image of the back wall.", "college": "LCx occlusion: lateral ST elevation, often subtle, with posterior ST depression in V1–V3. In a left-dominant heart the inferior wall is included." },
+    "om": { "ms": "A branch on the left side is blocked: a small part of the side wall runs short of oxygen.", "hs": "An obtuse marginal block affects the lateral wall: small ST elevation in V5–V6.", "college": "Lateral ischaemia with modest ST elevation in V5–V6, I." },
+    "rcaProx": { "ms": "The RCA is blocked near its start: the bottom of the heart, the right ventricle and the pacemaker lose blood. The heart slows down.", "hs": "A proximal RCA block causes an inferior heart attack (ST elevation in II, III and aVF), can infarct the right ventricle, and can slow the heart because the SA and AV nodes lose their supply.", "college": "Proximal RCA occlusion: inferior STEMI (III > II), right ventricular involvement (ST elevation V1/V4R), sinus bradycardia (SA nodal artery) and AV block (AV nodal artery, if right-dominant)." },
+    "rcaDist": { "ms": "The far end of the RCA is blocked: the bottom wall of the heart runs short of oxygen.", "hs": "A distal RCA block causes ST elevation in II, III and aVF, and may slow conduction through the AV node.", "college": "Distal RCA (after the RV branches): inferior and inferolateral ischaemia with reciprocal change in I and aVL; the AV nodal artery is at risk in right-dominant hearts." },
+    "pda": { "ms": "The artery under the heart is blocked: the bottom of the septum runs short of oxygen.", "hs": "A PDA block affects the inferior septum and wall: ST elevation in II, III and aVF.", "college": "Inferoseptal ischaemia; the posteromedial papillary muscle is at risk of rupture." }
+  },
+  "lens": {
+    "circulatory": {
+      "ms": "The heart is the engine of the circulatory system. It pumps blood through two loops: one to the lungs and back, and one to the whole body and back.",
+      "hs": "The heart drives two circuits in series, pulmonary and systemic, so its two sides must pump exactly the same amount over time. Arteries store and smooth each beat; veins hold about two-thirds of the blood and return it.",
+      "college": "Cardiac output is set where the cardiac function curve meets the venous return curve (Guyton). Baroreflexes adjust heart rate, contractility and vascular tone beat by beat to hold mean arterial pressure near 90 mmHg.",
+      "phd": "Series coupling means a transient imbalance between RV and LV output shifts blood between circuits: a few beats of LV failure can move hundreds of millilitres into the lungs. Mean systemic filling pressure (~7 mmHg) drives venous return." },
+    "nervous": {
+      "ms": "Your brain can speed up or slow down your heart through nerves, like a car’s accelerator and brake.",
+      "hs": "Sympathetic nerves speed the heart and make it squeeze harder; the vagus nerve slows it. Pressure sensors in the aorta and neck tell the brainstem how hard to press each pedal.",
+      "college": "The medullary cardiovascular centres integrate baroreceptor, chemoreceptor and cortical input. Vagal (M2) effects are fast and dominate at rest; sympathetic (β1) effects take seconds and dominate in exercise. Cardiac sensory nerves carry ischaemic pain referred to the chest, arm and jaw.",
+      "phd": "Intrinsic cardiac ganglionated plexi form a ‘little brain’ on the heart that modulates SA and AV nodal function and atrial electrophysiology; their ablation is studied as an AF treatment. Heart rate variability indexes vagal tone." },
+    "endocrine": {
+      "ms": "Hormones like adrenaline make your heart race. The heart even makes its own hormone.",
+      "hs": "Adrenaline and thyroid hormone speed the heart and strengthen its beat. When the atria are stretched by too much blood, the heart releases natriuretic peptides that tell the kidneys to get rid of salt and water.",
+      "college": "Catecholamines act via β1-receptors (cAMP, PKA). Thyroid hormone up-regulates β1-receptors, SERCA2a and α-myosin. The heart secretes ANP (atria) and BNP (ventricles); angiotensin II and aldosterone drive hypertrophy and fibrosis.",
+      "phd": "NT-proBNP is a key diagnostic and prognostic marker in heart failure; neprilysin inhibition (sacubitril) boosts natriuretic peptides and reduces mortality. Blocking the RAAS (ACE inhibitors, mineralocorticoid antagonists) is foundational therapy." },
+    "respiratory": {
+      "ms": "The right side of the heart sends blood to the lungs to pick up oxygen, and the left side gets it back. Breathing even changes your heart rate a little.",
+      "hs": "Every drop of blood passes through the lungs between the right and left sides of the heart. Breathing in speeds the heart slightly and breathing out slows it (respiratory sinus arrhythmia), and breathing in sucks blood back into the chest.",
+      "college": "The pulmonary circuit receives the whole cardiac output. Inspiration lowers intrathoracic pressure, raising venous return to the right heart and transiently lowering LV stroke volume (the normal small fall in systolic pressure).",
+      "phd": "Exaggerated inspiratory fall in systolic pressure (pulsus paradoxus > 10 mmHg) signals tamponade or severe asthma. Positive-pressure ventilation reverses these interactions, which is the basis of pulse-pressure-variation tests of fluid responsiveness." },
+    "digestive": {
+      "ms": "After you eat, the heart sends extra blood to your stomach and gut so they can digest and soak up food.",
+      "hs": "About a quarter of the resting cardiac output goes to the gut and liver, and this rises after a meal. In the run, blood is diverted away from the gut to the muscles.",
+      "college": "Splanchnic blood flow (~1.5 L/min at rest) rises after meals and falls by up to 80% in hard exercise. The splanchnic veins are also a blood reservoir that sympathetic constriction can mobilise.",
+      "phd": "Splanchnic venous capacitance mobilisation can add ~500 mL to the effective circulating volume; failure of this mechanism contributes to orthostatic and postprandial hypotension. Gut-microbial TMAO is linked to atherosclerosis." },
+    "urinary": {
+      "ms": "The kidneys clean your blood, and they need a strong heartbeat to do it. In return they control how much water is in your blood.",
+      "hs": "The kidneys get about 20% of cardiac output. They control blood volume, and so how much the heart fills, by keeping or getting rid of salt and water. The heart’s natriuretic peptides ask them to lose salt.",
+      "college": "Renal perfusion drives GFR; falling pressure triggers renin release, angiotensin II and aldosterone (salt retention, vasoconstriction). This raises preload and afterload, the RAAS loop that is over-activated in heart failure.",
+      "phd": "Cardiorenal syndrome: venous congestion (raised renal venous pressure) worsens GFR as much as low output does. SGLT2 inhibitors improve heart failure outcomes partly through natriuresis and haemodynamic effects on the kidney." },
+    "immune": {
+      "ms": "White blood cells fight germs, and they also help the heart heal after an injury. But inflammation can hurt arteries too.",
+      "hs": "The immune system clears dead cells and forms a scar after a heart attack. Long-term inflammation in artery walls helps build the fatty plaques that block coronary arteries. Lymph vessels drain fluid from the heart wall.",
+      "college": "Atherosclerosis is a chronic inflammatory disease: LDL in the intima recruits monocytes that become foam cells. After MI, neutrophils then macrophages clear necrotic tissue before fibroblasts lay down scar. Infections can inflame the heart (myocarditis, endocarditis, rheumatic fever).",
+      "phd": "CANTOS showed that blocking IL-1β reduces cardiovascular events independently of LDL, and low-dose colchicine (COLCOT, LoDoCo2) does too. Clonal haematopoiesis (CHIP) raises coronary risk via inflammatory macrophages." },
+    "musculoskeletal": {
+      "ms": "Heart muscle is one of three kinds of muscle. When your leg muscles squeeze, they also help push blood back up to your heart.",
+      "hs": "Cardiac muscle is striated like skeletal muscle but is involuntary and never tires. During the run, the ‘muscle pump’ of the legs squeezes veins and drives blood back to the heart, helping raise stroke volume. Bone marrow makes the red cells the heart pumps.",
+      "college": "Skeletal-muscle contraction plus venous valves form the muscle pump, which raises venous return in exercise. Exercise training enlarges the LV (athlete’s heart) and raises stroke volume; muscle metaboreflexes raise blood pressure during sustained effort.",
+      "phd": "The exercise pressor reflex (group III/IV muscle afferents) raises sympathetic outflow in proportion to metabolite build-up; it is exaggerated in heart failure and contributes to exercise intolerance." },
+    "integumentary": {
+      "ms": "When you get hot, your heart pumps more blood to your skin so the heat can escape. That’s why you go red when you run.",
+      "hs": "Skin blood flow can rise from a few hundred millilitres to several litres a minute to shed heat, so the heart must pump extra to supply both skin and muscles in a hot run. Pale or blue skin can be a sign the heart isn’t pumping enough.",
+      "college": "Thermoregulatory skin vasodilation competes with muscle for cardiac output; with dehydration, falling central blood volume causes ‘cardiovascular drift’ (rising HR, falling SV). Capillary refill time and skin mottling are bedside signs of perfusion.",
+      "phd": "Active cutaneous vasodilation (sympathetic cholinergic, with NO and VIP) can direct up to 6–8 L/min to the skin in severe heat stress, a major load in heat stroke and for patients with heart failure during heat waves." },
+    "reproductive": {
+      "ms": "When a woman is pregnant, her heart works much harder to feed the growing baby. The baby’s heart is wired differently before birth.",
+      "hs": "In pregnancy blood volume rises by about 40% and cardiac output by 30–50%. Before birth the baby’s lungs are bypassed by a hole between the atria (foramen ovale) and a duct to the aorta (ductus arteriosus), which close at birth.",
+      "college": "Pregnancy raises plasma volume, heart rate and stroke volume and lowers systemic vascular resistance; aortocaval compression in late pregnancy can lower venous return when lying flat. Oestrogen is cardioprotective before menopause.",
+      "phd": "Peripartum cardiomyopathy is linked to a cleaved 16-kDa prolactin fragment and is treated with bromocriptine in trials. A patent foramen ovale persists in ~25% of adults and enables paradoxical embolism." }
+  }
+}
+</script>
+<script type="application/json" id="organ-glossary">
+{
+  "systole": { "def": "The part of the heartbeat when the ventricles contract and push blood out.", "match": ["systole", "systolic"] },
+  "diastole": { "def": "The part of the heartbeat when the ventricles relax and fill with blood.", "match": ["diastole", "diastolic"] },
+  "stroke volume": { "def": "The amount of blood one ventricle pumps out in one beat, about 70 mL at rest.", "match": ["stroke volume"] },
+  "cardiac output": { "def": "How much blood the heart pumps each minute: heart rate × stroke volume.", "match": ["cardiac output"] },
+  "ejection fraction": { "def": "The share of the blood in the ventricle that is pumped out each beat, normally 55–70%.", "match": ["ejection fraction"] },
+  "preload": { "def": "How much the ventricle is stretched by filling before it contracts.", "match": ["preload"] },
+  "afterload": { "def": "The pressure the ventricle has to push against to eject blood.", "match": ["afterload"] },
+  "contractility": { "def": "How strongly the heart muscle squeezes at a given stretch.", "match": ["contractility"] },
+  "Frank–Starling": { "def": "The more the heart fills, the harder it contracts, so output matches what comes in.", "match": ["Frank–Starling", "Starling’s law"] },
+  "atrium": { "def": "One of the two upper chambers of the heart that receive blood.", "match": ["atrium", "atria", "atrial"] },
+  "ventricle": { "def": "One of the two lower, pumping chambers of the heart.", "match": ["ventricle", "ventricles", "ventricular"] },
+  "chordae tendineae": { "def": "Strong cords that tie the AV valve leaflets to the papillary muscles.", "match": ["chordae tendineae", "chordae"] },
+  "vagus": { "def": "The main parasympathetic nerve; it slows the heart.", "match": ["vagus", "vagal"] },
+  "sympathetic": { "def": "The ‘fight or flight’ part of the nervous system; it speeds the heart and strengthens its beat.", "match": ["sympathetic"] },
+  "ECG": { "def": "Electrocardiogram: the heart’s electrical activity recorded from the skin.", "match": ["ECG"] },
+  "P wave": { "def": "The bump on the ECG made by the atria depolarising.", "match": ["P wave", "P waves"] },
+  "QRS": { "def": "The spike on the ECG made by the ventricles depolarising.", "match": ["QRS"] },
+  "PR interval": { "def": "Time from the start of the P wave to the start of the QRS: mostly the AV node delay.", "match": ["PR interval"] },
+  "ST elevation": { "def": "A raised segment between the QRS and T wave, a sign of injury from blocked blood supply.", "match": ["ST elevation"] },
+  "depolarise": { "def": "When the inside of a cell becomes less negative, firing an electrical signal.", "match": ["depolarise", "depolarises", "depolarising", "depolarisation"] },
+  "ischaemia": { "def": "Too little blood flow for a tissue’s needs.", "match": ["ischaemia", "ischaemic"] },
+  "dominant": { "def": "The coronary artery that gives off the posterior descending artery.", "match": ["dominant", "dominance"] },
+  "Windkessel": { "def": "German for ‘air chamber’: the stretchy aorta storing part of each beat and releasing it between beats.", "match": ["Windkessel"] },
+  "baroreceptors": { "def": "Stretch sensors in the aorta and carotid arteries that measure blood pressure.", "match": ["baroreceptors", "baroreceptor", "baroreflexes"] },
+  "natriuretic peptides": { "def": "Hormones made by the stretched heart (ANP, BNP) that make the kidneys excrete salt and water.", "match": ["natriuretic peptides", "ANP", "BNP"] },
+  "funny current": { "def": "If: an inward current through HCN channels that drives pacemaker cells toward threshold.", "match": ["funny current"] }
+}
+</script>
+
+<script>
+/* ===== ORGAN ENGINE JS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+window.OrganPage = (() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function el(tag, attrs = {}, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const readJSON = id => { const n = document.getElementById(id); return n ? JSON.parse(n.textContent) : {}; };
+const storage = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wrapH = h => ((h % 24) + 24) % 24;
+
+const META = readJSON("organ-meta"), CONTENT = readJSON("organ-content"), GLOSSARY = readJSON("organ-glossary");
+
+/* shared with ../index.html: the same levels, phases and day plan */
+const LEVELS = [
+  { id: "ms", label: "Middle school", short: "Middle" },
+  { id: "hs", label: "High school", short: "High" },
+  { id: "college", label: "College", short: "College" },
+  { id: "phd", label: "PhD / MD", short: "PhD" }
+];
+const LEVEL_INDEX = Object.fromEntries(LEVELS.map((l, i) => [l.id, i]));
+/* typical vitals in each phase of the main page's day (its PHYSIO keyframes at rep) */
+const PHASES = [
+  { id: "sleep", label: "Sleep", rep: 3, color: "#5b62b3", vitals: { hr: 52, sbp: 105, dbp: 63, rr: 11.5, sv: 74, temp: 36.5 } },
+  { id: "rest", label: "Rest", rep: 10.5, color: "#2f8f83", vitals: { hr: 68, sbp: 118, dbp: 76, rr: 14, sv: 69, temp: 36.9 } },
+  { id: "meal", label: "Meal", rep: 12.75, color: "#d08a26", vitals: { hr: 74, sbp: 117, dbp: 76, rr: 14, sv: 69, temp: 37 } },
+  { id: "exercise", label: "Exercise", rep: 17.5, color: "#d9473a", vitals: { hr: 152, sbp: 165, dbp: 76, rr: 38, sv: 106, temp: 37.9 } }
+];
+const PHASE_BY_ID = Object.fromEntries(PHASES.map(p => [p.id, p]));
+const SCHEDULE = [
+  { phase: "sleep", from: 23, to: 6.5 }, { phase: "meal", from: 7.25, to: 8.5 }, { phase: "meal", from: 12.25, to: 13.5 },
+  { phase: "exercise", from: 17, to: 18.25 }, { phase: "meal", from: 19, to: 20.25 }
+];
+const inRange = (h, a, b) => a <= b ? h >= a && h < b : h >= a || h < b;
+function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.from, e.to)) return e.phase; return "rest"; }
+
+/* every body system; main = it can be animated on the main page (same id there) */
+const SYSTEMS = [
+  { id: "circulatory", name: "Circulatory", color: "#c2414b", main: true },
+  { id: "nervous", name: "Nervous", color: "#d9a21b", main: true },
+  { id: "endocrine", name: "Endocrine", color: "#8a5cc4", main: true },
+  { id: "respiratory", name: "Respiratory", color: "#3f8fe0", main: true },
+  { id: "digestive", name: "Digestive", color: "#c4702e", main: true },
+  { id: "urinary", name: "Urinary", color: "#1597a8", main: true },
+  { id: "immune", name: "Immune & lymphatic", color: "#5f9e4b" },
+  { id: "musculoskeletal", name: "Muscles & skeleton", color: "#b0603a" },
+  { id: "integumentary", name: "Skin", color: "#c98a6b" },
+  { id: "reproductive", name: "Reproductive", color: "#c2569a" }
+];
+const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
+
+/* ---------- store ---------- */
+const params = new URLSearchParams(location.search);
+const urlLevel = params.get("level"), savedLevel = storage.get("humanphysiology.level");
+const urlHour = parseFloat(params.get("hour"));
+const startHour = Number.isFinite(urlHour) ? wrapH(urlHour) : PHASE_BY_ID.rest.rep;
+let state = {
+  level: LEVEL_INDEX[urlLevel] !== undefined ? urlLevel : LEVEL_INDEX[savedLevel] !== undefined ? savedLevel : "hs",
+  hour: startHour, phase: phaseAt(startHour),
+  speed: 1, paused: reducedMotion, sel: {}
+};
+const subs = new Set();
+function set(patch){
+  const prev = state; state = { ...state, ...patch };
+  if (patch.hour !== undefined && patch.phase === undefined) state.phase = phaseAt(state.hour);
+  subs.forEach(f => f(state, prev));
+}
+const subscribe = f => (subs.add(f), () => subs.delete(f));
+
+/* ---------- content ---------- */
+function get(path, root = CONTENT){ return String(path).split(".").reduce((o, k) => o == null ? undefined : o[k], root); }
+function levelText(v, level = state.level){
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  /* keyed by phase first? take the current phase, else rest, else the first one */
+  if (!LEVELS.some(l => v[l.id] !== undefined) && PHASES.some(p => v[p.id] !== undefined))
+    v = v[state.phase] ?? v.rest ?? v[PHASES.find(p => v[p.id] !== undefined).id];
+  if (typeof v === "string") return v;
+  if (!v) return "";
+  const li = LEVEL_INDEX[level];
+  for (let i = li; i >= 0; i--) if (v[LEVELS[i].id]) return v[LEVELS[i].id];
+  for (let i = li + 1; i < LEVELS.length; i++) if (v[LEVELS[i].id]) return v[LEVELS[i].id];
+  return "";
+}
+/* glossary: link the first use of each term in a block of text */
+const TERMS = Object.entries(GLOSSARY).flatMap(([k, g]) => (g.match || [k]).map(m => [m, k])).sort((a, b) => b[0].length - a[0].length);
+const termRe = TERMS.length ? new RegExp("\\b(" + TERMS.map(t => t[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b", "gi") : null;
+const termKey = Object.fromEntries(TERMS.map(([m, k]) => [m.toLowerCase(), k]));
+function linkify(s){
+  const out = esc(s);
+  if (!termRe) return out;
+  const used = new Set();
+  return out.replace(termRe, m => {
+    const k = termKey[m.toLowerCase()];
+    if (!k || used.has(k)) return m;
+    used.add(k);
+    return `<span class="term" tabindex="0" data-term="${esc(k)}">${m}</span>`;
+  });
+}
+const text = v => linkify(levelText(v));
+const pips = li => `<span class="pips" aria-hidden="true">${LEVELS.map((_, i) => `<b class="${i <= li ? "on" : ""}"></b>`).join("")}</span>`;
+
+/* ---------- links back into the main page ---------- */
+function href(extra = {}){
+  const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString(), ...extra });
+  for (const [k, v] of [...p]) if (v === "" || v === "null" || v === "undefined") p.delete(k);
+  return "../index.html?" + p.toString();
+}
+
+/* ---------- theme-aware colours ---------- */
+let colorCache = {};
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { colorCache = {}; set({}); });
+function color(name){
+  if (!(name in colorCache)) colorCache[name] = getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
+  return colorCache[name];
+}
+
+/* ---------- tooltip (glossary terms and parts) ---------- */
+const tip = document.createElement("div"); tip.className = "tip"; tip.setAttribute("role", "tooltip");
+let tipFor = null;
+function showTip(target, html, x, y){
+  tipFor = target; tip.innerHTML = html; tip.classList.add("on");
+  const r = target.getBoundingClientRect();
+  const px = x ?? r.left + r.width / 2, py = y ?? r.top;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, px - w / 2)) + "px";
+  tip.style.top = (py - h - 10 < 8 ? py + 18 : py - h - 10) + "px";
+}
+function hideTip(target){ if (!target || tipFor === target){ tip.classList.remove("on"); tipFor = null; } }
+
+/* ---------- parts ---------- */
+function partName(id){ const p = CONTENT.parts && CONTENT.parts[id]; return p ? p.name : id; }
+function sectionOf(node){ const s = node.closest("[data-section]"); return s ? s.id : ""; }
+function bindParts(root = document){
+  $$("[data-part]", root).forEach(n => {
+    if (n.__bound) return; n.__bound = true;
+    n.setAttribute("tabindex", "0"); n.setAttribute("role", "button");
+    n.setAttribute("aria-label", partName(n.dataset.part));
+    n.addEventListener("pointermove", e => { if (e.pointerType === "mouse") showTip(n, `<b>${esc(partName(n.dataset.part))}</b>`, e.clientX, e.clientY); });
+    n.addEventListener("pointerleave", () => hideTip(n));
+    n.addEventListener("click", e => { e.stopPropagation(); select(sectionOf(n), n.dataset.part); });
+    n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); select(sectionOf(n), n.dataset.part); } });
+  });
+  markSelected();
+}
+function select(section, part){ set({ sel: { ...state.sel, [section]: part } }); }
+function markSelected(){
+  $$(".is-sel").forEach(n => n.classList.remove("is-sel"));
+  for (const [sec, part] of Object.entries(state.sel)){
+    const root = document.getElementById(sec); if (!root || !part) continue;
+    $$(`[data-part="${CSS.escape(part)}"]`, root).forEach(n => n.classList.add("is-sel"));
+  }
+}
+function renderInspectors(){
+  $$("[data-inspector]").forEach(box => {
+    const sec = sectionOf(box), id = state.sel[sec], p = id && CONTENT.parts[id];
+    const hint = box.dataset.hint || get(`sections.${sec}.hint`);
+    if (!p){ box.innerHTML = `<p class="insp-empty">${esc(levelText(hint) || "Tap or hover over a part of the figure to learn about it.")}</p>`; return; }
+    const li = LEVEL_INDEX[state.level];
+    const sys = (p.systems || []).filter(s => SYSTEM_BY_ID[s]).map(s => `<a class="chip" href="#lens-${s}" style="--c:${SYSTEM_BY_ID[s].color}"><i></i>${esc(SYSTEM_BY_ID[s].name)}</a>`).join("");
+    const rel = (p.related || []).filter(r => CONTENT.parts[r]).map(r => `<button type="button" class="chip" data-goto="${esc(r)}">${esc(CONTENT.parts[r].name)}</button>`).join("");
+    const extra = box.__extra ? box.__extra(id, p) : "";
+    box.innerHTML = `
+      ${p.kind ? `<p class="insp-kind">${esc(p.kind)}</p>` : ""}
+      <h3>${esc(p.name)}</h3>
+      <p class="lvl">${pips(li)}${esc(LEVELS[li].label)}</p>
+      <p class="prose">${text(p)}</p>
+      ${extra}
+      ${rel ? `<div class="chips">${rel}</div>` : ""}
+      ${sys ? `<div class="chips">${sys}</div>` : ""}`;
+    $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
+      const target = b.dataset.goto, home = document.getElementById(sec).querySelector(`[data-part="${CSS.escape(target)}"]`);
+      if (home) select(sec, target);
+      else { const other = document.querySelector(`[data-part="${CSS.escape(target)}"]`); if (other){ const s2 = sectionOf(other); select(s2, target); document.getElementById(s2).scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); } }
+    }));
+  });
+}
+
+/* ---------- controls ---------- */
+function choice(host, { options, value, onChange, label }){
+  const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "radiogroup");
+  if (label) seg.setAttribute("aria-label", label);
+  seg.innerHTML = options.map(([v, l, s]) => `<button type="button" role="radio" data-v="${esc(v)}" aria-checked="${v === value}"><span class="f">${esc(l)}</span><span class="s">${esc(s || l)}</span></button>`).join("");
+  const sync = v => $$("button", seg).forEach(b => b.setAttribute("aria-checked", String(b.dataset.v === String(v))));
+  seg.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; sync(b.dataset.v); onChange(b.dataset.v); });
+  host.appendChild(seg);
+  return { el: seg, set: sync };
+}
+const PLAY = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z" fill="currentColor"/></svg>';
+const PAUSE = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg>';
+function buildControls(){
+  const host = $("[data-controls]"); if (!host) return;
+  const ctl = (label) => { const d = document.createElement("div"); d.className = "op-ctl"; d.innerHTML = `<span>${esc(label)}</span>`; host.appendChild(d); return d; };
+  const lv = choice(ctl("Reading level"), { label: "Reading level", options: LEVELS.map(l => [l.id, l.label, l.short]), value: state.level, onChange: v => set({ level: v }) });
+  const ph = choice(ctl("Part of the day"), { label: "Part of the day", options: PHASES.map(p => [p.id, p.label]), value: state.phase, onChange: v => set({ hour: PHASE_BY_ID[v].rep, phase: v }) });
+  const sp = ctl("Speed");
+  const play = document.createElement("button"); play.type = "button"; play.className = "op-play";
+  sp.appendChild(play);
+  const spd = choice(sp, { label: "Speed", options: [["1", "Real time", "1×"], ["0.25", "¼ speed", "¼×"], ["0.1", "1⁄10", "⅒×"]], value: String(state.speed), onChange: v => set({ speed: +v, paused: false }) });
+  play.addEventListener("click", () => set({ paused: !state.paused }));
+  const sync = s => {
+    lv.set(s.level); ph.set(s.phase); spd.set(String(s.speed));
+    play.innerHTML = s.paused ? PLAY : PAUSE; play.setAttribute("aria-label", s.paused ? "Play" : "Pause");
+  };
+  subscribe(sync); sync(state);
+}
+function buildNav(){
+  const nav = $("[data-nav]"); if (!nav) return;
+  const secs = $$("[data-section]");
+  nav.innerHTML = secs.map(s => `<a href="#${s.id}">${esc(get(`sections.${s.id}.nav`) || get(`sections.${s.id}.title`) || s.id)}</a>`).join("");
+  const links = $$("a", nav);
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting){ links.forEach(a => a.setAttribute("aria-current", String(a.getAttribute("href") === "#" + e.target.id))); } });
+  }, { rootMargin: "-40% 0px -55% 0px" });
+  secs.forEach(s => io.observe(s));
+}
+
+/* ---------- hero: phase note and live stats ---------- */
+function buildNow(){
+  const box = $("[data-now]"); if (!box) return;
+  const stats = (META.stats || []).map(s => `<div class="stat" data-stat="${esc(s.id)}"><div class="l">${esc(s.label)}</div><div class="v">–<small>${esc(s.unit || "")}</small></div><div class="u"></div></div>`).join("");
+  box.innerHTML = `<p class="now-head"><i></i><span data-now-title></span></p><p class="t" data-now-text></p>${stats ? `<div class="stats">${stats}</div>` : ""}`;
+}
+function renderNow(){
+  const box = $("[data-now]"); if (!box) return;
+  const p = PHASE_BY_ID[state.phase];
+  box.style.setProperty("--pc", p.color);
+  $("[data-now-title]", box).textContent = `Right now: ${p.label.toLowerCase()}`;
+  $("[data-now-text]", box).innerHTML = text(get("phases"));
+}
+function setStat(id, value, sub){
+  const n = document.querySelector(`[data-stat="${CSS.escape(id)}"]`); if (!n) return;
+  const v = n.querySelector(".v"), unit = (META.stats.find(s => s.id === id) || {}).unit || "";
+  const html = `${esc(value)}<small>${esc(unit)}</small>`;
+  if (v.__h !== html){ v.innerHTML = html; v.__h = html; }
+  if (sub !== undefined){ const u = n.querySelector(".u"); if (u.textContent !== sub) u.textContent = sub; }
+}
+
+/* ---------- text slots and the lens ---------- */
+function renderText(){
+  $$("[data-meta]").forEach(n => { n.textContent = META[n.dataset.meta] || ""; });
+  $$("[data-section]").forEach(s => {
+    const k = $("[data-kicker]", s), t = $("[data-title]", s);
+    if (k) k.textContent = get(`sections.${s.id}.kicker`) || "";
+    if (t) t.textContent = get(`sections.${s.id}.title`) || "";
+  });
+  $$("[data-text]").forEach(n => { n.innerHTML = text(get(n.dataset.text)); });
+}
+function renderLens(){
+  $$("[data-lens]").forEach(box => {
+    const lens = CONTENT.lens || {};
+    box.innerHTML = SYSTEMS.filter(s => lens[s.id]).map(s => {
+      const parts = Object.entries(CONTENT.parts || {}).filter(([, p]) => (p.systems || []).includes(s.id)).slice(0, 6)
+        .map(([id, p]) => `<button type="button" class="chip" data-goto="${esc(id)}">${esc(p.name)}</button>`).join("");
+      const watch = s.main ? `<a class="chip" href="${esc(href({ live: s.id }))}" style="--c:${s.color}"><i></i>Watch it in the body</a>` : "";
+      return `<article class="lens-card" id="lens-${s.id}" style="--c:${s.color}">
+        <h3><span class="chip" style="--c:${s.color};padding:0;border:0;pointer-events:none"><i></i></span>${esc(s.name)}</h3>
+        <p class="prose">${text(lens[s.id])}</p>
+        ${parts || watch ? `<div class="chips">${parts}${watch}</div>` : ""}</article>`;
+    }).join("");
+    $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
+      const n = document.querySelector(`[data-part="${CSS.escape(b.dataset.goto)}"]`); if (!n) return;
+      const sec = sectionOf(n); select(sec, b.dataset.goto);
+      document.getElementById(sec).scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+    }));
+  });
+}
+function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: META.mainTopic || "" }); }); }
+
+/* ---------- animation loop ---------- */
+const ticks = [];
+const onTick = f => ticks.push(f);
+const seen = new WeakMap();
+const vio = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: "120px" });
+function visible(node){ if (!seen.has(node)){ seen.set(node, true); vio.observe(node); } return seen.get(node) && !document.hidden; }
+function loop(){
+  let last = performance.now();
+  function frame(t){
+    const real = Math.min(.05, (t - last) / 1000); last = t;
+    const dt = state.paused ? 0 : real * state.speed;
+    for (const f of ticks) f(dt, real);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- glossary tooltips ---------- */
+function bindGlossary(){
+  const show = n => { const g = GLOSSARY[n.dataset.term]; if (g) showTip(n, `<b>${esc(n.dataset.term)}</b> · ${esc(g.def)}`); };
+  document.addEventListener("pointerover", e => { const n = e.target.closest(".term"); if (n) show(n); });
+  document.addEventListener("pointerout", e => { const n = e.target.closest(".term"); if (n) hideTip(n); });
+  document.addEventListener("focusin", e => { const n = e.target.closest(".term"); if (n) show(n); });
+  document.addEventListener("focusout", e => { const n = e.target.closest(".term"); if (n) hideTip(n); });
+  document.addEventListener("click", e => { const n = e.target.closest(".term"); if (n){ tipFor === n ? hideTip(n) : show(n); } else if (tipFor && tipFor.classList && tipFor.classList.contains("term")) hideTip(); });
+  window.addEventListener("scroll", () => hideTip(), { passive: true });
+}
+
+function start(){
+  document.title = `${META.name} · HumanPhysiology`;
+  document.body.appendChild(tip);
+  $$("[data-organ-name]").forEach(n => n.textContent = META.name);
+  buildControls(); buildNav(); buildNow();
+  bindParts(); bindGlossary();
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); };
+  subscribe((s, p) => {
+    if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
+    if (s.level !== p.level || s.phase !== p.phase) all();
+    else { if (s.sel !== p.sel){ renderInspectors(); markSelected(); } if (s.hour !== p.hour) renderBack(); }
+  });
+  all();
+  loop();
+  if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }
+}
+
+return {
+  META, CONTENT, GLOSSARY, LEVELS, PHASES, SYSTEMS, SYSTEM_BY_ID, reducedMotion,
+  state: () => state, set, subscribe, get, levelText, text, linkify, esc, el, $, $$,
+  href, color, choice, bindParts, select, setStat, onTick, visible, start,
+  tip: showTip, untip: hideTip,
+  vitals: () => PHASE_BY_ID[state.phase].vitals,
+  inspector: (node, extra) => { node.__extra = extra; }
+};
+})();
+/* ===== ORGAN ENGINE JS · END ===== */
+</script>
+<script>
+/* =============================================================================
+   THE HEART: organ script (figures, simulation and controls)
+   ============================================================================= */
+(() => {
+"use strict";
+const O = OrganPage, { el, esc, $, $$ } = O;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+const gauss = (x, mu, s) => Math.exp(-((x - mu) * (x - mu)) / (2 * s * s));
+const rand = (() => { let a = 12345; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
+
+/* =========================================================================
+   CORONARY TREE: segments, dominance, territories (AHA 17-segment model)
+   and each segment's ST signature (mV; + elevation, − depression)
+   ========================================================================= */
+const SEG_NAMES = ["", "Basal anterior", "Basal anteroseptal", "Basal inferoseptal", "Basal inferior", "Basal inferolateral", "Basal anterolateral",
+  "Mid anterior", "Mid anteroseptal", "Mid inferoseptal", "Mid inferior", "Mid inferolateral", "Mid anterolateral",
+  "Apical anterior", "Apical septal", "Apical inferior", "Apical lateral", "Apex"];
+const OWN = { lm: [], ladProx: [1, 2], ladMid: [7, 8, 13], ladDist: [14, 17], d1: [12], lcx: [6], om: [5, 11, 12, 16],
+  rcaProx: [], rcaDist: [], pl: [4, 10, 15], pda: [3, 9] };
+const ST_SIG = {
+  ladProx: { V1: .12, V2: .1, aVL: .08, I: .05, aVR: .03 },
+  ladMid: { V2: .2, V3: .25, V4: .15, III: -.06, aVF: -.04 },
+  ladDist: { V3: .05, V4: .12, V5: .14, V6: .1, II: .03 },
+  d1: { I: .1, aVL: .14, V2: .05, V5: .05, III: -.1, aVF: -.06, II: -.03 },
+  lcx: { I: .05, aVL: .06, V1: -.08, V2: -.12, V3: -.08 },
+  om: { V5: .1, V6: .12, I: .04 },
+  rcaProx: { V1: .1, III: .03, aVR: -.02 },
+  rcaDist: {},
+  pl: { II: .1, III: .15, aVF: .14, V6: .04, V1: -.04, V2: -.1, I: -.05, aVL: -.1 },
+  pda: { II: .04, III: .08, aVF: .06, aVL: -.04 },
+  lm: { aVR: .12 }
+};
+const OCCL_LABEL = { lm: "left main", ladProx: "proximal LAD", ladMid: "mid LAD", d1: "first diagonal", lcx: "circumflex", om: "obtuse marginal",
+  rcaProx: "proximal RCA", rcaDist: "distal RCA", pda: "posterior descending artery" };
+function children(seg, dom){
+  return ({ lm: ["ladProx", "lcx"], ladProx: ["ladMid", "d1"], ladMid: ["ladDist"],
+    lcx: ["om", ...(dom === "left" ? ["pl", "pda"] : dom === "co" ? ["pl"] : [])],
+    rcaProx: ["rcaDist"], rcaDist: dom === "right" ? ["pl", "pda"] : dom === "co" ? ["pda"] : [] })[seg] || [];
+}
+function downstream(seg, dom){ const out = [seg]; for (const c of children(seg, dom)) out.push(...downstream(c, dom)); return out; }
+function owner(seg, dom){ /* which main artery a segment's blood comes from */
+  if (["lm"].includes(seg)) return "lm";
+  if (["ladProx", "ladMid", "ladDist", "d1"].includes(seg)) return "lad";
+  if (["lcx", "om"].includes(seg)) return "lcx";
+  if (["rcaProx", "rcaDist"].includes(seg)) return "rca";
+  if (seg === "pda") return dom === "left" ? "lcx" : "rca";
+  if (seg === "pl") return dom === "right" ? "rca" : "lcx";
+  return "lad";
+}
+function territoryOwner(n, dom){ for (const [seg, list] of Object.entries(OWN)) if (list.includes(n)) return owner(seg, dom); return "lad"; }
+/* 12 (of 17) segments' default owners follow the AHA convention; 12 is circumflex */
+function segOwner(n, dom){ if (n === 12) return "lcx"; return territoryOwner(n, dom); }
+
+/* =========================================================================
+   12-LEAD ECG TEMPLATES (mV)
+   ========================================================================= */
+const LEADS = {
+  I:   { p: .08, q: -.04, r: .55, s: -.08, t: .18 },  II:  { p: .14, q: -.05, r: 1.0, s: -.15, t: .28 },
+  III: { p: .06, q: -.03, r: .45, s: -.12, t: .10 },  aVR: { p: -.1, q: 0, r: .08, s: -.65, t: -.22 },
+  aVL: { p: .03, q: -.04, r: .32, s: -.12, t: .06 },  aVF: { p: .10, q: -.04, r: .72, s: -.13, t: .19 },
+  V1:  { p: .07, q: 0, r: .18, s: -.85, t: -.04 },    V2:  { p: .07, q: 0, r: .35, s: -1.15, t: .32 },
+  V3:  { p: .07, q: 0, r: .7, s: -.75, t: .38 },      V4:  { p: .07, q: -.03, r: 1.25, s: -.35, t: .36 },
+  V5:  { p: .07, q: -.07, r: 1.15, s: -.18, t: .28 }, V6:  { p: .07, q: -.07, r: .85, s: -.08, t: .22 }
+};
+const LATERAL = new Set(["I", "aVL", "V5", "V6"]), RIGHTP = new Set(["V1", "V2", "V3"]);
+
+/* =========================================================================
+   HEART: one simulated heart (conduction → mechanics → ECG) for every section
+   ========================================================================= */
+/* per-phase presets: how much sympathetic drive changes contractility,
+   resistance (afterload) and venous filling (preload) */
+const PRESET = { sleep: { c: .95, a: .95, p: 1.0 }, rest: { c: 1, a: 1, p: 1 }, meal: { c: 1.02, a: .96, p: 1.0 }, exercise: { c: 2.7, a: .36, p: 2.0 } };
+const RHYTHM_IDS = ["sinus", "avb1", "wenck", "mobitz2", "avb3", "rbbb", "lbbb", "afib", "saArrest"];
+const DT = 0.00025, REC_DT = 0.002, REC_N = 4096;
+
+const Heart = (() => {
+  const S = {
+    t: 0, Vlv: 125, Vla: 60, Pa: 85, Plv: 5, Pla: 8, Qmv: 0, Qav: 0, el: 0, lca: 0, rca: 0,
+    rhythm: "sinus", tone: 0, user: { p: 1, a: 1, c: 1 }, dom: "right", occl: null,
+    hr: 68, mech: { ...PRESET.rest },
+    P: [], V: [], pend: [], nextP: 0.3, wk: 0, m2: 0, lastV: -1, tvPrev: -1, nextAF: 0.4,
+    phase: 3, aopen: 0, mopen: 1
+  };
+  const rec = { i: 0, n: 0, t: new Float64Array(REC_N), plv: new Float32Array(REC_N), pao: new Float32Array(REC_N), pla: new Float32Array(REC_N),
+    vlv: new Float32Array(REC_N), lca: new Float32Array(REC_N), rca: new Float32Array(REC_N), ph: new Uint8Array(REC_N), el: new Float32Array(REC_N) };
+  let recAcc = 0;
+  const cyc = { minV: 1e9, maxPa: 0, minPa: 1e9 };
+  const beat = { hr: 68, sv: 70, edv: 125, esv: 55, ef: 60, sbp: 120, dbp: 76, co: 4.8, n: 0 };
+
+  function affected(){ return S.occl ? new Set(downstream(S.occl, S.dom)) : new Set(); }
+  function affectedSegs(){ const a = affected(), out = new Set(); a.forEach(s => (OWN[s] || []).forEach(n => out.add(n))); return out; }
+  function effects(){
+    const a = affected(), segs = affectedSegs();
+    return { sa: a.has("rcaProx") ? .82 : 1, pr: a.has("pl") ? .08 : 0, emax: 1 - .85 * segs.size / 17, rv: a.has("rcaProx") ? .88 : 1 };
+  }
+  function sinusRate(){
+    const base = O.vitals().hr * (S.tone >= 0 ? 1 + .55 * S.tone : 1 + .42 * S.tone);
+    return clamp(base * effects().sa, 30, 200);
+  }
+  function qrsKind(){ return S.rhythm === "rbbb" ? "rbbb" : S.rhythm === "lbbb" ? "lbbb" : "n"; }
+  function pushV(t, junctional){
+    S.pend.push({ t, kind: qrsKind(), junc: !!junctional });
+  }
+  /* the SA node fires (or the atria fibrillate); decide what reaches the ventricles */
+  function electrical(){
+    const t = S.t, r = S.rhythm, fx = effects();
+    if (r === "afib"){
+      if (t >= S.nextAF){
+        const mean = 60 / clamp(O.vitals().hr * 1.25 * (1 + .4 * S.tone), 50, 190);
+        pushV(t + .02); S.nextAF = t + mean * (.55 + .9 * rand());
+      }
+    } else if (r !== "saArrest" && t >= S.nextP){
+      const tp = S.nextP; S.nextP = tp + 60 / sinusRate();
+      const hr = sinusRate(), basePR = clamp(.165 - .0005 * (hr - 70), .12, .2) + fx.pr;
+      let pr = basePR, conducted = true;
+      if (r === "avb1") pr = .28 + fx.pr;
+      else if (r === "wenck"){ const k = S.wk % 4; pr = [basePR, basePR + .1, basePR + .14][k] || 0; conducted = k < 3; S.wk++; }
+      else if (r === "mobitz2"){ conducted = S.m2 % 3 !== 2; S.m2++; }
+      else if (r === "avb3") conducted = false;
+      S.P.push({ t: tp, cond: conducted, pr });
+      if (conducted) pushV(tp + pr);
+    }
+    /* escape: a lower pacemaker takes over when nothing arrives in time */
+    const escRate = r === "avb3" || r === "saArrest" ? 42 : 32;
+    if (!S.pend.length && t - S.lastV > 60 / escRate) pushV(t, true);
+    /* deliver due ventricular activations */
+    for (let i = 0; i < S.pend.length; i++){
+      const v = S.pend[i]; if (v.t > t) continue;
+      S.pend.splice(i--, 1);
+      v.rr = S.lastV > 0 ? v.t - S.lastV : 60 / sinusRate();
+      S.V.push(v); S.tvPrev = S.lastV; S.lastV = v.t;
+      onBeat();
+    }
+    /* forget old events */
+    while (S.P.length && S.P[0].t < t - 9) S.P.shift();
+    while (S.V.length && S.V[0].t < t - 9) S.V.shift();
+  }
+  function onBeat(){
+    if (cyc.minV < 1e8 && cyc.maxPa > 0){
+      const edv = S.Vlv, esv = cyc.minV, sv = Math.max(0, edv - esv), rr = S.lastV - S.tvPrev;
+      const hr = rr > 0 && S.tvPrev > 0 ? 60 / rr : beat.hr, a = beat.n < 3 ? 1 : .35;
+      beat.hr = lerp(beat.hr, hr, a); beat.sv = lerp(beat.sv, sv, a); beat.edv = lerp(beat.edv, edv, a); beat.esv = lerp(beat.esv, esv, a);
+      beat.sbp = lerp(beat.sbp, cyc.maxPa, a); beat.dbp = lerp(beat.dbp, cyc.minPa, a);
+      beat.ef = beat.edv > 0 ? 100 * beat.sv / beat.edv : 0; beat.co = beat.sv * beat.hr / 1000; beat.n++;
+    }
+    cyc.minV = 1e9; cyc.maxPa = 0; cyc.minPa = 1e9;
+  }
+  function En(tn){ const a = Math.pow(tn / .7, 1.9), b = Math.pow(tn / 1.17, 21.9); return 1.55 * (a / (1 + a)) * (1 / (1 + b)); }
+  function lastP(t){ for (let i = S.P.length - 1; i >= 0; i--) if (S.P[i].t <= t) return S.P[i]; return null; }
+  function mechanics(dt){
+    const t = S.t, fx = effects(), m = S.mech, u = S.user;
+    const contract = m.c * u.c * (1 + .25 * Math.max(0, S.tone)) * fx.emax * (S.rhythm === "lbbb" ? .86 : 1);
+    const Emax = 3.2 * contract, V0 = 10;
+    /* systole shortens as the rate rises (and with sympathetic lusitropy), leaving time to fill */
+    const tv = S.lastV + .03, rr = clamp(S.lastV - S.tvPrev, .3, 1.6), tmax = (.08 + .25 * rr) * (1 - .08 * Math.max(0, S.tone));
+    const tl = t - tv, el = S.lastV > 0 && tl >= 0 && tl < 1.6 * tmax ? En(tl / tmax) : 0;
+    const ped = .55 * (Math.exp(.025 * (S.Vlv - V0)) - 1);
+    const Plv = el * Emax * (S.Vlv - V0) + (1 - el) * ped;
+    let ea = 0;
+    if (S.rhythm !== "afib"){ const p = lastP(t); if (p){ const ta = t - p.t - .04; if (ta >= 0 && ta < .16) ea = Math.sin(Math.PI * ta / .16) ** 2; } }
+    const Pla = (.15 + .25 * ea) * (S.Vla - 20) + 2;
+    const Ppv = 10 * m.p * u.p * fx.rv, R = 1.15 * m.a * u.a;
+    const Qpv = (Ppv - Pla) / .03, Qmv = Math.max(0, (Pla - Plv) / .006), Qav = Math.max(0, (Plv - S.Pa) / .008);
+    S.Vla += (Qpv - Qmv) * dt; S.Vlv += (Qmv - Qav) * dt; S.Pa += (Qav - S.Pa / R) / 1.1 * dt;
+    S.Vlv = Math.max(V0 + 1, S.Vlv);
+    S.Plv = Plv; S.Pla = Pla; S.Qmv = Qmv; S.Qav = Qav; S.Qpv = Qpv; S.el = el; S.Emax = Emax; S.Qout = S.Pa / R;
+    /* coronary flow: perfusion pressure minus the squeeze of the wall around the vessels */
+    S.lca = Math.max(0, S.Pa - .9 * el * Plv) / 95; S.rca = Math.max(0, S.Pa - .22 * el * Plv) / 95;
+    /* a blocked artery: flow beyond the clot falls to what collaterals bring */
+    if (S.occl){ const own = owner(S.occl, S.dom); if (own === "rca") S.rca *= .15; else S.lca *= S.occl === "lm" ? .1 : .45; }
+    /* cycle phase: 0 isovolumic contraction, 1 ejection, 2 isovolumic relaxation, 3 filling */
+    const ao = Qav > 0 ? 1 : 0, mo = Qmv > 0 ? 1 : 0;
+    if (ao) S.phase = 1; else if (mo) S.phase = 3; else if (S.phase === 1) S.phase = 2; else if (S.phase === 3 && el > .02) S.phase = 0;
+    S.aopen = ao; S.mopen = mo;
+    cyc.minV = Math.min(cyc.minV, S.Vlv); cyc.maxPa = Math.max(cyc.maxPa, S.Pa); cyc.minPa = Math.min(cyc.minPa, S.Pa);
+  }
+  function record(){
+    const i = rec.i;
+    rec.t[i] = S.t; rec.plv[i] = S.Plv; rec.pao[i] = S.Pa; rec.pla[i] = S.Pla; rec.vlv[i] = S.Vlv; rec.lca[i] = S.lca; rec.rca[i] = S.rca; rec.ph[i] = S.phase; rec.el[i] = S.el;
+    rec.i = (i + 1) % REC_N; rec.n = Math.min(REC_N, rec.n + 1);
+  }
+  function advance(dt){
+    if (dt <= 0) return;
+    /* ease toward the part of the day's targets */
+    const k = 1 - Math.exp(-dt / 1.2), tgt = PRESET[O.state().phase];
+    for (const key of ["c", "a", "p"]) S.mech[key] = lerp(S.mech[key], tgt[key], k);
+    let n = Math.ceil(dt / DT); const h = dt / n;
+    while (n--){
+      electrical(); mechanics(h); S.t += h;
+      recAcc += h; if (recAcc >= REC_DT){ recAcc -= REC_DT; record(); }
+    }
+  }
+  /* --- ECG synthesis --- */
+  function qtFor(rr){ return clamp(.4 * Math.sqrt(clamp(rr, .3, 2)), .28, .46); }
+  function stFor(name){ let s = 0; affected().forEach(seg => { s += (ST_SIG[seg] || {})[name] || 0; }); return clamp(s, -.3, .38); }
+  function ecg(name, t, st){
+    const L = LEADS[name]; let v = 0;
+    if (st === undefined) st = stFor(name);
+    for (let i = S.P.length - 1; i >= 0; i--){
+      const p = S.P[i], dtp = t - p.t; if (dtp < -.05) continue; if (dtp > .2) break;
+      v += L.p * gauss(dtp, .045, .02);
+    }
+    if (S.rhythm === "afib") v += (name === "V1" ? .06 : name === "II" || name === "III" || name === "aVF" ? .035 : .015) * (Math.sin(t * 2 * Math.PI * 6.1) * .6 + Math.sin(t * 2 * Math.PI * 8.3 + 1.3) * .4);
+    for (let i = S.V.length - 1; i >= 0; i--){
+      const b = S.V[i], tt = t - b.t; if (tt < -.02) continue; if (tt > .7) break;
+      const qt = qtFor(b.rr || .88);
+      if (b.kind === "lbbb"){
+        if (RIGHTP.has(name)) v += .1 * gauss(tt, .02, .008) - 1.3 * gauss(tt, .075, .03) + .15 * smooth(.13, .15, tt) * (1 - smooth(qt - .1, qt, tt)) + .3 * gauss(tt, qt - .1, .05);
+        else if (LATERAL.has(name)) v += .8 * gauss(tt, .05, .02) + .85 * gauss(tt, .1, .022) - .1 * smooth(.14, .16, tt) * (1 - smooth(qt - .1, qt, tt)) - .25 * gauss(tt, qt - .1, .05);
+        else v += L.q * gauss(tt, .02, .01) + L.r * .85 * gauss(tt, .06, .022) + L.s * gauss(tt, .11, .02) + L.t * .4 * gauss(tt, qt - .09, .05);
+      } else {
+        v += L.q * gauss(tt, .012, .007) + L.r * gauss(tt, .035, .01) + L.s * gauss(tt, .058, .009);
+        let tAmp = L.t;
+        if (b.kind === "rbbb"){
+          if (name === "V1" || name === "V2") { v += .55 * gauss(tt, .1, .016); tAmp = -.15; }
+          if (LATERAL.has(name)) v += -.28 * gauss(tt, .1, .02);
+        }
+        /* ST shift from injury current, and hyperacute T waves where it is raised */
+        v += st * smooth(.06, .09, tt) * (1 - smooth(qt - .06, qt, tt));
+        v += (tAmp + Math.max(0, st) * 1.1) * gauss(tt, qt - .09, .045);
+      }
+    }
+    return v;
+  }
+  /* --- action potentials (mV) --- */
+  function apSA(t){
+    if (S.rhythm === "saArrest") return -62 + 1.5 * Math.sin(t * 3);
+    let f0 = null, f1 = S.nextP - .01;
+    for (let i = S.P.length - 1; i >= 0; i--) if (S.P[i].t - .01 <= t){ f0 = S.P[i].t - .01; if (S.P[i + 1]) f1 = S.P[i + 1].t - .01; break; }
+    if (S.rhythm === "afib") return -58 + 6 * Math.sin(t * 37) * Math.sin(t * 11.3);
+    if (f0 == null) return -60;
+    const tt = t - f0;
+    if (tt < .05) return -40 + 50 * smooth(0, .05, tt);
+    if (tt < .17) return 10 - 70 * smooth(.05, .17, tt);
+    const span = Math.max(.05, f1 - (f0 + .17)), x = clamp((t - f0 - .17) / span);
+    return -60 + 20 * Math.pow(x, 1.25);
+  }
+  function apV(t){
+    let b = null; for (let i = S.V.length - 1; i >= 0; i--) if (S.V[i].t + .01 <= t){ b = S.V[i]; break; }
+    if (!b) return -88;
+    const tt = t - b.t - .01, qt = qtFor(b.rr || .88);
+    if (tt < .004) return -88 + 113 * (tt / .004);
+    if (tt < .02) return 25 - 22 * smooth(.004, .02, tt);
+    if (tt < qt - .11) return 3 - 8 * (tt - .02) / Math.max(.05, qt - .13);
+    if (tt < qt - .01) return -5 - 83 * smooth(qt - .11, qt - .01, tt);
+    return -88;
+  }
+  return { S, rec, beat, advance, ecg, stFor, apSA, apV, sinusRate, affected, affectedSegs, effects, qtFor,
+    reset(){ S.wk = 0; S.m2 = 0; S.nextAF = S.t + .2; if (S.nextP < S.t) S.nextP = S.t + .1; } };
+})();
+
+/* =========================================================================
+   GEOMETRY: frontal section (shared by the anatomy and conduction figures)
+   ========================================================================= */
+const G = {
+  out: "M150 196 C128 230 124 290 138 330 C150 368 182 408 222 446 C266 490 326 538 378 548 C424 556 470 524 484 476 C500 424 500 360 486 314 C478 288 466 266 458 246 C452 216 432 194 402 186 L344 182 L300 204 L262 190 C214 180 168 182 150 196 Z",
+  ra: "M162 212 C146 242 144 290 158 322 C176 334 218 336 252 328 L258 234 C238 208 190 200 162 212 Z",
+  rv: "M172 344 C186 390 224 432 266 466 C294 488 318 498 328 484 C318 440 304 392 296 350 L300 222 L266 222 L260 338 Z",
+  la: "M356 208 C384 192 432 196 448 222 C458 248 454 276 442 292 L362 296 C352 270 350 232 356 208 Z",
+  lv: "M318 302 L442 300 C456 340 456 404 444 446 C432 486 408 510 386 512 C364 514 350 498 344 474 C336 430 332 360 318 302 Z",
+  septum: "M300 222 L318 302 C332 360 336 430 344 474 C340 486 334 490 328 484 C318 440 304 392 296 350 Z",
+  ao: "M339 302 C339 240 336 168 342 118 C348 78 404 62 438 82 C458 94 466 122 466 150 L466 282",
+  aoBranches: ["M362 80 L352 20", "M398 68 L398 14", "M430 78 L446 18"],
+  svc: "M180 214 L180 36", ivc: "M160 318 C150 350 148 392 152 444",
+  pt: "M283 224 C282 186 300 158 336 146 C356 140 376 140 394 144", lpa: "M386 144 C426 142 470 152 512 166", rpa: "M334 146 C290 132 214 128 126 140",
+  pvs: ["M452 222 L520 204", "M454 266 L522 274"],
+  valves: {
+    tricuspid: { a: [178, 334], b: [254, 330], open: [[196, 378], [236, 376]], shut: [216, 338], kind: "av", side: "r" },
+    pulmonaryValve: { a: [266, 222], b: [300, 222], open: [[268, 190], [298, 190]], shut: [283, 214], kind: "sl", side: "r" },
+    mitral: { a: [364, 300], b: [442, 298], open: [[384, 346], [424, 344]], shut: [403, 304], kind: "av", side: "l" },
+    aorticValve: { a: [320, 300], b: [358, 300], open: [[322, 266], [356, 266]], shut: [339, 292], kind: "sl", side: "l" }
+  },
+  paps: [{ c: [432, 452], rx: 9, ry: 20, rot: -25, tip: [430, 434], to: ["mitral", 1] }, { c: [364, 474], rx: 8, ry: 18, rot: 20, tip: [366, 458], to: ["mitral", 0] },
+         { c: [236, 446], rx: 7, ry: 16, rot: -30, tip: [240, 432], to: ["tricuspid", 0] }, { c: [236, 446], rx: 0, ry: 0, rot: 0, tip: [240, 432], to: ["tricuspid", 1] }],
+  moderator: "M300 420 C270 426 240 436 214 448",
+  flow: {
+    r: [{ d: "M180 40 L180 220 C186 250 200 292 214 334", q: "in" }, { d: "M216 338 C226 390 250 430 282 440", q: "mv" },
+        { d: "M282 440 C292 410 286 340 283 226", q: "av" }, { d: "M283 222 C282 186 300 158 336 146 C356 140 376 140 394 144 C430 142 470 152 512 166", q: "out" }],
+    l: [{ d: "M520 204 L452 222 C430 236 412 262 404 300", q: "in" }, { d: "M404 304 C410 380 400 450 386 480", q: "mv" },
+        { d: "M386 480 C360 470 346 400 339 300", q: "av" }, { d: "M339 300 C339 240 336 168 342 118 C348 78 404 62 438 82 C458 94 466 122 466 150 L466 282", q: "out" }]
+  },
+  cond: {
+    sa: [178, 216], av: [250, 318],
+    internodal: ["M184 222 C214 228 240 262 248 312", "M176 224 C190 262 220 296 246 316", "M170 220 C160 270 186 312 244 320"],
+    bachmann: "M188 210 C240 188 320 186 410 206",
+    his: "M254 320 C270 326 290 330 306 334",
+    rbb: "M306 336 C302 370 304 400 302 420 C276 428 244 438 216 450 M302 420 C306 440 312 460 318 478",
+    lbb: "M308 334 C322 346 332 362 338 380 M338 380 C370 384 410 410 428 436 M338 380 C344 410 354 440 364 458",
+    purkinje: ["M318 478 C330 500 350 512 372 516", "M364 458 C368 490 384 506 404 504", "M428 436 C446 418 452 380 450 344", "M404 504 C428 492 446 466 452 438",
+      "M216 450 C234 466 256 478 284 484", "M216 450 C198 420 184 386 178 352", "M450 344 L448 312", "M372 516 L376 500", "M284 484 L278 470", "M178 352 L190 350", "M452 438 L440 432"],
+    pulse: { inter: "M178 216 C190 262 220 296 250 318", his: "M250 318 C270 326 290 330 306 334",
+      rbb: "M306 336 C302 370 304 400 302 420 C276 428 244 438 216 450", laf: "M308 334 C322 346 332 362 338 380 C370 384 410 410 428 436",
+      lpf: "M308 334 C322 346 332 362 338 380 C344 410 354 440 364 458", bach: "M188 210 C240 188 320 186 410 206" }
+  }
+};
+const LABELS = [["RA", 200, 252], ["RV", 238, 410], ["LA", 404, 250], ["LV", 398, 420]];
+const OUT_LABELS = [["Superior vena cava", 204, 30, "start"], ["Inferior vena cava", 66, 420, "middle"], ["Aorta", 404, 112, "middle"],
+  ["Pulmonary arteries", 70, 120, "middle"], ["Pulmonary", 524, 298, "middle"], ["veins", 524, 311, "middle"]];
+
+function buildSection(svg, mode){
+  const cond = mode === "conduction", pre = svg.id;
+  svg.innerHTML = "";
+  const defs = el("defs", {}, svg);
+  /* back: vessels behind the heart */
+  const back = el("g", {}, svg);
+  el("path", { d: G.rpa, class: "v-wall", "stroke-width": 26 }, back);
+  el("path", { d: G.rpa, class: "v-co2", "stroke-width": 20, "data-part": "pulmonaryTrunk" }, back);
+  el("path", { d: "M466 150 L466 282", class: "v-wall", "stroke-width": 38 }, back);
+  el("path", { d: "M466 150 L466 282", class: "v-o2", "stroke-width": 30, "data-part": "aorta" }, back);
+  G.pvs.forEach(d => { el("path", { d, class: "v-wall", "stroke-width": 19 }, back); el("path", { d, class: "v-o2", "stroke-width": 13, "data-part": "pulmonaryVeins" }, back); });
+  el("path", { d: G.ivc, class: "v-wall", "stroke-width": 34 }, back);
+  el("path", { d: G.ivc, class: "v-co2", "stroke-width": 27, "data-part": "ivc" }, back);
+  /* pericardium and heart */
+  const body = el("g", { class: "h-body" }, svg);
+  el("path", { d: G.out, class: "h-peri", "data-part": "pericardium" }, body);
+  el("path", { d: G.out, class: "h-myo", "data-part": "myocardium" }, body);
+  el("path", { d: G.septum, class: "h-septum", "data-part": "septum" }, body);
+  const cav = {};
+  for (const [k, cls, part] of [["ra", "h-co2", "ra"], ["rv", "h-co2", "rv"], ["la", "h-o2", "la"], ["lv", "h-o2", "lv"]])
+    cav[k] = el("path", { d: G[k], class: cls, "data-part": part }, body);
+  el("path", { d: G.moderator, class: "h-band", "data-part": "moderator" }, body);
+  const paps = G.paps.map(p => p.rx ? el("ellipse", { cx: p.c[0], cy: p.c[1], rx: p.rx, ry: p.ry, transform: `rotate(${p.rot} ${p.c[0]} ${p.c[1]})`, class: "h-pap", "data-part": "papillary" }, body) : null);
+  const chords = G.paps.map(() => el("line", { class: "h-chord" }, body));
+  /* vessels in front */
+  const front = el("g", {}, svg);
+  el("path", { d: G.svc, class: "v-wall", "stroke-width": 40 }, front);
+  el("path", { d: G.svc, class: "v-co2", "stroke-width": 32, "data-part": "svc" }, front);
+  el("path", { d: G.ao.replace(" L466 282", ""), class: "v-wall", "stroke-width": 44 }, front);
+  G.aoBranches.forEach(d => { el("path", { d, class: "v-wall", "stroke-width": 18 }, front); el("path", { d, class: "v-o2", "stroke-width": 12, "data-part": "aorta" }, front); });
+  el("path", { d: G.ao.replace(" L466 282", ""), class: "v-o2", "stroke-width": 36, "data-part": "aorta" }, front);
+  el("path", { d: G.lpa, class: "v-wall", "stroke-width": 28 }, front);
+  el("path", { d: G.lpa, class: "v-co2", "stroke-width": 21, "data-part": "pulmonaryTrunk" }, front);
+  el("path", { d: G.pt, class: "v-wall", "stroke-width": 40 }, front);
+  el("path", { d: G.pt, class: "v-co2", "stroke-width": 32, "data-part": "pulmonaryTrunk" }, front);
+  /* valves */
+  const valves = {};
+  for (const [id, v] of Object.entries(G.valves)){
+    const g = el("g", { "data-part": id }, svg);
+    el("path", { d: `M${v.a} L${v.b}`, class: "h-valve-hit", "stroke-width": 24 }, g);
+    valves[id] = { v, l1: el("line", { class: "h-valve" }, g), l2: el("line", { class: "h-valve" }, g), open: 0 };
+  }
+  /* blood flow */
+  const flow = el("g", { class: "h-flow" }, svg);
+  /* labels */
+  const lab = el("g", {}, svg);
+  LABELS.forEach(([t, x, y]) => { const n = el("text", { x, y, class: "h-label", "text-anchor": "middle" }, lab); n.textContent = t; });
+  OUT_LABELS.forEach(([t, x, y, a]) => { const n = el("text", { x, y, class: "h-label out", "text-anchor": a }, lab); n.textContent = t; });
+  /* wall-layers inset (anatomy only) */
+  if (!cond){
+    const ins = el("g", { transform: "translate(16 470)" }, svg);
+    const t0 = el("text", { x: 0, y: 0, class: "h-label out", "font-size": 11 }, ins); t0.textContent = "Wall layers";
+    [["Fibrous pericardium", "pericardium", "var(--peri)", 8], ["Epicardium", "epicardium", "var(--fat)", 7], ["Myocardium", "myocardium", "var(--myo)", 26], ["Endocardium", "endocardium", "var(--valve)", 5]]
+      .reduce((y, [name, part, fill, h]) => {
+        el("rect", { x: 0, y, width: 26, height: h, fill, "data-part": part, rx: 2 }, ins);
+        const n = el("text", { x: 34, y: y + h / 2 + 4, class: "h-label out", "font-size": 11 }, ins); n.textContent = name;
+        return y + h + 6;
+      }, 10);
+  }
+  /* conduction system */
+  let condRefs = null;
+  if (cond){
+    const c = G.cond;
+    const cp1 = el("clipPath", { id: pre + "-ca" }, defs), cp2 = el("clipPath", { id: pre + "-cv" }, defs);
+    const waveA = el("circle", { cx: c.sa[0], cy: c.sa[1], r: 0 }, cp1), waveV = el("circle", { cx: 330, cy: 440, r: 0 }, cp2);
+    const gA = el("g", { "clip-path": `url(#${pre}-ca)`, class: "wave" }, svg), gV = el("g", { "clip-path": `url(#${pre}-cv)`, class: "wave" }, svg);
+    for (const k of ["ra", "la"]) el("path", { d: G[k], fill: "var(--wave-a)" }, gA);
+    for (const k of ["rv", "lv", "septum"]) el("path", { d: G[k], fill: "var(--wave-v)" }, gV);
+    const cg = el("g", {}, svg);
+    const part = (d, id, thin) => { el("path", { d, class: "cond-hit", "data-part": id }, cg); el("path", { d, class: "cond-path" + (thin ? " thin" : ""), "data-part": id }, cg); };
+    c.internodal.forEach(d => part(d, "internodal", true));
+    part(c.bachmann, "bachmann", true);
+    part(c.his, "his"); part(c.rbb, "rbb"); part(c.lbb, "lbb");
+    c.purkinje.forEach(d => part(d, "purkinje", true));
+    const sa = el("ellipse", { cx: c.sa[0], cy: c.sa[1], rx: 12, ry: 8, transform: `rotate(-20 ${c.sa[0]} ${c.sa[1]})`, class: "cond-node", "data-part": "saNode" }, cg);
+    const av = el("ellipse", { cx: c.av[0], cy: c.av[1], rx: 11, ry: 7, class: "cond-node", "data-part": "avNode" }, cg);
+    const pulses = {};
+    for (const [k, d] of Object.entries(c.pulse)){ const p = el("path", { d, fill: "none", stroke: "none" }, cg); pulses[k] = { p, len: p.getTotalLength(), dot: el("circle", { r: 5.5, fill: "#fff", stroke: "var(--cond-line)", "stroke-width": 2, opacity: 0, "pointer-events": "none" }, svg) }; }
+    for (const [t, x, y, a] of [["SA node", 150, 196, "end"], ["AV node", 236, 300, "end"], ["Bundle of His", 300, 352, "end"], ["Purkinje fibres", 470, 540, "start"]]){
+      const n = el("text", { x, y, class: "h-label out", "text-anchor": a, "font-size": 11.5 }, lab); n.textContent = t;
+    }
+    condRefs = { waveA, waveV, gA, gV, sa, av, pulses };
+  }
+  /* flow particles */
+  const routes = {};
+  for (const side of ["r", "l"]){
+    const segs = G.flow[side].map(s => { const p = el("path", { d: s.d, fill: "none", stroke: "none" }, flow); return { p, q: s.q, len: p.getTotalLength() }; });
+    const total = segs.reduce((a, s) => a + s.len, 0), n = cond ? 0 : 24;
+    const dots = [];
+    for (let i = 0; i < n; i++){
+      let d = (i + .5) / n * total, k = 0; while (d > segs[k].len){ d -= segs[k].len; k++; }
+      dots.push({ k, s: d, c: el("circle", { r: 4, fill: side === "r" ? "#c9cdf5" : "#ffd1d4", stroke: side === "r" ? "var(--blood-co2)" : "var(--blood-o2)", "stroke-width": 1.2 }, flow) });
+    }
+    routes[side] = { segs, dots };
+  }
+  O.bindParts(svg);
+  return { svg, cav, valves, paps, chords, flow, routes, cond: condRefs };
+}
+
+/* animate a section figure from the heart's state */
+function animateSection(f, dt){
+  const S = Heart.S;
+  /* chamber volumes → size (both sides share the left heart's timing) */
+  const kv = Math.cbrt(clamp(S.Vlv / 130, .3, 1.3)), ka = Math.cbrt(clamp(S.Vla / 65, .4, 1.6));
+  const sc = (n, cx, cy, k, ky = k) => n.setAttribute("transform", `translate(${cx} ${cy}) scale(${k.toFixed(3)} ${ky.toFixed(3)}) translate(${-cx} ${-cy})`);
+  sc(f.cav.lv, 392, 330, lerp(1, kv, .9), kv); sc(f.cav.rv, 240, 360, lerp(1, kv, .7), kv);
+  sc(f.cav.la, 404, 296, ka, lerp(1, ka, .8)); sc(f.cav.ra, 206, 330, ka, lerp(1, ka, .8));
+  /* valves: AV valves open with filling, semilunar valves with ejection */
+  for (const [id, V] of Object.entries(f.valves)){
+    const target = V.v.kind === "av" ? (S.Qmv > 2 ? 1 : 0) : (S.Qav > 2 ? 1 : 0);
+    V.open = lerp(V.open, target, 1 - Math.exp(-(dt || .016) / .018));
+    const o = V.open, v = V.v;
+    const t1 = [lerp(v.shut[0], v.open[0][0], o), lerp(v.shut[1], v.open[0][1], o)], t2 = [lerp(v.shut[0], v.open[1][0], o), lerp(v.shut[1], v.open[1][1], o)];
+    V.l1.setAttribute("x1", v.a[0]); V.l1.setAttribute("y1", v.a[1]); V.l1.setAttribute("x2", t1[0]); V.l1.setAttribute("y2", t1[1]);
+    V.l2.setAttribute("x1", v.b[0]); V.l2.setAttribute("y1", v.b[1]); V.l2.setAttribute("x2", t2[0]); V.l2.setAttribute("y2", t2[1]);
+    V.tips = [t1, t2];
+  }
+  G.paps.forEach((p, i) => {
+    const V = f.valves[p.to[0]], tip = V.tips ? V.tips[p.to[1]] : V.v.shut, ln = f.chords[i];
+    ln.setAttribute("x1", p.tip[0]); ln.setAttribute("y1", p.tip[1]); ln.setAttribute("x2", tip[0]); ln.setAttribute("y2", tip[1]);
+  });
+  /* blood */
+  if (f.flow.style.display !== "none" && dt > 0){
+    const Q = { in: S.Qpv, mv: S.Qmv, av: S.Qav, out: S.Qav * .6 + S.Qout * .4 };
+    for (const side of ["r", "l"]){
+      const R = f.routes[side];
+      for (const d of R.dots){
+        const seg = R.segs[d.k];
+        d.s += dt * 38 * Math.sqrt(Math.max(0, Q[seg.q]));
+        while (d.s > R.segs[d.k].len){ d.s -= R.segs[d.k].len; d.k = (d.k + 1) % R.segs.length; if (d.k === 0) d.s = 0; }
+        const pt = R.segs[d.k].p.getPointAtLength(d.s);
+        d.c.setAttribute("cx", pt.x.toFixed(1)); d.c.setAttribute("cy", pt.y.toFixed(1));
+      }
+    }
+  }
+}
+
+/* the electrical wave and conduction pulses (conduction figure) */
+function animateConduction(f){
+  const S = Heart.S, t = S.t, c = f.cond;
+  /* atria */
+  let ra = 0, ao = 0;
+  if (S.rhythm === "afib"){
+    const ph = Math.floor(t / .09); const r = mulb(ph);
+    c.waveA.setAttribute("cx", 170 + r * 260); c.waveA.setAttribute("cy", 200 + mulb(ph + 7) * 90); ra = 60 + 40 * ((t / .09) % 1); ao = .55;
+  } else {
+    const p = [...S.P].reverse().find(p => p.t <= t);
+    c.waveA.setAttribute("cx", G.cond.sa[0]); c.waveA.setAttribute("cy", G.cond.sa[1]);
+    if (p){ const tt = t - p.t; ra = clamp(tt / .09) * 330; ao = tt < .2 ? 1 : 1 - smooth(.2, .3, tt); }
+  }
+  c.waveA.setAttribute("r", ra.toFixed(1)); c.gA.setAttribute("opacity", ao.toFixed(2));
+  /* ventricles */
+  const v = [...S.V].reverse().find(v => v.t <= t);
+  let rv = 0, vo = 0, ox = 330, oy = 440;
+  if (v){
+    const tt = t - v.t, qt = Heart.qtFor(v.rr || .88), dur = v.kind === "n" ? .085 : .15;
+    if (v.kind === "lbbb"){ ox = 262; oy = 430; } else if (v.kind === "rbbb"){ ox = 360; oy = 430; }
+    rv = clamp(tt / dur) * 260; vo = 1 - smooth(qt - .12, qt, tt);
+  }
+  c.waveV.setAttribute("cx", ox); c.waveV.setAttribute("cy", oy); c.waveV.setAttribute("r", rv.toFixed(1)); c.gV.setAttribute("opacity", vo.toFixed(2));
+  /* pulses */
+  const show = (k, x) => { const P = c.pulses[k]; if (x == null || x < 0 || x > 1){ P.dot.setAttribute("opacity", 0); return; } const pt = P.p.getPointAtLength(x * P.len); P.dot.setAttribute("cx", pt.x); P.dot.setAttribute("cy", pt.y); P.dot.setAttribute("opacity", 1); };
+  const p = S.rhythm === "afib" || S.rhythm === "saArrest" ? null : [...S.P].reverse().find(p => p.t <= t);
+  const nextV = S.pend.length ? S.pend[0] : null;
+  const vNear = nextV && nextV.t - t < .06 ? nextV : v && t - v.t < .02 ? v : null;
+  show("inter", p ? (t - p.t) / .045 : null);
+  show("bach", p ? (t - p.t) / .05 : null);
+  const hx = vNear ? (t - (vNear.t - .045)) / .015 : null, bx = vNear ? (t - (vNear.t - .03)) / .03 : null;
+  show("his", hx); show("rbb", vNear && vNear.kind !== "rbbb" ? bx : null);
+  show("laf", vNear && vNear.kind !== "lbbb" ? bx : null); show("lpf", vNear && vNear.kind !== "lbbb" ? bx : null);
+  /* nodes glow: SA as it fires, AV while it holds the impulse */
+  const saGlow = p ? 1 - smooth(0, .12, t - p.t) : 0;
+  const avHold = p && p.cond && (t - p.t) > .04 && (t - p.t) < p.pr - .03 ? 1 : p && !p.cond && (t - p.t) > .04 && (t - p.t) < .2 ? .6 : 0;
+  if (saGlow > .05) c.sa.setAttribute("style", `fill:#fff;filter:drop-shadow(0 0 ${(4 + 8 * saGlow).toFixed(1)}px var(--cond))`); else c.sa.removeAttribute("style");
+  if (avHold) c.av.setAttribute("style", `fill:#fff;filter:drop-shadow(0 0 ${(6 * avHold + 2).toFixed(1)}px var(--cond))`); else c.av.removeAttribute("style");
+}
+function mulb(n){ let a = n * 2654435761 | 0; a ^= a >>> 15; a = Math.imul(a, 2246822519); a ^= a >>> 13; return ((a >>> 0) % 1000) / 1000; }
+
+/* =========================================================================
+   CANVAS HELPERS
+   ========================================================================= */
+function makeCanvas(node){
+  const baseH = +node.getAttribute("height") || 300, c = { node, ctx: node.getContext("2d"), w: 0, h: 0 };
+  const fit = () => {
+    const w = node.parentElement.clientWidth - (node.offsetLeft - node.parentElement.offsetLeft > 0 ? 0 : 0);
+    const cw = Math.max(240, node.getBoundingClientRect().width || w), h = Math.round(Math.min(baseH, Math.max(baseH * .62, cw * .9)));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    node.style.height = h + "px"; node.width = Math.round(cw * dpr); node.height = Math.round(h * dpr);
+    c.w = cw; c.h = h; c.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  new ResizeObserver(fit).observe(node); fit();
+  return c;
+}
+const FONT = '500 11px "Schibsted Grotesk", system-ui, sans-serif', FONT_B = '600 11px "Schibsted Grotesk", system-ui, sans-serif';
+function txt(ctx, s, x, y, col, align = "left", font = FONT){ ctx.font = font; ctx.fillStyle = col; ctx.textAlign = align; ctx.fillText(s, x, y); }
+/* samples from the recording inside [t0, t1] */
+function eachSample(t0, t1, f){
+  const R = Heart.rec;
+  for (let j = 0; j < R.n; j++){
+    const i = (R.i - R.n + j + REC_N) % REC_N, t = R.t[i];
+    if (t < t0 || t > t1) continue;
+    f(i, t);
+  }
+}
+function paper(ctx, x, y, w, h, pxPerS, pxPerMv){
+  ctx.fillStyle = O.color("--paper"); ctx.fillRect(x, y, w, h);
+  ctx.lineWidth = 1;
+  const small = pxPerS * .04, big = pxPerS * .2;
+  for (let k = 0, gx = x; gx <= x + w; k++, gx = x + k * small){ ctx.strokeStyle = k % 5 ? O.color("--paper-line") : O.color("--paper-bold"); ctx.beginPath(); ctx.moveTo(Math.round(gx) + .5, y); ctx.lineTo(Math.round(gx) + .5, y + h); ctx.stroke(); }
+  const smallY = pxPerMv * .1;
+  for (let k = 0, gy = y; gy <= y + h; k++, gy = y + k * smallY){ ctx.strokeStyle = k % 5 ? O.color("--paper-line") : O.color("--paper-bold"); ctx.beginPath(); ctx.moveTo(x, Math.round(gy) + .5); ctx.lineTo(x + w, Math.round(gy) + .5); ctx.stroke(); }
+}
+function trace(ctx, x0, w, t0, t1, fy, col, lw = 2, step = 1){
+  ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineJoin = "round"; ctx.beginPath();
+  for (let px = 0; px <= w; px += step){ const t = t0 + (t1 - t0) * px / w, y = fy(t); px ? ctx.lineTo(x0 + px, y) : ctx.moveTo(x0 + px, y); }
+  ctx.stroke();
+}
+
+/* =========================================================================
+   ANATOMY FIGURE
+   ========================================================================= */
+const anat = buildSection($("#anatomyFig"), "anatomy");
+(() => {
+  const tools = $("#anatomy [data-tools]");
+  const mk = (label, on, f) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = label; b.setAttribute("aria-pressed", String(on)); b.onclick = () => { const v = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", String(v)); f(v); }; tools.appendChild(b); };
+  const s = document.createElement("span"); s.textContent = "Show"; tools.appendChild(s);
+  mk("Blood flow", true, v => { anat.flow.style.display = v ? "" : "none"; });
+  mk("Labels", true, v => anat.svg.classList.toggle("hide-labels", !v));
+})();
+
+/* =========================================================================
+   CONDUCTION FIGURE + rhythm controls + AP strip
+   ========================================================================= */
+const condFig = buildSection($("#conductionFig"), "conduction");
+(() => {
+  const host = $("#rhythmChips");
+  host.innerHTML = RHYTHM_IDS.map(id => `<button type="button" class="chip" data-r="${id}" aria-pressed="${id === Heart.S.rhythm}">${esc(O.get(`rhythms.${id}.name`))}</button>`).join("");
+  host.addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (!b) return; Heart.S.rhythm = b.dataset.r; Heart.reset(); renderRhythm(); });
+  const tone = $("#toneSlider");
+  tone.innerHTML = `<div class="sl"><label for="toneIn">Autonomic balance <output id="toneOut"></output></label>
+    <input id="toneIn" type="range" min="-1" max="1" step="0.05" value="0">
+    <div class="ends"><span>Vagus: rest and digest</span><span>Sympathetic: fight or flight</span></div></div>`;
+  $("#toneIn").addEventListener("input", e => { Heart.S.tone = +e.target.value; });
+})();
+function renderRhythm(){
+  $$("#rhythmChips [data-r]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.r === Heart.S.rhythm)));
+  const r = O.get(`rhythms.${Heart.S.rhythm}`);
+  $("#rhythmText").innerHTML = `<p class="lvl" style="margin-top:14px">${esc(r.name)}</p><p class="prose">${O.text(r)}</p>`;
+}
+renderRhythm();
+
+const apC = makeCanvas($("#apStrip"));
+function drawAP(){
+  const { ctx, w, h } = apC, S = Heart.S, now = S.t, W = 3, t0 = now - W;
+  ctx.clearRect(0, 0, w, h);
+  const ink = O.color("--ink"), muted = O.color("--muted"), line = O.color("--line");
+  const padL = 8, rowH = (h - 16 - 20 - 66) / 3, gx = padL, gw = w - padL - 8;
+  const rows = [["SA node pacemaker cell (mV)", -70, 20, t => Heart.apSA(t), O.color("--nerve")],
+    ["Ventricular muscle cell (mV)", -95, 35, t => Heart.apV(t), O.color("--tr-ao")], ["ECG, lead II (mV)", -.5, 1.3, t => Heart.ecg("II", t), ink]];
+  rows.forEach(([label, lo, hi, f, col], r) => {
+    const y0 = 16 + r * (rowH + 10), fy = t => y0 + rowH - (f(t) - lo) / (hi - lo) * rowH;
+    if (r === 2) paper(ctx, gx, y0, gw, rowH, gw / W, rowH / (hi - lo));
+    else { ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.beginPath(); const zy = y0 + rowH - (0 - lo) / (hi - lo) * rowH; ctx.moveTo(gx, zy); ctx.lineTo(gx + gw, zy); ctx.stroke(); ctx.setLineDash([]);
+      if (r === 0){ const ty = y0 + rowH - (-40 - lo) / (hi - lo) * rowH; ctx.strokeStyle = muted; ctx.setLineDash([1, 3]); ctx.beginPath(); ctx.moveTo(gx, ty); ctx.lineTo(gx + gw, ty); ctx.stroke(); ctx.setLineDash([]); txt(ctx, "threshold", gx + gw - 2, ty - 3, muted, "right"); }
+      txt(ctx, "0", gx + 2, zy - 3, muted); }
+    txt(ctx, label, gx + 2, y0 - 4, muted, "left", FONT_B);
+    trace(ctx, gx, gw, t0, now, fy, col, 2, 1.5);
+  });
+  /* intervals of the last conducted beat */
+  const ecgY0 = 16 + 2 * (rowH + 10), yb = ecgY0 + rowH + 14;
+  const v = [...S.V].reverse().find(v => v.t < now - .5 && v.t > t0);
+  if (v){
+    const X = t => gx + (t - t0) / W * gw, p = [...S.P].reverse().find(p => p.t < v.t && v.t - p.t < .45 && p.cond);
+    const qrs = v.kind === "n" ? .09 : .15, qt = Heart.qtFor(v.rr || .88);
+    const br = (a, b, label, y) => { if (X(a) < gx) return; ctx.strokeStyle = ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(X(a), y - 4); ctx.lineTo(X(a), y); ctx.lineTo(X(b), y); ctx.lineTo(X(b), y - 4); ctx.stroke(); txt(ctx, label, (X(a) + X(b)) / 2, y + 11, ink, "center"); };
+    if (p && !v.junc) br(p.t + .005, v.t, `PR ${Math.round((v.t - p.t) * 1000)} ms`, yb);
+    br(v.t, v.t + qrs, `QRS ${Math.round(qrs * 1000)} ms`, yb + 17);
+    br(v.t, v.t + qt, `QT ${Math.round(qt * 1000)} ms`, yb + 34);
+  }
+}
+
+/* =========================================================================
+   PHYSIOLOGY: Wiggers diagram, PV loop, sliders and the four phases
+   ========================================================================= */
+const wig = makeCanvas($("#wiggers")), pv = makeCanvas($("#pvloop"));
+const PH_NAMES = ["Isovolumic contraction", "Ejection", "Isovolumic relaxation", "Filling"];
+let hoverT = null;
+$("#wiggers").addEventListener("pointermove", e => { const r = e.target.getBoundingClientRect(); hoverT = (e.clientX - r.left) / r.width; });
+$("#wiggers").addEventListener("pointerleave", () => { hoverT = null; O.untip(); });
+function drawWiggers(){
+  const { ctx, w, h } = wig, S = Heart.S, now = S.t, W = 2.6, t0 = now - W;
+  ctx.clearRect(0, 0, w, h);
+  const ink = O.color("--ink"), muted = O.color("--muted"), line = O.color("--line");
+  const L = 34, R = 8, gw = w - L - R;
+  const pTop = 14, pH = h * .48, vTop = pTop + pH + 28, vH = h * .17, eTop = vTop + vH + 16, eH = h * .13, sTop = eTop + eH + 6, sH = h - sTop - 4;
+  const X = t => L + (t - t0) / W * gw;
+  let pmax = 140; eachSample(t0, now, i => { pmax = Math.max(pmax, Heart.rec.plv[i] + 10); });
+  pmax = Math.ceil(pmax / 20) * 20;
+  /* phase bands */
+  let segStart = null, segPh = null, lastX = L;
+  const bandCol = [O.color("--surface-2"), "rgba(235,104,52,.10)", O.color("--surface-2"), "rgba(42,120,214,.07)"];
+  const bands = [];
+  eachSample(t0, now, (i, t) => { const ph = Heart.rec.ph[i]; if (ph !== segPh){ if (segPh != null) bands.push([segStart, t, segPh]); segPh = ph; segStart = t; } });
+  if (segPh != null) bands.push([segStart, now, segPh]);
+  bands.forEach(([a, b, ph]) => { ctx.fillStyle = bandCol[ph]; ctx.fillRect(X(a), pTop, X(b) - X(a), sTop + sH - pTop); });
+  bands.forEach(([a, b, ph]) => { const wd = X(b) - X(a); const lab = ["IVC", "Ejection", "IVR", "Filling"][ph]; ctx.font = FONT; if (wd > ctx.measureText(lab).width + 6) txt(ctx, lab, (X(a) + X(b)) / 2, pTop + 11, muted, "center"); });
+  /* axes */
+  ctx.strokeStyle = line; ctx.lineWidth = 1;
+  for (let p = 0; p <= pmax; p += 40){ const y = pTop + pH - p / pmax * pH; ctx.beginPath(); ctx.moveTo(L, y + .5); ctx.lineTo(L + gw, y + .5); ctx.stroke(); txt(ctx, String(p), L - 5, y + 4, muted, "right"); }
+  txt(ctx, "mmHg", 2, pTop + 4, muted);
+  const yP = p => pTop + pH - p / pmax * pH;
+  const series = (arr, col) => { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); let f = true; eachSample(t0, now, (i, t) => { const y = yP(arr[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; }); ctx.stroke(); };
+  const R_ = Heart.rec;
+  series(R_.pla, O.color("--tr-la")); series(R_.pao, O.color("--tr-ao")); series(R_.plv, O.color("--tr-lv"));
+  /* direct labels at the right end */
+  const labs = [["Aorta", yP(S.Pa)], ["LV", yP(S.Plv)], ["LA", yP(S.Pla)]].sort((a, b) => a[1] - b[1]);
+  for (let k = 1; k < labs.length; k++) labs[k][1] = Math.max(labs[k][1], labs[k - 1][1] + 12);
+  labs.forEach(([s, y]) => { ctx.font = FONT_B; const tw = ctx.measureText(s).width; ctx.fillStyle = O.color("--surface"); ctx.globalAlpha = .8; ctx.fillRect(L + gw - tw - 6, y - 15, tw + 6, 13); ctx.globalAlpha = 1; txt(ctx, s, L + gw - 3, y - 5, ink, "right", FONT_B); });
+  /* volume */
+  const vmax = 180, yV = v => vTop + vH - v / vmax * vH;
+  txt(ctx, "LV volume (mL)", 2, vTop - 4, muted, "left", FONT_B);
+  for (const v of [0, 90, 180]){ ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(L, yV(v) + .5); ctx.lineTo(L + gw, yV(v) + .5); ctx.stroke(); txt(ctx, String(v), L - 5, yV(v) + 4, muted, "right"); }
+  ctx.strokeStyle = O.color("--tr-lv"); ctx.lineWidth = 2; ctx.beginPath(); let f = true; eachSample(t0, now, (i, t) => { const y = yV(R_.vlv[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; }); ctx.stroke();
+  /* ECG */
+  txt(ctx, "ECG", 2, eTop + eH / 2 + 4, muted, "left", FONT_B);
+  trace(ctx, L, gw, t0, now, t => eTop + eH * .72 - Heart.ecg("II", t) * eH * .55, ink, 1.6, 1.5);
+  /* heart sounds at valve closures */
+  txt(ctx, "Sounds", 2, sTop + sH / 2 + 4, muted, "left", FONT_B);
+  let prev = null;
+  eachSample(t0, now, (i, t) => {
+    const ph = R_.ph[i];
+    if (prev != null && ph !== prev && (ph === 0 || ph === 2)){
+      const x = X(t), lab = ph === 0 ? "S1" : "S2";
+      ctx.strokeStyle = ink; ctx.lineWidth = 1.2; ctx.beginPath();
+      for (let k = 0; k < 14; k++){ const xx = x + k * 1.6, a = Math.sin(k * 1.9) * (sH * .32) * (1 - k / 14) * (ph === 0 ? 1 : .8); k ? ctx.lineTo(xx, sTop + sH / 2 + a) : ctx.moveTo(xx, sTop + sH / 2); }
+      ctx.stroke(); txt(ctx, lab, x + 26, sTop + sH / 2 + 4, ink, "left", FONT_B);
+    }
+    prev = ph;
+  });
+  /* crosshair */
+  if (hoverT != null){
+    const x = L + clamp((hoverT * w - L) / gw) * gw, t = t0 + (x - L) / gw * W;
+    let best = null; eachSample(t - .004, t + .004, i => { best = i; });
+    ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + .5, pTop); ctx.lineTo(x + .5, sTop + sH); ctx.stroke();
+    if (best != null){
+      const r = $("#wiggers").getBoundingClientRect();
+      O.tip($("#wiggers"), `<b>${PH_NAMES[R_.ph[best]]}</b><br>LV ${Math.round(R_.plv[best])} · aorta ${Math.round(R_.pao[best])} · LA ${Math.round(R_.pla[best])} mmHg<br>LV volume ${Math.round(R_.vlv[best])} mL`, r.left + x, r.top + pTop + 20);
+    }
+  }
+}
+function drawPV(){
+  const { ctx, w, h } = pv, S = Heart.S, now = S.t;
+  ctx.clearRect(0, 0, w, h);
+  const ink = O.color("--ink"), muted = O.color("--muted"), line = O.color("--line");
+  const L = 40, B = 30, T = 12, Rr = 12, gw = w - L - Rr, gh = h - B - T;
+  const vmax = 200, pmax = 200, X = v => L + v / vmax * gw, Y = p => T + gh - p / pmax * gh;
+  ctx.lineWidth = 1;
+  for (let p = 0; p <= pmax; p += 50){ ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(L, Y(p) + .5); ctx.lineTo(L + gw, Y(p) + .5); ctx.stroke(); txt(ctx, String(p), L - 6, Y(p) + 4, muted, "right"); }
+  for (let v = 0; v <= vmax; v += 50){ txt(ctx, String(v), X(v), T + gh + 16, muted, "center"); }
+  txt(ctx, "LV volume (mL)", L + gw, T + gh + 28, muted, "right"); txt(ctx, "Pressure (mmHg)", L + 4, T + 10, muted);
+  /* ESPVR and EDPVR */
+  const Emax = S.Emax || 3.2, V0 = 10;
+  ctx.setLineDash([5, 4]); ctx.strokeStyle = muted; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(X(V0), Y(0)); const vEnd = Math.min(vmax, V0 + pmax / Emax); ctx.lineTo(X(vEnd), Y(Emax * (vEnd - V0))); ctx.stroke();
+  txt(ctx, "End-systolic line", X(vEnd) + 4, Y(Emax * (vEnd - V0)) + 12, muted);
+  ctx.beginPath(); for (let v = V0; v <= vmax; v += 2){ const p = .55 * (Math.exp(.025 * (v - V0)) - 1); if (p > pmax) break; v === V0 ? ctx.moveTo(X(v), Y(p)) : ctx.lineTo(X(v), Y(p)); } ctx.stroke(); ctx.setLineDash([]);
+  txt(ctx, "End-diastolic curve", X(150), Y(.55 * (Math.exp(.025 * 140) - 1)) - 8, muted, "right");
+  /* the loop: the last beat bright, earlier ones faint */
+  const rr = 60 / Math.max(30, Heart.beat.hr), R_ = Heart.rec;
+  for (const [a, b, alpha] of [[now - 3 * rr, now - rr, .25], [now - rr * 1.02, now, 1]]){
+    ctx.strokeStyle = O.color("--tr-lv"); ctx.globalAlpha = alpha; ctx.lineWidth = 2.2; ctx.beginPath(); let f = true;
+    eachSample(a, b, i => { const x = X(R_.vlv[i]), y = Y(R_.plv[i]); f ? ctx.moveTo(x, y) : ctx.lineTo(x, y); f = false; }); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const x = X(S.Vlv), y = Y(S.Plv);
+  ctx.fillStyle = O.color("--surface"); ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill();
+  ctx.fillStyle = O.color("--tr-ao"); ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill();
+  /* stroke volume bracket */
+  const b = Heart.beat, yb = T + gh - 6;
+  ctx.strokeStyle = ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(X(b.esv), yb - 5); ctx.lineTo(X(b.esv), yb); ctx.lineTo(X(b.edv), yb); ctx.lineTo(X(b.edv), yb - 5); ctx.stroke();
+  txt(ctx, `Stroke volume ${Math.round(b.sv)} mL`, (X(b.esv) + X(b.edv)) / 2, yb - 8, ink, "center", FONT_B);
+}
+/* sliders */
+const MECH = [["p", "Preload (how full)", .5, 1.6, "Less filling", "More filling"], ["a", "Afterload (resistance)", .5, 2, "Wide open arteries", "Tight arteries"], ["c", "Contractility", .4, 1.8, "Weaker", "Stronger"]];
+$("#mechSliders").innerHTML = MECH.map(([k, label, lo, hi, a, b]) => `<div class="sl"><label for="m-${k}">${label}<output id="mo-${k}">×1.00</output></label>
+  <input id="m-${k}" type="range" min="${lo}" max="${hi}" step="0.02" value="1"><div class="ends"><span>${a}</span><span>${b}</span></div></div>`).join("");
+MECH.forEach(([k]) => $(`#m-${k}`).addEventListener("input", e => { Heart.S.user[k] = +e.target.value; $(`#mo-${k}`).textContent = "×" + (+e.target.value).toFixed(2); }));
+$("#mechReset").addEventListener("click", () => MECH.forEach(([k]) => { Heart.S.user[k] = 1; $(`#m-${k}`).value = 1; $(`#mo-${k}`).textContent = "×1.00"; }));
+const RO = [["sv", "Stroke volume", "mL"], ["ef", "Ejection fraction", "%"], ["co", "Cardiac output", "L/min"], ["bp", "Aortic pressure", "mmHg"], ["edv", "End-diastolic vol.", "mL"], ["esv", "End-systolic vol.", "mL"]];
+$("#mechRO").innerHTML = RO.map(([k, l]) => `<div class="ro"><div class="l">${l}</div><div class="v" id="ro-${k}">–</div></div>`).join("");
+function renderSteps(){
+  const steps = O.get("sections.physiology.steps") || [];
+  $("#cycleSteps").innerHTML = steps.map((s, i) => `<li data-ph="${i}"><div><b>${esc(s.name)}</b><span>${O.text(s)}</span></div></li>`).join("");
+}
+let lastPh = -1;
+
+/* =========================================================================
+   CORONARY FIGURE, bull's-eye, 12-lead ECG and coronary flow
+   ========================================================================= */
+const COR = {
+  grooves: ["M298 238 C252 250 200 272 166 318 C152 340 152 372 158 400", "M352 238 C400 240 446 254 478 276", "M354 238 C358 300 366 380 376 450 C382 490 392 524 402 548"],
+  raa: "M262 214 C240 204 214 212 208 232 C224 242 252 244 276 236 Z", laa: "M416 238 C432 220 458 222 466 238 C452 250 432 252 414 248 Z",
+  arteries: [
+    { seg: "rcaProx", part: "rca", d: "M322 236 L300 238 C262 246 212 266 176 300", w: 6.5 },
+    { seg: "rcaProx", part: "rca", d: "M296 240 C288 254 288 266 296 278", w: 2.5, name: "conus" },
+    { seg: "rcaProx", part: "rca", d: "M288 242 C262 226 222 210 194 204", w: 2.5, name: "SA nodal" },
+    { seg: "rcaDist", part: "rca", d: "M176 300 C156 326 152 370 160 404 C168 432 186 454 212 470", w: 6 },
+    { seg: "rcaDist", part: "rca", d: "M160 398 C200 412 252 432 300 452", w: 3, name: "acute marginal" },
+    { seg: "rcaDist", part: "rca", d: "M212 470 C232 486 250 496 270 502", w: 4.5, back: true },
+    { seg: "pda", part: "pda", d: "M270 502 C292 520 318 532 346 538", w: 4, back: true },
+    { seg: "pl", part: "pl", d: "M270 502 C320 514 400 516 456 494", w: 3.5, back: true },
+    { seg: "lm", part: "lm", d: "M340 234 C348 234 356 236 362 238", w: 8 },
+    { seg: "ladProx", part: "lad", d: "M362 238 C362 262 362 282 363 300", w: 6.5 },
+    { seg: "ladProx", part: "lad", d: "M362 268 L346 286", w: 2, name: "septal", back: true },
+    { seg: "ladMid", part: "lad", d: "M363 300 C366 350 370 400 376 440", w: 5.5 },
+    { seg: "ladMid", part: "lad", d: "M365 330 L349 350 M368 372 L352 390", w: 2, name: "septal", back: true },
+    { seg: "ladMid", part: "d1", d: "M370 386 C396 400 426 424 450 452", w: 3, name: "second diagonal" },
+    { seg: "ladDist", part: "lad", d: "M376 440 C382 490 392 522 404 548 C410 560 420 556 424 544", w: 4.5 },
+    { seg: "d1", part: "d1", d: "M363 294 C390 310 420 336 446 368", w: 3.5 },
+    { seg: "lcx", part: "lcx", d: "M362 238 C404 242 446 256 478 278 C490 288 498 300 502 312", w: 6 },
+    { seg: "lcx", part: "lcx", d: "M502 312 C506 380 490 450 456 494", w: 4, back: true },
+    { seg: "om", part: "om", d: "M474 274 C488 320 492 380 482 432", w: 3.5 }
+  ],
+  veins: [
+    { part: "gcv", d: "M386 546 C380 500 376 440 372 380 C370 330 370 290 374 252 C410 248 450 262 484 286", w: 4 },
+    { part: "cs", d: "M490 300 C490 380 440 470 360 500 C320 512 280 500 252 470", w: 7, back: true },
+    { part: "acv", d: "M232 330 C220 320 208 312 196 308 M262 380 C240 360 214 344 186 336", w: 3 },
+    { part: "acv", d: "M170 316 C176 290 200 266 240 252", w: 2.5 }
+  ],
+  zones: {
+    anterior: { segs: [1, 2, 7, 8, 13, 14], d: "M352 250 C330 300 330 400 350 470 C366 510 386 536 402 548 C420 540 440 520 452 500 C440 440 420 360 400 290 C390 262 372 248 352 250 Z" },
+    apex: { segs: [17], d: "M362 530 C380 512 420 512 436 528 C426 548 404 560 384 554 C372 548 364 540 362 530 Z" },
+    lateral: { segs: [5, 6, 11, 12, 16], d: "M440 268 C470 288 494 340 496 400 C496 450 480 492 458 514 C440 470 434 400 428 330 C426 300 430 280 440 268 Z" },
+    inferior: { segs: [3, 4, 9, 10, 15], d: "M184 436 C230 488 300 528 372 546 L368 528 C300 512 240 484 198 440 Z" },
+    rv: { rv: true, d: "M176 322 C200 300 280 282 342 298 C348 380 352 450 360 500 C300 482 232 444 188 404 C176 384 172 352 176 322 Z" }
+  }
+};
+const corSvg = $("#coronaryFig");
+const corRefs = { arts: [], zones: {} };
+(() => {
+  const svg = corSvg;
+  const defs = el("defs", {}, svg);
+  const pat = el("pattern", { id: "hatch", width: 7, height: 7, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+  el("rect", { width: 7, height: 7, fill: "var(--ischemia)", opacity: .35 }, pat);
+  el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "var(--ischemia)", "stroke-width": 3, opacity: .55 }, pat);
+  /* great vessels behind */
+  el("path", { d: "M466 150 L466 282", class: "v-wall", "stroke-width": 38 }, svg); el("path", { d: "M466 150 L466 282", class: "v-o2", "stroke-width": 30 }, svg);
+  el("path", { d: G.svc, class: "v-wall", "stroke-width": 40 }, svg); el("path", { d: G.svc, class: "v-co2", "stroke-width": 32 }, svg);
+  el("path", { d: G.ao.replace(" L466 282", ""), class: "v-wall", "stroke-width": 44 }, svg);
+  G.aoBranches.forEach(d => { el("path", { d, class: "v-wall", "stroke-width": 18 }, svg); el("path", { d, class: "v-o2", "stroke-width": 12 }, svg); });
+  el("path", { d: G.ao.replace(" L466 282", ""), class: "v-o2", "stroke-width": 36, "data-part": "aorticValve" }, svg);
+  /* heart surface */
+  el("path", { d: G.out, class: "cor-surface", "data-part": "myocardium" }, svg);
+  COR.grooves.forEach(d => el("path", { d, class: "cor-groove" }, svg));
+  el("path", { d: COR.raa, class: "cor-surface", "data-part": "ra" }, svg);
+  el("path", { d: COR.laa, class: "cor-surface", "data-part": "la" }, svg);
+  el("path", { d: G.lpa, class: "v-wall", "stroke-width": 28 }, svg); el("path", { d: G.lpa, class: "v-co2", "stroke-width": 21, "data-part": "pulmonaryTrunk" }, svg);
+  el("path", { d: G.pt, class: "v-wall", "stroke-width": 40 }, svg); el("path", { d: G.pt, class: "v-co2", "stroke-width": 32, "data-part": "pulmonaryTrunk" }, svg);
+  /* ischaemic zones */
+  const zg = el("g", {}, svg);
+  for (const [k, z] of Object.entries(COR.zones)) corRefs.zones[k] = el("path", { d: z.d, fill: "url(#hatch)", class: "cor-zone", opacity: 0 }, zg);
+  /* veins, then arteries */
+  const vg = el("g", {}, svg);
+  COR.veins.forEach(v => { el("path", { d: v.d, class: "cor-hit cor-vein-hit", "data-part": v.part }, vg); el("path", { d: v.d, class: "cor-vein" + (v.back ? " back" : ""), "stroke-width": v.w, "data-part": v.part }, vg); });
+  const ag = el("g", {}, svg);
+  COR.arteries.forEach(a => {
+    const hit = el("path", { d: a.d, class: "cor-hit", "data-part": a.part }, ag);
+    const p = el("path", { d: a.d, class: "cor-art" + (a.back ? " back" : ""), "stroke-width": a.w, "data-part": a.part }, ag);
+    corRefs.arts.push({ a, p, hit });
+  });
+  corRefs.clot = el("circle", { r: 7, class: "clot", opacity: 0, "pointer-events": "none" }, svg);
+  for (const [t, x, y, an] of [["Aorta", 404, 112, "middle"], ["Pulmonary trunk", 156, 150, "end"], ["RCA", 140, 360, "end"], ["LAD", 352, 420, "end"], ["LCx", 512, 268, "start"], ["Left main", 348, 222, "end"]]){
+    const n = el("text", { x, y, class: "h-label out", "text-anchor": an, "font-size": 12 }, svg); n.textContent = t;
+  }
+  O.bindParts(svg);
+  /* tools: dominance and veins */
+  const tools = $("#coronary [data-tools]");
+  const s1 = document.createElement("span"); s1.textContent = "Dominance"; tools.appendChild(s1);
+  O.choice(tools, { label: "Coronary dominance", options: [["right", "Right (70%)", "Right"], ["co", "Co-dominant", "Co"], ["left", "Left (10%)", "Left"]], value: "right", onChange: v => { Heart.S.dom = v; renderCoronary(); } });
+  const vb = document.createElement("button"); vb.type = "button"; vb.className = "chip"; vb.textContent = "Veins"; vb.setAttribute("aria-pressed", "true");
+  vb.onclick = () => { const on = vb.getAttribute("aria-pressed") !== "true"; vb.setAttribute("aria-pressed", String(on)); svg.classList.toggle("hide-veins", !on); };
+  tools.appendChild(vb);
+})();
+const ART_COLOR = { lad: "var(--lad)", lcx: "var(--lcx)", rca: "var(--rca)", lm: "var(--lad)" };
+function renderCoronary(){
+  const S = Heart.S, aff = Heart.affected(), segs = Heart.affectedSegs();
+  corSvg.classList.toggle("cor-occl", !!S.occl);
+  corRefs.arts.forEach(({ a, p, hit }) => {
+    const own = a.part === "pl" ? owner("pl", S.dom) : a.part === "pda" ? owner("pda", S.dom) : owner(a.seg, S.dom);
+    p.style.stroke = ART_COLOR[own];
+    p.classList.toggle("down", aff.has(a.seg));
+    /* PL and PDA belong to whichever artery is dominant */
+    const partNow = a.part === "pl" ? own : a.part;
+    p.dataset.part = partNow; hit.dataset.part = partNow;
+    const nm = O.CONTENT.parts[partNow]; if (nm){ p.setAttribute("aria-label", nm.name); hit.setAttribute("aria-label", nm.name); }
+    /* the right coronary is short in a left-dominant heart */
+    const hideBack = (a.seg === "rcaDist" && a.back && S.dom === "left") || (a.seg === "lcx" && a.back && S.dom === "right");
+    p.style.opacity = hideBack ? .25 : 1;
+  });
+  for (const [k, z] of Object.entries(COR.zones)){
+    const on = z.rv ? aff.has("rcaProx") : z.segs.filter(n => segs.has(n)).length / z.segs.length;
+    corRefs.zones[k].setAttribute("opacity", (typeof on === "boolean" ? (on ? .9 : 0) : on > 0 ? .45 + .5 * on : 0).toFixed(2));
+  }
+  /* clot at the start of the blocked segment */
+  const first = corRefs.arts.find(x => x.a.seg === S.occl && !x.a.name);
+  if (first){ const pt = first.p.getPointAtLength(Math.min(10, first.p.getTotalLength() * .3)); corRefs.clot.setAttribute("cx", pt.x); corRefs.clot.setAttribute("cy", pt.y); corRefs.clot.setAttribute("opacity", 1); }
+  else corRefs.clot.setAttribute("opacity", 0);
+  renderBull();
+  O.set({ sel: { ...O.state().sel } });
+}
+/* bull's-eye */
+const bull = $("#bullseye"), bullSegs = {};
+(() => {
+  const cx = 110, cy = 110, arc = (r0, r1, a0, a1) => {
+    const P = (r, a) => [cx - r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
+    const [x0, y0] = P(r1, a0), [x1, y1] = P(r1, a1), [x2, y2] = P(r0, a1), [x3, y3] = P(r0, a0), big = a1 - a0 > 180 ? 1 : 0;
+    return `M${x0} ${y0} A${r1} ${r1} 0 ${big} 0 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 ${big} 1 ${x3} ${y3} Z`;
+  };
+  const add = (n, d, tx, ty) => {
+    const g = el("g", {}, bull), p = el("path", { d }, g), t = el("text", { x: tx, y: ty, "text-anchor": "middle" }, g); t.textContent = n;
+    p.addEventListener("pointermove", e => O.tip(p, `<b>${n} · ${SEG_NAMES[n]}</b><br>${esc(bullInfo(n))}`, e.clientX, e.clientY));
+    p.addEventListener("pointerleave", () => O.untip(p));
+    bullSegs[n] = { g, p };
+  };
+  const ring = (first, count, r0, r1) => { const span = 360 / count; for (let k = 0; k < count; k++){ const c = k * span, a = c - span / 2, rm = (r0 + r1) / 2; add(first + k, arc(r0, r1, a, a + span), cx - rm * Math.sin(c * Math.PI / 180), cy - rm * Math.cos(c * Math.PI / 180) + 4); } };
+  ring(1, 6, 74, 104); ring(7, 6, 46, 74); ring(13, 4, 20, 46);
+  const g = el("g", {}, bull), p = el("circle", { cx, cy, r: 20 }, g), t = el("text", { x: cx, y: cy + 4, "text-anchor": "middle" }, g); t.textContent = 17;
+  p.addEventListener("pointermove", e => O.tip(p, `<b>17 · Apex</b><br>${esc(bullInfo(17))}`, e.clientX, e.clientY)); p.addEventListener("pointerleave", () => O.untip(p));
+  bullSegs[17] = { g, p };
+  const lab = (s, x, y) => { const n = el("text", { x, y, "text-anchor": "middle", style: "font-weight:500;fill:var(--muted)" }, bull); n.textContent = s; };
+  lab("Anterior", 110, -6); lab("Inferior", 110, 230); lab("Septal", -16, 114); lab("Lateral", 236, 114);
+  $("#bullLegend").innerHTML = `<span><i class="dot" style="--c:var(--lad)"></i>LAD</span><span><i class="dot" style="--c:var(--lcx)"></i>Circumflex</span><span><i class="dot" style="--c:var(--rca)"></i>RCA</span><span><i class="dot" style="--c:var(--ischemia);outline:1px solid var(--line-strong)"></i>Starved of blood</span>`;
+})();
+function bullInfo(n){ const o = segOwner(n, Heart.S.dom); return `Usually fed by the ${{ lad: "LAD", lcx: "circumflex", rca: "RCA" }[o]}` + (Heart.affectedSegs().has(n) ? " · now ischaemic" : ""); }
+function renderBull(){
+  const segs = Heart.affectedSegs();
+  for (const [n, { g, p }] of Object.entries(bullSegs)){
+    const o = segOwner(+n, Heart.S.dom), hit = segs.has(+n);
+    p.style.fill = hit ? "var(--ischemia)" : `color-mix(in srgb, ${ART_COLOR[o]} 62%, var(--surface))`;
+    g.classList.toggle("hit", hit);
+  }
+}
+/* the inspector for arteries offers to block them */
+const BLOCKS = { lm: [["lm", "Block the left main"]], lad: [["ladProx", "Block the proximal LAD"], ["ladMid", "Block the mid LAD"]], d1: [["d1", "Block the diagonal"]],
+  lcx: [["lcx", "Block the circumflex"]], om: [["om", "Block the marginal"]], rca: [["rcaProx", "Block the proximal RCA"], ["rcaDist", "Block the distal RCA"]], pda: [["pda", "Block the PDA"]] };
+const corInsp = $("#coronary [data-inspector]");
+O.inspector(corInsp, id => {
+  const S = Heart.S, list = BLOCKS[id];
+  let html = "";
+  if (list) html += `<div class="btn-row">${list.map(([seg, l]) => `<button type="button" class="btn${S.occl === seg ? " ghost" : ""}" data-block="${seg}">${S.occl === seg ? "Blocked" : esc(l)}</button>`).join("")}${S.occl ? `<button type="button" class="btn ghost" data-block="">Restore blood flow</button>` : ""}</div>`;
+  if (S.occl){
+    const segs = [...Heart.affectedSegs()].sort((a, b) => a - b), fx = Heart.effects();
+    const extra = [fx.sa < 1 ? "the SA node loses its artery, so the heart slows" : "", fx.pr ? "the AV node loses its artery, so the PR interval lengthens" : "", fx.rv < 1 ? "the right ventricle is ischaemic and fills the left less well" : ""].filter(Boolean);
+    html += `<div class="alert"><b>Blocked: ${esc(OCCL_LABEL[S.occl])}</b>${O.text(O.get(`occlusions.${S.occl}`))}
+      <p class="note" style="margin-top:6px">${segs.length ? `Segments without blood: ${segs.join(", ")} (${segs.length} of 17).` : "No left-ventricular segments; right ventricle only."}${extra.length ? " Also: " + extra.join("; ") + "." : ""}</p></div>`;
+  }
+  return html;
+});
+corInsp.addEventListener("click", e => {
+  const b = e.target.closest("[data-block]"); if (!b) return;
+  Heart.S.occl = b.dataset.block || null; renderCoronary();
+});
+/* 12-lead */
+const ecgC = makeCanvas($("#ecg12"));
+const GRID12 = [["I", "aVR", "V1", "V4"], ["II", "aVL", "V2", "V5"], ["III", "aVF", "V3", "V6"]];
+function draw12(){
+  const { ctx, w, h } = ecgC, now = Heart.S.t, W = 1.5;
+  ctx.clearRect(0, 0, w, h);
+  const cw = w / 4, rh = h / 3, ink = O.color("--trace");
+  const pxPerS = cw / W, pxPerMv = rh / 2.3;
+  paper(ctx, 0, 0, w, h, pxPerS, pxPerMv);
+  GRID12.forEach((row, r) => row.forEach((name, c) => {
+    const x0 = c * cw, y0 = r * rh, base = y0 + rh * .62, st = Heart.stFor(name);
+    trace(ctx, x0 + 2, cw - 4, now - W, now, t => base - Heart.ecg(name, t, st) * pxPerMv, ink, 1.4, 1);
+    const mark = st >= .06 ? " ▲ ST" : st <= -.06 ? " ▼ ST" : "";
+    txt(ctx, name + mark, x0 + 6, y0 + 14, O.color("--ink"), "left", FONT_B);
+    if (c){ ctx.strokeStyle = O.color("--paper-bold"); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, y0 + 4); ctx.lineTo(x0, y0 + rh - 4); ctx.stroke(); }
+  }));
+}
+function ecgCaption(){
+  const up = [], down = [];
+  Object.keys(LEADS).forEach(n => { const s = Heart.stFor(n); if (s >= .06) up.push(n); else if (s <= -.06) down.push(n); });
+  const rh = O.get(`rhythms.${Heart.S.rhythm}.name`);
+  $("#ecg12cap").textContent = (up.length || down.length)
+    ? `▲ ST elevation in ${up.join(", ") || "no leads"}${down.length ? `; ▼ ST depression in ${down.join(", ")}` : ""}. Rhythm: ${rh}. 1 small square = 40 ms × 0.1 mV.`
+    : `Normal ST segments in every lead. Rhythm: ${rh}. 1 small square = 40 ms × 0.1 mV.`;
+}
+/* coronary flow */
+const cfC = makeCanvas($("#corFlow"));
+function drawCorFlow(){
+  const { ctx, w, h } = cfC, now = Heart.S.t, W = 2.6, t0 = now - W, R_ = Heart.rec;
+  ctx.clearRect(0, 0, w, h);
+  const muted = O.color("--muted"), line = O.color("--line"), L = 8, gw = w - 16, T = 18, gh = h - T - 18;
+  const X = t => L + (t - t0) / W * gw, Y = v => T + gh - clamp(v / 1.6) * gh;
+  /* systole bands */
+  let s0 = null;
+  ctx.fillStyle = O.color("--surface-2");
+  eachSample(t0, now, (i, t) => { const sys = R_.el[i] > .08; if (sys && s0 == null) s0 = t; if (!sys && s0 != null){ ctx.fillRect(X(s0), T, X(t) - X(s0), gh); s0 = null; } });
+  if (s0 != null) ctx.fillRect(X(s0), T, X(now) - X(s0), gh);
+  txt(ctx, "Grey = systole", L, 12, muted);
+  ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(L, T + gh + .5); ctx.lineTo(L + gw, T + gh + .5); ctx.stroke();
+  for (const [arr, col] of [[R_.rca, O.color("--rca")], [R_.lca, O.color("--lad")]]){
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); let f = true;
+    eachSample(t0, now, (i, t) => { const y = Y(arr[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; }); ctx.stroke();
+  }
+  txt(ctx, "Relative flow", L + gw, 12, muted, "right");
+}
+
+/* =========================================================================
+   FRAME LOOP and wiring
+   ========================================================================= */
+let statT = 0, capT = 0;
+O.onTick((dt, real) => {
+  Heart.advance(Math.min(dt, .05));
+  if (O.visible(anat.svg)) animateSection(anat, dt);
+  if (O.visible(condFig.svg)){ animateSection(condFig, dt); animateConduction(condFig); }
+  if (O.visible($("#apStrip"))) drawAP();
+  if (O.visible($("#wiggers"))) drawWiggers();
+  if (O.visible($("#pvloop"))) drawPV();
+  if (O.visible($("#ecg12"))) draw12();
+  if (O.visible($("#corFlow"))) drawCorFlow();
+  const ph = Heart.S.phase;
+  if (ph !== lastPh){ lastPh = ph; $$("#cycleSteps li").forEach(li => li.classList.toggle("on", +li.dataset.ph === ph)); }
+  statT += real;
+  if (statT > .25){
+    statT = 0;
+    const b = Heart.beat;
+    O.setStat("hr", String(Math.round(b.hr)), `SA node ${Math.round(Heart.S.rhythm === "saArrest" ? 0 : Heart.sinusRate())}/min`);
+    O.setStat("bp", `${Math.round(b.sbp)}/${Math.round(b.dbp)}`);
+    O.setStat("sv", String(Math.round(b.sv)));
+    O.setStat("co", b.co.toFixed(1));
+    O.setStat("ef", String(Math.round(b.ef)));
+    const ro = { sv: [Math.round(b.sv), "mL"], ef: [Math.round(b.ef), "%"], co: [b.co.toFixed(1), "L/min"], bp: [`${Math.round(b.sbp)}/${Math.round(b.dbp)}`, "mmHg"], edv: [Math.round(b.edv), "mL"], esv: [Math.round(b.esv), "mL"] };
+    for (const [k, [v, u]] of Object.entries(ro)){ const n = $("#ro-" + k), html = `${v}<small>${u}</small>`; if (n.innerHTML !== html) n.innerHTML = html; }
+    $("#toneOut").textContent = Heart.S.rhythm === "saArrest" ? "SA node silent" : Heart.S.rhythm === "afib" ? "atria fibrillating" : `SA node ${Math.round(Heart.sinusRate())}/min`;
+    if ((capT += 1) % 4 === 0) ecgCaption();
+  }
+});
+O.subscribe((s, p) => { if (s.level !== p.level || s.phase !== p.phase){ renderSteps(); renderRhythm(); lastPh = -1; } });
+renderSteps(); renderCoronary(); ecgCaption();
+/* warm the model up so the traces start full */
+Heart.advance(3);
+window.__heart = Heart; /* for debugging in the console */
+O.start();
+})();
+</script>
+</body>
+</html>

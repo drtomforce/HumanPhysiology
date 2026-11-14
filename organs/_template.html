@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Organ deep dive · HumanPhysiology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&family=Schibsted+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+================================================================================
+ HUMANPHYSIOLOGY — ORGAN DEEP-DIVE PAGE (the template every organ page copies)
+================================================================================
+ Each organ gets one standalone file, organs/<id>.html, that opens on its own
+ (file:// or a web server, no build step) and links back into ../index.html.
+ Copy this file to start a new organ. A page has four parts:
+
+ 1. ENGINE CSS + ENGINE JS   Identical in every organ page, between the
+    "ORGAN ENGINE … BEGIN/END" markers. Edit them HERE, in _template.html, then
+    run `node organs/sync-engine.mjs` to copy them into every organ page
+    (`--check` only reports pages that are out of date).
+
+ 2. DATA (JSON blocks; the schema is the contract)
+    #organ-meta      {id, name, mainTopic, kicker, blurb, stats:[{id,label,unit}]}
+    #organ-content   {phases:{sleep|rest|meal|exercise: levels},
+                      sections:{<id>:{nav, kicker, title, intro: levels, …}},
+                      parts:{<id>:{name, kind, systems:[sys], related:[part], …levels}},
+                      lens:{<system id>: levels}, …anything the organ needs}
+                     "levels" = {ms, hs, college, phd}. Missing levels fall back
+                     to the nearest lower one (then the nearest higher).
+                     Any text value may instead be keyed by phase first:
+                     {rest:{ms…}, exercise:{ms…}}; the current phase is picked.
+    #organ-glossary  {term: {def, match:[forms]}}: auto-linked, with tooltips.
+
+ 3. MARKUP           <section class="sec" id="<section id>" data-section> with
+    [data-title] / [data-kicker] / [data-text="path.in.content"] slots the engine
+    fills (and refills when the level or phase changes), a figure holding SVG
+    elements tagged data-part="<part id>" (hover = name, click = select) and an
+    [data-inspector] that shows the selected part. [data-lens] renders the
+    body-systems lens. Text paths are dot paths into #organ-content.
+
+ 4. ORGAN SCRIPT     Uses window.OrganPage (the engine API):
+      state() / set(patch) / subscribe(fn(state, prev))     the store
+         {level, phase, hour, speed, paused, sel:{<section>: part id}}
+      text(value) → string    level- and phase-aware text with glossary links
+      get(path)               a value from #organ-content
+      onTick(fn(dt, realDt))  animation; dt is scaled by the speed control and
+                              is 0 while paused
+      visible(el)             is el on screen (skip drawing when not)
+      bindParts(root)         wire up data-part elements added after start()
+      select(section, part)   select a part from code
+      choice(el, {options:[[value,label]], value, onChange})  segmented control
+      setStat(id, value, sub) update a hero stat tile
+      vitals()                typical vitals for the current phase
+      color(name)             a CSS custom property, theme-aware
+      href(params)            a link into the main page (../index.html?…)
+      tip(node, html, x, y) / untip(node)   the shared tooltip
+      inspector(box, fn(id, part) → html)  extra HTML under a part's text
+      el(tag, attrs, parent)  SVG element helper; esc(s) escapes HTML
+    and ends with OrganPage.start().
+
+ Integration with the main page
+    ../index.html lists finished organ pages in ORGAN_PAGES (topic → file) and
+    shows "Explore in depth" on that organ's card, passing ?level=&hour=.
+    This page links back with ?topic=<mainTopic>&level=&hour=, and the lens
+    cards with ?live=<system>&level=&hour= so that system is animated.
+    The reading level is shared through localStorage ("humanphysiology.level").
+
+ Values are typical for a healthy adult and simplified for teaching; this is
+ not medical advice.
+================================================================================
+-->
+<style>
+/* ===== ORGAN ENGINE CSS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+:root{
+  --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
+  --line:#DCD2C9; --line-strong:#A99B91;
+  --skin:#EBCDB6; --skin-line:#C9A186; --vessel:#C2414B; --vein:#4F5FB0; --nerve:#C99318;
+  --accent:#2f8f83; --sel:#d9a21b;
+  --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans:"Schibsted Grotesk", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+    --line:#342B26; --line-strong:#5A4B42;
+    --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0; --nerve:#E8BC45;
+    --accent:#4fb3a6; --sel:#f0c040;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+  --line:#342B26; --line-strong:#5A4B42;
+  --skin:#5E4A3F; --skin-line:#86695A; --vessel:#E0606A; --vein:#8090E0; --nerve:#E8BC45;
+  --accent:#4fb3a6; --sel:#f0c040;
+  color-scheme: dark;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-padding-top:120px; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+button{ font:inherit; color:inherit; }
+a{ color:inherit; }
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:4px; }
+.wrap{ max-width:1240px; margin:0 auto; padding:0 24px; }
+
+/* header */
+.op-top{ position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.op-bar{ display:flex; align-items:center; gap:14px; padding-top:10px; padding-bottom:10px; flex-wrap:wrap; }
+.op-back{ display:inline-flex; align-items:center; gap:6px; text-decoration:none; border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 13px 6px 10px; font-size:13px; font-weight:500; white-space:nowrap; }
+.op-back:hover{ background:var(--surface-2); }
+.op-name{ font-family:var(--serif); font-size:19px; font-weight:500; margin:0; letter-spacing:-.01em; white-space:nowrap; }
+.op-ctrls{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.op-ctl{ display:flex; align-items:center; gap:7px; }
+.op-ctl > span{ font-size:12px; color:var(--muted); }
+.seg{ display:inline-flex; background:var(--surface-2); border-radius:999px; padding:3px; flex-wrap:wrap; }
+.seg button{ border:0; background:transparent; padding:5px 11px; border-radius:999px; cursor:pointer; font-size:12.5px; font-weight:500; color:var(--muted); white-space:nowrap; transition:background .2s, color .2s; }
+.seg button[aria-checked="true"]{ background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--line); }
+.seg .s{ display:none; }
+.op-play{ border:1px solid var(--line); background:var(--surface); border-radius:999px; width:32px; height:32px; display:grid; place-items:center; cursor:pointer; padding:0; }
+.op-nav{ display:flex; gap:4px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+.op-nav::-webkit-scrollbar{ display:none; }
+.op-nav a{ text-decoration:none; font-size:13px; font-weight:500; color:var(--muted); padding:5px 11px; border-radius:999px; white-space:nowrap; }
+.op-nav a:hover{ color:var(--ink); background:var(--surface-2); }
+.op-nav a[aria-current="true"]{ color:var(--ink); background:var(--surface); box-shadow:0 0 0 1px var(--line); }
+
+/* hero */
+.hero{ padding-top:36px; padding-bottom:12px; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:32px; align-items:end; }
+.kicker{ margin:0 0 6px; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.hero h1{ font-family:var(--serif); font-weight:400; font-size:clamp(34px, 5vw, 58px); line-height:1.02; letter-spacing:-.025em; margin:0 0 12px; text-wrap:balance; }
+.hero .lede{ font-family:var(--serif); font-size:18px; line-height:1.5; margin:0; color:var(--ink); max-width:62ch; text-wrap:pretty; }
+.now{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
+.now-head{ display:flex; align-items:center; gap:8px; margin:0 0 6px; font-size:13px; font-weight:600; }
+.now-head i{ width:9px; height:9px; border-radius:50%; background:var(--pc, var(--accent)); }
+.now p.t{ margin:0 0 12px; font-size:14px; color:var(--muted); }
+.stats{ display:grid; grid-template-columns:repeat(auto-fit, minmax(96px, 1fr)); gap:8px; }
+.stat{ background:var(--bg); border-radius:10px; padding:8px 10px; min-width:0; }
+.stat .l{ font-size:11px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat .v{ font-family:var(--serif); font-size:22px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.stat .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:3px; }
+.stat .u{ font-size:11px; color:var(--muted); }
+
+/* sections */
+.sec{ padding-top:44px; padding-bottom:20px; border-top:1px solid var(--line); margin-top:28px; }
+.sec-head{ max-width:760px; margin-bottom:20px; }
+.sec h2{ font-family:var(--serif); font-weight:400; font-size:clamp(26px, 3.4vw, 38px); line-height:1.1; letter-spacing:-.02em; margin:0 0 10px; }
+.sec h3{ font-size:14px; font-weight:600; margin:0 0 6px; }
+.prose{ font-family:var(--serif); font-size:16.5px; line-height:1.6; margin:0; text-wrap:pretty; }
+.prose + .prose{ margin-top:10px; }
+.muted{ color:var(--muted); }
+.small{ font-size:13px; }
+.sec-grid{ display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,1fr); gap:24px; align-items:start; }
+.sec-grid.wide{ grid-template-columns:minmax(0,1fr); }
+.panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; min-width:0; }
+.panel + .panel{ margin-top:14px; }
+.side{ position:sticky; top:116px; min-width:0; }
+.fig{ position:relative; min-width:0; }
+.fig svg{ display:block; width:100%; height:auto; }
+.fig-tools{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+.fig-tools > span{ font-size:12px; color:var(--muted); }
+.cap{ font-size:12.5px; color:var(--muted); margin:8px 2px 0; }
+
+/* parts: anything tagged data-part in a figure */
+[data-part]{ cursor:pointer; transition:filter .2s, opacity .2s; }
+[data-part]:hover{ filter:brightness(1.12) saturate(1.15); }
+[data-part]:focus{ outline:none; }
+[data-part]:focus-visible{ filter:drop-shadow(0 0 3px var(--sel)); }
+.is-sel{ filter:drop-shadow(0 0 2.5px var(--sel)) drop-shadow(0 0 2px var(--sel)) !important; }
+.tip{ position:fixed; z-index:50; pointer-events:none; background:var(--ink); color:var(--surface); font-size:12.5px; line-height:1.35; padding:6px 9px; border-radius:8px; max-width:260px; opacity:0; transform:translateY(4px); transition:opacity .15s, transform .15s; }
+.tip.on{ opacity:1; transform:none; }
+.tip b{ font-weight:600; }
+
+/* inspector */
+.insp-kind{ margin:0 0 2px; font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.insp h3{ font-family:var(--serif); font-size:22px; font-weight:400; margin:0 0 8px; letter-spacing:-.01em; }
+.insp .prose{ font-size:15.5px; }
+.insp-empty{ color:var(--muted); font-size:14px; margin:0; }
+.chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.chip{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:5px 11px; font-size:12.5px; font-weight:500; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.chip:hover{ background:var(--surface-2); }
+.chip[aria-pressed="true"], .chip.on{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.chip i{ width:8px; height:8px; border-radius:50%; background:var(--c, var(--muted)); flex:none; }
+.lvl{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); margin:0 0 8px; }
+.pips{ display:inline-flex; gap:3px; }
+.pips b{ width:6px; height:6px; border-radius:50%; background:var(--line-strong); }
+.pips b.on{ background:var(--ink); }
+
+/* body-systems lens */
+.lens{ display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:12px; }
+.lens-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 14px; border-top:4px solid var(--c); display:flex; flex-direction:column; }
+.lens-card h3{ display:flex; align-items:center; gap:8px; font-size:15px; margin:0 0 6px; }
+.lens-card .prose{ font-size:15px; flex:1; }
+.lens-card .chips{ margin-top:12px; }
+
+/* glossary terms */
+.term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
+.term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
+
+.foot{ border-top:1px solid var(--line); margin-top:40px; padding-top:20px; padding-bottom:40px; color:var(--muted); font-size:13px; display:flex; gap:16px; flex-wrap:wrap; justify-content:space-between; }
+
+@media (max-width: 980px){
+  .hero{ grid-template-columns:minmax(0,1fr); gap:18px; }
+  .sec-grid{ grid-template-columns:minmax(0,1fr); }
+  .side{ position:static; }
+}
+@media (max-width: 640px){
+  .wrap{ padding:0 16px; }
+  .op-top{ position:static; }
+  .op-name{ display:none; }
+  .op-ctrls{ margin-left:0; width:100%; }
+  .seg .s{ display:inline; } .seg .f{ display:none; }
+  .op-ctl > span{ display:none; }
+  .hero{ padding-top:22px; }
+  html{ scroll-padding-top:12px; }
+}
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+/* ===== ORGAN ENGINE CSS · END ===== */
+</style>
+<style>
+/* ---------- organ-specific styles ---------- */
+.demo-shape{ fill:var(--vessel); }
+</style>
+</head>
+<body>
+<header class="op-top">
+  <div class="wrap op-bar">
+    <a class="op-back" data-back href="../index.html"><svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>The whole body</a>
+    <p class="op-name" data-organ-name></p>
+    <div class="op-ctrls" data-controls></div>
+  </div>
+  <nav class="wrap op-nav" data-nav aria-label="Sections"></nav>
+</header>
+
+<main>
+  <div class="wrap hero" data-hero>
+    <div>
+      <p class="kicker" data-meta="kicker"></p>
+      <h1 data-meta="name"></h1>
+      <p class="lede" data-meta="blurb"></p>
+    </div>
+    <div class="now" data-now></div>
+  </div>
+
+  <section class="sec wrap" id="anatomy" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.anatomy.intro"></p>
+    </div>
+    <div class="sec-grid">
+      <div class="panel fig">
+        <svg viewBox="0 0 400 260" role="img" aria-label="Example figure">
+          <rect class="demo-shape" data-part="example" x="140" y="70" width="120" height="120" rx="24"/>
+        </svg>
+      </div>
+      <aside class="side"><div class="panel insp" data-inspector></div></aside>
+    </div>
+  </section>
+
+  <section class="sec wrap" id="systems" data-section>
+    <div class="sec-head">
+      <p class="kicker" data-kicker></p>
+      <h2 data-title></h2>
+      <p class="prose" data-text="sections.systems.intro"></p>
+    </div>
+    <div class="lens" data-lens></div>
+  </section>
+
+  <footer class="wrap foot">
+    <span>Values are typical for a healthy adult and simplified for teaching. This is not medical advice.</span>
+    <a data-back href="../index.html">Back to the whole body</a>
+  </footer>
+</main>
+
+<script type="application/json" id="organ-meta">
+{
+  "id": "example",
+  "name": "Example organ",
+  "mainTopic": null,
+  "kicker": "Organ deep dive",
+  "blurb": "Copy this file to organs/<id>.html, fill in the data blocks, draw the figures and write the organ script.",
+  "stats": [{ "id": "hr", "label": "Heart rate", "unit": "bpm" }]
+}
+</script>
+<script type="application/json" id="organ-content">
+{
+  "phases": {
+    "rest": { "ms": "What the organ is doing at rest." },
+    "exercise": { "ms": "What the organ is doing in the run." }
+  },
+  "sections": {
+    "anatomy": { "nav": "Anatomy", "kicker": "Structure", "title": "Anatomy", "intro": { "ms": "Tap a part of the figure." } },
+    "systems": { "nav": "Body systems", "kicker": "Connections", "title": "Through the lens of every body system", "intro": { "ms": "How this organ works with each system." } }
+  },
+  "parts": {
+    "example": { "name": "Example part", "kind": "Tissue", "systems": ["circulatory"], "ms": "Every part has a name, a kind, the systems it belongs to and text at each level." }
+  },
+  "lens": {
+    "circulatory": { "ms": "One card per body system." }
+  }
+}
+</script>
+<script type="application/json" id="organ-glossary">
+{ "organ": { "def": "A group of tissues that work together on a job.", "match": ["organ", "organs"] } }
+</script>
+
+<script>
+/* ===== ORGAN ENGINE JS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+window.OrganPage = (() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const NS = "http://www.w3.org/2000/svg";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function el(tag, attrs = {}, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const readJSON = id => { const n = document.getElementById(id); return n ? JSON.parse(n.textContent) : {}; };
+const storage = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wrapH = h => ((h % 24) + 24) % 24;
+
+const META = readJSON("organ-meta"), CONTENT = readJSON("organ-content"), GLOSSARY = readJSON("organ-glossary");
+
+/* shared with ../index.html: the same levels, phases and day plan */
+const LEVELS = [
+  { id: "ms", label: "Middle school", short: "Middle" },
+  { id: "hs", label: "High school", short: "High" },
+  { id: "college", label: "College", short: "College" },
+  { id: "phd", label: "PhD / MD", short: "PhD" }
+];
+const LEVEL_INDEX = Object.fromEntries(LEVELS.map((l, i) => [l.id, i]));
+/* typical vitals in each phase of the main page's day (its PHYSIO keyframes at rep) */
+const PHASES = [
+  { id: "sleep", label: "Sleep", rep: 3, color: "#5b62b3", vitals: { hr: 52, sbp: 105, dbp: 63, rr: 11.5, sv: 74, temp: 36.5 } },
+  { id: "rest", label: "Rest", rep: 10.5, color: "#2f8f83", vitals: { hr: 68, sbp: 118, dbp: 76, rr: 14, sv: 69, temp: 36.9 } },
+  { id: "meal", label: "Meal", rep: 12.75, color: "#d08a26", vitals: { hr: 74, sbp: 117, dbp: 76, rr: 14, sv: 69, temp: 37 } },
+  { id: "exercise", label: "Exercise", rep: 17.5, color: "#d9473a", vitals: { hr: 152, sbp: 165, dbp: 76, rr: 38, sv: 106, temp: 37.9 } }
+];
+const PHASE_BY_ID = Object.fromEntries(PHASES.map(p => [p.id, p]));
+const SCHEDULE = [
+  { phase: "sleep", from: 23, to: 6.5 }, { phase: "meal", from: 7.25, to: 8.5 }, { phase: "meal", from: 12.25, to: 13.5 },
+  { phase: "exercise", from: 17, to: 18.25 }, { phase: "meal", from: 19, to: 20.25 }
+];
+const inRange = (h, a, b) => a <= b ? h >= a && h < b : h >= a || h < b;
+function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.from, e.to)) return e.phase; return "rest"; }
+
+/* every body system; main = it can be animated on the main page (same id there) */
+const SYSTEMS = [
+  { id: "circulatory", name: "Circulatory", color: "#c2414b", main: true },
+  { id: "nervous", name: "Nervous", color: "#d9a21b", main: true },
+  { id: "endocrine", name: "Endocrine", color: "#8a5cc4", main: true },
+  { id: "respiratory", name: "Respiratory", color: "#3f8fe0", main: true },
+  { id: "digestive", name: "Digestive", color: "#c4702e", main: true },
+  { id: "urinary", name: "Urinary", color: "#1597a8", main: true },
+  { id: "immune", name: "Immune & lymphatic", color: "#5f9e4b" },
+  { id: "musculoskeletal", name: "Muscles & skeleton", color: "#b0603a" },
+  { id: "integumentary", name: "Skin", color: "#c98a6b" },
+  { id: "reproductive", name: "Reproductive", color: "#c2569a" }
+];
+const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
+
+/* ---------- store ---------- */
+const params = new URLSearchParams(location.search);
+const urlLevel = params.get("level"), savedLevel = storage.get("humanphysiology.level");
+const urlHour = parseFloat(params.get("hour"));
+const startHour = Number.isFinite(urlHour) ? wrapH(urlHour) : PHASE_BY_ID.rest.rep;
+let state = {
+  level: LEVEL_INDEX[urlLevel] !== undefined ? urlLevel : LEVEL_INDEX[savedLevel] !== undefined ? savedLevel : "hs",
+  hour: startHour, phase: phaseAt(startHour),
+  speed: 1, paused: reducedMotion, sel: {}
+};
+const subs = new Set();
+function set(patch){
+  const prev = state; state = { ...state, ...patch };
+  if (patch.hour !== undefined && patch.phase === undefined) state.phase = phaseAt(state.hour);
+  subs.forEach(f => f(state, prev));
+}
+const subscribe = f => (subs.add(f), () => subs.delete(f));
+
+/* ---------- content ---------- */
+function get(path, root = CONTENT){ return String(path).split(".").reduce((o, k) => o == null ? undefined : o[k], root); }
+function levelText(v, level = state.level){
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  /* keyed by phase first? take the current phase, else rest, else the first one */
+  if (!LEVELS.some(l => v[l.id] !== undefined) && PHASES.some(p => v[p.id] !== undefined))
+    v = v[state.phase] ?? v.rest ?? v[PHASES.find(p => v[p.id] !== undefined).id];
+  if (typeof v === "string") return v;
+  if (!v) return "";
+  const li = LEVEL_INDEX[level];
+  for (let i = li; i >= 0; i--) if (v[LEVELS[i].id]) return v[LEVELS[i].id];
+  for (let i = li + 1; i < LEVELS.length; i++) if (v[LEVELS[i].id]) return v[LEVELS[i].id];
+  return "";
+}
+/* glossary: link the first use of each term in a block of text */
+const TERMS = Object.entries(GLOSSARY).flatMap(([k, g]) => (g.match || [k]).map(m => [m, k])).sort((a, b) => b[0].length - a[0].length);
+const termRe = TERMS.length ? new RegExp("\\b(" + TERMS.map(t => t[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b", "gi") : null;
+const termKey = Object.fromEntries(TERMS.map(([m, k]) => [m.toLowerCase(), k]));
+function linkify(s){
+  const out = esc(s);
+  if (!termRe) return out;
+  const used = new Set();
+  return out.replace(termRe, m => {
+    const k = termKey[m.toLowerCase()];
+    if (!k || used.has(k)) return m;
+    used.add(k);
+    return `<span class="term" tabindex="0" data-term="${esc(k)}">${m}</span>`;
+  });
+}
+const text = v => linkify(levelText(v));
+const pips = li => `<span class="pips" aria-hidden="true">${LEVELS.map((_, i) => `<b class="${i <= li ? "on" : ""}"></b>`).join("")}</span>`;
+
+/* ---------- links back into the main page ---------- */
+function href(extra = {}){
+  const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString(), ...extra });
+  for (const [k, v] of [...p]) if (v === "" || v === "null" || v === "undefined") p.delete(k);
+  return "../index.html?" + p.toString();
+}
+
+/* ---------- theme-aware colours ---------- */
+let colorCache = {};
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { colorCache = {}; set({}); });
+function color(name){
+  if (!(name in colorCache)) colorCache[name] = getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
+  return colorCache[name];
+}
+
+/* ---------- tooltip (glossary terms and parts) ---------- */
+const tip = document.createElement("div"); tip.className = "tip"; tip.setAttribute("role", "tooltip");
+let tipFor = null;
+function showTip(target, html, x, y){
+  tipFor = target; tip.innerHTML = html; tip.classList.add("on");
+  const r = target.getBoundingClientRect();
+  const px = x ?? r.left + r.width / 2, py = y ?? r.top;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, px - w / 2)) + "px";
+  tip.style.top = (py - h - 10 < 8 ? py + 18 : py - h - 10) + "px";
+}
+function hideTip(target){ if (!target || tipFor === target){ tip.classList.remove("on"); tipFor = null; } }
+
+/* ---------- parts ---------- */
+function partName(id){ const p = CONTENT.parts && CONTENT.parts[id]; return p ? p.name : id; }
+function sectionOf(node){ const s = node.closest("[data-section]"); return s ? s.id : ""; }
+function bindParts(root = document){
+  $$("[data-part]", root).forEach(n => {
+    if (n.__bound) return; n.__bound = true;
+    n.setAttribute("tabindex", "0"); n.setAttribute("role", "button");
+    n.setAttribute("aria-label", partName(n.dataset.part));
+    n.addEventListener("pointermove", e => { if (e.pointerType === "mouse") showTip(n, `<b>${esc(partName(n.dataset.part))}</b>`, e.clientX, e.clientY); });
+    n.addEventListener("pointerleave", () => hideTip(n));
+    n.addEventListener("click", e => { e.stopPropagation(); select(sectionOf(n), n.dataset.part); });
+    n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); select(sectionOf(n), n.dataset.part); } });
+  });
+  markSelected();
+}
+function select(section, part){ set({ sel: { ...state.sel, [section]: part } }); }
+function markSelected(){
+  $$(".is-sel").forEach(n => n.classList.remove("is-sel"));
+  for (const [sec, part] of Object.entries(state.sel)){
+    const root = document.getElementById(sec); if (!root || !part) continue;
+    $$(`[data-part="${CSS.escape(part)}"]`, root).forEach(n => n.classList.add("is-sel"));
+  }
+}
+function renderInspectors(){
+  $$("[data-inspector]").forEach(box => {
+    const sec = sectionOf(box), id = state.sel[sec], p = id && CONTENT.parts[id];
+    const hint = box.dataset.hint || get(`sections.${sec}.hint`);
+    if (!p){ box.innerHTML = `<p class="insp-empty">${esc(levelText(hint) || "Tap or hover over a part of the figure to learn about it.")}</p>`; return; }
+    const li = LEVEL_INDEX[state.level];
+    const sys = (p.systems || []).filter(s => SYSTEM_BY_ID[s]).map(s => `<a class="chip" href="#lens-${s}" style="--c:${SYSTEM_BY_ID[s].color}"><i></i>${esc(SYSTEM_BY_ID[s].name)}</a>`).join("");
+    const rel = (p.related || []).filter(r => CONTENT.parts[r]).map(r => `<button type="button" class="chip" data-goto="${esc(r)}">${esc(CONTENT.parts[r].name)}</button>`).join("");
+    const extra = box.__extra ? box.__extra(id, p) : "";
+    box.innerHTML = `
+      ${p.kind ? `<p class="insp-kind">${esc(p.kind)}</p>` : ""}
+      <h3>${esc(p.name)}</h3>
+      <p class="lvl">${pips(li)}${esc(LEVELS[li].label)}</p>
+      <p class="prose">${text(p)}</p>
+      ${extra}
+      ${rel ? `<div class="chips">${rel}</div>` : ""}
+      ${sys ? `<div class="chips">${sys}</div>` : ""}`;
+    $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
+      const target = b.dataset.goto, home = document.getElementById(sec).querySelector(`[data-part="${CSS.escape(target)}"]`);
+      if (home) select(sec, target);
+      else { const other = document.querySelector(`[data-part="${CSS.escape(target)}"]`); if (other){ const s2 = sectionOf(other); select(s2, target); document.getElementById(s2).scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); } }
+    }));
+  });
+}
+
+/* ---------- controls ---------- */
+function choice(host, { options, value, onChange, label }){
+  const seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "radiogroup");
+  if (label) seg.setAttribute("aria-label", label);
+  seg.innerHTML = options.map(([v, l, s]) => `<button type="button" role="radio" data-v="${esc(v)}" aria-checked="${v === value}"><span class="f">${esc(l)}</span><span class="s">${esc(s || l)}</span></button>`).join("");
+  const sync = v => $$("button", seg).forEach(b => b.setAttribute("aria-checked", String(b.dataset.v === String(v))));
+  seg.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; sync(b.dataset.v); onChange(b.dataset.v); });
+  host.appendChild(seg);
+  return { el: seg, set: sync };
+}
+const PLAY = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z" fill="currentColor"/></svg>';
+const PAUSE = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z" fill="currentColor"/></svg>';
+function buildControls(){
+  const host = $("[data-controls]"); if (!host) return;
+  const ctl = (label) => { const d = document.createElement("div"); d.className = "op-ctl"; d.innerHTML = `<span>${esc(label)}</span>`; host.appendChild(d); return d; };
+  const lv = choice(ctl("Reading level"), { label: "Reading level", options: LEVELS.map(l => [l.id, l.label, l.short]), value: state.level, onChange: v => set({ level: v }) });
+  const ph = choice(ctl("Part of the day"), { label: "Part of the day", options: PHASES.map(p => [p.id, p.label]), value: state.phase, onChange: v => set({ hour: PHASE_BY_ID[v].rep, phase: v }) });
+  const sp = ctl("Speed");
+  const play = document.createElement("button"); play.type = "button"; play.className = "op-play";
+  sp.appendChild(play);
+  const spd = choice(sp, { label: "Speed", options: [["1", "Real time", "1×"], ["0.25", "¼ speed", "¼×"], ["0.1", "1⁄10", "⅒×"]], value: String(state.speed), onChange: v => set({ speed: +v, paused: false }) });
+  play.addEventListener("click", () => set({ paused: !state.paused }));
+  const sync = s => {
+    lv.set(s.level); ph.set(s.phase); spd.set(String(s.speed));
+    play.innerHTML = s.paused ? PLAY : PAUSE; play.setAttribute("aria-label", s.paused ? "Play" : "Pause");
+  };
+  subscribe(sync); sync(state);
+}
+function buildNav(){
+  const nav = $("[data-nav]"); if (!nav) return;
+  const secs = $$("[data-section]");
+  nav.innerHTML = secs.map(s => `<a href="#${s.id}">${esc(get(`sections.${s.id}.nav`) || get(`sections.${s.id}.title`) || s.id)}</a>`).join("");
+  const links = $$("a", nav);
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting){ links.forEach(a => a.setAttribute("aria-current", String(a.getAttribute("href") === "#" + e.target.id))); } });
+  }, { rootMargin: "-40% 0px -55% 0px" });
+  secs.forEach(s => io.observe(s));
+}
+
+/* ---------- hero: phase note and live stats ---------- */
+function buildNow(){
+  const box = $("[data-now]"); if (!box) return;
+  const stats = (META.stats || []).map(s => `<div class="stat" data-stat="${esc(s.id)}"><div class="l">${esc(s.label)}</div><div class="v">–<small>${esc(s.unit || "")}</small></div><div class="u"></div></div>`).join("");
+  box.innerHTML = `<p class="now-head"><i></i><span data-now-title></span></p><p class="t" data-now-text></p>${stats ? `<div class="stats">${stats}</div>` : ""}`;
+}
+function renderNow(){
+  const box = $("[data-now]"); if (!box) return;
+  const p = PHASE_BY_ID[state.phase];
+  box.style.setProperty("--pc", p.color);
+  $("[data-now-title]", box).textContent = `Right now: ${p.label.toLowerCase()}`;
+  $("[data-now-text]", box).innerHTML = text(get("phases"));
+}
+function setStat(id, value, sub){
+  const n = document.querySelector(`[data-stat="${CSS.escape(id)}"]`); if (!n) return;
+  const v = n.querySelector(".v"), unit = (META.stats.find(s => s.id === id) || {}).unit || "";
+  const html = `${esc(value)}<small>${esc(unit)}</small>`;
+  if (v.__h !== html){ v.innerHTML = html; v.__h = html; }
+  if (sub !== undefined){ const u = n.querySelector(".u"); if (u.textContent !== sub) u.textContent = sub; }
+}
+
+/* ---------- text slots and the lens ---------- */
+function renderText(){
+  $$("[data-meta]").forEach(n => { n.textContent = META[n.dataset.meta] || ""; });
+  $$("[data-section]").forEach(s => {
+    const k = $("[data-kicker]", s), t = $("[data-title]", s);
+    if (k) k.textContent = get(`sections.${s.id}.kicker`) || "";
+    if (t) t.textContent = get(`sections.${s.id}.title`) || "";
+  });
+  $$("[data-text]").forEach(n => { n.innerHTML = text(get(n.dataset.text)); });
+}
+function renderLens(){
+  $$("[data-lens]").forEach(box => {
+    const lens = CONTENT.lens || {};
+    box.innerHTML = SYSTEMS.filter(s => lens[s.id]).map(s => {
+      const parts = Object.entries(CONTENT.parts || {}).filter(([, p]) => (p.systems || []).includes(s.id)).slice(0, 6)
+        .map(([id, p]) => `<button type="button" class="chip" data-goto="${esc(id)}">${esc(p.name)}</button>`).join("");
+      const watch = s.main ? `<a class="chip" href="${esc(href({ live: s.id }))}" style="--c:${s.color}"><i></i>Watch it in the body</a>` : "";
+      return `<article class="lens-card" id="lens-${s.id}" style="--c:${s.color}">
+        <h3><span class="chip" style="--c:${s.color};padding:0;border:0;pointer-events:none"><i></i></span>${esc(s.name)}</h3>
+        <p class="prose">${text(lens[s.id])}</p>
+        ${parts || watch ? `<div class="chips">${parts}${watch}</div>` : ""}</article>`;
+    }).join("");
+    $$("[data-goto]", box).forEach(b => b.addEventListener("click", () => {
+      const n = document.querySelector(`[data-part="${CSS.escape(b.dataset.goto)}"]`); if (!n) return;
+      const sec = sectionOf(n); select(sec, b.dataset.goto);
+      document.getElementById(sec).scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+    }));
+  });
+}
+function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: META.mainTopic || "" }); }); }
+
+/* ---------- animation loop ---------- */
+const ticks = [];
+const onTick = f => ticks.push(f);
+const seen = new WeakMap();
+const vio = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: "120px" });
+function visible(node){ if (!seen.has(node)){ seen.set(node, true); vio.observe(node); } return seen.get(node) && !document.hidden; }
+function loop(){
+  let last = performance.now();
+  function frame(t){
+    const real = Math.min(.05, (t - last) / 1000); last = t;
+    const dt = state.paused ? 0 : real * state.speed;
+    for (const f of ticks) f(dt, real);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- glossary tooltips ---------- */
+function bindGlossary(){
+  const show = n => { const g = GLOSSARY[n.dataset.term]; if (g) showTip(n, `<b>${esc(n.dataset.term)}</b> · ${esc(g.def)}`); };
+  document.addEventListener("pointerover", e => { const n = e.target.closest(".term"); if (n) show(n); });
+  document.addEventListener("pointerout", e => { const n = e.target.closest(".term"); if (n) hideTip(n); });
+  document.addEventListener("focusin", e => { const n = e.target.closest(".term"); if (n) show(n); });
+  document.addEventListener("focusout", e => { const n = e.target.closest(".term"); if (n) hideTip(n); });
+  document.addEventListener("click", e => { const n = e.target.closest(".term"); if (n){ tipFor === n ? hideTip(n) : show(n); } else if (tipFor && tipFor.classList && tipFor.classList.contains("term")) hideTip(); });
+  window.addEventListener("scroll", () => hideTip(), { passive: true });
+}
+
+function start(){
+  document.title = `${META.name} · HumanPhysiology`;
+  document.body.appendChild(tip);
+  $$("[data-organ-name]").forEach(n => n.textContent = META.name);
+  buildControls(); buildNav(); buildNow();
+  bindParts(); bindGlossary();
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); };
+  subscribe((s, p) => {
+    if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
+    if (s.level !== p.level || s.phase !== p.phase) all();
+    else { if (s.sel !== p.sel){ renderInspectors(); markSelected(); } if (s.hour !== p.hour) renderBack(); }
+  });
+  all();
+  loop();
+  if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }
+}
+
+return {
+  META, CONTENT, GLOSSARY, LEVELS, PHASES, SYSTEMS, SYSTEM_BY_ID, reducedMotion,
+  state: () => state, set, subscribe, get, levelText, text, linkify, esc, el, $, $$,
+  href, color, choice, bindParts, select, setStat, onTick, visible, start,
+  tip: showTip, untip: hideTip,
+  vitals: () => PHASE_BY_ID[state.phase].vitals,
+  inspector: (node, extra) => { node.__extra = extra; }
+};
+})();
+/* ===== ORGAN ENGINE JS · END ===== */
+</script>
+<script>
+/* ---------- organ script: figures, simulations and their controls ---------- */
+(() => {
+  const O = OrganPage;
+  O.onTick(() => O.setStat("hr", O.vitals().hr));
+  O.start();
+})();
+</script>
+</body>
+</html>

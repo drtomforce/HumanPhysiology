@@ -27,7 +27,9 @@
                       sections:{<id>:{nav, kicker, title, intro: levels, …}},
                       parts:{<id>:{name, kind, systems:[sys], related:[part],
                              link?:{href, label}, …levels}},
-                      lens:{<system id>: levels}, …anything the organ needs}
+                      lens:{<system id>: levels},
+                      alter:{title, healthy, notes:{<key>: levels with {placeholders}}}
+                      (optional, for the changes bar), …anything the organ needs}
                      "levels" = {ms, hs, college, phd}. Missing levels fall back
                      to the nearest lower one (then the nearest higher).
                      Any text value may instead be keyed by phase first:
@@ -289,6 +291,7 @@ a{ color:inherit; }
     </div>
     <div class="sec-grid">
       <div class="panel fig">
+        <div class="fig-tools"><button type="button" class="chip" id="demoDamage" aria-pressed="false">Damage the organ</button></div>
         <svg viewBox="0 0 400 260" role="img" aria-label="Example figure">
           <rect class="demo-shape" data-part="example" x="140" y="70" width="120" height="120" rx="24"/>
         </svg>
@@ -337,6 +340,13 @@ a{ color:inherit; }
   },
   "lens": {
     "circulatory": { "ms": "One card per body system." }
+  },
+  "alter": {
+    "title": "Your organ",
+    "healthy": "A healthy organ: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
+    "notes": {
+      "damage": { "ms": "The organ is damaged, so it works at {pct}% of its normal rate.", "college": "Write the mechanism here; placeholders such as {pct} are filled in by the organ script." }
+    }
   }
 }
 </script>
@@ -782,6 +792,27 @@ return {
 /* ---------- organ script: figures, simulations and their controls ---------- */
 (() => {
   const O = OrganPage;
+  /* one shared model that every section reads (here, a single switch) */
+  const model = { damaged: false };
+  const btn = document.getElementById("demoDamage");
+  const syncUI = () => btn.setAttribute("aria-pressed", String(model.damaged));
+  btn.addEventListener("click", () => { model.damaged = !model.damaged; syncUI(); O.altered(); });
+
+  /* the changes bar: list the changes, say where each one shows, put them in the URL.
+     Call O.alter() before O.start(), and O.altered() after every change. */
+  O.alter({
+    title: () => O.get("alter.title"),
+    healthy: () => O.levelText(O.get("alter.healthy")),
+    items: () => model.damaged ? [{ id: "damage", section: "anatomy", label: "Organ damaged" }] : [],
+    clear(id){ if (id === "damage") model.damaged = false; syncUI(); },
+    reset(){ model.damaged = false; syncUI(); },
+    /* a note in each OTHER section the change affects, so readers see the knock-on effect */
+    notes: sec => sec === "systems" && model.damaged ? [{ cause: "damage", html: O.fill(O.get("alter.notes.damage"), { pct: 60 }) }] : [],
+    toParams: () => ({ damage: model.damaged ? "1" : "" }),
+    fromParams(P){ model.damaged = P.get("damage") === "1"; }
+  });
+  syncUI();
+
   O.onTick(() => O.setStat("hr", O.vitals().hr));
   O.start();
 })();

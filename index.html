@@ -256,6 +256,7 @@ button{ font:inherit; color:inherit; }
 .hotspots{ position:absolute; inset:0; pointer-events:none; z-index:2; transition:opacity .3s; }
 .hotspots.off{ opacity:0; }
 .hotspots.off .hs{ pointer-events:none; }
+.hs[hidden]{ display:none; }
 .hs{ position:absolute; left:0; top:0; pointer-events:auto; cursor:pointer; display:flex; align-items:center; gap:7px; border:0; background:none; padding:0; transform:translate(-11px,-11px); }
 .hs-dot{ width:22px; height:22px; border-radius:50%; position:relative; flex:none; background:var(--surface); box-shadow:0 0 0 1.5px var(--ink) inset; }
 .hs-dot::after{ content:""; position:absolute; inset:6px; border-radius:50%; background:var(--ink); transition:inset .2s; }
@@ -539,6 +540,71 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   .sw{ padding:2px 3px 2px 4px; }
   .systems-label{ display:none; }
 }
+/* ---------- Phones: html.phone is set by script from PHONE_MQ (portrait ≤ 640 px wide,
+   or landscape ≤ 500 px tall). The clock sits in a slim bar above the body and the
+   systems in a scrolling chip row under it, so nothing covers the figure; organ
+   labels become dots (Hotspots.place spreads them apart); an organ opens in a
+   bottom sheet over the page. */
+.phone{ --bar-top:46px; --bar-bot:56px; }
+.phone .stage{ grid-template-rows:auto auto auto; }
+.phone .scene-wrap{ grid-row:1; height:clamp(460px, calc(100svh - 4px), 980px); }
+.phone #scene{ top:var(--bar-top); height:calc(100% - var(--bar-top) - var(--bar-bot)); touch-action:pan-y; }
+.phone .hs{ touch-action:pan-y; }
+.phone .zoomed #scene, .phone .zoomed .hs{ touch-action:none; }
+.phone .vitals{ grid-row:2; }
+.phone .timeline{ grid-row:3; }
+.phone .moment{ left:0; right:0; top:0; height:var(--bar-top); max-width:none; display:flex; align-items:center; gap:12px; padding:0 14px; border-bottom:1px solid var(--line); background:var(--bg); }
+.phone .moment-time{ font-size:30px; line-height:1; }
+.phone .moment-phase{ margin:0; }
+.phone .moment-note{ display:block; flex:1; min-width:0; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.phone .back{ top:6px; right:10px; min-height:34px; }
+.phone .journey{ top:calc(var(--bar-top) + 8px); }
+.phone .systems{ left:0; right:0; bottom:0; height:var(--bar-bot); flex-direction:row; align-items:center; gap:6px; padding:0 12px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; border-top:1px solid var(--line); background:var(--bg); scroll-snap-type:x proximity; }
+.phone .systems::-webkit-scrollbar{ display:none; }
+.phone .systems-label{ display:none; }
+.phone .sw{ flex:none; height:44px; padding:0 4px 0 0; scroll-snap-align:start; }
+.phone .sw-tog{ width:44px; height:44px; background:none; box-shadow:none; }
+.phone .sw-tog::before{ content:""; position:absolute; left:7px; top:13px; width:30px; height:18px; border-radius:999px; background:var(--surface-2); box-shadow:0 0 0 1px var(--line-strong) inset; transition:background .2s; }
+.phone .sw.on .sw-tog{ background:none; }
+.phone .sw.on .sw-tog::before{ background:var(--sc); box-shadow:none; }
+.phone .sw-tog i{ left:10px; top:16px; z-index:1; }
+.phone .sw-name{ flex:none; height:44px; font-size:13px; padding:0 8px 0 2px; }
+.phone .sw:not(.live) .sw-live{ display:none; }
+.phone .sw-name .long{ display:none; } .phone .sw-name .short{ display:inline; }
+/* organ dots: 44 px tap targets, names on demand, leader lines to the organ */
+.phone .hs, .phone .hs.flip{ width:44px; height:44px; justify-content:center; transform:translate(-22px,-22px); }
+.phone .hs-label{ display:none; }
+.hs-lead{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+.hs-lead line{ stroke:var(--ink); stroke-width:1.2; stroke-dasharray:2 3; opacity:.55; }
+.hs-lead circle{ fill:var(--ink); opacity:.7; }
+.hs-tip{ position:absolute; z-index:4; pointer-events:auto; display:none; align-items:center; gap:6px; min-height:44px; padding:0 14px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface); box-shadow:0 6px 18px rgba(0,0,0,.14); font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; transform:translate(-50%, calc(-100% - 26px)); }
+.hs-tip.on{ display:flex; }
+.hs-tip span{ color:var(--muted); font-weight:500; font-size:12.5px; }
+.hs.picked .hs-dot{ box-shadow:0 0 0 2.5px var(--ink) inset, 0 0 0 4px var(--surface), 0 0 0 5.5px var(--ink); }
+.zoom-reset{ position:absolute; right:10px; bottom:calc(var(--bar-bot) + 10px); z-index:3; min-height:40px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); font-size:13px; font-weight:500; cursor:pointer; display:none; }
+.zoom-reset.on{ display:block; }
+/* the organ panel as a bottom sheet */
+.sheet-handle{ display:none; }
+.phone .panel.sheet{ position:fixed; left:0; right:0; bottom:0; z-index:30; height:var(--sheet-h, 52svh); overflow-y:auto; overscroll-behavior:contain; border:0; border-top:1px solid var(--line-strong); border-radius:18px 18px 0 0; box-shadow:0 -10px 30px rgba(0,0,0,.16); padding-bottom:env(safe-area-inset-bottom,0px); animation:sheetUp .32s ease both; }
+.phone .panel.sheet.dragging{ transition:none; }
+.phone .panel.sheet:not(.dragging){ transition:height .25s ease; }
+.phone .panel.sheet .sheet-handle{ display:flex; justify-content:center; align-items:center; position:sticky; top:0; z-index:2; height:44px; margin-bottom:-18px; background:var(--surface); cursor:grab; touch-action:none; border:0; width:100%; border-radius:18px 18px 0 0; }
+.phone .panel.sheet .sheet-handle::before{ content:""; width:40px; height:5px; border-radius:3px; background:var(--line-strong); }
+.phone .panel.sheet .panel-inner{ padding-top:8px; }
+.phone body.has-sheet{ padding-bottom:52svh; }
+@keyframes sheetUp{ from{ transform:translateY(100%); } }
+/* landscape phones: body and vitals side by side, the scene no taller than the screen */
+@media (orientation: landscape){
+  .phone{ --bar-top:40px; --bar-bot:52px; }
+  .phone .stage{ grid-template-columns:minmax(0,1fr) minmax(0,280px); grid-template-rows:auto auto; }
+  .phone .scene-wrap{ grid-row:1; grid-column:1; height:calc(100svh - 8px); min-height:300px; }
+  .phone .vitals{ grid-row:1; grid-column:2; align-self:stretch; grid-template-columns:repeat(2, minmax(0,1fr)); overflow-y:auto; max-height:calc(100svh - 8px); padding:8px 12px; align-content:start; }
+  .phone .timeline{ grid-row:2; grid-column:1 / -1; }
+  .phone .vt-wide{ grid-template-columns:auto 1fr; }
+  .phone .moment-time{ font-size:26px; }
+  .phone .panel.sheet{ left:auto; width:min(440px, 60vw); height:calc(100svh - 12px) !important; border-left:1px solid var(--line-strong); border-radius:18px 0 0 0; }
+  .phone body.has-sheet{ padding-bottom:0; }
+}
 @media (prefers-reduced-motion: reduce){
   *{ animation:none !important; transition:none !important; }
 }
@@ -682,6 +748,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="journey" id="biteCard" aria-live="polite"></div>
       <div class="journey" id="dropCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
+      <button class="zoom-reset" id="zoomReset" type="button">Whole body</button>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
       <div class="systems" id="sysSwitch" role="group" aria-labelledby="sysLabel"><p class="systems-label" id="sysLabel">Body systems</p></div>
       <button class="back" id="backBtn" type="button">
@@ -715,6 +782,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   </section>
 
   <aside class="panel" id="panel" aria-live="polite">
+    <button class="sheet-handle" id="sheetHandle" type="button" aria-label="Drag to resize; tap to make the sheet taller or shorter"></button>
     <div class="panel-inner" id="panelInner"></div>
   </aside>
 </div>
@@ -4547,6 +4615,11 @@ const storage = {
   set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
 };
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* phones: portrait up to 640 px wide, or landscape up to 500 px tall. Sets html.phone,
+   which the CSS uses for the bar layout, dots for labels and the bottom sheet */
+const PHONE_MQ = window.matchMedia("(max-width: 640px), (max-width: 960px) and (max-height: 500px)");
+const isPhone = () => PHONE_MQ.matches;
+document.documentElement.classList.toggle("phone", isPhone());
 const wrapH = h => ((h % 24) + 24) % 24;
 const pad2 = n => String(n).padStart(2, "0");
 /* a real duration in ms: 0.6 ms, 27.4 ms, 286 ms, 1.13 s */
@@ -5993,7 +6066,7 @@ const Particles = (() => {
   const list = []; let ph = null, accF = 0, accZ = 0, accS = 0, wasIn = false, live = true;
   let esoL = 0;
   /* ---- blood: red cells that each do the full figure-of-eight ---- */
-  const NCELL = 96, routes = [], cells = [];
+  const NCELL = isPhone() ? 60 : 96, routes = [], cells = [];  /* fewer on phones */
   const SYS = [], PUL = [];
   const RED = hex2rgb("#d63340"), BLUE = hex2rgb("#5a68bd");
   const satCol = sat => { const t = clamp((sat - 40) / 56); return rgb2hex(BLUE.map((v, i) => lerp(v, RED[i], t * t * (3 - 2 * t)))); };
@@ -7326,23 +7399,34 @@ const BreathRide = (() => {
 const Camera = (() => {
   const svg = $("#scene");
   let cur = null, from = null, to = null, t0 = 0, dur = 950, moving = false;
+  /* the user's pinch zoom over the whole-body view: k ≥ 1 and the view centre */
+  let user = null;
+  /* px hidden at the bottom of the scene by the phone's bottom sheet */
+  let cover = 0, coverR = 0;
+  const box = () => { const r = svg.getBoundingClientRect(); return { w: Math.max(1, r.width), h: Math.max(1, r.height) }; };
+  /* on phones the clock lives in a bar above the scene, so crop to the body itself */
+  const BODY = { x0: 440, x1: 760, y0: 80, y1: 1066 };
   function homeView(){
-    const b = Scene.bbox, wrap = $("#sceneWrap");
-    const asp = wrap.clientHeight / Math.max(1, wrap.clientWidth);
+    const phone = isPhone(), b = phone ? BODY : Scene.bbox, { w: W, h: H } = box();
+    const asp = H / W;
     let w = b.x1 - b.x0, h = b.y1 - b.y0;
-    let top = b.y0 - h * .14;   /* headroom for the clock heading */
+    let top = b.y0 - h * (phone ? .01 : .14);   /* headroom for the clock heading */
     const need = b.y1 - top;
     h = need;
     if (h / w < asp) h = w * asp; else w = h / asp;
     top -= (h - need) / 2;      /* centre any spare height (tall screens) */
     const cx = (b.x0 + b.x1) / 2;
-    return { x: cx - w / 2, y: top, w, h };
+    const v = { x: cx - w / 2, y: top, w, h };
+    if (!user) return v;
+    const uw = w / user.k, uh = h / user.k;
+    return { x: user.cx - uw / 2, y: user.cy - uh / 2, w: uw, h: uh };
   }
   function focusView(p, wWorld){
-    const wrap = $("#sceneWrap");
-    const asp = wrap.clientHeight / Math.max(1, wrap.clientWidth);
+    const { w: W, h: H } = box();
+    const asp = H / W, vis = Math.max(.3, (H - cover) / H), visX = Math.max(.3, (W - coverR) / W);
     const w = wWorld, h = w * asp;
-    return { x: p.x - w / 2, y: p.y - h / 2, w, h };
+    /* centre the target in the part of the scene the sheet leaves visible */
+    return { x: p.x - w * visX / 2, y: p.y - h * vis / 2, w, h };
   }
   function apply(v){ svg.setAttribute("viewBox", `${f1(v.x)} ${f1(v.y)} ${f1(v.w)} ${f1(v.h)}`); cur = v; }
   function go(v, instant){
@@ -7366,7 +7450,36 @@ const Camera = (() => {
     const k = 1 - Math.exp(-6 * dt);
     apply({ x: lerp(cur.x, v.x, k), y: lerp(cur.y, v.y, k), w: lerp(cur.w, v.w, k), h: lerp(cur.h, v.h, k) });
   }
-  return { go, tick, track, homeView, focusView };
+  /* pinch and pan over the whole body. zoomAt keeps the world point under the
+     screen point (sx, sy) in place; pan moves by screen pixels */
+  function setUser(u){
+    user = u && u.k > 1.02 ? u : null;
+    if (user){ /* keep the centre inside the body */
+      const base = (() => { const k = user; user = null; const v = homeView(); user = k; return v; })();
+      const hw = base.w / user.k / 2, hh = base.h / user.k / 2;
+      user.cx = clamp(user.cx, base.x + hw, base.x + base.w - hw);
+      user.cy = clamp(user.cy, base.y + hh, base.y + base.h - hh);
+    }
+    moving = false; apply(homeView()); Hotspots.place();
+    $("#sceneWrap").classList.toggle("zoomed", !!user);
+    $("#zoomReset").classList.toggle("on", !!user);
+  }
+  function zoomAt(f, sx, sy){
+    if (!cur) return;
+    const r = svg.getBoundingClientRect(), k0 = user ? user.k : 1, k = clamp(k0 * f, 1, 5);
+    const wx = cur.x + (sx - r.left) / r.width * cur.w, wy = cur.y + (sy - r.top) / r.height * cur.h;
+    const nw = cur.w * k0 / k, nh = cur.h * k0 / k;
+    const x = wx - (sx - r.left) / r.width * nw, y = wy - (sy - r.top) / r.height * nh;
+    setUser({ k, cx: x + nw / 2, cy: y + nh / 2 });
+  }
+  function pan(dx, dy){
+    if (!user || !cur) return;
+    const r = svg.getBoundingClientRect();
+    setUser({ k: user.k, cx: user.cx - dx / r.width * cur.w, cy: user.cy - dy / r.height * cur.h });
+  }
+  return { go, tick, track, homeView, focusView, zoomAt, pan,
+    zoomed: () => !!user, resetZoom(){ if (user) setUser(null); },
+    setCover(bottom, right){ cover = Math.max(0, bottom || 0); coverR = Math.max(0, right || 0); } };
 })();
 
 /* =========================================================================
@@ -8968,28 +9081,210 @@ const Pins = (() => {
 const Hotspots = (() => {
   const layer = $("#hotspots"), svg = $("#scene");
   const btns = new Map();
+  let lead = null, tip = null, picked = null;
+  const SVGNS = "http://www.w3.org/2000/svg";
   function build(){
     layer.innerHTML = "";
+    lead = document.createElementNS(SVGNS, "svg"); lead.setAttribute("class", "hs-lead"); lead.setAttribute("aria-hidden", "true");
+    layer.appendChild(lead);
     Topics.forEach((t, id) => {
       const b = document.createElement("button");
-      b.type = "button"; b.className = "hs" + (t.side === "left" ? " flip" : "");
+      b.type = "button"; b.className = "hs" + (t.side === "left" ? " flip" : ""); b.dataset.topic = id;
       const name = CONTENT.topics[id].name;
       b.setAttribute("aria-label", `Look closer: ${name}`);
       b.innerHTML = `<span class="hs-dot"></span><span class="hs-label">${esc(name)}</span>`;
-      b.addEventListener("click", () => store.set({ topic: id }));
+      /* on phones the dots carry no names: the first tap names the organ, a
+         second tap (or a tap on the name) opens it. Keyboard opens at once. */
+      b.addEventListener("click", e => {
+        if (isPhone() && e.detail !== 0 && picked !== id){ pick(id); return; }
+        pick(null); store.set({ topic: id });
+      });
       layer.appendChild(b); btns.set(id, b);
     });
+    tip = document.createElement("button");
+    tip.type = "button"; tip.className = "hs-tip";
+    tip.addEventListener("click", () => { const id = picked; pick(null); if (id) store.set({ topic: id }); });
+    layer.appendChild(tip);
+    document.addEventListener("pointerdown", e => { if (picked && !e.target.closest(".hs, .hs-tip")) pick(null); }, true);
+  }
+  function pick(id){
+    picked = id;
+    btns.forEach((b, k) => b.classList.toggle("picked", k === id));
+    if (!tip) return;
+    tip.classList.toggle("on", !!id);
+    if (id){ tip.innerHTML = `${esc(CONTENT.topics[id].name)} <span>Look closer ›</span>`; placeTip(); }
+  }
+  function placeTip(){
+    if (!picked) return;
+    const b = btns.get(picked), w = layer.clientWidth, tw = tip.offsetWidth;
+    const x = parseFloat(b.style.left), y = parseFloat(b.style.top);
+    tip.style.left = clamp(x, tw / 2 + 8, w - tw / 2 - 8) + "px";
+    /* below the dot if there's no room above it */
+    const above = y - 70 > (isPhone() ? 46 : 0);
+    tip.style.top = (above ? y : y + 96) + "px";
+  }
+  /* spread the dots so no two tap targets (44 px) overlap: pairs that are too
+     close push apart, each dot is pulled back to its organ, and all stay inside
+     the scene between the bars. A few dozen rounds settle it. */
+  function spread(P, W, H, top, bot){
+    /* tap targets are 44 px squares, so separate them as squares: two dots are
+       apart once they differ by D in x or in y, and the push goes along whichever
+       axis needs the smaller move */
+    const D = 46, Q = P.map(p => ({ x: p.x, y: p.y }));
+    const keepIn = q => { q.x = clamp(q.x, 24, W - 24); q.y = clamp(q.y, top + 24, H - bot - 24); };
+    for (let it = 0; it < 160; it++){
+      let worst = 0;
+      for (let i = 0; i < Q.length; i++) for (let j = i + 1; j < Q.length; j++){
+        const dx = Q[j].x - Q[i].x, dy = Q[j].y - Q[i].y, ax = Math.abs(dx), ay = Math.abs(dy);
+        if (ax >= D || ay >= D) continue;
+        worst = Math.max(worst, Math.min(D - ax, D - ay));
+        if (D - ax <= D - ay){ const m = (D - ax) / 2 + .1, sx = dx < 0 || (dx === 0 && i % 2) ? -1 : 1; Q[i].x -= sx * m; Q[j].x += sx * m; }
+        else { const m = (D - ay) / 2 + .1, sy = dy < 0 ? -1 : 1; Q[i].y -= sy * m; Q[j].y += sy * m; }
+      }
+      /* pull each dot back towards its organ, less and less, then not at all */
+      const pull = it < 100 ? .05 * (1 - it / 100) : 0;
+      for (let i = 0; i < Q.length; i++){ Q[i].x += (P[i].x - Q[i].x) * pull; Q[i].y += (P[i].y - Q[i].y) * pull; keepIn(Q[i]); }
+      if (it >= 100 && worst === 0) break;
+    }
+    return Q;
   }
   function place(){
     const m = svg.getScreenCTM(); if (!m) return;
     const r = layer.getBoundingClientRect(), pt = svg.createSVGPoint();
-    btns.forEach((b, id) => {
+    const ids = [...btns.keys()], P = ids.map(id => {
       const p = Scene.toView(Scene.focusPoints[id]); pt.x = p.x; pt.y = p.y;
       const s = pt.matrixTransform(m);
-      b.style.left = (s.x - r.left) + "px"; b.style.top = (s.y - r.top) + "px";
+      return { x: s.x - r.left, y: s.y - r.top };
     });
+    const phone = isPhone();
+    let Q = P, show = ids.map(() => true);
+    if (phone){
+      const cs = getComputedStyle(document.documentElement);
+      const top = parseFloat(cs.getPropertyValue("--bar-top")) || 0, bot = parseFloat(cs.getPropertyValue("--bar-bot")) || 0;
+      /* zoomed in: organs out of view lose their dot */
+      show = P.map(p => p.x > 4 && p.x < r.width - 4 && p.y > top + 4 && p.y < r.height - bot - 4);
+      const on = P.filter((p, i) => show[i]), S = spread(on, r.width, r.height, top, bot);
+      let k = 0; Q = P.map((p, i) => show[i] ? S[k++] : p);
+    }
+    let lines = "";
+    ids.forEach((id, i) => {
+      const b = btns.get(id);
+      b.hidden = !show[i];
+      if (!show[i]){ if (picked === id) pick(null); return; }
+      b.style.left = Q[i].x.toFixed(1) + "px"; b.style.top = Q[i].y.toFixed(1) + "px";
+      if (phone && Math.hypot(Q[i].x - P[i].x, Q[i].y - P[i].y) > 13)
+        lines += `<line x1="${P[i].x.toFixed(1)}" y1="${P[i].y.toFixed(1)}" x2="${Q[i].x.toFixed(1)}" y2="${Q[i].y.toFixed(1)}"/><circle cx="${P[i].x.toFixed(1)}" cy="${P[i].y.toFixed(1)}" r="2.2"/>`;
+    });
+    if (lead) lead.innerHTML = lines;
+    placeTip();
   }
-  return { build, place, setVisible(v){ layer.classList.toggle("off", !v); } };
+  return { build, place, pick, setVisible(v){ layer.classList.toggle("off", !v); if (!v) pick(null); } };
+})();
+
+/* =========================================================================
+   SHEET — on phones an open organ is a bottom sheet over the page (on a
+   landscape phone, a side sheet), so the body stays in view while you read.
+   Drag the handle to resize it; drag it down to go back to the whole body.
+   ========================================================================= */
+const Sheet = (() => {
+  const panel = $("#panel"), handle = $("#sheetHandle");
+  const SNAP = [.52, .9];
+  let open = false, frac = SNAP[0], drag = null;
+  const landscape = () => window.matchMedia("(orientation: landscape)").matches;
+  function setFrac(f){ frac = f; panel.style.setProperty("--sheet-h", (f * 100).toFixed(1) + "svh"); cover(); }
+  /* how much of the scene the sheet hides, once the scene is scrolled to the top */
+  function cover(){
+    if (!open){ Camera.setCover(0, 0); return; }
+    const r = $("#scene").getBoundingClientRect(), wrap = $("#sceneWrap").getBoundingClientRect();
+    const top = r.top - wrap.top;   /* the scene's offset inside its wrap (the clock bar) */
+    if (landscape()) Camera.setCover(0, Math.max(0, r.right - (innerWidth - panel.getBoundingClientRect().width)));
+    else Camera.setCover(Math.max(0, r.height - (innerHeight * (1 - frac) - top)), 0);
+  }
+  function sync(s){
+    const want = !!s.topic && isPhone();
+    if (want === open){ if (open) cover(); return; }
+    open = want;
+    panel.classList.toggle("sheet", open);
+    document.body.classList.toggle("has-sheet", open);
+    if (open){
+      setFrac(SNAP[0]);
+      panel.scrollTop = 0;
+      /* bring the body to the top of the screen, above the sheet */
+      const top = $("#sceneWrap").getBoundingClientRect().top;
+      if (Math.abs(top) > 4) window.scrollTo({ top: window.scrollY + top, behavior: "auto" });
+    } else { panel.style.removeProperty("--sheet-h"); Camera.setCover(0, 0); }
+  }
+  function settle(){ panel.classList.remove("dragging"); cover(); Camera.go(cameraFor(store.get())); }
+  handle.addEventListener("pointerdown", e => {
+    if (!open || landscape()) return;
+    drag = { y: e.clientY, f: frac, moved: false };
+    handle.setPointerCapture(e.pointerId); panel.classList.add("dragging");
+  });
+  handle.addEventListener("pointermove", e => {
+    if (!drag) return;
+    if (Math.abs(e.clientY - drag.y) > 5) drag.moved = true;
+    if (drag.moved) setFrac(clamp(drag.f + (drag.y - e.clientY) / innerHeight, .12, .94));
+  });
+  const end = () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (!d.moved){ setFrac(frac < .7 ? SNAP[1] : SNAP[0]); settle(); return; }
+    if (frac < .3){ panel.classList.remove("dragging"); store.set({ topic: null }); return; }
+    setFrac(SNAP.reduce((a, b) => Math.abs(b - frac) < Math.abs(a - frac) ? b : a));
+    settle();
+  };
+  handle.addEventListener("pointerup", end);
+  handle.addEventListener("pointercancel", end);
+  /* keyboard: Enter or Space on the handle toggles the height */
+  handle.addEventListener("click", e => { if (e.detail === 0 && open){ setFrac(frac < .7 ? SNAP[1] : SNAP[0]); settle(); } });
+  return { sync, isOpen: () => open };
+})();
+
+/* =========================================================================
+   GESTURES — pinch to zoom the whole body on a touch screen, drag to pan
+   once zoomed. Trackpad pinch (ctrl + wheel) does the same on a computer.
+   ========================================================================= */
+const Gestures = (() => {
+  const wrap = $("#sceneWrap");
+  const skip = e => e.target.closest(".systems, .journey, .back, .zoom-reset, .moment, .hs-tip");
+  let last = null, moved = false;
+  const free = () => { const s = store.get(); return !s.topic && !riding(s); };
+  const mid = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) });
+  function init(){
+    wrap.addEventListener("touchstart", e => {
+      if (e.touches.length === 1) moved = false;
+      if (!free() || skip(e)) { last = null; return; }
+      if (e.touches.length === 2){ last = mid(e.touches); moved = true; }
+      else if (e.touches.length === 1 && Camera.zoomed()){ last = { x: e.touches[0].clientX, y: e.touches[0].clientY, d: 0, x0: e.touches[0].clientX, y0: e.touches[0].clientY }; moved = false; }
+      else last = null;
+    }, { passive: true });
+    wrap.addEventListener("touchmove", e => {
+      if (!last || !free()) return;
+      if (e.touches.length === 2){
+        e.preventDefault();
+        const m = mid(e.touches);
+        if (last.d > 0) Camera.zoomAt(m.d / last.d, m.x, m.y);
+        Camera.pan(m.x - last.x, m.y - last.y);
+        last = m;
+      } else if (e.touches.length === 1 && Camera.zoomed()){
+        e.preventDefault();
+        const x = e.touches[0].clientX, y = e.touches[0].clientY;
+        Camera.pan(x - last.x, y - last.y);
+        if (Math.hypot(x - last.x0, y - last.y0) > 8) moved = true;
+        last = { ...last, x, y };
+      }
+    }, { passive: false });
+    wrap.addEventListener("touchend", e => { if (e.touches.length === 0) last = null; else if (e.touches.length === 1 && Camera.zoomed()) last = { x: e.touches[0].clientX, y: e.touches[0].clientY, d: 0, x0: e.touches[0].clientX, y0: e.touches[0].clientY }; }, { passive: true });
+    /* a drag or a pinch is not a tap on a red cell */
+    wrap.addEventListener("click", e => { if (moved){ moved = false; e.stopImmediatePropagation(); } }, true);
+    wrap.addEventListener("wheel", e => {
+      if (!e.ctrlKey || !free()) return;
+      e.preventDefault();
+      Camera.zoomAt(Math.exp(-e.deltaY * .01), e.clientX, e.clientY);
+    }, { passive: false });
+    $("#zoomReset").addEventListener("click", () => Camera.resetZoom());
+  }
+  return { init };
 })();
 
 /* =========================================================================
@@ -10227,7 +10522,7 @@ store.subscribe((s, prev) => {
   }
   Pins.render(s);
   const free = !s.topic && !riding(s);
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop){ Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop){ if (riding(s)) Camera.resetZoom(); Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
@@ -10242,8 +10537,10 @@ store.subscribe((s, prev) => {
   BiteCard.sync(s);
   DropCard.sync(s);
   if (s.topic !== prev.topic){
+    if (s.topic) Camera.resetZoom();
+    Sheet.sync(s);
     Camera.go(cameraFor(s)); Hotspots.setVisible(free); Scene.focus(s.topic);
-    if (s.topic && !prev.topic && window.matchMedia("(max-width: 860px)").matches){
+    if (s.topic && !prev.topic && !isPhone() && window.matchMedia("(max-width: 860px)").matches){
       setTimeout(() => {
         const r = $("#panel").getBoundingClientRect();
         if (r.top > window.innerHeight * .7) window.scrollTo({ top: window.scrollY + r.top - window.innerHeight * .38, behavior: reducedMotion ? "auto" : "smooth" });
@@ -10442,9 +10739,15 @@ function init(){
   requestAnimationFrame(() => { Camera.go(cameraFor(s), true); Hotspots.place(); });
 
   let resizeT;
-  new ResizeObserver(() => { clearTimeout(resizeT); resizeT = setTimeout(() => { Camera.go(cameraFor(store.get()), true); Pins.refresh(); }, 60); }).observe($("#sceneWrap"));
+  new ResizeObserver(() => { clearTimeout(resizeT); resizeT = setTimeout(() => { Camera.resetZoom(); Sheet.sync(store.get()); Camera.go(cameraFor(store.get()), true); Pins.refresh(); }, 60); }).observe($("#sceneWrap"));
+  PHONE_MQ.addEventListener("change", () => { document.documentElement.classList.toggle("phone", isPhone()); Hotspots.pick(null); Sheet.sync(store.get()); });
+  Gestures.init();
 
   let last = performance.now(), lastReal = 0, clockDebt = 0, held = false, virtual = 0;
+  /* while the body is scrolled out of view (on a phone, reading the panel below it)
+     draw it at about 10 frames a second; the clock keeps running at full rate */
+  let sceneOn = true, skipped = 0, owe = 0, oweR = 0;
+  if ("IntersectionObserver" in window) new IntersectionObserver(es => { sceneOn = es[es.length - 1].isIntersecting; }).observe($("#sceneWrap"));
   function frame(t){
     const dt = Math.min(.05, (t - last) / 1000); last = t;
     if (!held) advance(dt, t);
@@ -10459,8 +10762,8 @@ function init(){
     const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : st.drop != null ? DropRide : null;
     const k = st.impulse != null ? Impulse.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
     /* a paused ride freezes everything: the rider, the body and the clock */
-    const paused = st.ridePaused && riding(st) && !st.topic, rdt = paused ? 0 : dt;
-    const sdt = rdt * Math.min(k, BODY_MAX);
+    const paused = st.ridePaused && riding(st) && !st.topic;
+    const rdt = paused ? 0 : dt, sdt = rdt * Math.min(k, BODY_MAX);
     if (!lapse){ lastReal = 0; clockDebt = 0; }
     /* scrubbed: the slider already set the hour, so don't catch the clock up */
     if (rideSeeked){ rideSeeked = false; if (lapse) lastReal = lapse.info().real; clockDebt = 0; }
@@ -10477,31 +10780,34 @@ function init(){
     else if (st.playing && !paused) store.set({ hour: (st.hour + sdt * CONFIG.hoursPerSecond) % 24 });
     if (riding(st) && !st.topic) Camera.track(cameraFor(st), dt);
     else if (Camera.tick(t)) Hotspots.place();
-    if (!document.hidden){
-      const ph = Physio.at(store.get().hour);
-      Rhythm.tick(sdt, ph);
-      Scene.animate();
-      Vitals.tick(sdt);
-      Particles.tick(sdt);
-      const live = store.get().live;
-      if (!reducedMotion && live === "nervous") Nerves.tick(sdt, ph);
-      if (!reducedMotion && live === "endocrine") Hormones.tick(sdt, ph); else Hormones.setRates(ph);
-      if (!reducedMotion && live === "respiratory") Airways.tick(sdt, ph); else Airways.setRates(ph);
-      if (!reducedMotion && live === "digestive") Digestion.tick(sdt, ph); else Digestion.setRates(ph);
-      if (!reducedMotion && live === "urinary") Urinary.tick(sdt, ph); else Urinary.setRates(ph);
-      Panel.tick(sdt, ph);
-      Journey.tick(sdt);
-      Impulse.tick(rdt);
-      ImpulseCard.tick();
-      Cascade.tick(rdt);
-      CascadeCard.tick();
-      BreathRide.tick(rdt);
-      BreathCard.tick();
-      BiteRide.tick(rdt);
-      BiteCard.tick();
-      DropRide.tick(rdt);
-      DropCard.tick();
-    }
+    if (document.hidden) return;
+    const ph = Physio.at(store.get().hour);
+    /* the heartbeat, the vitals and the panel's close-up always run at full rate */
+    Rhythm.tick(sdt, ph);
+    Vitals.tick(sdt);
+    Panel.tick(sdt, ph);
+    /* the body itself is drawn less often while it is off screen */
+    if (!held && !sceneOn && ++skipped % 6){ owe += sdt; oweR += rdt; return; }
+    const bdt = sdt + owe, brdt = rdt + oweR; owe = oweR = 0;
+    Scene.animate();
+    Particles.tick(bdt);
+    const live = store.get().live;
+    if (!reducedMotion && live === "nervous") Nerves.tick(bdt, ph);
+    if (!reducedMotion && live === "endocrine") Hormones.tick(bdt, ph); else Hormones.setRates(ph);
+    if (!reducedMotion && live === "respiratory") Airways.tick(bdt, ph); else Airways.setRates(ph);
+    if (!reducedMotion && live === "digestive") Digestion.tick(bdt, ph); else Digestion.setRates(ph);
+    if (!reducedMotion && live === "urinary") Urinary.tick(bdt, ph); else Urinary.setRates(ph);
+    Journey.tick(bdt);
+    Impulse.tick(brdt);
+    ImpulseCard.tick();
+    Cascade.tick(brdt);
+    CascadeCard.tick();
+    BreathRide.tick(brdt);
+    BreathCard.tick();
+    BiteRide.tick(brdt);
+    BiteCard.tick();
+    DropRide.tick(brdt);
+    DropCard.tick();
   }
   requestAnimationFrame(frame);
   /* the Export menu holds the loop and steps the body frame by frame */

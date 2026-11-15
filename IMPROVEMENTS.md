@@ -14,7 +14,7 @@ The README describes what already exists. This file only lists what doesn't exis
 
 ## Next up
 
-The better body view on phones comes before the next organ page. It reaches every visitor on a phone, so later pages get it without extra work.
+Both items here are done. The next step is the liver and pancreas pages (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -26,23 +26,15 @@ Built as planned; see the README for what it covers. Checked by `node tests/expo
 - **Settings by position**: a settings file finds radio groups, toggles and tabs by their order in each section. If a page's controls change order, an older file could set the wrong one. Give every control a stable id.
 - **Other apps and browsers**: the files are checked in Chromium. Open them once in Inkscape, PowerPoint and Keynote, and try the menu in Safari and Firefox.
 
-### B. Mobile view of the body on the starting page
-
-On a 390 × 664 phone (iPhone 13) the body is only about 150 px wide, inside a 390 × 410 scene. The figure is crowded, and parts of it are covered.
-
-- **What goes wrong now**
-  - The 13 organ labels sit on top of the body and on top of each other (Ears/Throat, Liver/Kidneys/Pancreas). They hide the organs they point to, and the tap targets overlap.
-  - The body-systems switches sit over the right side of the body and cut off the "Skin" label.
-  - The day-window clock and the moment text ("Exercise") collide with the Ears and Brain labels.
-  - In landscape (750 × 342) the scene is taller than the screen, so the legs are cut off and the vitals sit below the fold.
-- **Plan**
-  - **Let the body fill the width**: use a taller scene and a `viewBox` cropped to the body on narrow screens, so the figure is about twice as wide. Allow pinch-zoom and pan, and double-tap an organ to zoom to it.
-  - **Labels on demand**: hide the text labels below about 600 px and keep small numbered dots, or show labels only for the system that's live. Tapping a dot shows its name in a tooltip. Tap areas at least 44 px, and a layout check that moves dots apart so they don't overlap.
-  - **Move the overlays off the body**: the systems switches go to a horizontal scrolling chip row (or a bottom sheet) under the scene. The day window and the moment text go into a slim bar above it.
-  - **Landscape**: put the scene and the vitals side by side, with the scene height capped at the viewport (`100svh` minus the bars).
-  - **Panel as a bottom sheet**: the topic panel slides up over the scene with a drag handle, instead of opening far below it, so the body stays in view while you read.
-  - **Speed**: on small screens, fewer particles and a lower frame rate when the scene is off screen, so older phones don't stutter.
-- **Done when**: at 360, 390 and 430 px wide (portrait) and 667–932 px wide (landscape) no labels overlap, no control covers the body, every tap target is at least 44 px, and the page has no horizontal scroll. A Playwright check takes screenshots at these sizes and fails if label boxes overlap.
+### B. Mobile view of the body on the starting page ✅ Done
+Built as planned; see the README for what it covers. Checked by `node tests/mobile-check.mjs` at 360, 390 and 430 px wide in portrait and 667–932 px wide in landscape. What changed from the plan, and what is still open:
+- **Body width**: the body is 167–231 px wide in portrait, depending on the screen (it was about 150 px on a 390 × 664 phone, and is now 174 px there), not twice as wide. The figure is about three times taller than it is wide, so filling the width would need a scene about three screens tall. Pinch-zoom covers the rest. A "head to hips" crop that you scroll through could make it larger still, if testing with readers shows it's needed.
+- **Double-tap to zoom** is not built: tapping a dot already opens the organ zoomed in, and a double-tap would clash with tapping a red cell to follow it.
+- **Labels for the live system**: the dots have no labels on phones. Showing the names only for the organs of the live system could help readers find their way.
+- **Fact pins** are drawn in the body's own units, so they grow when you zoom in. Keep them a fixed size on screen.
+- **Ride cards** (the journey cards) still cover the top third of the scene on a phone. They could fold into the clock bar, with a tap to expand them.
+- **Real devices**: checked in Chromium's phone emulation, with touch events sent through the DevTools protocol. Try it on an iPhone (Safari) and an Android phone, especially the pinch and the sheet drag.
+- **Desktop at 1280 × 800**: the vitals cards cover the Liver, Kidneys and Bones labels. Spread the desktop labels the way the phone dots are spread, or move the vitals.
 
 ## What a finished deep-dive page includes
 
@@ -261,8 +253,8 @@ These span several organs and are best built as their own pages (for example `ex
 1. ~~Kidneys page~~ (done).
 2. ~~Gut page~~ (done).
 3. ~~Export utility~~ (done).
-4. **Mobile view of the body** ([B](#b-mobile-view-of-the-body-on-the-starting-page)) on the starting page.
-5. The liver and pancreas pages, which complete the trio and build on the bite journeys and the insulin/glucagon channels.
+4. ~~Mobile view of the body~~ (done).
+5. **The liver and pancreas pages**, which complete the trio and build on the bite journeys and the insulin/glucagon channels.
 6. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.
 7. Muscles and bones pages, then the muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).

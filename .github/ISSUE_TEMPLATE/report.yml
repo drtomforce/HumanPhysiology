@@ -1,16 +1,16 @@
 # Filled in by the app's "Report a problem" form (the REPORTER block in
 # organs/_template.html). The field ids are the URL parameters it sets, and the
-# dropdown options must match its CATEGORIES labels. The nightly triage
-# (.github/workflows/nightly-triage.yml) reads the "context" JSON.
+# dropdown options must match its CATEGORIES labels. The "context" JSON says where
+# the text comes from and holds a link that reopens the page as the reader saw it.
 name: Report a problem
 description: Something wrong or unclear in HumanPhysiology. Easiest from the app itself; select the text and press "Report this".
 title: "[Report] "
-labels: ["report", "triage:pending"]
+labels: ["report"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping! Reports are checked every night: clear fixes are made, others get an answer here.
+        Thanks for helping!
         The fastest way to report is from the app: select the words that are wrong and press **Report this**, which fills in everything below.
   - type: dropdown
     id: category

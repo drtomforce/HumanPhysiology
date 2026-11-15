@@ -1294,8 +1294,8 @@ canvas.trace{ display:block; width:100%; }
      (found by searching this page's <script type="application/json"> blocks),
      the section and heading it sits under, the page's settings, and a link
      that reopens the page as the reader saw it.
-   The nightly triage (.github/workflows/nightly-triage.yml) reads the JSON
-   context block. A page describes its settings with
+   The JSON context block lets whoever fixes the issue find the text and
+   reopen the page in the reader's state. A page describes its settings with
      HPReport.provide(() => ({ label, settings, changes, query }))
    label: where the reader is, in words; settings: the state as plain JSON;
    changes: what the reader has altered, in words; query: URL parameters that
@@ -1471,7 +1471,7 @@ function renderForm(){
       <dt>Browser</dt><dd>${esc(c.context.viewport)}, ${esc(c.context.ua.slice(0, 80))}</dd>
     </dl><p style="margin:8px 0 0">Nothing about you is collected. Reports are public.</p></details>
     <div class="hpr-foot"><button type="button" class="hpr-btn" data-copy>Copy report</button><button type="submit" class="hpr-btn primary">${ENDPOINT ? "Send report" : "Continue on GitHub"}</button></div>
-    <p class="hpr-note">${ENDPOINT ? "Your report goes to the authors, who check reports every night." : "This opens GitHub in a new tab with everything filled in; press “Create” there to send it (a free GitHub account is needed). Reports are checked every night."}</p>
+    <p class="hpr-note">${ENDPOINT ? "Your report goes to the authors." : "This opens GitHub in a new tab with everything filled in; press “Create” there to send it (a free GitHub account is needed)."}</p>
   </form>`;
   const form = dlg.querySelector("form"), what = form.elements.what, hint = dlg.querySelector("[data-hint]");
   const setHint = () => { const c = CATEGORIES.find(x => x[0] === form.elements.cat.value); hint.textContent = c ? c[2] : ""; };
@@ -1532,7 +1532,7 @@ async function send(r){
         const j = await res.json().catch(() => ({}));
         /* only ever link to an issue in this repository, whatever the relay sends back */
         const ok = typeof j.url === "string" && j.url.startsWith(`https://github.com/${REPO}/issues/`);
-        thanks(`<p>Your report has been filed${ok ? ` as <a href="${esc(j.url)}" target="_blank" rel="noopener">an issue on GitHub</a>` : ""}. It will be checked tonight.</p>`);
+        thanks(`<p>Your report has been filed${ok ? ` as <a href="${esc(j.url)}" target="_blank" rel="noopener">an issue on GitHub</a>` : ""}. Thank you!</p>`);
         return;
       }
     } catch(e){}

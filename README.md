@@ -54,42 +54,14 @@ Values are typical for a healthy adult and simplified for teaching. This is not 
 
 The structure follows the [Oak Year](../OakYear) template. See the architecture notes at the top of `index.html`.
 
-## Reporting problems and the nightly triage
+## Reporting problems
 
-Reader reports arrive as GitHub issues, labelled `report` and `triage:pending`. The form is `.github/ISSUE_TEMPLATE/report.yml`. Every night `.github/workflows/nightly-triage.yml` triages them in two jobs:
+Reader reports arrive as GitHub issues labelled `report`, through the issue form `.github/ISSUE_TEMPLATE/report.yml`. Each one ends with a JSON block, filled in by the app, that holds:
+- where the text comes from, as a JSON key such as `body-content:topics.heart.phases.exercise.college`;
+- the section and heading it sits under;
+- the settings on screen;
+- a `repro` link that reopens the page as the reader saw it.
 
-- **judge**: Claude Code reads that night's reports and follows `.github/triage/TRIAGE.md`. It reproduces each report in a headless browser and judges it against its reading level. It then proposes a fix, a rejection, a duplicate or a brief for you.
-- **apply**: `.github/triage/apply.mjs`, plain code with no AI, checks each proposal. Only then does it push a `triage/issue-<n>` branch and open a pull request, or comment, label and close. A fix it can't verify goes to you (`needs-human`) instead.
-
-Fix PRs are never merged automatically. A table of the night's decisions is in the run's summary, and the agent's raw proposals are kept as a 14-day artifact.
-
-**One-time setup:**
-1. Add the repository secret `ANTHROPIC_API_KEY`. Ideally it is a key in its own Console workspace with a monthly spend limit. Alternatively use `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`.
-2. Under Settings → Actions → General → Workflow permissions, choose "Read and write permissions" and tick "Allow GitHub Actions to create and approve pull requests".
-3. Under Settings → Rules → Rulesets, protect `main`: changes only through pull requests, block force pushes, and no bypass list. Don't skip this: it is what keeps anything unreviewed off the live site.
-4. Run *Nightly triage of reports* once from the Actions tab with *dry run* ticked. This creates the labels and shows the judgements in the run summary, without posting anything.
-
-To send a `needs-human` issue back through triage, reply with your decision and add `triage:pending` again. The agent follows comments from the repository's owner and collaborators.
-
-**Security.** Anyone can open an issue, so every report is treated as written by an attacker.
-- **The agent is boxed in:**
-  - Its GitHub token is read-only.
-  - It runs in the strict `dontAsk` permission mode, which denies anything not explicitly allowed.
-  - It can edit only `index.html`, `organs/*.html` and its own `.triage/` folder.
-  - It can read only inside the repository, so not `/proc` or the environment.
-  - It can run only two helper scripts. These, Playwright and the browser are owned by root and read-only.
-  - It has no git, no `gh` and no web access.
-  - The browser it drives gets no environment variables and can reach only the local test server.
-- **The apply script is the only writer:**
-  - It acts only on that night's pending reports.
-  - It accepts a fix only if it touches existing pages only, stays small, and adds no scripts, links, network, storage or HTML-writing code and no hidden characters. The JSON must still parse, the shared blocks must be in sync and the smoke test must pass.
-  - Before posting anything the agent wrote, it removes HTML, images, @-mentions, off-site links and cross-repository references.
-  - It refuses to post anything that looks like a secret.
-  - It runs the smoke test without any token.
-- **The rest:** actions are pinned to commit hashes, and nothing in a report is ever pasted into a shell command.
-
-**Checks anyone can run locally** (they need Playwright):
-- `node .github/triage/check.mjs smoke` loads every page on desktop and phone. It fails on script errors or out-of-date shared blocks.
-- `node .github/triage/check.mjs repro "<link>" --text "<text>"` opens a report's link against your working copy.
+One-time setup: create a label named `report` (Issues → Labels). GitHub only applies a form's labels if they already exist.
 
 The form's code is the `REPORTER` block in `organs/_template.html`. `node organs/sync-engine.mjs` copies it into every organ page and `index.html`. To file reports without a GitHub account later, set its `ENDPOINT` to a relay that creates the issue.

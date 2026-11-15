@@ -1,0 +1,49 @@
+# Filled in by the app's "Report a problem" form (the REPORTER block in
+# organs/_template.html). The field ids are the URL parameters it sets, and the
+# dropdown options must match its CATEGORIES labels. The "context" JSON says where
+# the text comes from and holds a link that reopens the page as the reader saw it.
+name: Report a problem
+description: Something wrong or unclear in HumanPhysiology. Easiest from the app itself; select the text and press "Report this".
+title: "[Report] "
+labels: ["report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping!
+        The fastest way to report is from the app: select the words that are wrong and press **Report this**, which fills in everything below.
+  - type: dropdown
+    id: category
+    attributes:
+      label: What kind of problem?
+      options:
+        - Factual error
+        - Wrong for this reading level
+        - Typo or wording
+        - Visual or animation bug
+        - Something doesn't work
+        - Suggestion
+    validations:
+      required: true
+  - type: textarea
+    id: selection
+    attributes:
+      label: The text in question
+      description: Copied from the page, if there is one.
+  - type: textarea
+    id: what
+    attributes:
+      label: What's wrong, and what should it say?
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source (optional)
+      description: A textbook, paper or link that backs this up.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context (filled in by the app)
+      description: Where the text is and the settings on screen. Leave as it is.
+      render: json

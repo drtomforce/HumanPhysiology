@@ -82,6 +82,11 @@
     exporting, the engine holds the clock, steps the ticks itself and
     visible() is true for every figure. tests/export-check.mjs checks it all.
 
+ 6. REPORT A PROBLEM The REPORTER CSS / JS blocks (synced like the others, also into
+    ../index.html) add the "Report this" button on selected text and the form
+    behind [data-report] buttons. The engine tells it the page's settings in
+    start(); see the comment at the top of the REPORTER JS block.
+
  Integration with the main page
     ../index.html lists finished organ pages in ORGAN_PAGES (topic → file) and
     shows "Explore in depth" on that organ's card, passing ?level=&hour=.
@@ -330,6 +335,62 @@ a{ color:inherit; }
   .xp select{ min-height:44px; }
 }
 /* ===== EXPORT ENGINE CSS · END ===== */
+/* ===== REPORTER CSS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+.hpr-fab{
+  position:fixed; z-index:2147483000; display:flex; align-items:center; gap:6px;
+  border:1px solid var(--line-strong, #A99B91); background:var(--surface, #F8F5F1); color:var(--ink, #261D1B);
+  border-radius:999px; padding:6px 12px 6px 10px; font:500 13px/1.2 var(--sans, system-ui, sans-serif);
+  box-shadow:0 4px 14px rgba(0,0,0,.16); cursor:pointer; opacity:0; transform:translateY(4px); pointer-events:none;
+  transition:opacity .15s, transform .15s;
+}
+.hpr-fab.on{ opacity:1; transform:none; pointer-events:auto; }
+.hpr-fab svg, .hpr-open svg{ flex:none; }
+.hpr-open{
+  display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line, #DCD2C9); background:transparent;
+  color:var(--muted, #6D615B); border-radius:999px; padding:5px 11px 5px 9px; font:500 13px/1.2 var(--sans, system-ui, sans-serif); cursor:pointer;
+}
+.hpr-open:hover{ color:var(--ink, #261D1B); border-color:var(--line-strong, #A99B91); }
+@media (max-width: 560px){ .hpr-open.compact .hpr-open-t{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); } .hpr-open.compact{ padding:6px; } }
+.hpr-dlg{
+  width:min(560px, calc(100vw - 32px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid var(--line, #DCD2C9);
+  border-radius:14px; background:var(--surface, #F8F5F1); color:var(--ink, #261D1B); font:15px/1.45 var(--sans, system-ui, sans-serif);
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+.hpr-dlg::backdrop{ background:rgba(20,14,12,.45); }
+.hpr-form{ display:flex; flex-direction:column; gap:14px; padding:18px 20px 20px; }
+.hpr-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.hpr-head h2{ margin:0; font:500 20px/1.2 var(--serif, Georgia, serif); }
+.hpr-x{ border:0; background:transparent; color:var(--muted, #6D615B); width:32px; height:32px; border-radius:50%; cursor:pointer; display:grid; place-items:center; }
+.hpr-x:hover{ background:var(--surface-2, #E6DFD8); color:var(--ink, #261D1B); }
+.hpr-quote{ margin:0; padding:10px 12px; border-left:3px solid var(--accent, #2f8f83); background:var(--surface-2, #E6DFD8); border-radius:0 8px 8px 0; font:15px/1.45 var(--serif, Georgia, serif); max-height:9em; overflow:auto; overflow-wrap:anywhere; }
+.hpr-quote.none{ border-left-color:var(--line-strong, #A99B91); font-family:var(--sans, system-ui, sans-serif); font-size:13px; color:var(--muted, #6D615B); }
+.hpr-where{ margin:-6px 0 0; font-size:12.5px; color:var(--muted, #6D615B); }
+.hpr-cats{ border:0; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
+.hpr-cats legend, .hpr-lab{ font-size:13px; font-weight:600; margin-bottom:6px; padding:0; }
+.hpr-cats label{ position:relative; }
+.hpr-cats input{ position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; }
+.hpr-cats span{ display:block; border:1px solid var(--line, #DCD2C9); border-radius:999px; padding:5px 11px; font-size:13px; cursor:pointer; }
+.hpr-cats input:checked + span{ background:var(--ink, #261D1B); color:var(--surface, #F8F5F1); border-color:var(--ink, #261D1B); }
+.hpr-cats input:focus-visible + span{ outline:2px solid var(--ink, #261D1B); outline-offset:2px; }
+.hpr-hint{ margin:4px 0 0; font-size:12.5px; color:var(--muted, #6D615B); min-height:1.2em; }
+.hpr-form textarea, .hpr-form input[type=text]{
+  width:100%; box-sizing:border-box; border:1px solid var(--line-strong, #A99B91); border-radius:8px; background:var(--bg, #EFEAE5);
+  color:inherit; font:inherit; font-size:16px; padding:8px 10px; resize:vertical; /* 16px: no zoom on iOS */
+}
+.hpr-form textarea{ min-height:5.5em; }
+.hpr-form textarea:focus, .hpr-form input[type=text]:focus{ outline:2px solid var(--accent, #2f8f83); outline-offset:0; border-color:transparent; }
+.hpr-ctx{ font-size:13px; color:var(--muted, #6D615B); }
+.hpr-ctx summary{ cursor:pointer; font-weight:500; }
+.hpr-ctx dl{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:3px 12px; margin:8px 0 0; }
+.hpr-ctx dt{ font-weight:600; color:var(--ink, #261D1B); }
+.hpr-ctx dd{ margin:0; overflow-wrap:anywhere; }
+.hpr-foot{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.hpr-btn{ border:1px solid var(--line-strong, #A99B91); background:transparent; color:var(--ink, #261D1B); border-radius:999px; padding:8px 16px; font:500 14px/1.2 var(--sans, system-ui, sans-serif); cursor:pointer; }
+.hpr-btn.primary{ background:var(--ink, #261D1B); color:var(--surface, #F8F5F1); border-color:var(--ink, #261D1B); }
+.hpr-note{ margin:0; font-size:12.5px; color:var(--muted, #6D615B); }
+.hpr-done{ padding:8px 0 4px; }
+.hpr-done p{ margin:0 0 10px; }
+/* ===== REPORTER CSS · END ===== */
 </style>
 <style>
 /* ---------- organ-specific styles ---------- */
@@ -385,6 +446,7 @@ a{ color:inherit; }
 
   <footer class="wrap foot">
     <span>Values are typical for a healthy adult and simplified for teaching. This is not medical advice.</span>
+    <button data-report></button>
     <a data-back href="../index.html">Back to the whole body</a>
   </footer>
 </main>
@@ -431,6 +493,300 @@ a{ color:inherit; }
 { "organ": { "def": "A group of tissues that work together on a job.", "match": ["organ", "organs"] } }
 </script>
 
+<script>
+/* ===== REPORTER JS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+/* Report an issue, linked to the text and the settings on screen.
+   Select any text and press "Report", or press a [data-report] button. The short form
+   files a GitHub issue (.github/ISSUE_TEMPLATE/report.yml) carrying:
+     the selected text and the words around it, the JSON key(s) it comes from
+     (found by searching this page's <script type="application/json"> blocks),
+     the section and heading it sits under, the page's settings, and a link
+     that reopens the page as the reader saw it.
+   The JSON context block lets whoever fixes the issue find the text and
+   reopen the page in the reader's state. A page describes its settings with
+     HPReport.provide(() => ({ label, settings, changes, query }))
+   label: where the reader is, in words; settings: the state as plain JSON;
+   changes: what the reader has altered, in words; query: URL parameters that
+   restore that state. With ENDPOINT set, reports are POSTed there (a relay
+   that files issues without a GitHub account); otherwise GitHub opens prefilled. */
+window.HPReport = (() => {
+"use strict";
+const REPO = "drtomforce/HumanPhysiology";
+const SITE = "https://drtomforce.github.io/HumanPhysiology/";
+const TEMPLATE = "report.yml";
+const ENDPOINT = "";
+const SCHEMA = 1;
+const MAX_URL = 7600; /* GitHub refuses much longer new-issue URLs */
+/* [id, label (must match the dropdown in report.yml), hint] */
+const CATEGORIES = [
+  ["factual", "Factual error", "Something here is wrong. Say what is right, and how you know."],
+  ["level", "Wrong for this reading level", "Too hard, too simple or misleading at this reading level."],
+  ["wording", "Typo or wording", "A spelling or grammar slip, or a sentence that is hard to follow."],
+  ["visual", "Visual or animation bug", "Something looks or moves wrong. Say what you expected to see."],
+  ["broken", "Something doesn't work", "A button, slider or link misbehaves. Say what you pressed."],
+  ["suggestion", "Suggestion", "An idea to make this better."]
+];
+const FLAG = `<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 13V1.8M3 2.2h7.6l-1.8 3 1.8 3H3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const squash = s => String(s).replace(/\s+/g, " ").trim();
+/* the same folding on both sides, so rendered text matches its JSON source */
+const norm = s => squash(String(s).replace(/<[^>]+>/g, " ").replace(/[‘’ʼ′]/g, "'").replace(/[“”″]/g, '"').replace(/[‐-―−]/g, "-").replace(/ /g, " ")).toLowerCase();
+
+let provider = () => ({});
+function provide(fn){ provider = fn; }
+function pageCtx(){ try { return provider() || {}; } catch(e){ return { error: String(e) }; } }
+function pagePath(){
+  const p = location.pathname, i = p.lastIndexOf("/organs/");
+  if (i >= 0) return p.slice(i + 1);
+  const f = p.slice(p.lastIndexOf("/") + 1);
+  return f && f.endsWith(".html") ? f : "index.html";
+}
+
+/* ---------- where the selected text comes from ---------- */
+let blocks = null;
+function jsonBlocks(){
+  if (!blocks) blocks = [...document.querySelectorAll('script[type="application/json"][id]')].map(n => {
+    try { return [n.id, JSON.parse(n.textContent)]; } catch(e){ return null; }
+  }).filter(Boolean);
+  return blocks;
+}
+function find(q, level){
+  const out = [];
+  const walk = (v, path, id) => {
+    if (out.length >= 12) return;
+    if (typeof v === "string"){ if (norm(v).includes(q)) out.push(`${id}:${path.join(".")}`); }
+    else if (v && typeof v === "object") for (const k of Object.keys(v)) walk(v[k], [...path, k], id);
+  };
+  jsonBlocks().forEach(([id, d]) => walk(d, [], id));
+  /* keys at the reader's level first */
+  return level ? out.sort((a, b) => (b.endsWith("." + level) - a.endsWith("." + level))) : out;
+}
+function locate(text, level){
+  const q = norm(text);
+  if (q.length < 3) return { match: "none", keys: [] };
+  let keys = find(q, level);
+  if (keys.length) return { match: "exact", keys };
+  /* filled-in numbers or a selection across several blocks: try the longest plain runs */
+  const runs = q.split(/[0-9.,;:!?()%·•]+/).map(x => x.trim()).filter(x => x.length >= 14).sort((a, b) => b.length - a.length).slice(0, 3);
+  for (const r of runs){ keys = find(r, level); if (keys.length) return { match: "partial", fragment: r, keys }; }
+  return { match: "none", keys: [] };
+}
+function cssPath(node){
+  const out = [];
+  for (let n = node; n && n.nodeType === 1 && n !== document.body && out.length < 5; n = n.parentElement){
+    let s = n.tagName.toLowerCase();
+    if (n.id){ out.unshift(s + "#" + n.id); break; }
+    const cls = [...n.classList].filter(c => !/^(on|off|has|empty|dim)$/.test(c)).slice(0, 2);
+    if (cls.length) s += "." + cls.join(".");
+    out.unshift(s);
+  }
+  return out.join(" > ");
+}
+function whereIs(node){
+  const sec = node.closest("[data-section]") || node.closest("section[id], aside[id], [id]");
+  const scope = node.closest("[data-section], section, aside, article, .card, dialog") || document.body;
+  let heading = "";
+  for (const h of scope.querySelectorAll("h1, h2, h3, h4")){
+    if (h.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING || h.contains(node)) heading = squash(h.textContent);
+  }
+  return { section: sec ? sec.id : "", dataSection: !!(sec && sec.hasAttribute("data-section")), heading: heading.slice(0, 120), element: cssPath(node) };
+}
+
+/* ---------- the selection and the floating button ---------- */
+function selection(){
+  const s = getSelection();
+  if (!s || s.isCollapsed || !s.rangeCount) return null;
+  const r = s.getRangeAt(0), text = squash(s.toString());
+  if (text.length < 2) return null;
+  let node = r.commonAncestorContainer;
+  if (node.nodeType !== 1) node = node.parentElement;
+  if (!node || node.closest(".hpr-dlg, input, textarea, select, [contenteditable]")) return null;
+  return { r, text, node };
+}
+function capture(sel){
+  if (!sel) return { text: "", where: { section: "", heading: "", element: "" } };
+  const { r, node } = sel;
+  const block = node.closest("p, li, dd, td, blockquote, figcaption, h1, h2, h3, h4, [data-text], [data-section], section, aside") || node;
+  let before = "", after = "", raw = r.toString();
+  try {
+    const a = document.createRange(); a.selectNodeContents(block); a.setEnd(r.startContainer, r.startOffset); before = a.toString();
+    const b = document.createRange(); b.selectNodeContents(block); b.setStart(r.endContainer, r.endOffset); after = b.toString();
+  } catch(e){}
+  /* a selection that cuts a word in half reports the whole word */
+  const W = /[\p{L}\p{N}’'-]/u;
+  const head = W.test(raw[0] || "") ? (before.match(/[\p{L}\p{N}’'-]+$/u) || [""])[0] : "";
+  const tail = W.test(raw[raw.length - 1] || "") ? (after.match(/^[\p{L}\p{N}’'-]+/u) || [""])[0] : "";
+  raw = head + raw + tail; before = before.slice(0, before.length - head.length); after = after.slice(tail.length);
+  return { text: squash(raw).slice(0, 1500), before: squash(before).slice(-160), after: squash(after).slice(0, 160), where: whereIs(node) };
+}
+let fab = null, fabSel = null, fabTimer = 0;
+function placeFab(){
+  const sel = selection();
+  fabSel = sel;
+  if (!sel || (dlg && dlg.open)){ fab.classList.remove("on"); return; }
+  const rects = sel.r.getClientRects(), last = rects[rects.length - 1] || sel.r.getBoundingClientRect();
+  const w = fab.offsetWidth || 90, h = fab.offsetHeight || 30;
+  let x = last.right - w / 2, y = last.bottom + 10;
+  if (y + h > innerHeight - 8) y = Math.max(8, last.top - h - 10);
+  x = Math.max(8, Math.min(innerWidth - w - 8, x));
+  fab.style.left = x + "px"; fab.style.top = y + "px";
+  fab.classList.add("on");
+}
+function buildFab(){
+  fab = document.createElement("button");
+  fab.type = "button"; fab.className = "hpr-fab"; fab.innerHTML = `${FLAG}Report this`;
+  fab.setAttribute("aria-label", "Report a problem with the selected text");
+  /* keep the selection alive while the button is pressed */
+  fab.addEventListener("pointerdown", e => e.preventDefault());
+  fab.addEventListener("mousedown", e => e.preventDefault());
+  fab.addEventListener("click", () => { const s = fabSel || selection(); fab.classList.remove("on"); open(s); });
+  document.body.appendChild(fab);
+  const later = () => { clearTimeout(fabTimer); fabTimer = setTimeout(placeFab, 180); };
+  document.addEventListener("selectionchange", later);
+  addEventListener("scroll", () => { if (fab.classList.contains("on")) placeFab(); }, { passive: true, capture: true });
+  addEventListener("resize", later);
+}
+
+/* ---------- the form ---------- */
+let dlg = null, report = null;
+function buildDialog(){
+  dlg = document.createElement("dialog");
+  dlg.className = "hpr-dlg"; dlg.setAttribute("aria-labelledby", "hprTitle");
+  document.body.appendChild(dlg);
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); }); /* backdrop */
+  dlg.addEventListener("close", () => { report = null; });
+}
+function renderForm(){
+  const c = report, sel = c.selection, ctx = c.page;
+  const settings = Object.entries(ctx.settings || {}).filter(([, v]) => v !== null && v !== "" && !(typeof v === "object" && !Object.keys(v).length))
+    .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
+  dlg.innerHTML = `<form class="hpr-form" method="dialog" novalidate>
+    <div class="hpr-head"><h2 id="hprTitle">Report a problem</h2><button type="button" class="hpr-x" data-close aria-label="Close"><svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>
+    ${sel.text ? `<blockquote class="hpr-quote">${esc(sel.text)}</blockquote>` : `<p class="hpr-quote none">Tip: to report a sentence, select it on the page first and press “Report this”. You can still describe any problem here.</p>`}
+    <p class="hpr-where">${esc(ctx.label || document.title)}${sel.where.heading && !(ctx.label || "").includes(sel.where.heading) ? ` · ${esc(sel.where.heading)}` : ""}</p>
+    <fieldset class="hpr-cats"><legend>What kind of problem?</legend>
+      ${CATEGORIES.map(([id, label], i) => `<label><input type="radio" name="cat" value="${id}"${i === (sel.text ? 0 : 3) ? " checked" : ""}><span>${esc(label)}</span></label>`).join("")}
+      <p class="hpr-hint" data-hint style="flex-basis:100%"></p>
+    </fieldset>
+    <label><div class="hpr-lab">What’s wrong, and what should it say?</div><textarea name="what" maxlength="3000" required placeholder="For example: the resting heart rate in adults is 60–100 beats a minute, not 50–90."></textarea></label>
+    <label><div class="hpr-lab">Source <span style="font-weight:400" class="hpr-note">(optional)</span></div><input type="text" name="source" maxlength="400" placeholder="A book, paper or link that backs this up"></label>
+    <details class="hpr-ctx"><summary>Sent with your report</summary><dl>
+      <dt>Page</dt><dd>${esc(c.context.page)}</dd>
+      ${settings ? `<dt>Settings</dt><dd>${esc(settings)}</dd>` : ""}
+      ${(ctx.changes || []).length ? `<dt>Changes</dt><dd>${esc(ctx.changes.join(", "))}</dd>` : ""}
+      ${c.context.source.keys.length ? `<dt>Text from</dt><dd>${esc(c.context.source.keys.slice(0, 3).join(", "))}</dd>` : ""}
+      <dt>Link</dt><dd>${esc(c.context.repro)}</dd>
+      <dt>Browser</dt><dd>${esc(c.context.viewport)}, ${esc(c.context.ua.slice(0, 80))}</dd>
+    </dl><p style="margin:8px 0 0">Nothing about you is collected. Reports are public.</p></details>
+    <div class="hpr-foot"><button type="button" class="hpr-btn" data-copy>Copy report</button><button type="submit" class="hpr-btn primary">${ENDPOINT ? "Send report" : "Continue on GitHub"}</button></div>
+    <p class="hpr-note">${ENDPOINT ? "Your report goes to the authors." : "This opens GitHub in a new tab with everything filled in; press “Create” there to send it (a free GitHub account is needed)."}</p>
+  </form>`;
+  const form = dlg.querySelector("form"), what = form.elements.what, hint = dlg.querySelector("[data-hint]");
+  const setHint = () => { const c = CATEGORIES.find(x => x[0] === form.elements.cat.value); hint.textContent = c ? c[2] : ""; };
+  form.addEventListener("change", e => { if (e.target.name === "cat") setHint(); });
+  setHint();
+  dlg.querySelector("[data-close]").addEventListener("click", () => dlg.close());
+  dlg.querySelector("[data-copy]").addEventListener("click", e => {
+    const b = e.currentTarget, done = ok => { b.textContent = ok ? "Copied" : "Copy failed"; setTimeout(() => { b.textContent = "Copy report"; }, 1600); };
+    try { navigator.clipboard.writeText(asMarkdown(collect(form))).then(() => done(true), () => done(false)); } catch(err){ done(false); }
+  });
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    if (!squash(what.value)){ what.setCustomValidity("Say what is wrong."); what.reportValidity(); what.setCustomValidity(""); what.focus(); return; }
+    send(collect(form));
+  });
+  requestAnimationFrame(() => what.focus());
+}
+function collect(form){
+  const cat = CATEGORIES.find(x => x[0] === form.elements.cat.value) || CATEGORIES[0];
+  const what = form.elements.what.value.trim(), source = form.elements.source.value.trim();
+  const context = { ...report.context, category: cat[0] };
+  const lead = report.selection.text ? `“${report.selection.text.slice(0, 60)}${report.selection.text.length > 60 ? "…" : ""}”` : squash(what).slice(0, 70);
+  const title = `[${cat[1]}] ${lead} (${report.page.label || context.page})`.slice(0, 200);
+  return { title, category: cat[1], what, source, selection: report.selection.text, context };
+}
+function asMarkdown(r){
+  return `**${r.title}**\n\n${r.selection ? `> ${r.selection}\n\n` : ""}${r.what}\n\n${r.source ? `Source: ${r.source}\n\n` : ""}\`\`\`json\n${JSON.stringify(r.context, null, 2)}\n\`\`\`\n`;
+}
+/* shrink the context until the new-issue URL fits */
+function issueURL(r){
+  const ctx = JSON.parse(JSON.stringify(r.context));
+  const make = () => {
+    const p = new URLSearchParams({ template: TEMPLATE, title: r.title, category: r.category, selection: r.selection, what: r.what, source: r.source, context: JSON.stringify(ctx, null, 2) });
+    return `https://github.com/${REPO}/issues/new?${p.toString()}`;
+  };
+  const cuts = [
+    () => { delete ctx.ua; },
+    () => { ctx.before = ctx.before.slice(-60); ctx.after = ctx.after.slice(0, 60); },
+    () => { ctx.source.keys = ctx.source.keys.slice(0, 3); },
+    () => { delete ctx.settings; },
+    () => { r = { ...r, selection: r.selection.slice(0, 400) + "…" }; ctx.selection = r.selection; },
+    () => { r = { ...r, what: r.what.slice(0, 1500) + "… (cut: copy the report for the rest)" }; }
+  ];
+  let url = make();
+  for (const cut of cuts){ if (url.length <= MAX_URL) break; cut(); url = make(); }
+  return url;
+}
+function thanks(html){
+  dlg.innerHTML = `<div class="hpr-form"><div class="hpr-head"><h2 id="hprTitle">Thank you</h2><button type="button" class="hpr-x" data-close aria-label="Close"><svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div><div class="hpr-done">${html}</div><div class="hpr-foot"><button type="button" class="hpr-btn primary" data-close>Done</button></div></div>`;
+  dlg.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => dlg.close()));
+  dlg.querySelector(".hpr-foot [data-close]").focus();
+}
+async function send(r){
+  if (ENDPOINT){
+    try {
+      const res = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) });
+      if (res.ok){
+        const j = await res.json().catch(() => ({}));
+        /* only ever link to an issue in this repository, whatever the relay sends back */
+        const ok = typeof j.url === "string" && j.url.startsWith(`https://github.com/${REPO}/issues/`);
+        thanks(`<p>Your report has been filed${ok ? ` as <a href="${esc(j.url)}" target="_blank" rel="noopener">an issue on GitHub</a>` : ""}. Thank you!</p>`);
+        return;
+      }
+    } catch(e){}
+  }
+  const url = issueURL(r);
+  window.open(url, "_blank", "noopener");
+  thanks(`<p>GitHub has opened in a new tab with your report filled in. Press <b>Create</b> there to send it.</p>
+    <p class="hpr-note">Nothing opened? <a href="${esc(url)}" target="_blank" rel="noopener">Open the report on GitHub</a>.</p>`);
+}
+
+function open(sel){
+  if (!dlg) buildDialog();
+  const ctx = pageCtx(), cap = capture(sel || null), level = ctx.settings && ctx.settings.level;
+  const hash = cap.where.dataSection && cap.where.section ? "#" + cap.where.section : "";
+  const page = pagePath();
+  report = {
+    page: ctx, selection: cap,
+    context: {
+      schema: SCHEMA, page,
+      selection: cap.text, before: cap.before || "", after: cap.after || "",
+      source: cap.text ? locate(cap.text, level) : { match: "none", keys: [] },
+      section: cap.where.section, heading: cap.where.heading, element: cap.where.element,
+      settings: ctx.settings || {}, changes: ctx.changes || [],
+      repro: SITE + page + (ctx.query ? "?" + ctx.query : "") + hash,
+      served: document.lastModified, reported: new Date().toISOString(),
+      viewport: `${innerWidth}x${innerHeight}`, ua: navigator.userAgent
+    }
+  };
+  renderForm();
+  if (!dlg.open) dlg.showModal();
+}
+function mount(root = document){
+  root.querySelectorAll("[data-report]").forEach(b => {
+    if (b.__hpr) return; b.__hpr = true;
+    if (!b.innerHTML.trim()) b.innerHTML = `${FLAG}<span class="hpr-open-t">Report a problem</span>`;
+    b.classList.add("hpr-open");
+    if (b.tagName === "BUTTON") b.type = "button";
+    b.addEventListener("click", e => { e.preventDefault(); open(selection()); });
+  });
+}
+function init(){ buildFab(); mount(); }
+document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", init) : init();
+return { provide, open, mount, locate };
+})();
+/* ===== REPORTER JS · END ===== */
+</script>
 <script>
 /* ===== ORGAN ENGINE JS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
 window.OrganPage = (() => {
@@ -839,12 +1195,16 @@ function renderAlter(){
   }
 }
 /* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
+function urlParams(){
+  const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString() });
+  if (ALT && ALT.toParams) for (const [k, v] of Object.entries(ALT.toParams() || {})) if (v !== undefined && v !== null && v !== "") p.set(k, v);
+  return p;
+}
 function writeURL(now){
   if (!ALT || !ALT.toParams) return;
   clearTimeout(urlTimer);
   const go = () => {
-    const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString() });
-    for (const [k, v] of Object.entries(ALT.toParams() || {})) if (v !== undefined && v !== null && v !== "") p.set(k, v);
+    const p = urlParams();
     try { history.replaceState(history.state, "", location.pathname + "?" + p.toString() + location.hash); } catch(e){}
   };
   now ? go() : (urlTimer = setTimeout(go, 250));
@@ -1006,6 +1366,17 @@ function start(){
     else { if (s.sel !== p.sel){ renderInspectors(); markSelected(); } if (s.hour !== p.hour) renderBack(); }
   });
   started = true;
+  /* "Report a problem" (REPORTER block): where the reader is and what they changed */
+  if (window.HPReport) HPReport.provide(() => {
+    const sc = ALT && changed() ? activeScenario() : null;
+    return {
+      label: `${META.name} page`,
+      settings: { level: state.level, hour: Math.round(state.hour * 100) / 100, phase: state.phase, speed: state.speed, paused: state.paused,
+                  selected: state.sel, scenario: sc ? sc.id : null, alter: Object.fromEntries([...urlParams()].filter(([k]) => k !== "level" && k !== "hour")) },
+      changes: ALT ? (ALT.items() || []).map(i => `${i.label} (${secName(i.section)})`) : [],
+      query: urlParams().toString()
+    };
+  });
   all();
   loop();
   if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }

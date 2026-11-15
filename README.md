@@ -55,7 +55,20 @@ Open `index.html` in any modern browser. No build step and no dependencies (Goog
   - **The view**: *Save settings* writes a JSON file (`humanphysiology.view`, version 1) with the reading level, hour, speed, shown and live systems, the journey being followed and how far along it is, and on organ pages the selected parts, every control, the changes and the scenario. *Load settings…*, or dropping the file anywhere on the page, brings that view back, and a file saved on another page opens that page first. *Copy link* gives a shareable link (the body's link now carries `shown=`, `live=none` and `play=1` too). *Data (CSV)* exports the readouts and live traces with units in the headers: the vitals now and through the day on the body, the hero stats and every readout on the organ pages, plus the Wiggers recording (heart), the breathing traces (lungs), the action potential (brain) and the day's water balance (kidneys). *All figures (ZIP)* bundles every figure as SVG and PNG with the settings and data.
   - The menu is one shared engine, kept between `EXPORT ENGINE` markers in `organs/_template.html` and copied into every organ page and `index.html` by `node organs/sync-engine.mjs`. `node tests/export-check.mjs` (Playwright) opens every page, exports every figure as SVG and PNG, records a WebM, a GIF and PNG frames, round-trips a settings file with a scenario applied, and checks the CSV.
 - **Four reading levels**: Middle school, High school, College and PhD / MD. A glossary links terms and shows their definitions as tooltips.
+- **Report a problem**: select any text on any page and press *Report this*, or use the flag button in the header (or the page footer). A short form asks what kind of problem it is and what it should say, then opens a GitHub issue filled in with the text, the words around it, the JSON key it comes from, the section, the settings on screen (reading level, time of day, body systems, ride, organ-page changes and scenario) and a link that reopens the page exactly as the reader saw it. The main page reads `?level=&hour=&topic=&shown=&live=&ride=<kind>:<id>` for that.
 
 Values are typical for a healthy adult and simplified for teaching. This is not medical advice.
 
 The structure follows the [Oak Year](../OakYear) template. See the architecture notes at the top of `index.html`.
+
+## Reporting problems
+
+Reader reports arrive as GitHub issues labelled `report`, through the issue form `.github/ISSUE_TEMPLATE/report.yml`. Each one ends with a JSON block, filled in by the app, that holds:
+- where the text comes from, as a JSON key such as `body-content:topics.heart.phases.exercise.college`;
+- the section and heading it sits under;
+- the settings on screen;
+- a `repro` link that reopens the page as the reader saw it.
+
+One-time setup: create a label named `report` (Issues → Labels). GitHub only applies a form's labels if they already exist.
+
+The form's code is the `REPORTER` block in `organs/_template.html`. `node organs/sync-engine.mjs` copies it into every organ page and `index.html`. To file reports without a GitHub account later, set its `ENDPOINT` to a relay that creates the issue.

@@ -8,7 +8,7 @@ The README describes what already exists. This file only lists what doesn't exis
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 13: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat | New organs: see [New organs for the body](#new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 3: heart, lungs, brain | 10 existing organs + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 4: heart, lungs, brain, kidneys | 9 existing organs + any new ones |
 | Body systems animated on the body | 6: circulatory, nervous, endocrine, respiratory, digestive, urinary | 4: immune & lymphatic, muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | One per new system, plus cross-system journeys |
 
@@ -32,8 +32,8 @@ These are the conventions the heart, lungs and brain pages set. Each new page sh
 
 Ordered roughly by teaching value and by how much the existing body simulation already gives each page to build on.
 
-### 1.1 Kidneys (`organs/kidneys.html`)
-The body already models GFR, ADH, renin and the four drop journeys, so this is the most natural next page.
+### 1.1 Kidneys (`organs/kidneys.html`) ✅ Done
+Built as planned below; see the README for what it covers. Still open for this page: a Starling-based clearance calculator you fill in yourself, K⁺ handling as its own interactive section, an AKI section that separates prerenal, renal and postrenal injury, and passing a condition across to the heart and lungs pages.
 - **Anatomy**: the kidney in coronal section (cortex, medullary pyramids, calyces, pelvis, renal artery and vein, ureter), then a nephron (glomerulus, Bowman's capsule, PCT, loop of Henle, DCT, collecting duct, vasa recta, juxtaglomerular apparatus).
 - **Filtration**: Starling forces across the glomerulus (glomerular capillary pressure, Bowman's pressure, oncotic pressure) give GFR live. Use sliders for afferent and efferent arteriolar tone, show autoregulation (myogenic response and tubuloglomerular feedback) holding GFR steady over a range of blood pressure, and add a clearance calculator (inulin, creatinine, PAH).
 - **Concentrating urine**: a countercurrent multiplier you can step through, with the osmolality gradient building from 300 to 1200 mOsm/kg, urea recycling, and ADH and aquaporin-2 setting the final urine concentration. Include a water-deprivation versus water-load test.
@@ -224,7 +224,7 @@ These span several organs and are best built as their own pages (for example `ex
 
 ## Suggested order
 
-1. Kidneys page: it builds on the urinary system and drop journeys already on the body.
+1. ~~Kidneys page~~ (done).
 2. Gut, liver and pancreas pages, a connected trio that builds on the bite journeys and the insulin/glucagon channels.
 3. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.
 4. Muscles and bones pages, then the muscles & skeleton system on the body.

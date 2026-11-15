@@ -5,12 +5,16 @@
    so all pages run the same engine and the same "Report a problem" form.
      node organs/sync-engine.mjs           update the pages
      node organs/sync-engine.mjs --check   only list pages that are out of date (exit 1)
+     --dir <organs folder>                 work on another checkout (the nightly triage
+                                           runs a pristine copy of this script on the
+                                           working tree)
    No dependencies. */
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const dir = dirname(fileURLToPath(import.meta.url));
+const argDir = process.argv.indexOf("--dir");
+const dir = argDir > 0 ? process.argv[argDir + 1] : dirname(fileURLToPath(import.meta.url));
 const check = process.argv.includes("--check");
 const ENGINE = ["ORGAN ENGINE CSS", "ORGAN ENGINE JS"], REPORTER = ["REPORTER CSS", "REPORTER JS"];
 const re = k => new RegExp(`(/\\* ===== ${k} · BEGIN[^\\n]*\\n)([\\s\\S]*?)(/\\* ===== ${k} · END ===== \\*/)`);

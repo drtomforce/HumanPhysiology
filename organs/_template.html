@@ -678,7 +678,9 @@ async function send(r){
       const res = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) });
       if (res.ok){
         const j = await res.json().catch(() => ({}));
-        thanks(`<p>Your report has been filed${j.url ? ` as <a href="${esc(j.url)}" target="_blank" rel="noopener">an issue on GitHub</a>` : ""}. It will be checked tonight.</p>`);
+        /* only ever link to an issue in this repository, whatever the relay sends back */
+        const ok = typeof j.url === "string" && j.url.startsWith(`https://github.com/${REPO}/issues/`);
+        thanks(`<p>Your report has been filed${ok ? ` as <a href="${esc(j.url)}" target="_blank" rel="noopener">an issue on GitHub</a>` : ""}. It will be checked tonight.</p>`);
         return;
       }
     } catch(e){}

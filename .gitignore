@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# nightly triage (.github/triage)
+node_modules/
+.triage/

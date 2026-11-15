@@ -48,7 +48,34 @@ Open `index.html` in any modern browser. No build step and no dependencies (Goog
   - **Scenarios and a healthy reference** (all organ pages): the changes bar has a *Scenarios* menu of ready-made cases that set several controls at once and say what each shows, for example an inferior heart attack with complete heart block, heart failure, septic shock or an athlete’s heart; an asthma attack, COPD on a plane, fibrosis on a run or the summit of Everest; a middle cerebral artery stroke, fainting, a panic attack, multiple sclerosis or an all-nighter. Once anything is changed, an untouched healthy organ runs alongside for comparison: the heart’s pressure–volume loop and the lungs’ flow and volume traces show it dashed, readouts show ▲/▼ how far each value has moved from it, and the hero stats add the healthy value.
   - **Adding an organ**: copy `organs/_template.html` to `organs/<id>.html`, fill in its JSON blocks (text at four levels, parts, body-systems lens), draw its figures, and add it to `ORGAN_PAGES` in `index.html`. The shared engine sits between `ORGAN ENGINE` markers: edit it in the template and run `node organs/sync-engine.mjs` to copy it into every page (`--check` reports pages that are out of date). A page can register its changes with `OrganPage.alter()` to get the changes bar, the “Because of …” notes, scenarios (`alter.scenarios` in its content) and shareable links, and use `OrganPage.delta()` to compare readouts with a healthy reference.
 - **Four reading levels**: Middle school, High school, College and PhD / MD. A glossary links terms and shows their definitions as tooltips.
+- **Report a problem**: select any text on any page and press *Report this*, or use the flag button in the header (or the page footer). A short form asks what kind of problem it is and what it should say, then opens a GitHub issue filled in with the text, the words around it, the JSON key it comes from, the section, the settings on screen (reading level, time of day, body systems, ride, organ-page changes and scenario) and a link that reopens the page exactly as the reader saw it. The main page reads `?level=&hour=&topic=&shown=&live=&ride=<kind>:<id>` for that.
 
 Values are typical for a healthy adult and simplified for teaching. This is not medical advice.
 
 The structure follows the [Oak Year](../OakYear) template. See the architecture notes at the top of `index.html`.
+
+## Reporting problems and the nightly triage
+
+Reader reports arrive as GitHub issues (the form is `.github/ISSUE_TEMPLATE/report.yml`, labelled `report` and `triage:pending`). Every night `.github/workflows/nightly-triage.yml` runs Claude Code on them, following the rules in `.github/triage/TRIAGE.md`. For each report it:
+- reproduces it in a headless browser;
+- judges it against the reading level;
+- then does one of three things:
+  - opens a small fix PR, labelled `verdict:fixed`;
+  - rejects it with an explanation (`verdict:rejected`) or closes it as a duplicate;
+  - leaves a brief for you (`needs-human`).
+
+Fix PRs are never merged automatically. A table of the night's decisions is in the run's summary.
+
+One-time setup:
+1. Add the repository secret `ANTHROPIC_API_KEY`, or `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`.
+2. Under Settings → Actions → General → Workflow permissions, choose "Read and write permissions" and tick "Allow GitHub Actions to create and approve pull requests".
+3. Run *Nightly triage of reports* once from the Actions tab. This creates the labels. Tick *dry run* to see its judgements without anything being posted.
+4. Recommended: protect `main` so that changes go in only through pull requests.
+
+To send a `needs-human` issue back through triage, reply with your decision and add `triage:pending` again.
+
+Checks anyone can run locally (they need Playwright):
+- `node .github/triage/check.mjs smoke` loads every page on desktop and phone and fails on script errors or out-of-date shared blocks.
+- `node .github/triage/check.mjs repro "<link>" --text "<text>"` opens a report's link against your working copy.
+
+The form's code is the `REPORTER` block in `organs/_template.html`. `node organs/sync-engine.mjs` copies it into every organ page and `index.html`. To file reports without a GitHub account later, set its `ENDPOINT` to a relay that creates the issue.

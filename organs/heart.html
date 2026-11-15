@@ -30,7 +30,9 @@
    CORONARY  The coronary tree (segments, dominance), the AHA 17-segment
              territories each segment feeds, and each segment's ST signature.
    FIGURES   Frontal section (anatomy, flow, conduction), Wiggers diagram and
-             pressure–volume loop, coronary surface view, bull's-eye, 12-lead
+             pressure–volume loop, a beating 3D coronary model (software 3D on
+             a canvas: vessels ride the wall, blood flows with the simulated
+             coronary flow, ischaemic segments bulge), bull's-eye, 12-lead
              ECG and the stacked action-potential / ECG strip.
 ================================================================================
 -->
@@ -251,7 +253,11 @@ a{ color:inherit; }
   --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c; --trace:#EEE6DE;
   --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0;
 }
-#anatomyFig, #conductionFig, #coronaryFig{ max-height:600px; margin:0 auto; }
+#anatomyFig, #conductionFig{ max-height:600px; margin:0 auto; }
+canvas.cor3d{ display:block; width:100%; touch-action:pan-y; cursor:grab; border-radius:12px; outline-offset:3px; }
+.cor-views{ margin-top:-2px; }
+.cor-parts{ margin-top:8px; }
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 #bullseye{ max-width:260px; margin:6px auto 0; display:block; }
 .h-myo{ fill:var(--myo); stroke:var(--myo-line); stroke-width:1.5; }
 .h-septum{ fill:var(--myo-2); }
@@ -277,17 +283,6 @@ a{ color:inherit; }
 .cond-mode .h-o2, .cond-mode .h-co2{ opacity:.35; }
 .cond-mode .v-o2, .cond-mode .v-co2{ opacity:.45; }
 .wave{ pointer-events:none; mix-blend-mode:normal; }
-.cor-surface{ fill:var(--myo); stroke:var(--myo-line); stroke-width:1.5; }
-.cor-groove{ fill:none; stroke:var(--fat); stroke-width:9; stroke-linecap:round; opacity:.85; }
-.cor-art{ fill:none; stroke-linecap:round; stroke-linejoin:round; }
-.cor-art.back{ stroke-dasharray:5 5; }
-.cor-hit{ fill:none; stroke:transparent; stroke-width:18; stroke-linecap:round; }
-.cor-vein{ fill:none; stroke:var(--vein-c); stroke-linecap:round; opacity:.9; }
-.cor-vein.back{ stroke-dasharray:4 5; }
-.hide-veins .cor-vein, .hide-veins .cor-vein-hit{ display:none; }
-.cor-occl .cor-art.down{ stroke:var(--line-strong) !important; stroke-dasharray:2 4; }
-.cor-zone{ pointer-events:none; }
-.clot{ fill:var(--ink); stroke:var(--surface); stroke-width:2; }
 .bull path{ stroke:var(--surface); stroke-width:2; cursor:default; }
 .bull text{ font:600 10.5px var(--sans); fill:var(--ink); pointer-events:none; }
 .bull .hit text{ fill:var(--surface); }
@@ -416,14 +411,16 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid">
       <div class="panel fig">
         <div class="fig-tools" data-tools></div>
-        <svg id="coronaryFig" viewBox="0 0 560 580" role="img" aria-label="The front of the heart with its coronary arteries and veins"></svg>
+        <div class="fig-tools cor-views" id="corViews"><span>View</span></div>
+        <canvas id="corCanvas" class="cor3d" height="560" tabindex="0" role="img" aria-label="A beating 3D heart with its coronary arteries and veins. Drag or use the arrow keys to turn it; the buttons below pick each vessel."></canvas>
         <div class="legend">
           <span><i style="--c:var(--lad)"></i>Left anterior descending (LAD)</span>
           <span><i style="--c:var(--lcx)"></i>Circumflex (LCx)</span>
           <span><i style="--c:var(--rca)"></i>Right coronary (RCA)</span>
           <span><i style="--c:var(--vein-c)"></i>Cardiac veins</span>
         </div>
-        <p class="cap">Dashed vessels run over the back of the heart. Tap an artery, then block it to see what happens.</p>
+        <div class="chips cor-parts" id="corParts" aria-label="Vessels on the model"></div>
+        <p class="cap">Drag to turn the heart (arrow keys work too). White dots are blood: in the left coronary they surge between beats, when the squeeze lets go. Dashed vessels are on the far side. Tap an artery, then block it: the starved wall darkens and bulges out instead of squeezing.</p>
       </div>
       <aside class="side">
         <div class="panel insp" data-inspector></div>
@@ -2307,115 +2304,588 @@ let lastPh = -1;
 /* =========================================================================
    CORONARY FIGURE, bull's-eye, 12-lead ECG and coronary flow
    ========================================================================= */
-const COR = {
-  grooves: ["M298 238 C252 250 200 272 166 318 C152 340 152 372 158 400", "M352 238 C400 240 446 254 478 276", "M354 238 C358 300 366 380 376 450 C382 490 392 524 402 548"],
-  raa: "M262 214 C240 204 214 212 208 232 C224 242 252 244 276 236 Z", laa: "M416 238 C432 220 458 222 466 238 C452 250 432 252 414 248 Z",
-  arteries: [
-    { seg: "rcaProx", part: "rca", d: "M322 236 L300 238 C262 246 212 266 176 300", w: 6.5 },
-    { seg: "rcaProx", part: "rca", d: "M296 240 C288 254 288 266 296 278", w: 2.5, name: "conus" },
-    { seg: "rcaProx", part: "rca", d: "M288 242 C262 226 222 210 194 204", w: 2.5, name: "SA nodal" },
-    { seg: "rcaDist", part: "rca", d: "M176 300 C156 326 152 370 160 404 C168 432 186 454 212 470", w: 6 },
-    { seg: "rcaDist", part: "rca", d: "M160 398 C200 412 252 432 300 452", w: 3, name: "acute marginal" },
-    { seg: "rcaDist", part: "rca", d: "M212 470 C232 486 250 496 270 502", w: 4.5, back: true },
-    { seg: "pda", part: "pda", d: "M270 502 C292 520 318 532 346 538", w: 4, back: true },
-    { seg: "pl", part: "pl", d: "M270 502 C320 514 400 516 456 494", w: 3.5, back: true },
-    { seg: "lm", part: "lm", d: "M340 234 C348 234 356 236 362 238", w: 8 },
-    { seg: "ladProx", part: "lad", d: "M362 238 C362 262 362 282 363 300", w: 6.5 },
-    { seg: "ladProx", part: "lad", d: "M362 268 L346 286", w: 2, name: "septal", back: true },
-    { seg: "ladMid", part: "lad", d: "M363 300 C366 350 370 400 376 440", w: 5.5 },
-    { seg: "ladMid", part: "lad", d: "M365 330 L349 350 M368 372 L352 390", w: 2, name: "septal", back: true },
-    { seg: "ladMid", part: "d1", d: "M370 386 C396 400 426 424 450 452", w: 3, name: "second diagonal" },
-    { seg: "ladDist", part: "lad", d: "M376 440 C382 490 392 522 404 548 C410 560 420 556 424 544", w: 4.5 },
-    { seg: "d1", part: "d1", d: "M363 294 C390 310 420 336 446 368", w: 3.5 },
-    { seg: "lcx", part: "lcx", d: "M362 238 C404 242 446 256 478 278 C490 288 498 300 502 312", w: 6 },
-    { seg: "lcx", part: "lcx", d: "M502 312 C506 380 490 450 456 494", w: 4, back: true },
-    { seg: "om", part: "om", d: "M474 274 C488 320 492 380 482 432", w: 3.5 }
-  ],
-  veins: [
-    { part: "gcv", d: "M386 546 C380 500 376 440 372 380 C370 330 370 290 374 252 C410 248 450 262 484 286", w: 4 },
-    { part: "cs", d: "M490 300 C490 380 440 470 360 500 C320 512 280 500 252 470", w: 7, back: true },
-    { part: "acv", d: "M232 330 C220 320 208 312 196 308 M262 380 C240 360 214 344 186 336", w: 3 },
-    { part: "acv", d: "M170 316 C176 290 200 266 240 252", w: 2.5 }
-  ],
-  zones: {
-    anterior: { segs: [1, 2, 7, 8, 13, 14], d: "M352 250 C330 300 330 400 350 470 C366 510 386 536 402 548 C420 540 440 520 452 500 C440 440 420 360 400 290 C390 262 372 248 352 250 Z" },
-    apex: { segs: [17], d: "M362 530 C380 512 420 512 436 528 C426 548 404 560 384 554 C372 548 364 540 362 530 Z" },
-    lateral: { segs: [5, 6, 11, 12, 16], d: "M440 268 C470 288 494 340 496 400 C496 450 480 492 458 514 C440 470 434 400 428 330 C426 300 430 280 440 268 Z" },
-    inferior: { segs: [3, 4, 9, 10, 15], d: "M184 436 C230 488 300 528 372 546 L368 528 C300 512 240 484 198 440 Z" },
-    rv: { rv: true, d: "M176 322 C200 300 280 282 342 298 C348 380 352 450 360 500 C300 482 232 444 188 404 C176 384 172 352 176 322 Z" }
+/* -------------------------------------------------------------------------
+   3D CORONARY MODEL: a beating heart drawn in software 3D on a canvas
+   (no WebGL, no library). Painter's algorithm over a few thousand faces.
+   Heart coordinates: the ventricles are a blunt cone, u runs from the base
+   (0; negative values round off into the top) to the apex (1), θ in degrees
+   around the long axis: 0° faces forward, +90° the left side, 180° the back.
+   Coronary vessels are curves in (u, θ), so they ride on the wall as it beats.
+   Every point of the wall knows its AHA segment, so an ischaemic wall darkens
+   and bulges in systole instead of squeezing (dyskinesis).
+   ------------------------------------------------------------------------- */
+const D2R = Math.PI / 180;
+const TH_ANT = 25, TH_POST = 200, VH = 1.6, U_TOP = -.16;
+const wrap360 = a => ((a % 360) + 360) % 360;
+const angD = (a, b) => { const d = wrap360(a - b); return d > 180 ? d - 360 : d; };
+const ART_COLOR = { lad: "var(--lad)", lcx: "var(--lcx)", rca: "var(--rca)", lm: "var(--lad)" };
+const ART_VAR = { lad: "--lad", lcx: "--lcx", rca: "--rca", lm: "--lad" };
+/* the AHA segment (1–17) under a point of the wall, "rv" for the right ventricle, 0 for the base */
+function segmentAt(u, th){
+  if (u < .03) return 0;
+  if (u > .9) return 17;
+  const p = wrap360(th - TH_ANT), span = TH_POST - TH_ANT;
+  let wall;
+  if (p <= span) wall = p < 42 ? "ant" : p < 95 ? "antlat" : p < 140 ? "inflat" : "inf";
+  else if (p < span + 16) wall = "infsep";
+  else if (p > 344) wall = "antsep";
+  else return "rv";
+  if (u < .64){ const b = { ant: 1, antsep: 2, infsep: 3, inf: 4, inflat: 5, antlat: 6 }[wall]; return u < .36 ? b : b + 6; }
+  return { ant: 13, antsep: 14, infsep: 14, inf: 15, inflat: 16, antlat: 16 }[wall];
+}
+/* the resting shape of the ventricles */
+function shapeR(u, th){
+  const uu = Math.max(0, u);
+  let r = Math.sqrt(Math.max(0, 1 - Math.pow(uu, 2.3)));
+  if (u < 0) r *= Math.sqrt(Math.max(0, 1 - (u / U_TOP) ** 2));
+  r *= 1 + .1 * Math.cos((th - 105) * D2R);                       /* the left ventricle bulges out to the left */
+  r *= 1 - .14 * Math.max(0, Math.cos((th - 192) * D2R)) ** 3;     /* the flat diaphragmatic surface */
+  const g = 1 - .7 * uu;                                           /* grooves for the arteries */
+  r *= 1 - .045 * g * (gauss(angD(th, TH_ANT), 0, 6) + gauss(angD(th, TH_POST), 0, 6)) - .04 * gauss(u, 0, .035);
+  return r;
+}
+/* the heart is tilted in the chest: apex forward, down and to the left */
+const TILT_A = 38 * D2R, TILT_B = -24 * D2R;
+function h2w(p){
+  const x = p[0] * Math.cos(TILT_A) - p[1] * Math.sin(TILT_A), y = p[0] * Math.sin(TILT_A) + p[1] * Math.cos(TILT_A), z = p[2];
+  return [x, y * Math.cos(TILT_B) - z * Math.sin(TILT_B), y * Math.sin(TILT_B) + z * Math.cos(TILT_B)];
+}
+const v3 = { add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; } };
+function catmull(p0, p1, p2, p3, t){
+  const t2 = t * t, t3 = t2 * t;
+  return p1.map((_, i) => .5 * (2 * p1[i] + (-p0[i] + p2[i]) * t + (2 * p0[i] - 5 * p1[i] + 4 * p2[i] - p3[i]) * t2 + (-p0[i] + 3 * p1[i] - 3 * p2[i] + p3[i]) * t3));
+}
+function spline(pts, per){
+  const out = [];
+  for (let i = 0; i < pts.length - 1; i++){
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    for (let k = 0; k < per; k++) out.push(catmull(p0, p1, p2, p3, k / per));
   }
-};
-let domChoice = null;
-const corSvg = $("#coronaryFig");
-const corRefs = { arts: [], zones: {} };
-(() => {
-  const svg = corSvg;
-  const defs = el("defs", {}, svg);
-  const pat = el("pattern", { id: "hatch", width: 7, height: 7, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
-  el("rect", { width: 7, height: 7, fill: "var(--ischemia)", opacity: .35 }, pat);
-  el("line", { x1: 0, y1: 0, x2: 0, y2: 7, stroke: "var(--ischemia)", "stroke-width": 3, opacity: .55 }, pat);
-  /* great vessels behind */
-  el("path", { d: "M466 150 L466 282", class: "v-wall", "stroke-width": 38 }, svg); el("path", { d: "M466 150 L466 282", class: "v-o2", "stroke-width": 30 }, svg);
-  el("path", { d: G.svc, class: "v-wall", "stroke-width": 40 }, svg); el("path", { d: G.svc, class: "v-co2", "stroke-width": 32 }, svg);
-  el("path", { d: G.ao.replace(" L466 282", ""), class: "v-wall", "stroke-width": 44 }, svg);
-  G.aoBranches.forEach(d => { el("path", { d, class: "v-wall", "stroke-width": 18 }, svg); el("path", { d, class: "v-o2", "stroke-width": 12 }, svg); });
-  el("path", { d: G.ao.replace(" L466 282", ""), class: "v-o2", "stroke-width": 36, "data-part": "aorticValve" }, svg);
-  /* heart surface */
-  el("path", { d: G.out, class: "cor-surface", "data-part": "myocardium" }, svg);
-  COR.grooves.forEach(d => el("path", { d, class: "cor-groove" }, svg));
-  el("path", { d: COR.raa, class: "cor-surface", "data-part": "ra" }, svg);
-  el("path", { d: COR.laa, class: "cor-surface", "data-part": "la" }, svg);
-  el("path", { d: G.lpa, class: "v-wall", "stroke-width": 28 }, svg); el("path", { d: G.lpa, class: "v-co2", "stroke-width": 21, "data-part": "pulmonaryTrunk" }, svg);
-  el("path", { d: G.pt, class: "v-wall", "stroke-width": 40 }, svg); el("path", { d: G.pt, class: "v-co2", "stroke-width": 32, "data-part": "pulmonaryTrunk" }, svg);
-  /* ischaemic zones */
-  const zg = el("g", {}, svg);
-  for (const [k, z] of Object.entries(COR.zones)) corRefs.zones[k] = el("path", { d: z.d, fill: "url(#hatch)", class: "cor-zone", opacity: 0 }, zg);
-  /* veins, then arteries */
-  const vg = el("g", {}, svg);
-  COR.veins.forEach(v => { el("path", { d: v.d, class: "cor-hit cor-vein-hit", "data-part": v.part }, vg); el("path", { d: v.d, class: "cor-vein" + (v.back ? " back" : ""), "stroke-width": v.w, "data-part": v.part }, vg); });
-  const ag = el("g", {}, svg);
-  COR.arteries.forEach(a => {
-    const hit = el("path", { d: a.d, class: "cor-hit", "data-part": a.part }, ag);
-    const p = el("path", { d: a.d, class: "cor-art" + (a.back ? " back" : ""), "stroke-width": a.w, "data-part": a.part }, ag);
-    corRefs.arts.push({ a, p, hit });
+  out.push(pts[pts.length - 1].slice());
+  return out;
+}
+/* fixed landmarks (heart coordinates) */
+const RA_C = [-.8, .3, .02], LA_C = [.12, .34, -.64], AO_ROOT = [-.12, .1, .16], PT_ROOT = [.32, .1, .58];
+const OST = { rca: [-.24, .16, .42], lm: [.08, .17, .3] };
+/* the coronary tree as curves over the wall. Points are [u, θ] on the surface or { p } fixed in heart coordinates. */
+function vesselDefs(dom){
+  const V = [];
+  const A = (seg, part, w, pts, o = {}) => V.push({ kind: "a", seg, part, w, pts, ...o });
+  const W = (part, w, pts, o = {}) => V.push({ kind: "v", seg: "", part, w, pts, ...o });
+  A("lm", "lm", .085, [{ p: OST.lm }, [-.085, 2], [-.06, 16]], { label: "Left main", la: .6 });
+  A("ladProx", "lad", .07, [[-.06, 16], [-.01, 23], [.1, 25], [.22, 25.5]]);
+  A("ladMid", "lad", .06, [[.22, 25.5], [.42, 25.5], [.62, 27]], { label: "LAD", la: .5 });
+  A("ladDist", "lad", .05, [[.62, 27], [.8, 31], [.93, 48], [.985, 100]]);
+  A("d1", "d1", .04, [[.12, 25.5], [.26, 42], [.44, 58], [.64, 70]], { label: "Diagonal", la: .7 });
+  A("ladMid", "d1", .032, [[.42, 25.5], [.56, 41], [.74, 54]], { name: "second diagonal" });
+  const lcxEnd = dom === "left" ? [[0, 150], [0, 180], [0, 200]] : dom === "co" ? [[0, 145], [-.002, 168]] : [];
+  A("lcx", "lcx", .065, [[-.06, 16], [-.035, 40], [-.016, 75], [-.01, 112], ...lcxEnd], { label: "LCx", la: dom === "right" ? .55 : .3 });
+  A("om", "om", .04, [[-.015, 84], [.18, 91], [.42, 97], [.68, 103]], { label: "OM", la: .65 });
+  A("rcaProx", "rca", .075, [{ p: OST.rca }, [-.07, -16], [-.03, -45], [-.012, -80]], { label: "RCA", la: .7 });
+  A("rcaProx", "rca", .03, [[-.065, -20], [.04, -10], [.15, -2]], { name: "conus" });
+  A("rcaProx", "rca", .028, [[-.055, -30], { p: [RA_C[0] + .2, RA_C[1] + .42, RA_C[2] + .16] }], { name: "SA nodal" });
+  A("rcaDist", "rca", .068, dom === "left" ? [[-.012, -80], [-.006, -100], [0, -118]] : [[-.012, -80], [-.006, -110], [0, -138], [0, -160]]);
+  A("rcaDist", "rca", .033, [[-.008, -86], [.25, -82], [.5, -74], [.72, -62]], { name: "acute marginal" });
+  A("pda", "pda", .05, dom === "left" ? [[0, 200], [.25, 199.5], [.55, 198], [.82, 190]] : [[0, -160], [.25, -160.5], [.55, -162], [.82, -170]], { label: "PDA", la: .55 });
+  A("pl", "pl", .04, dom === "right" ? [[0, -160], [-.002, -176], [.15, -186], [.38, -194], [.6, -200]] : [[-.004, 168], [.18, 164], [.4, 159], [.62, 155]]);
+  W("gcv", .042, [[.84, 41], [.55, 34], [.25, 33], [.035, 33], [.016, 58], [.012, 100], [.012, 150]]);
+  W("cs", .08, [[.012, 150], [.008, 182], [.004, 214], { p: [RA_C[0] + .22, RA_C[1] - .26, RA_C[2] - .3] }]);
+  W("acv", .03, [[.46, -34], [.22, -44], [.03, -54], { p: [RA_C[0] + .16, RA_C[1] - .06, RA_C[2] + .42] }]);
+  W("acv", .026, [[.5, -70], [.25, -75], [.03, -82], { p: [RA_C[0] - .05, RA_C[1] - .1, RA_C[2] + .44] }]);
+  return V;
+}
+const rgbMemo = new Map();
+function rgb(cssColor){
+  let v = rgbMemo.get(cssColor);
+  if (!v){
+    const h0 = String(cssColor).trim().replace("#", ""), h = h0.length === 3 ? h0.split("").map(c => c + c).join("") : h0;
+    v = [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    if (v.some(Number.isNaN)) v = [136, 136, 136];
+    rgbMemo.set(cssColor, v);
+  }
+  return v;
+}
+const cmix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const rgbs = (c, k = 1, al) => { const r = Math.min(255, c[0] * k) | 0, g = Math.min(255, c[1] * k) | 0, b = Math.min(255, c[2] * k) | 0; return al == null ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${al})`; };
+
+const Cor3D = (() => {
+  const node = $("#corCanvas"), cv = makeCanvas(node);
+  const LIGHT = v3.norm([-.45, .6, .75]);
+  const DC = 7;
+  const cam = { yaw: -14, pitch: 6, ty: -14, tp: 6, spin: !O.reducedMotion, ghost: true, veins: true, labels: true };
+  let vessels = [], dom = null, hover = null, drag = null, pickSegs = [], faceItems = [];
+  const segVal = new Float32Array(18); let rvVal = 0;
+  let K = 0, KR = 0, LNG = 1, atr = 1, aoPulse = 1, clock = 0, lastDt = 0;
+
+  /* ---------- meshes ---------- */
+  const meshes = [];
+  function mesh(kind, part, nVert, faces, opts = {}){ const m = { kind, part, n: nVert, faces, hp: new Float32Array(nVert * 3), cp: new Float32Array(nVert * 3), sp: new Float32Array(nVert * 2), sign: new Int8Array(faces.length), ...opts }; meshes.push(m); return m; }
+  /* ventricles */
+  const NU = 34, NT = 52;
+  const vU = [], vT = [];
+  for (let i = 0; i <= NU; i++){ const s = i / NU, u = U_TOP + (1 - U_TOP) * (s < .25 ? s * s / .25 * .6 + s * .4 : s); for (let j = 0; j < NT; j++){ vU.push(Math.min(.999, u)); vT.push(j * 360 / NT); } }
+  const vFaces = [], vAttr = [];
+  for (let i = 0; i < NU; i++) for (let j = 0; j < NT; j++){
+    const a = i * NT + j, b = i * NT + (j + 1) % NT, c = (i + 1) * NT + (j + 1) % NT, d = (i + 1) * NT + j;
+    vFaces.push([a, b, c, d]);
+    const um = (vU[a] + vU[d]) / 2, tm = (j + .5) * 360 / NT;
+    const fat = Math.max(gauss(angD(tm, TH_ANT), 0, 7) * (1 - .8 * Math.max(0, um)), gauss(angD(tm, TH_POST), 0, 7) * (1 - .8 * Math.max(0, um)), gauss(um, 0, .05), um < 0 ? 1 : 0);
+    vAttr.push({ seg: segmentAt(um, tm), fat: clamp(fat), noise: mulb(i * 131 + j * 7) });
+  }
+  const vent = mesh("vent", "myocardium", vU.length, vFaces, { attr: vAttr });
+  const vSq = new Float32Array(vU.length), vSeg = vU.map((u, k) => segmentAt(u, vT[k]));
+  function surf(u, th, sq){
+    const r = shapeR(u, th) * sq, off = .2 * Math.pow(Math.max(0, u), 1.5), s = Math.sin(th * D2R), c = Math.cos(th * D2R);
+    return [r * s * 1.06 + off * .87, -u * VH * (u > 0 ? LNG : 1), r * c * .9 + off * .5];
+  }
+  const segIsch = seg => seg === "rv" ? rvVal : seg ? segVal[seg] : 0;
+  function squeeze(u, seg){
+    const w = smooth(-.04, .18, u), v = segIsch(seg), k = seg === "rv" ? KR : K;
+    return 1 - k * w * (1 - 1.45 * v);
+  }
+  /* atria and auricles: squashed spheres */
+  function sphere(part, c, rad, nla = 10, nlo = 18){
+    const faces = [], dirs = [];
+    for (let i = 0; i <= nla; i++) for (let j = 0; j < nlo; j++){ const ph = Math.PI * i / nla, la = 2 * Math.PI * j / nlo; dirs.push([Math.sin(ph) * Math.cos(la) * rad[0], Math.cos(ph) * rad[1], Math.sin(ph) * Math.sin(la) * rad[2]]); }
+    for (let i = 0; i < nla; i++) for (let j = 0; j < nlo; j++) faces.push([i * nlo + j, i * nlo + (j + 1) % nlo, (i + 1) * nlo + (j + 1) % nlo, (i + 1) * nlo + j]);
+    return mesh("sphere", part, dirs.length, faces, { c, dirs });
+  }
+  sphere("ra", RA_C, [.5, .46, .5]);
+  sphere("la", LA_C, [.58, .4, .46]);
+  sphere("la", [.8, .14, .26], [.17, .15, .3], 8, 14).auricle = true;
+  sphere("ra", [-.46, .3, .56], [.26, .17, .2], 8, 14).auricle = true;
+  /* great vessels: tubes in world coordinates */
+  function tube(part, start, offs, r, col, per = 5, nr = 14){
+    const pts = spline(offs.map(o => v3.add(start, o)), per), rings = [], faces = [];
+    let ref = [0, 0, 1];
+    pts.forEach((p, i) => {
+      const t = v3.norm(v3.sub(pts[Math.min(pts.length - 1, i + 1)], pts[Math.max(0, i - 1)]));
+      if (Math.abs(v3.dot(t, ref)) > .95) ref = Math.abs(t[0]) < .9 ? [1, 0, 0] : [0, 1, 0];
+      const a = v3.norm(v3.sub(ref, v3.mul(t, v3.dot(t, ref)))), b = v3.cross(t, a); ref = a;   /* parallel transport: no twist */
+      for (let k = 0; k < nr; k++){ const ang = 2 * Math.PI * k / nr; rings.push({ c: p, e: v3.add(v3.mul(a, Math.cos(ang)), v3.mul(b, Math.sin(ang))) }); }
+    });
+    for (let i = 0; i < pts.length - 1; i++) for (let k = 0; k < nr; k++) faces.push([i * nr + k, i * nr + (k + 1) % nr, (i + 1) * nr + (k + 1) % nr, (i + 1) * nr + k]);
+    const last = pts.length - 1; faces.push([...Array(nr).keys()].reverse().map(k => k)); faces.push([...Array(nr).keys()].map(k => last * nr + k));
+    return mesh("tube", part, rings.length, faces, { rings, r, col, pts });
+  }
+  const aoStart = v3.add(h2w(AO_ROOT), [0, -.05, 0]), ptStart = v3.add(h2w(PT_ROOT), [0, -.05, 0]), raW = h2w(RA_C);
+  const ao = tube("aorta", aoStart, [[0, 0, 0], [-.04, .5, 0], [-.07, 1.02, -.04], [.14, 1.42, -.32], [.5, 1.44, -.7], [.7, 1.04, -.86], [.74, .2, -.92]], .29, "o2", 4);
+  const ptEnd = [.26, .98, -.5];
+  tube("pulmonaryTrunk", ptStart, [[0, 0, 0], [.07, .42, -.04], [.18, .8, -.24], ptEnd], .27, "co2", 4);
+  tube("pulmonaryTrunk", v3.add(ptStart, ptEnd), [[0, 0, 0], [.32, .06, -.22], [.66, .02, -.36]], .17, "co2", 3, 12);
+  tube("pulmonaryTrunk", v3.add(ptStart, ptEnd), [[0, 0, 0], [-.36, -.02, -.3], [-.95, -.06, -.34]], .17, "co2", 3, 12);
+  tube("svc", v3.add(raW, [.02, .3, -.06]), [[0, 0, 0], [-.04, .6, -.04], [-.06, 1.3, -.06]], .21, "co2", 3, 12);
+  tube("ivc", v3.add(raW, [0, -.28, -.16]), [[0, 0, 0], [.02, -.45, -.12], [.04, -.95, -.2]], .23, "co2", 3, 12);
+  /* outward-facing sign of each face, from the resting shape */
+  function newell(P, f){ let nx = 0, ny = 0, nz = 0; for (let i = 0; i < f.length; i++){ const a = f[i] * 3, b = f[(i + 1) % f.length] * 3; nx += (P[a + 1] - P[b + 1]) * (P[a + 2] + P[b + 2]); ny += (P[a + 2] - P[b + 2]) * (P[a] + P[b]); nz += (P[a] - P[b]) * (P[a + 1] + P[b + 1]); } return [nx, ny, nz]; }
+  function centroid(P, f){ let x = 0, y = 0, z = 0; for (const i of f){ x += P[i * 3]; y += P[i * 3 + 1]; z += P[i * 3 + 2]; } return [x / f.length, y / f.length, z / f.length]; }
+
+  /* ---------- per-frame geometry ---------- */
+  function buildVent(){
+    const P = vent.hp;
+    for (let k = 0; k < vent.n; k++){ const sq = squeeze(vU[k], vSeg[k]); vSq[k] = sq; const p = surf(vU[k], vT[k], sq); P[k * 3] = p[0]; P[k * 3 + 1] = p[1]; P[k * 3 + 2] = p[2]; }
+  }
+  function buildSpheres(){
+    for (const m of meshes) if (m.kind === "sphere"){
+      const s = m.auricle ? atr * 1.04 : atr;
+      m.dirs.forEach((d, k) => { m.hp[k * 3] = m.c[0] + d[0] * s; m.hp[k * 3 + 1] = m.c[1] + d[1] * s; m.hp[k * 3 + 2] = m.c[2] + d[2] * s; });
+    }
+  }
+  function buildTubes(){
+    for (const m of meshes) if (m.kind === "tube"){
+      const r = m.r * (m.part === "aorta" ? aoPulse : 1);
+      m.rings.forEach((q, k) => { m.hp[k * 3] = q.c[0] + q.e[0] * r; m.hp[k * 3 + 1] = q.c[1] + q.e[1] * r; m.hp[k * 3 + 2] = q.c[2] + q.e[2] * r; });
+    }
+  }
+  /* world centre and size, from the resting pose */
+  buildVent(); buildSpheres(); buildTubes();
+  const CEN = (() => {
+    let lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+    for (const m of meshes) for (let k = 0; k < m.n; k++){ const p = [m.hp[k * 3], m.hp[k * 3 + 1], m.hp[k * 3 + 2]], w = m.kind === "tube" ? p : h2w(p); for (let i = 0; i < 3; i++){ lo[i] = Math.min(lo[i], w[i]); hi[i] = Math.max(hi[i], w[i]); } }
+    const c = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2 - .05, (lo[2] + hi[2]) / 2];
+    let r = 0; for (const m of meshes) for (let k = 0; k < m.n; k++){ const p = [m.hp[k * 3], m.hp[k * 3 + 1], m.hp[k * 3 + 2]], w = m.kind === "tube" ? p : h2w(p); r = Math.max(r, Math.hypot(w[0] - c[0], w[1] - c[1], w[2] - c[2])); }
+    return { c, r };
+  })();
+  for (const m of meshes){
+    m.faces.forEach((f, i) => {
+      const n = newell(m.hp, f), c = centroid(m.hp, f);
+      let ref;
+      if (m.kind === "vent"){ const u = vU[f[0]]; ref = [.2 * Math.pow(Math.max(0, u), 1.5) * .87, c[1], .2 * Math.pow(Math.max(0, u), 1.5) * .5]; }
+      else if (m.kind === "sphere") ref = m.c;
+      else ref = i === m.faces.length - 2 ? m.pts[1] : i === m.faces.length - 1 ? m.pts[m.pts.length - 2] : m.rings[f[0]].c;
+      m.sign[i] = v3.dot(n, v3.sub(c, ref)) >= 0 ? 1 : -1;
+    });
+  }
+  /* ---------- vessels ---------- */
+  function buildVessels(d){
+    dom = d;
+    vessels = vesselDefs(d).map(v => {
+      const S = [];
+      for (let i = 0; i < v.pts.length - 1; i++){
+        const a = v.pts[i], b = v.pts[i + 1], per = 7;
+        if (Array.isArray(a) && Array.isArray(b)){
+          const p0 = v.pts[Math.max(0, i - 1)], p3 = v.pts[Math.min(v.pts.length - 1, i + 2)];
+          const q0 = Array.isArray(p0) ? p0 : a, q3 = Array.isArray(p3) ? p3 : b;
+          for (let k = 0; k < per; k++){ const q = catmull(q0, a, b, q3, k / per); S.push({ u: q[0], th: q[1], t3: 0 }); }
+        } else {
+          const sp = Array.isArray(a) ? a : b, fix = Array.isArray(a) ? b.p : a.p;
+          for (let k = 0; k < per; k++){ const t = k / per, t3 = Array.isArray(a) ? smooth(0, 1, t) : 1 - smooth(0, 1, t); S.push({ u: sp[0], th: sp[1], t3, P3: fix }); }
+        }
+      }
+      const e = v.pts[v.pts.length - 1];
+      S.push(Array.isArray(e) ? { u: e[0], th: e[1], t3: 0 } : { u: v.pts[v.pts.length - 2][0], th: v.pts[v.pts.length - 2][1], t3: 1, P3: e.p });
+      S.forEach(s => { s.seg = segmentAt(s.u, s.th); });
+      const n = S.length, out = { ...v, S, n, hp: new Float32Array(n * 3), cp: new Float32Array(n * 3), sp: new Float32Array(n * 2), face: new Float32Array(n), len: 1 };
+      return out;
+    });
+    vessels.forEach(v => {
+      placeVessel(v);
+      let L = 0; for (let i = 1; i < v.n; i++) L += Math.hypot(v.hp[i * 3] - v.hp[i * 3 - 3], v.hp[i * 3 + 1] - v.hp[i * 3 - 2], v.hp[i * 3 + 2] - v.hp[i * 3 - 1]);
+      v.len = Math.max(.1, L);
+      const np = Math.max(3, Math.round(L * (v.kind === "a" ? 11 : 7)));
+      v.par = Float32Array.from({ length: np }, (_, i) => (i + mulb(i * 17 + v.n) * .6) / np);
+    });
+  }
+  const nrm = new Float32Array(3);
+  function placeVessel(v){
+    for (let i = 0; i < v.n; i++){
+      const s = v.S[i], sq = squeeze(s.u, s.seg), u = Math.min(.97, s.u);
+      const p0 = surf(u, s.th, sq), pu = surf(u + .012, s.th, sq), pt = surf(u, s.th + 1.5, sq);
+      let n = v3.norm(v3.cross(v3.sub(pt, p0), v3.sub(pu, p0)));
+      const ax = [.2 * Math.pow(Math.max(0, u), 1.5) * .87, p0[1], .2 * Math.pow(Math.max(0, u), 1.5) * .5];
+      if (v3.dot(n, v3.sub(p0, ax)) < 0) n = v3.mul(n, -1);
+      let p = v3.add(p0, v3.mul(n, v.w * .75));
+      if (s.t3 > 0) p = [lerp(p[0], s.P3[0], s.t3), lerp(p[1], s.P3[1], s.t3), lerp(p[2], s.P3[2], s.t3)];
+      v.hp[i * 3] = p[0]; v.hp[i * 3 + 1] = p[1]; v.hp[i * 3 + 2] = p[2];
+      s.n = n;
+    }
+  }
+  /* ---------- camera ---------- */
+  let MX = null;
+  function camMatrix(){
+    const cy = Math.cos(cam.yaw * D2R), sy = Math.sin(cam.yaw * D2R), cp = Math.cos(cam.pitch * D2R), spp = Math.sin(cam.pitch * D2R);
+    const W = p => { const x1 = p[0] * cy + p[2] * sy, z1 = -p[0] * sy + p[2] * cy; return [x1, p[1] * cp - z1 * spp, p[1] * spp + z1 * cp]; };
+    const Hm = [W(h2w([1, 0, 0])), W(h2w([0, 1, 0])), W(h2w([0, 0, 1]))], Wm = [W([1, 0, 0]), W([0, 1, 0]), W([0, 0, 1])], c = W(CEN.c);
+    MX = { Hm, Wm, c };
+  }
+  let F = 1, CX = 0, CY = 0;
+  function xform(src, dst, scr, n, heart){
+    const M = heart ? MX.Hm : MX.Wm, c = MX.c;
+    for (let k = 0; k < n; k++){
+      const x = src[k * 3], y = src[k * 3 + 1], z = src[k * 3 + 2];
+      const X = x * M[0][0] + y * M[1][0] + z * M[2][0] - c[0], Y = x * M[0][1] + y * M[1][1] + z * M[2][1] - c[1], Z = x * M[0][2] + y * M[1][2] + z * M[2][2] - c[2];
+      dst[k * 3] = X; dst[k * 3 + 1] = Y; dst[k * 3 + 2] = Z;
+      const q = F * DC / (DC - Z); scr[k * 2] = CX + X * q; scr[k * 2 + 1] = CY - Y * q;
+    }
+  }
+  const rotN = (n, heart) => { const M = heart ? MX.Hm : MX.Wm; return [n[0] * M[0][0] + n[1] * M[1][0] + n[2] * M[2][0], n[0] * M[0][1] + n[1] * M[1][1] + n[2] * M[2][1], n[0] * M[0][2] + n[1] * M[1][2] + n[2] * M[2][2]]; };
+  /* the camera direction that looks straight at a heart-frame normal */
+  function faceDir(nh){
+    const d = h2w(nh), yaw = Math.atan2(-d[0], d[2]), z1 = -d[0] * Math.sin(yaw) + d[2] * Math.cos(yaw);
+    return { yaw: yaw / D2R, pitch: clamp(Math.atan2(d[1], z1) / D2R, -70, 70) };
+  }
+  function turnTo(t){
+    let y = t.yaw; while (y - cam.yaw > 180) y -= 360; while (y - cam.yaw < -180) y += 360;
+    cam.ty = y; cam.tp = t.pitch; cam.spin = false; syncSpin();
+  }
+  function focusPart(part){
+    const vs = vessels.filter(v => partOf(v) === part); if (!vs.length) return;
+    let n = [0, 0, 0]; vs.forEach(v => v.S.forEach(s => { if (s.n && !s.t3) n = v3.add(n, s.n); }));
+    if (Math.hypot(...n) < 1e-6) return;
+    const t = faceDir(v3.norm(n)); t.pitch = clamp(t.pitch, -55, 55); turnTo(t);
+  }
+  const VIEWS = [["front", "Front", () => ({ yaw: -14, pitch: 6 })], ["left", "Left side", () => faceDir([1, -.1, -.15])], ["under", "Underside", () => { const t = faceDir(v3.norm([-.1, -.2, -1])); return { yaw: t.yaw, pitch: -48 }; }], ["right", "Right side", () => faceDir([-1, .05, .25])]];
+
+  /* ---------- state from the simulation ---------- */
+  function partOf(v){ return v.part === "pl" ? owner("pl", dom) : v.part; }
+  function ownerOf(v){ return v.kind === "v" ? "vein" : v.part === "pl" ? owner("pl", dom) : v.part === "pda" ? owner("pda", dom) : owner(v.seg, dom); }
+  let up = new Set(), aff = new Set();
+  function syncOccl(){
+    const S = Heart.S; aff = Heart.affected(); up = new Set();
+    if (S.occl) for (const s of ["lm", "ladProx", "ladMid", "lcx", "rcaProx", "rcaDist"]) if (s !== S.occl && downstream(s, S.dom).includes(S.occl)) up.add(s);
+    if (S.dom !== dom) buildVessels(S.dom);
+  }
+  function flowOf(v){
+    const S = Heart.S;
+    if (v.kind === "v") return .3 + .9 * S.el;
+    const own = ownerOf(v), right = own === "rca";
+    let f = right ? Math.max(0, S.Pa - .22 * S.el * S.Plv) / 95 : Math.max(0, S.Pa - .9 * S.el * S.Plv) / 95;
+    if (aff.has(v.seg)) f *= .03; else if (up.has(v.seg)) f *= .55;
+    return f;
+  }
+  function step(dt, real){
+    const S = Heart.S, b = Heart.beat;
+    const segsNow = Heart.affectedSegs(), k = 1 - Math.exp(-real / .45);
+    for (let n = 1; n <= 17; n++) segVal[n] += ((segsNow.has(n) ? 1 : 0) - segVal[n]) * k;
+    rvVal += ((aff.has("rcaProx") ? 1 : 0) - rvVal) * k;
+    const kl = clamp((b.edv - S.Vlv) / Math.max(20, b.edv - b.esv));
+    K = .12 * kl; KR = .1 * kl; LNG = 1 - .07 * kl;
+    atr = 1 - .07 * clamp((S.Pla - 6) / 6) * (S.rhythm === "afib" ? .2 : 1);
+    aoPulse = 1 + .05 * clamp((S.Pa - 80) / 40, -.5, 1.2);
+    clock += dt; lastDt = dt;
+    vessels.forEach(v => {
+      if (!dt) return;
+      const sp = flowOf(v) * (v.kind === "a" ? .95 : .45) * dt / v.len;
+      for (let i = 0; i < v.par.length; i++){ v.par[i] += sp; if (v.par[i] >= 1) v.par[i] -= 1; }
+    });
+    if (cam.spin && !drag) cam.ty += real * 9;
+    const e = 1 - Math.exp(-real / .35);
+    cam.yaw += (cam.ty - cam.yaw) * e; cam.pitch += (cam.tp - cam.pitch) * e;
+  }
+
+  /* ---------- drawing ---------- */
+  const CHUNK = 5;
+  function draw(){
+    const { ctx, w, h } = cv;
+    ctx.clearRect(0, 0, w, h);
+    F = Math.min(w, h) * .47 / CEN.r; CX = w / 2; CY = h / 2;
+    camMatrix(); buildVent(); buildSpheres(); buildTubes();
+    for (const m of meshes) xform(m.hp, m.cp, m.sp, m.n, m.kind !== "tube");
+    vessels.forEach(v => { placeVessel(v); xform(v.hp, v.cp, v.sp, v.n, true); for (let i = 0; i < v.n; i++){ const s = v.S[i]; if (s.t3 > .5){ v.face[i] = 1; continue; } const n = rotN(s.n, true), p = [v.cp[i * 3], v.cp[i * 3 + 1], v.cp[i * 3 + 2]]; v.face[i] = n[0] * -p[0] + n[1] * -p[1] + n[2] * (DC - p[2]) > 0 ? 1 : 0; } });
+    const col = {
+      myo: rgb(O.color("--myo")), myo2: rgb(O.color("--myo-2")), fat: rgb(O.color("--fat")), isch: rgb(O.color("--ischemia")),
+      o2: rgb(O.color("--blood-o2")), co2: rgb(O.color("--blood-co2")), peri: rgb(O.color("--peri")), sel: rgb(O.color("--sel")),
+      vein: rgb(O.color("--vein-c")), grey: rgb(O.color("--line-strong")), ink: O.color("--ink"), muted: O.color("--muted"), surface: O.color("--surface")
+    };
+    const atrium = cmix(col.myo, col.myo2, .55), selPart = (O.state().sel || {}).coronary;
+    const items = [];
+    /* faces */
+    for (const m of meshes){
+      const P = m.cp;
+      for (let i = 0; i < m.faces.length; i++){
+        const f = m.faces[i];
+        let nx = 0, ny = 0, nz = 0, cx = 0, cy = 0, cz = 0;
+        for (let a = 0; a < f.length; a++){ const p = f[a] * 3, q = f[(a + 1) % f.length] * 3; nx += (P[p + 1] - P[q + 1]) * (P[p + 2] + P[q + 2]); ny += (P[p + 2] - P[q + 2]) * (P[p] + P[q]); nz += (P[p] - P[q]) * (P[p + 1] + P[q + 1]); cx += P[p]; cy += P[p + 1]; cz += P[p + 2]; }
+        cx /= f.length; cy /= f.length; cz /= f.length;
+        const s = m.sign[i], L = Math.hypot(nx, ny, nz) || 1; nx *= s / L; ny *= s / L; nz *= s / L;
+        if (nx * -cx + ny * -cy + nz * (DC - cz) <= 0) continue;
+        let base;
+        if (m.kind === "vent"){
+          const at = m.attr[i], v = segIsch(at.seg);
+          base = col.myo;
+          if (v > .01) base = cmix(base, col.isch, v * (.78 + .06 * at.noise));
+          if (at.fat > .05) base = cmix(base, col.fat, at.fat * .42);
+        } else if (m.kind === "sphere") base = m.auricle ? cmix(atrium, col.myo, .3) : atrium;
+        else base = cmix(m.col === "o2" ? col.o2 : col.co2, col.peri, .38);
+        const lam = Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]), spec = Math.pow(Math.max(0, nz * .3 + lam * .7), 24) * .25;
+        let shade = .5 + .62 * lam;
+        if (m.part === selPart || hover === m.part) shade *= 1.12;
+        const c = cmix(base, [255, 255, 255], spec);
+        items.push({ z: cz, t: 0, m, f, col: rgbs(c, shade) });
+      }
+    }
+    /* vessel chunks */
+    const ghosts = [];
+    for (const v of vessels){
+      if (v.kind === "v" && !cam.veins) continue;
+      let i = 0;
+      while (i < v.n - 1){
+        const vis = v.face[i] && v.face[i + 1];
+        let j = i + 1;
+        while (j < v.n - 1 && j - i < CHUNK && (v.face[j + 1] ? 1 : 0) === (vis ? 1 : 0) && (v.face[j] ? 1 : 0) === (vis ? 1 : 0)) j++;
+        if (vis){ let z = -1e9; for (let k = i; k <= j; k++) z = Math.max(z, v.cp[k * 3 + 2]); items.push({ z: z + .14, t: 1, v, i0: i, i1: j }); }
+        else ghosts.push({ v, i0: i, i1: j });
+        i = j;
+      }
+    }
+    items.sort((a, b) => a.z - b.z);
+    faceItems = items; pickSegs = [];
+    ctx.lineJoin = "round";
+    for (const it of items){
+      if (it.t === 0){
+        const S = it.m.sp, f = it.f;
+        ctx.beginPath(); ctx.moveTo(S[f[0] * 2], S[f[0] * 2 + 1]);
+        for (let a = 1; a < f.length; a++) ctx.lineTo(S[f[a] * 2], S[f[a] * 2 + 1]);
+        ctx.closePath(); ctx.fillStyle = it.col; ctx.fill(); ctx.strokeStyle = it.col; ctx.lineWidth = .9; ctx.stroke();
+      } else drawChunk(ctx, it, col, selPart);
+    }
+    if (cam.ghost) for (const g of ghosts) drawGhost(ctx, g, col);
+    drawClot(ctx, col);
+    if (cam.labels) drawLabels(ctx, col);
+    if (Heart.S.occl) drawLumen(ctx, col);
+  }
+  function vesselRGB(v, col){
+    if (v.kind === "v") return col.vein;
+    const own = ownerOf(v), c = rgb(O.color(ART_VAR[own]));
+    return aff.has(v.seg) && Heart.S.occl ? cmix(c, col.grey, .72) : c;
+  }
+  function pxW(v, i){ return Math.max(1.4, v.w * 1.15 * F * DC / (DC - v.cp[i * 3 + 2])); }
+  function path(ctx, v, i0, i1){ ctx.beginPath(); ctx.moveTo(v.sp[i0 * 2], v.sp[i0 * 2 + 1]); for (let k = i0 + 1; k <= i1; k++) ctx.lineTo(v.sp[k * 2], v.sp[k * 2 + 1]); }
+  function drawChunk(ctx, it, col, selPart){
+    const { v, i0, i1 } = it, c = vesselRGB(v, col), wpx = pxW(v, Math.round((i0 + i1) / 2)), part = partOf(v);
+    const ends = i0 === 0 || i1 === v.n - 1;
+    ctx.lineCap = ends ? "round" : "butt";
+    if (part === selPart || part === hover){ path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(col.sel, 1, part === selPart ? .95 : .55); ctx.lineWidth = wpx + 7; ctx.stroke(); }
+    path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(c, .55); ctx.lineWidth = wpx + 1.6; ctx.stroke();
+    path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(c, 1); ctx.lineWidth = wpx; ctx.stroke();
+    path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(cmix(c, [255, 255, 255], .5), 1, .7); ctx.lineWidth = Math.max(.8, wpx * .28); ctx.stroke();
+    for (let k = i0; k < i1; k++) pickSegs.push({ x0: v.sp[k * 2], y0: v.sp[k * 2 + 1], x1: v.sp[k * 2 + 2], y1: v.sp[k * 2 + 3], w: wpx, part, z: it.z });
+    /* blood in the vessel */
+    const stalled = v.kind === "a" && aff.has(v.seg) && Heart.S.occl;
+    ctx.fillStyle = v.kind === "v" ? rgbs(cmix(col.vein, [255, 255, 255], .55), 1, .9) : stalled ? rgbs(col.isch, 1.4, .9) : "rgba(255,255,255,.92)";
+    const rr = Math.max(.9, wpx * .22);
+    for (const s of v.par){
+      const x = s * (v.n - 1); if (x < i0 || x >= i1) continue;
+      const k = Math.floor(x), t = x - k;
+      ctx.beginPath(); ctx.arc(lerp(v.sp[k * 2], v.sp[k * 2 + 2], t), lerp(v.sp[k * 2 + 1], v.sp[k * 2 + 3], t), rr, 0, 7); ctx.fill();
+    }
+  }
+  function drawGhost(ctx, g, col){
+    const { v, i0, i1 } = g, c = vesselRGB(v, col);
+    ctx.save(); ctx.setLineDash([4, 4]); ctx.lineCap = "butt";
+    path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(c, 1, .38); ctx.lineWidth = Math.max(1, pxW(v, i0) * .45); ctx.stroke(); ctx.restore();
+  }
+  /* the clot sits at the start of the blocked segment */
+  function clotSpot(){
+    const S = Heart.S; if (!S.occl) return null;
+    const v = vessels.find(x => x.seg === S.occl && !x.name && x.kind === "a"); if (!v) return null;
+    const i = Math.min(v.n - 1, 2);
+    return { v, i, x: v.sp[i * 2], y: v.sp[i * 2 + 1], face: v.face[i] };
+  }
+  function drawClot(ctx, col){
+    const c = clotSpot(); if (!c) return;
+    const r = pxW(c.v, c.i) * .85 + 2, pulse = 1 + .08 * Math.sin(clock * 6);
+    ctx.save(); ctx.globalAlpha = c.face ? 1 : .55;
+    ctx.beginPath(); ctx.arc(c.x, c.y, r * 2.1 * pulse, 0, 7); ctx.strokeStyle = rgbs(col.sel, 1, .9); ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, 7); ctx.fillStyle = "#3a0d10"; ctx.fill(); ctx.strokeStyle = col.surface; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
+  function drawLabels(ctx, col){
+    ctx.font = '600 11.5px "Schibsted Grotesk", system-ui, sans-serif'; ctx.textAlign = "center"; ctx.lineJoin = "round";
+    const put = (s, x, y) => { ctx.lineWidth = 3.5; ctx.strokeStyle = col.surface; ctx.strokeText(s, x, y); ctx.fillStyle = col.ink; ctx.fillText(s, x, y); };
+    for (const v of vessels){
+      if (!v.label) continue;
+      const i = Math.round((v.la || .5) * (v.n - 1)); if (!v.face[i]) continue;
+      const n = rotN(v.S[i].n, true), q = Math.hypot(n[0], n[1]) || 1, wpx = pxW(v, i);
+      put(v.label === "PDA" ? "PDA" : v.label, v.sp[i * 2] + n[0] / q * (wpx + 14), v.sp[i * 2 + 1] - n[1] / q * (wpx + 14) + 4);
+    }
+    for (const m of meshes) if (m.kind === "tube" && (m.part === "aorta" || m.part === "pulmonaryTrunk") && m.r > .2){
+      const nr = m.rings.length / m.pts.length, k = Math.round((m.pts.length - 1) * (m.part === "aorta" ? .42 : .7)) * nr;
+      let x = 0, y = 0, z = 0; for (let j = 0; j < nr; j++){ x += m.sp[(k + j) * 2]; y += m.sp[(k + j) * 2 + 1]; z += m.cp[(k + j) * 3 + 2]; }
+      if (z / nr < -.3) continue;
+      put(m.part === "aorta" ? "Aorta" : "Pulmonary trunk", x / nr, y / nr + 4);
+    }
+  }
+  /* close-up of the blocked artery: plaque, ruptured cap, clot, red cells piling up */
+  const cells = Array.from({ length: 34 }, (_, i) => ({ x: mulb(i * 7 + 3), y: mulb(i * 13 + 5) - .5, r: .7 + .5 * mulb(i * 29 + 1) }));
+  function drawLumen(ctx, col){
+    const { w, h } = cv, S = Heart.S, c = clotSpot(); if (!c) return;
+    const bw = Math.min(250, w * .44), bh = bw * .58, x0 = 10, y0 = h - bh - 10;
+    const wall = rgb(O.color(ART_VAR[ownerOf(c.v)]));
+    ctx.save();
+    ctx.fillStyle = col.surface; ctx.globalAlpha = .94; ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 10); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = O.color("--line-strong"); ctx.lineWidth = 1; ctx.stroke();
+    ctx.font = '600 11px "Schibsted Grotesk", system-ui, sans-serif'; ctx.textAlign = "left"; ctx.fillStyle = col.ink;
+    ctx.fillText(`Inside the ${OCCL_LABEL[S.occl]}`, x0 + 10, y0 + 16);
+    const lx = x0 + 10, lw = bw - 20, ly = y0 + 30, lh = bh - 52, mid = ly + lh / 2, R = lh / 2;
+    ctx.beginPath(); ctx.rect(lx, ly, lw, lh); ctx.clip();
+    /* lumen and walls */
+    ctx.fillStyle = rgbs(cmix(col.o2, [255, 255, 255], .7)); ctx.fillRect(lx, mid - R * .62, lw, R * 1.24);
+    ctx.fillStyle = rgbs(wall, .9); ctx.fillRect(lx, ly, lw, R * .38); ctx.fillRect(lx, mid + R * .62, lw, R * .38);
+    const cx = lx + lw * .46;
+    /* plaque under the wall with its torn fibrous cap */
+    ctx.fillStyle = rgbs(col.fat); ctx.beginPath(); ctx.ellipse(cx, mid + R * .62, lw * .2, R * .5, 0, Math.PI, 0); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(cx, mid + R * .62, lw * .2, R * .5, 0, Math.PI, Math.PI * 1.55); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, mid + R * .62, lw * .2, R * .5, 0, Math.PI * 1.7, Math.PI * 2); ctx.stroke();
+    /* the clot */
+    ctx.fillStyle = "#4a0f14"; ctx.beginPath();
+    ctx.moveTo(cx - lw * .02, mid + R * .25); ctx.bezierCurveTo(cx + lw * .02, mid - R * .9, cx + lw * .14, mid - R * .75, cx + lw * .2, mid - R * .62);
+    ctx.lineTo(cx + lw * .24, mid + R * .62); ctx.lineTo(cx + lw * .02, mid + R * .62); ctx.closePath(); ctx.fill();
+    for (let i = 0; i < 9; i++){ ctx.strokeStyle = "rgba(255,230,200,.35)"; ctx.lineWidth = .8; ctx.beginPath(); const a = mulb(i * 3 + 1), b = mulb(i * 5 + 2); ctx.moveTo(cx + lw * (.02 + .2 * a), mid - R * .5 + R * b); ctx.lineTo(cx + lw * (.05 + .18 * b), mid + R * .5 - R * a * .6); ctx.stroke(); }
+    /* red cells: they arrive with each beat and pile up against the clot; beyond it the blood stands still */
+    const f = Math.max(0, S.Pa - (owner(S.occl, S.dom) === "rca" ? .22 : .9) * S.el * S.Plv) / 95, stop = (cx - lw * .02 - lx) / lw;
+    cells.forEach((q, i) => {
+      if (q.beyond == null) q.beyond = i % 6 === 0;
+      if (q.beyond){ q.x = stop + .12 + ((q.x - stop - .12 + .004 * lastDt) % (.98 - stop - .12) + (.98 - stop - .12)) % (.98 - stop - .12); }
+      else {
+        const cap = stop - .015 - .045 * (i % 4) - .06 * Math.abs(q.y);
+        q.x = Math.min(cap, q.x + f * .3 * lastDt);
+        if (q.x >= cap - 1e-4){ q.hold = (q.hold || 0) + lastDt; if (q.hold > 1.5 + 4 * mulb(i * 31 + Math.floor(clock))){ q.hold = 0; q.x = -.05 - .3 * mulb(i * 11 + Math.floor(clock * 3)); } }
+      }
+      const px = lx + q.x * lw, py = mid + q.y * R * .95;
+      ctx.fillStyle = q.beyond ? rgbs(cmix(col.co2, col.isch, .35)) : rgbs(col.o2);
+      ctx.beginPath(); ctx.ellipse(px, py, 4.2 * q.r, 2.6 * q.r, .3 * q.y, 0, 7); ctx.fill();
+    });
+    ctx.restore();
+    ctx.font = '500 10.5px "Schibsted Grotesk", system-ui, sans-serif'; ctx.fillStyle = col.muted; ctx.textAlign = "left";
+    ctx.fillText("Plaque", lx + lw * .12, y0 + bh - 8); ctx.textAlign = "right"; ctx.fillText(bw < 220 ? "Clot" : "Clot · no flow beyond", lx + lw, y0 + bh - 8);
+    ctx.textAlign = "left"; ctx.fillText("Flow →", lx, y0 + 30 - 3);
+  }
+
+  /* ---------- picking and input ---------- */
+  function pick(x, y, touch){
+    let best = null, bd = 1e9;
+    for (const s of pickSegs){
+      const dx = s.x1 - s.x0, dy = s.y1 - s.y0, L2 = dx * dx + dy * dy || 1, t = clamp(((x - s.x0) * dx + (y - s.y0) * dy) / L2), px = s.x0 + t * dx, py = s.y0 + t * dy;
+      const d = Math.hypot(x - px, y - py) - s.w / 2, lim = touch ? 14 : 7;
+      if (d < lim && d - s.z * 2 < bd){ bd = d - s.z * 2; best = s.part; }
+    }
+    if (best) return best;
+    for (let i = faceItems.length - 1; i >= 0; i--){
+      const it = faceItems[i]; if (it.t) continue;
+      const S = it.m.sp, f = it.f; let inside = false;
+      for (let a = 0, b = f.length - 1; a < f.length; b = a++){ const xa = S[f[a] * 2], ya = S[f[a] * 2 + 1], xb = S[f[b] * 2], yb = S[f[b] * 2 + 1]; if ((ya > y) !== (yb > y) && x < (xb - xa) * (y - ya) / (yb - ya) + xa) inside = !inside; }
+      if (inside) return it.m.part;
+    }
+    return null;
+  }
+  const local = e => { const r = node.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  node.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, yaw: cam.ty, pitch: cam.tp, moved: false, touch: e.pointerType !== "mouse" }; });
+  node.addEventListener("pointermove", e => {
+    if (drag && (e.buttons || drag.touch)){
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 5){ drag.moved = true; try { node.setPointerCapture(e.pointerId); } catch(_){} cam.spin = false; syncSpin(); O.untip(node); }
+      if (drag.moved){ cam.ty = drag.yaw + dx * .5; cam.tp = clamp(drag.pitch + (drag.touch ? 0 : dy * .4), -80, 80); cam.yaw = cam.ty; cam.pitch = cam.tp; }
+      return;
+    }
+    const [x, y] = local(e), p = pick(x, y, e.pointerType !== "mouse");
+    hover = p; node.style.cursor = p ? "pointer" : "grab";
+    if (p && e.pointerType === "mouse") O.tip(node, `<b>${esc(O.CONTENT.parts[p] ? O.CONTENT.parts[p].name : p)}</b>`, e.clientX, e.clientY); else O.untip(node);
   });
-  corRefs.clot = el("circle", { r: 7, class: "clot", opacity: 0, "pointer-events": "none" }, svg);
-  for (const [t, x, y, an] of [["Aorta", 404, 112, "middle"], ["Pulmonary trunk", 156, 150, "end"], ["RCA", 140, 360, "end"], ["LAD", 352, 420, "end"], ["LCx", 512, 268, "start"], ["Left main", 348, 222, "end"]]){
-    const n = el("text", { x, y, class: "h-label out", "text-anchor": an, "font-size": 12 }, svg); n.textContent = t;
-  }
-  O.bindParts(svg);
-  /* tools: dominance and veins */
+  node.addEventListener("pointerup", e => {
+    const d = drag; drag = null; if (!d || d.moved) return;
+    const [x, y] = local(e), p = pick(x, y, e.pointerType !== "mouse");
+    if (p){ O.select("coronary", p); }
+  });
+  node.addEventListener("pointercancel", () => { drag = null; });
+  node.addEventListener("pointerleave", () => { hover = null; O.untip(node); });
+  node.addEventListener("keydown", e => {
+    const k = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -15], ArrowDown: [0, 15] }[e.key];
+    if (k){ e.preventDefault(); cam.spin = false; syncSpin(); cam.ty += k[0]; cam.tp = clamp(cam.tp + k[1], -80, 80); }
+  });
+  /* tools: views, spin, far side, veins */
+  let spinBtn = null;
+  function syncSpin(){ if (spinBtn) spinBtn.setAttribute("aria-pressed", String(cam.spin)); }
+  const viewHost = $("#corViews");
+  VIEWS.forEach(([id, label, f]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = label; b.onclick = () => turnTo(f()); viewHost.appendChild(b); });
+  const toggle = (label, key, after) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = label; b.setAttribute("aria-pressed", String(cam[key])); b.onclick = () => { cam[key] = !cam[key]; b.setAttribute("aria-pressed", String(cam[key])); if (after) after(); }; viewHost.appendChild(b); return b; };
+  spinBtn = toggle("Spin", "spin");
+  toggle("Far side", "ghost"); toggle("Labels", "labels");
+  buildVessels(Heart.S.dom);
+  return { node, cam, step, draw, syncOccl, focusPart, toggleVeins: on => { cam.veins = on; } };
+})();
+let domChoice = null;
+(() => {
   const tools = $("#coronary [data-tools]");
   const s1 = document.createElement("span"); s1.textContent = "Dominance"; tools.appendChild(s1);
   domChoice = O.choice(tools, { label: "Coronary dominance", options: [["right", "Right (70%)", "Right"], ["co", "Co-dominant", "Co"], ["left", "Left (10%)", "Left"]], value: "right", onChange: v => { Heart.S.dom = v; renderCoronary(); O.altered(); } });
   const vb = document.createElement("button"); vb.type = "button"; vb.className = "chip"; vb.textContent = "Veins"; vb.setAttribute("aria-pressed", "true");
-  vb.onclick = () => { const on = vb.getAttribute("aria-pressed") !== "true"; vb.setAttribute("aria-pressed", String(on)); svg.classList.toggle("hide-veins", !on); };
+  vb.onclick = () => { const on = vb.getAttribute("aria-pressed") !== "true"; vb.setAttribute("aria-pressed", String(on)); Cor3D.toggleVeins(on); };
   tools.appendChild(vb);
+  /* a keyboard- and screen-reader-friendly list of the parts drawn on the canvas */
+  const list = $("#corParts");
+  list.innerHTML = [["lm", "Left main"], ["lad", "LAD"], ["d1", "Diagonal"], ["lcx", "Circumflex"], ["om", "Marginal"], ["rca", "RCA"], ["pda", "PDA"], ["gcv", "Great cardiac vein"], ["cs", "Coronary sinus"], ["acv", "Anterior cardiac veins"]]
+    .map(([id, l]) => `<button type="button" class="chip" data-part="${id}">${esc(l)}</button>`).join("")
+    + ["myocardium", "ra", "la", "aorta", "pulmonaryTrunk", "svc", "ivc"].map(id => `<button type="button" class="sr-only" data-part="${id}"></button>`).join("");
+  O.bindParts(list);
 })();
-const ART_COLOR = { lad: "var(--lad)", lcx: "var(--lcx)", rca: "var(--rca)", lm: "var(--lad)" };
+let lastCorSel = null;
+O.subscribe(s => { const p = (s.sel || {}).coronary; if (p !== lastCorSel){ lastCorSel = p; if (p) Cor3D.focusPart(p); } });
 function renderCoronary(){
-  const S = Heart.S, aff = Heart.affected(), segs = Heart.affectedSegs();
-  corSvg.classList.toggle("cor-occl", !!S.occl);
-  corRefs.arts.forEach(({ a, p, hit }) => {
-    const own = a.part === "pl" ? owner("pl", S.dom) : a.part === "pda" ? owner("pda", S.dom) : owner(a.seg, S.dom);
-    p.style.stroke = ART_COLOR[own];
-    p.classList.toggle("down", aff.has(a.seg));
-    /* PL and PDA belong to whichever artery is dominant */
-    const partNow = a.part === "pl" ? own : a.part;
-    p.dataset.part = partNow; hit.dataset.part = partNow;
-    const nm = O.CONTENT.parts[partNow]; if (nm){ p.setAttribute("aria-label", nm.name); hit.setAttribute("aria-label", nm.name); }
-    /* the right coronary is short in a left-dominant heart */
-    const hideBack = (a.seg === "rcaDist" && a.back && S.dom === "left") || (a.seg === "lcx" && a.back && S.dom === "right");
-    p.style.opacity = hideBack ? .25 : 1;
-  });
-  for (const [k, z] of Object.entries(COR.zones)){
-    const on = z.rv ? aff.has("rcaProx") : z.segs.filter(n => segs.has(n)).length / z.segs.length;
-    corRefs.zones[k].setAttribute("opacity", (typeof on === "boolean" ? (on ? .9 : 0) : on > 0 ? .45 + .5 * on : 0).toFixed(2));
-  }
-  /* clot at the start of the blocked segment */
-  const first = corRefs.arts.find(x => x.a.seg === S.occl && !x.a.name);
-  if (first){ const pt = first.p.getPointAtLength(Math.min(10, first.p.getTotalLength() * .3)); corRefs.clot.setAttribute("cx", pt.x); corRefs.clot.setAttribute("cy", pt.y); corRefs.clot.setAttribute("opacity", 1); }
-  else corRefs.clot.setAttribute("opacity", 0);
+  Cor3D.syncOccl();
   renderBull();
   O.set({ sel: { ...O.state().sel } });
 }
@@ -2531,6 +3001,7 @@ O.onTick((dt, real) => {
   if (O.visible($("#pvloop"))) drawPV();
   if (O.visible($("#ecg12"))) draw12();
   if (O.visible($("#corFlow"))) drawCorFlow();
+  if (O.visible(Cor3D.node)){ Cor3D.step(dt, real); Cor3D.draw(); }
   const ph = Heart.S.phase;
   if (ph !== lastPh){ lastPh = ph; $$("#cycleSteps li").forEach(li => li.classList.toggle("on", +li.dataset.ph === ph)); }
   statT += real;
@@ -2636,7 +3107,7 @@ O.alter({
 syncHeartUI();
 /* warm the model up so the traces start full */
 Heart.advance(3); RefHeart.advance(3);
-window.__heart = Heart; /* for debugging in the console */
+window.__heart = Heart; window.__cor3d = Cor3D; /* for debugging in the console */
 O.start();
 })();
 </script>

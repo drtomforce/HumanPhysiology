@@ -8,7 +8,7 @@ The README describes what already exists. This file only lists what doesn't exis
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 13: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat | New organs: see [New organs for the body](#new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 4: heart, lungs, brain, kidneys | 9 existing organs + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 5: heart, lungs, brain, kidneys, stomach & gut | 8 existing organs + any new ones |
 | Body systems animated on the body | 6: circulatory, nervous, endocrine, respiratory, digestive, urinary | 4: immune & lymphatic, muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | One per new system, plus cross-system journeys |
 
@@ -40,7 +40,8 @@ Built as planned below; see the README for what it covers. Still open for this p
 - **Acid–base and electrolytes**: bicarbonate reabsorption, H⁺ secretion and ammonia buffering. K⁺ handling with aldosterone. A Davenport diagram or a simple pH, PaCO₂ and HCO₃⁻ panel that reads the lungs' PaCO₂ for respiratory compensation.
 - **Scenarios**: dehydration, diabetes insipidus (central vs nephrogenic), SIADH, acute kidney injury (prerenal, renal, postrenal), chronic kidney disease, an SGLT2 inhibitor, a loop diuretic.
 
-### 1.2 Stomach & gut (`organs/gut.html`)
+### 1.2 Stomach & gut (`organs/gut.html`) ✅ Done
+Built as planned below; see the README for what it covers. Still open for this page: tie the enterocyte and the meal clock to the body’s bite journeys (open the page at the stage a bite has reached), an interactive enzyme cascade you can step through (trypsinogen → trypsin is a list for now), serotonin and the enterochromaffin cells (with IBS and anti-nausea drugs), bile acids and the enterohepatic circulation once the liver page exists, and the oesophagus and reflux, which belong with the throat page.
 - **Anatomy**: the GI tract from oesophagus to rectum, then wall layers (mucosa, submucosa, muscularis with Meissner's and Auerbach's plexuses, serosa), gastric glands (parietal, chief, G and D cells) and a villus with its crypt.
 - **Motility**: slow waves from the interstitial cells of Cajal, with spike bursts on top that make contractions. Peristalsis versus segmentation, the migrating motor complex, gastric emptying rate by meal type (liquid, carbohydrate, fat), and the gastrocolic reflex.
 - **Secretion and digestion**: the parietal cell (H⁺/K⁺-ATPase, the alkaline tide) and the cephalic, gastric and intestinal phases with gastrin, histamine, ACh and somatostatin. Enzyme cascades (trypsinogen → trypsin), with brush-border enzymes and transporters tied to the existing bite journeys.
@@ -225,7 +226,7 @@ These span several organs and are best built as their own pages (for example `ex
 ## Suggested order
 
 1. ~~Kidneys page~~ (done).
-2. Gut, liver and pancreas pages, a connected trio that builds on the bite journeys and the insulin/glucagon channels.
+2. ~~Gut page~~ (done), then the liver and pancreas pages, which complete the trio and build on the bite journeys and the insulin/glucagon channels.
 3. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.
 4. Muscles and bones pages, then the muscles & skeleton system on the body.
 5. Skin page and the skin system on the body (heat balance).

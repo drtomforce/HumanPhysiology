@@ -1037,6 +1037,42 @@ canvas.trace{ display:block; width:100%; }
       "hs": "The hypothalamus releases GnRH, which makes the pituitary release FSH and LH, controlling the ovaries and testes. Sex hormones in turn act on the brain.",
       "college": "Kisspeptin neurons trigger the GnRH pulse generator at puberty; oxytocin drives labour and milk let-down and influences bonding.",
       "phd": "Hypothalamic amenorrhoea from energy deficit (in athletes) reflects suppressed GnRH pulsatility signalled by low leptin." }
+  },
+  "alter": {
+    "title": "Your brain",
+    "healthy": "A healthy brain: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
+    "areas": {
+      "mcaL": "the motor and sensory strips, Broca’s and Wernicke’s areas, the hearing area and the deep basal ganglia",
+      "acaL": "the front of the frontal lobe and the cingulate gyrus on the inner surface",
+      "pcaL": "the vision area at the back, the hippocampus and the thalamus",
+      "basilar": "the brainstem, the cerebellum and both vision areas"
+    },
+    "notes": {
+      "strokeAnat": {
+        "ms": "The blocked artery feeds {areas}. Starved of blood, they go dark in the figure.",
+        "college": "The occluded artery supplies {areas}; their activity collapses within seconds of ischaemia, so they go dark in the figure. Brain O₂ and glucose use in the stats fall with them."
+      },
+      "icaAnat": {
+        "ms": "The circle of Willis reroutes blood from the other side, so no whole area goes dark, only the thin borders between territories are at risk.",
+        "college": "Collateral flow through the anterior and posterior communicating arteries perfuses both territories; only the watershed zones between them are at risk, so no region goes dark in the figure."
+      },
+      "flowAnat": {
+        "ms": "Brain blood flow is down to {cbf} mL per 100 g each minute, so the outer layer of the brain goes quiet. Below about 20 you would faint.",
+        "college": "Cerebral blood flow of {cbf} mL/100 g/min is below the threshold for normal synaptic activity (~35); cortical activity fades, and below ~20 the EEG flattens and consciousness is lost."
+      },
+      "nightAnat": {
+        "ms": "You are staying up all night, so the brain shows waking activity instead of sleep: no slow waves wash over the cortex.",
+        "college": "With sleep skipped the cortex stays in a waking state: no slow oscillation in N3 and no REM pattern, while sleep pressure keeps building."
+      },
+      "nightBlood": {
+        "ms": "Awake all night, the brain keeps using blood at the waking rate ({cbf} mL a minute) instead of using less in deep sleep.",
+        "college": "Skipping sleep keeps cerebral metabolism, and with it blood flow ({cbf} mL/min), at waking levels instead of falling by about a quarter in N3."
+      },
+      "nightSleep": {
+        "ms": "It’s daytime now, so staying up all night changes nothing yet. Move to the night (or press a ‘Deep sleep’ button) to see the brain stay awake.",
+        "college": "The all-nighter only acts during the sleep hours; move the clock into the night to see its effect on activity, the EEG and blood flow."
+      }
+    }
   }
 }
 </script>
@@ -1544,9 +1580,13 @@ function stageAt(h){
   const seg = HYPNO.segs.find(s => m < s.to) || HYPNO.segs[HYPNO.segs.length - 1];
   return { stage: seg.stage, cycle: seg.cycle, min: m };
 }
+/* the sleep section's what-ifs: a 4 pm coffee, staying up all night */
+const proc = { coffee: false, night: false };
 /* the brain's state now: a sleep stage, or awake in the current part of the day */
 function brainNow(){
   const s = O.state();
+  /* up all night: the brain stays awake through the sleep hours (proc is set in the sleep section) */
+  if (s.phase === "sleep" && proc.night) return { key: "wake", stage: "awake", cycle: 0, min: -1, asleep: false, allNighter: true };
   if (s.phase === "sleep"){ const st = stageAt(s.hour); if (st) return { key: st.stage, stage: st.stage, cycle: st.cycle, min: st.min, asleep: st.stage !== "wake" }; }
   return { key: s.phase === "sleep" ? "rest" : s.phase, stage: "awake", cycle: 0, min: -1, asleep: false };
 }
@@ -1768,9 +1808,16 @@ O.subscribe((s, p) => {
   else if (anat.view === "mid" && !inMid && inOut) setView("out");
 });
 let actT = 0;
+/* regions each blocked artery feeds (left hemisphere; the outside view is from the left) */
+const STROKE_REGIONS = {
+  mcaL: ["motor", "sensory", "broca", "wernicke", "auditory", "basal"], acaL: ["prefrontal", "cingulate"],
+  pcaL: ["visual", "hippocampus", "thalamus"], basilar: ["brainstem", "cerebellum", "visual", "thalamus", "hippocampus"], icaL: [], none: []
+};
+/* below ~32 mL/100 g/min the cortex quietens; below ~12 it falls silent */
+const flowFactor = () => clamp((cbfNow() - 12) / 20);
 function animateAnatomy(dt){
   actT += dt;
-  const b = brainNow(), A = ACT[b.key];
+  const b = brainNow(), A = ACT[b.key], dead = new Set(STROKE_REGIONS[blood.stroke]), ff = flowFactor();
   /* slow oscillation in deep sleep: the whole cortex swings between up and down states */
   const so = b.key === "n3" ? .35 + .65 * Math.max(0, Math.sin(TAU * .8 * actT)) : 1;
   const cortical = { prefrontal: 1, motor: 1, sensory: 1, visual: 1, auditory: 1, broca: 1, wernicke: 1, cingulate: 1 };
@@ -1779,6 +1826,8 @@ function animateAnatomy(dt){
     if (cortical[g.region]) a *= so;
     a *= .88 + .12 * Math.sin(actT * 2.3 + g.region.length);
     if (g.region === "motor" && b.key === "exercise") a *= .75 + .25 * Math.abs(Math.sin(TAU * 1.4 * actT));
+    if (dead.has(g.region)) a *= .08;
+    if (cortical[g.region]) a *= ff;
     g.n.setAttribute("opacity", (a * .85).toFixed(3));
   }
   if (anat.view === "mid"){
@@ -2144,10 +2193,10 @@ function renderStage(){
   const b = brainNow(), k = b.key;
   const node = b.stage === "awake" ? (O.CONTENT.stages.awake[k] || O.CONTENT.stages.awake.rest) : O.CONTENT.stages[k];
   $("#stageBadge").style.setProperty("--c", STAGE_COLOR[k]);
-  $("#stageBadge span").textContent = b.asleep ? `Asleep · cycle ${b.cycle} of 5` : b.key === "wake" ? `Night · cycle ${b.cycle} of 5` : "Awake";
+  $("#stageBadge span").textContent = b.allNighter ? "Up all night" : b.asleep ? `Asleep · cycle ${b.cycle} of 5` : b.key === "wake" ? `Night · cycle ${b.cycle} of 5` : "Awake";
   $("#stageTitle").textContent = node.name;
   $("#stageText").innerHTML = O.text(node);
-  $("#eegCap").textContent = EEG_CAP[k];
+  $("#eegCap").textContent = b.allNighter ? "Up all night: waking alpha and muscle tone instead of the night’s sleep stages, while sleep pressure keeps building." : EEG_CAP[k];
 }
 readouts($("#sleepRO"), [["clock", "Time"], ["stage", "Stage"], ["asleep", "Asleep for"], ["press", "Sleep pressure"], ["mel", "Melatonin"], ["band", "Main rhythm"]]);
 
@@ -2169,6 +2218,12 @@ function drawHypno(){
   ctx.fillStyle = STAGE_COLOR.rem; HYPNO.segs.filter(s => s.stage === "rem").forEach(s => ctx.fillRect(X(s.from), Y("rem") - 3, X(s.to) - X(s.from), 6));
   ctx.fillStyle = STAGE_COLOR.n3; ctx.globalAlpha = .6; HYPNO.segs.filter(s => s.stage === "n3").forEach(s => ctx.fillRect(X(s.from), Y("n3") - 3, X(s.to) - X(s.from), 6)); ctx.globalAlpha = 1;
   const m = sleepMinute(O.state().hour);
+  if (proc.night){
+    ctx.fillStyle = C("--surface"); ctx.globalAlpha = .78; ctx.fillRect(L, top - 8, gw, 4 * rowH + 14); ctx.globalAlpha = 1;
+    txt(ctx, "Skipped: you are staying up all night", L + gw / 2, top + 2.2 * rowH, ink, "center", FONT_B);
+    if (m >= 0) line(ctx, X(m), top - 6, X(m), top + 4 * rowH + 4, C("--sel"), 2);
+    return;
+  }
   if (m >= 0){ const st = stageAt(O.state().hour), x = X(m); line(ctx, x, top - 6, x, top + 4 * rowH + 4, C("--sel"), 2); ctx.fillStyle = C("--sel"); ctx.beginPath(); ctx.arc(x, Y(st.stage), 5, 0, TAU); ctx.fill(); }
   else txt(ctx, "Awake now: tap the chart to jump into the night", L + gw / 2, top + 2.5 * rowH, muted, "center", FONT_B);
 }
@@ -2181,7 +2236,6 @@ const procS = h => { h = wrapH(h); if (h >= WAKE_AT && h < SLEEP_FROM) return 1 
 const procSnoSleep = x => 1 - (1 - S_LIM.s0) * Math.exp(-(x - WAKE_AT) / TW);   /* x in hours from 06:30, can pass 24 */
 const procC = h => { const c = .7 * Math.cos(TAU * (h - 19) / 24) + .3 * Math.cos(2 * TAU * (h - 8) / 24); return (c + .75) / 1.8; };
 const caffeine = x => x >= 16 ? Math.exp(-Math.LN2 * (x - 16) / 5) : 0;   /* x in hours, 16:00 = one cup */
-const proc = { coffee: false, night: false };
 let hourCtl = null, lapse = false;
 const twoC = makeCanvas($("#twoProc"));
 const twoLayout = () => { const L = 40, R = 12; return { L, gw: twoC.w - L - R, top: 14, gh: twoC.h - 44 }; };
@@ -2224,8 +2278,8 @@ function procMessage(){
   const jh = $("#jumpBtns");
   jumps.forEach(([l, hr]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = l; b.onclick = () => O.set({ hour: hr }); jh.appendChild(b); });
   $("#lapseBtn").onclick = () => { lapse = !lapse; toggle($("#lapseBtn"), lapse); if (lapse && O.state().paused) O.set({ paused: false }); };
-  $("#coffeeBtn").onclick = () => { proc.coffee = !proc.coffee; toggle($("#coffeeBtn"), proc.coffee); procMessage(); };
-  $("#nightBtn").onclick = () => { proc.night = !proc.night; toggle($("#nightBtn"), proc.night); procMessage(); };
+  $("#coffeeBtn").onclick = () => { proc.coffee = !proc.coffee; toggle($("#coffeeBtn"), proc.coffee); procMessage(); O.altered(); };
+  $("#nightBtn").onclick = () => { proc.night = !proc.night; toggle($("#nightBtn"), proc.night); procMessage(); renderStage(); O.altered(); };
 })();
 
 /* =========================================================================
@@ -2439,7 +2493,7 @@ O.onTick((dt, real) => {
   if (roT > .25){
     roT = 0;
     const hr = O.state().hour, M = MET[b.key], loss = 1 - STROKES[blood.stroke].loss;
-    O.setStat("state", STAGE_SHORT[b.key], b.asleep ? O.CONTENT.stages[b.key].name : b.key === "wake" ? "brief wake" : ({ rest: "resting", meal: "after a meal", exercise: "running" })[b.key]);
+    O.setStat("state", STAGE_SHORT[b.key], b.allNighter ? "up all night" : b.asleep ? O.CONTENT.stages[b.key].name : b.key === "wake" ? "brief wake" : ({ rest: "resting", meal: "after a meal", exercise: "running" })[b.key]);
     O.setStat("rhythm", M.hz, M.band);
     O.setStat("cbf", String(Math.round(cbfTotal() / 10) * 10), `${Math.round(cbfNow())} per 100 g`);
     O.setStat("o2", String(Math.round(BASE.o2 * M.o2 * loss)));
@@ -2469,7 +2523,92 @@ O.subscribe((s, p) => {
   if (s.hour !== p.hour && hourCtl) hourCtl.set(Math.round(wrapH(s.hour) * 12) / 12 % 24);
   if (s.phase !== p.phase) syncBloodDefaults();
 });
-renderSteps(); renderStroke(); syncBloodDefaults(); procMessage();
+syncBloodDefaults();
+/* =========================================================================
+   CHANGES BAR: what the reader has altered, where each change shows, and the URL
+   ========================================================================= */
+const STROKE_LABEL = { mcaL: "Left middle cerebral blocked", acaL: "Left anterior cerebral blocked", pcaL: "Left posterior cerebral blocked", basilar: "Basilar artery blocked", icaL: "Left internal carotid blocked" };
+const HH0 = { amp: 10, Iss: 0, Ko: 4 }, RACE0 = { dM: 12, dC: 1 };
+const setSl = (id, v) => { const i = $("#" + id); if (!i) return; i.value = v; $("#" + id + "Out").textContent = ""; i.dispatchEvent(new Event("input")); };
+const near = (a, b) => Math.abs(a - b) < 1e-6;
+const flowCauses = () => ["map", "co2", "htn"];
+/* every control in these sections reports its change (the controls' own handlers run first) */
+["signals", "sleep", "blood"].forEach(id => ["input", "click"].forEach(ev => $("#" + id).addEventListener(ev, () => O.altered())));
+function clearChange(id){
+  const S = HH.S;
+  if (id === "amp") setSl("apAmp", HH0.amp);
+  else if (id === "Iss") setSl("apIss", HH0.Iss);
+  else if (id === "Ko") setSl("apKo", HH0.Ko);
+  else if (id === "naB"){ S.naB = false; toggle($("#naBtn"), false); }
+  else if (id === "kB"){ S.kB = false; toggle($("#kBtn"), false); }
+  else if (id === "dM") setSl("dM", RACE0.dM);
+  else if (id === "dC") setSl("dC", RACE0.dC);
+  else if (id === "ms"){ race.ms = false; toggle($("#msBtn"), false); renderMyelin(); restartRace(); }
+  else if (id === "coffee"){ proc.coffee = false; toggle($("#coffeeBtn"), false); procMessage(); }
+  else if (id === "night"){ proc.night = false; toggle($("#nightBtn"), false); procMessage(); renderStage(); }
+  else if (id === "stroke"){ blood.stroke = "none"; wil.choice.set("none"); renderStroke(); }
+  else if (id === "map"){ blood.mapTouched = false; syncBloodDefaults(); }
+  else if (id === "co2"){ blood.co2Touched = false; syncBloodDefaults(); }
+  else if (id === "htn"){ blood.htn = false; toggle($("#htnBtn"), false); }
+}
+const ALL_CHANGES = ["amp", "Iss", "Ko", "naB", "kB", "dM", "dC", "ms", "coffee", "night", "stroke", "map", "co2", "htn"];
+O.alter({
+  title: () => O.get("alter.title"),
+  healthy: () => O.levelText(O.get("alter.healthy")),
+  items(){
+    const S = HH.S, out = [], add = (id, section, label) => out.push({ id, section, label });
+    if (!near(S.amp, HH0.amp)) add("amp", "signals", S.amp ? `Stimulus ${S.amp} µA/cm²` : "Stimulus off");
+    if (!near(S.Iss, HH0.Iss)) add("Iss", "signals", `Steady current ${S.Iss} µA/cm²`);
+    if (!near(S.Ko, HH0.Ko)) add("Ko", "signals", `Potassium outside ${S.Ko} mM`);
+    if (S.naB) add("naB", "signals", "Na⁺ channels blocked");
+    if (S.kB) add("kB", "signals", "K⁺ channels blocked");
+    if (!near(race.dM, RACE0.dM)) add("dM", "signals", `Myelinated axon ${race.dM} µm`);
+    if (!near(race.dC, RACE0.dC)) add("dC", "signals", `Unmyelinated axon ${race.dC.toFixed(1)} µm`);
+    if (race.ms) add("ms", "signals", "Myelin stripped (MS)");
+    if (proc.coffee) add("coffee", "sleep", "Coffee at 4 pm");
+    if (proc.night) add("night", "sleep", "Up all night");
+    if (blood.stroke !== "none") add("stroke", "blood", STROKE_LABEL[blood.stroke]);
+    if (blood.mapTouched && blood.map !== mapDefault()) add("map", "blood", `Blood pressure ${blood.map} mmHg`);
+    if (blood.co2Touched && blood.co2 !== co2Default()) add("co2", "blood", `Blood CO₂ ${blood.co2} mmHg`);
+    if (blood.htn) add("htn", "blood", "Years of high blood pressure");
+    return out;
+  },
+  clear(id){ clearChange(id); },
+  reset(){ ALL_CHANGES.forEach(clearChange); },
+  notes(sec){
+    const out = [], night = proc.night && O.state().phase === "sleep", c100 = Math.round(cbfNow());
+    const N = (cause, key, vars = {}) => out.push({ cause, html: O.fill(O.get(`alter.notes.${key}`), vars) });
+    if (sec === "anatomy"){
+      if (STROKE_REGIONS[blood.stroke] && STROKE_REGIONS[blood.stroke].length) N("stroke", "strokeAnat", { areas: O.get(`alter.areas.${blood.stroke}`) });
+      if (blood.stroke === "icaL") N("stroke", "icaAnat");
+      if (flowFactor() < .999) N(flowCauses(), "flowAnat", { cbf: c100 });
+      if (night) N("night", "nightAnat");
+    }
+    if (sec === "sleep" && proc.night && !night) N("night", "nightSleep");
+    if (sec === "blood" && night) N("night", "nightBlood", { cbf: Math.round(cbfTotal()) });
+    return out;
+  },
+  toParams(){
+    const S = HH.S, n = (v, d) => near(v, d) ? "" : String(v);
+    return { stim: n(S.amp, HH0.amp), steady: n(S.Iss, HH0.Iss), ko: n(S.Ko, HH0.Ko), nablock: S.naB ? "1" : "", kblock: S.kB ? "1" : "",
+      dm: n(race.dM, RACE0.dM), dc: n(race.dC, RACE0.dC), ms: race.ms ? "1" : "", coffee: proc.coffee ? "1" : "", night: proc.night ? "1" : "",
+      stroke: blood.stroke !== "none" ? blood.stroke : "", map: blood.mapTouched && blood.map !== mapDefault() ? String(blood.map) : "", paco2: blood.co2Touched && blood.co2 !== co2Default() ? String(blood.co2) : "", htn: blood.htn ? "1" : "" };
+  },
+  fromParams(P){
+    const num = (k, lo, hi) => { const x = parseFloat(P.get(k)); return Number.isFinite(x) ? clamp(x, lo, hi) : null; };
+    const sl = (k, id, lo, hi) => { const x = num(k, lo, hi); if (x !== null) setSl(id, x); };
+    sl("stim", "apAmp", 0, 20); sl("steady", "apIss", 0, 20); sl("ko", "apKo", 2, 16); sl("dm", "dM", 2, 20); sl("dc", "dC", .2, 2);
+    sl("map", "mapIn", 30, 200); sl("paco2", "co2In", 15, 80);
+    if (P.get("nablock") === "1"){ HH.S.naB = true; toggle($("#naBtn"), true); }
+    if (P.get("kblock") === "1"){ HH.S.kB = true; toggle($("#kBtn"), true); }
+    if (P.get("ms") === "1"){ race.ms = true; toggle($("#msBtn"), true); renderMyelin(); restartRace(); }
+    if (P.get("coffee") === "1"){ proc.coffee = true; toggle($("#coffeeBtn"), true); }
+    if (P.get("night") === "1"){ proc.night = true; toggle($("#nightBtn"), true); }
+    if (STROKE_LABEL[P.get("stroke")]){ blood.stroke = P.get("stroke"); wil.choice.set(blood.stroke); }
+    if (P.get("htn") === "1"){ blood.htn = true; toggle($("#htnBtn"), true); }
+  }
+});
+renderSteps(); renderStroke(); procMessage();
 HH.settle(); EEG.prime(brainNow().key);
 stageKey = brainNow().key; renderStage();
 window.__brain = { HH, EEG, blood, race, brainNow }; /* for debugging in the console */

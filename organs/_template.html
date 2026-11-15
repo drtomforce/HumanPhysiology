@@ -59,6 +59,12 @@
       tip(node, html, x, y) / untip(node)   the shared tooltip
       inspector(box, fn(id, part) → html)  extra HTML under a part's text
       el(tag, attrs, parent)  SVG element helper; esc(s) escapes HTML
+      fill(value, vars)       like text(), with {name} placeholders filled in
+      alter(spec) / altered() the changes bar: list what the reader has changed,
+                              which other sections each change reaches, and a
+                              "because of …" note in each of those sections; the
+                              changes go into the URL so a set-up can be shared.
+                              See the comment above alter() for the spec.
     and ends with OrganPage.start().
 
  Integration with the main page
@@ -156,7 +162,7 @@ a{ color:inherit; }
 .sec-grid.wide{ grid-template-columns:minmax(0,1fr); }
 .panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; min-width:0; }
 .panel + .panel{ margin-top:14px; }
-.side{ position:sticky; top:116px; min-width:0; }
+.side{ position:sticky; top:calc(var(--op-stick, 104px) + 12px); min-width:0; }
 .fig{ position:relative; min-width:0; }
 .fig svg{ display:block; width:100%; height:auto; }
 .fig-tools{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
@@ -195,6 +201,31 @@ a{ color:inherit; }
 .lens-card .prose{ font-size:15px; flex:1; }
 .lens-card .chips{ margin-top:12px; }
 
+/* changes bar: what the reader has altered, and which sections each change reaches */
+.op-alter{ position:sticky; top:var(--op-top-h, 0px); z-index:19; background:color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.op-alter-in{ display:flex; align-items:center; gap:8px 12px; padding-top:7px; padding-bottom:7px; flex-wrap:wrap; min-height:44px; }
+.alt-title{ margin:0; font-size:13px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:7px; }
+.alt-title i{ width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none; }
+.op-alter.has .alt-title i{ background:var(--sel); }
+.alt-empty{ margin:0; font-size:13px; color:var(--muted); flex:1; min-width:0; }
+.alt-list{ list-style:none; margin:0; padding:0; display:flex; gap:6px; flex-wrap:wrap; flex:1; min-width:0; }
+.alt{ display:inline-flex; align-items:center; border:1px solid var(--line-strong); background:var(--surface); border-radius:999px; font-size:12.5px; white-space:nowrap; }
+.alt-go{ border:0; background:transparent; padding:4px 4px 4px 11px; font-weight:600; cursor:pointer; }
+.alt-to{ color:var(--muted); padding:4px 2px 4px 4px; }
+.alt-to a{ color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--line-strong); }
+.alt-to a:hover{ color:var(--ink); border-bottom-color:var(--ink); }
+.alt-x{ border:0; background:transparent; cursor:pointer; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; color:var(--muted); padding:0; margin-right:1px; }
+.alt-x:hover{ background:var(--surface-2); color:var(--ink); }
+.alt-act{ display:flex; gap:6px; margin-left:auto; }
+.alt-btn{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:4px 11px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; }
+.alt-btn:hover{ background:var(--surface-2); }
+.alt-btn.strong{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.because:empty{ display:none; }
+.because{ display:grid; gap:8px; margin-top:14px; }
+.because-note{ background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--sel); border-radius:10px; padding:9px 12px; font-family:var(--serif); font-size:15px; line-height:1.5; }
+.because-from{ display:block; font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+.because-from a{ color:var(--ink); text-decoration:none; border-bottom:1px dotted var(--line-strong); text-transform:none; letter-spacing:0; font-size:12.5px; }
+
 /* glossary terms */
 .term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
 .term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
@@ -215,6 +246,11 @@ a{ color:inherit; }
   .op-ctl > span{ display:none; }
   .hero{ padding-top:22px; }
   html{ scroll-padding-top:12px; }
+  .op-alter.empty{ position:static; }
+  .op-alter-in{ flex-wrap:nowrap; }
+  .alt-list{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  .alt-list::-webkit-scrollbar{ display:none; }
+  .alt-title span, .alt-to, .alt-btn[data-alt-share]{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 /* ===== ORGAN ENGINE CSS · END ===== */
@@ -593,6 +629,96 @@ function renderSee(){
 }
 function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: META.mainTopic || "" }); }); }
 
+/* ---------- alterations: what the reader has changed, and where it shows ----------
+   A page registers alter(spec) before start():
+     title, healthy                  bar heading and the text shown with no changes
+                                     (strings, level objects or functions)
+     items() → [{id, label, section}]      the changes in force now
+     clear(id) / reset()             undo one change / all of them (then sync the page's controls)
+     notes(sectionId) → [{cause: id | [ids], html}]   "because of …" notes for a section
+     toParams() → {key: value}       the changes as URL parameters (empty values dropped)
+     fromParams(URLSearchParams)     apply them on load
+   and calls altered() after every change. */
+let ALT = null, started = false, urlTimer = 0;
+const altCache = new WeakMap();
+const altVal = v => typeof v === "function" ? v() : levelText(v);
+function fill(v, vars = {}){
+  const s = levelText(v).replace(/\{(\w+)\}/g, (m, k) => vars[k] !== undefined ? String(vars[k]) : m);
+  return linkify(s);
+}
+function secName(id){ return get(`sections.${id}.nav`) || get(`sections.${id}.title`) || id; }
+function alter(spec){
+  ALT = spec;
+  if (spec.fromParams) spec.fromParams(params);
+  if (started){ buildAlter(); altered(); }
+}
+function putHTML(node, html){ if (altCache.get(node) !== html){ node.innerHTML = html; altCache.set(node, html); } }
+function buildAlter(){
+  if (!ALT || $(".op-alter")) return;
+  const top = $(".op-top"), bar = document.createElement("div");
+  bar.className = "op-alter"; bar.setAttribute("role", "region"); bar.setAttribute("aria-label", "Your changes");
+  bar.innerHTML = `<div class="wrap op-alter-in" data-alter></div>`;
+  if (top) top.after(bar); else document.body.prepend(bar);
+  $$("[data-section]").forEach(s => {
+    if ($("[data-because]", s)) return;
+    const d = document.createElement("div"); d.className = "because"; d.setAttribute("data-because", ""); d.setAttribute("aria-live", "polite");
+    const head = $(".sec-head", s); head ? head.appendChild(d) : s.prepend(d);
+  });
+  bar.addEventListener("click", e => {
+    const go = e.target.closest("[data-alt-go]"), x = e.target.closest("[data-alt-x]");
+    if (go){ const t = document.getElementById(go.dataset.altGo); if (t) t.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); }
+    else if (x){ ALT.clear(x.dataset.altX); altered(); const f = $("[data-alt-x]", bar) || $("[data-alt-reset]", bar); if (f) f.focus(); }
+    else if (e.target.closest("[data-alt-reset]")){ ALT.reset(); altered(); }
+    else if (e.target.closest("[data-alt-share]")){
+      const b = e.target.closest("[data-alt-share]"), done = ok => { b.textContent = ok ? "Link copied" : "Copy the address bar"; setTimeout(() => { b.textContent = "Copy link"; }, 1600); };
+      writeURL(true);
+      try { navigator.clipboard.writeText(location.href).then(() => done(true), () => done(false)); } catch(err){ done(false); }
+    }
+  });
+  /* keep sticky offsets right as the header and bar change height */
+  const measure = () => {
+    const th = top && getComputedStyle(top).position === "sticky" ? top.offsetHeight : 0;
+    const bh = getComputedStyle(bar).position === "sticky" ? bar.offsetHeight : 0;
+    document.documentElement.style.setProperty("--op-top-h", th + "px");
+    document.documentElement.style.setProperty("--op-stick", (th + bh) + "px");
+    document.documentElement.style.scrollPaddingTop = (th + bh + 12) + "px";
+  };
+  if (window.ResizeObserver){ const ro = new ResizeObserver(measure); if (top) ro.observe(top); ro.observe(bar); }
+  addEventListener("resize", measure); measure();
+  setInterval(() => { if (!document.hidden) renderAlter(); }, 1000);
+}
+function renderAlter(){
+  const bar = $(".op-alter"); if (!ALT || !bar) return;
+  const items = ALT.items() || [], byId = Object.fromEntries(items.map(i => [i.id, i])), reach = {};
+  $$("[data-section]").forEach(s => {
+    const box = $("[data-because]", s); if (!box) return;
+    const notes = ((ALT.notes && ALT.notes(s.id)) || []).map(n => ({ ...n, causes: [].concat(n.cause).filter(c => byId[c]) })).filter(n => n.causes.length);
+    notes.forEach(n => n.causes.forEach(c => { if (byId[c].section !== s.id) (reach[c] ||= new Set()).add(s.id); }));
+    putHTML(box, notes.map(n => `<div class="because-note"><span class="because-from">Because of ${n.causes.map(c => `<a href="#${esc(byId[c].section)}">${esc(byId[c].label)}</a>`).join(" + ")}</span>${n.html}</div>`).join(""));
+  });
+  bar.classList.toggle("has", items.length > 0); bar.classList.toggle("empty", !items.length);
+  const list = items.map(i => {
+    const to = [...(reach[i.id] || [])];
+    const where = to.length ? `→ ${to.map(t => `<a href="#${esc(t)}">${esc(secName(t))}</a>`).join(", ")}` : "→ only here";
+    return `<li class="alt"><button type="button" class="alt-go" data-alt-go="${esc(i.section)}" title="Set in ${esc(secName(i.section))}">${esc(i.label)}</button><span class="alt-to">${where}</span><button type="button" class="alt-x" data-alt-x="${esc(i.id)}" aria-label="Undo: ${esc(i.label)}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></li>`;
+  }).join("");
+  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
+    ${items.length ? `<ul class="alt-list">${list}</ul>` : `<p class="alt-empty">${esc(altVal(ALT.healthy) || "Nothing changed yet.")}</p>`}
+    <div class="alt-act">${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+}
+/* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
+function writeURL(now){
+  if (!ALT || !ALT.toParams) return;
+  clearTimeout(urlTimer);
+  const go = () => {
+    const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString() });
+    for (const [k, v] of Object.entries(ALT.toParams() || {})) if (v !== undefined && v !== null && v !== "") p.set(k, v);
+    try { history.replaceState(history.state, "", location.pathname + "?" + p.toString() + location.hash); } catch(e){}
+  };
+  now ? go() : (urlTimer = setTimeout(go, 250));
+}
+function altered(){ renderAlter(); writeURL(); }
+
 /* ---------- animation loop ---------- */
 const ticks = [];
 const onTick = f => ticks.push(f);
@@ -625,14 +751,16 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow(); renderSee();
+  buildControls(); buildNav(); buildNow(); renderSee(); buildAlter();
   bindParts(); bindGlossary();
-  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); };
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); };
   subscribe((s, p) => {
     if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
+    if (s.level !== p.level || s.hour !== p.hour) writeURL();
     if (s.level !== p.level || s.phase !== p.phase) all();
     else { if (s.sel !== p.sel){ renderInspectors(); markSelected(); } if (s.hour !== p.hour) renderBack(); }
   });
+  started = true;
   all();
   loop();
   if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }
@@ -644,7 +772,8 @@ return {
   href, color, choice, bindParts, select, setStat, onTick, visible, start,
   tip: showTip, untip: hideTip,
   vitals: () => PHASE_BY_ID[state.phase].vitals,
-  inspector: (node, extra) => { node.__extra = extra; }
+  inspector: (node, extra) => { node.__extra = extra; },
+  alter, altered, fill
 };
 })();
 /* ===== ORGAN ENGINE JS · END ===== */

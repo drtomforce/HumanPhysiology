@@ -118,7 +118,7 @@ a{ color:inherit; }
 .sec-grid.wide{ grid-template-columns:minmax(0,1fr); }
 .panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; min-width:0; }
 .panel + .panel{ margin-top:14px; }
-.side{ position:sticky; top:116px; min-width:0; }
+.side{ position:sticky; top:calc(var(--op-stick, 104px) + 12px); min-width:0; }
 .fig{ position:relative; min-width:0; }
 .fig svg{ display:block; width:100%; height:auto; }
 .fig-tools{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
@@ -157,6 +157,31 @@ a{ color:inherit; }
 .lens-card .prose{ font-size:15px; flex:1; }
 .lens-card .chips{ margin-top:12px; }
 
+/* changes bar: what the reader has altered, and which sections each change reaches */
+.op-alter{ position:sticky; top:var(--op-top-h, 0px); z-index:19; background:color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.op-alter-in{ display:flex; align-items:center; gap:8px 12px; padding-top:7px; padding-bottom:7px; flex-wrap:wrap; min-height:44px; }
+.alt-title{ margin:0; font-size:13px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:7px; }
+.alt-title i{ width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none; }
+.op-alter.has .alt-title i{ background:var(--sel); }
+.alt-empty{ margin:0; font-size:13px; color:var(--muted); flex:1; min-width:0; }
+.alt-list{ list-style:none; margin:0; padding:0; display:flex; gap:6px; flex-wrap:wrap; flex:1; min-width:0; }
+.alt{ display:inline-flex; align-items:center; border:1px solid var(--line-strong); background:var(--surface); border-radius:999px; font-size:12.5px; white-space:nowrap; }
+.alt-go{ border:0; background:transparent; padding:4px 4px 4px 11px; font-weight:600; cursor:pointer; }
+.alt-to{ color:var(--muted); padding:4px 2px 4px 4px; }
+.alt-to a{ color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--line-strong); }
+.alt-to a:hover{ color:var(--ink); border-bottom-color:var(--ink); }
+.alt-x{ border:0; background:transparent; cursor:pointer; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; color:var(--muted); padding:0; margin-right:1px; }
+.alt-x:hover{ background:var(--surface-2); color:var(--ink); }
+.alt-act{ display:flex; gap:6px; margin-left:auto; }
+.alt-btn{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:4px 11px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; }
+.alt-btn:hover{ background:var(--surface-2); }
+.alt-btn.strong{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.because:empty{ display:none; }
+.because{ display:grid; gap:8px; margin-top:14px; }
+.because-note{ background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--sel); border-radius:10px; padding:9px 12px; font-family:var(--serif); font-size:15px; line-height:1.5; }
+.because-from{ display:block; font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+.because-from a{ color:var(--ink); text-decoration:none; border-bottom:1px dotted var(--line-strong); text-transform:none; letter-spacing:0; font-size:12.5px; }
+
 /* glossary terms */
 .term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
 .term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
@@ -177,6 +202,11 @@ a{ color:inherit; }
   .op-ctl > span{ display:none; }
   .hero{ padding-top:22px; }
   html{ scroll-padding-top:12px; }
+  .op-alter.empty{ position:static; }
+  .op-alter-in{ flex-wrap:nowrap; }
+  .alt-list{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  .alt-list::-webkit-scrollbar{ display:none; }
+  .alt-title span, .alt-to, .alt-btn[data-alt-share]{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 /* ===== ORGAN ENGINE CSS · END ===== */
@@ -890,6 +920,67 @@ canvas.trace{ display:block; width:100%; }
       "hs": "In pregnancy blood volume rises by about 40% and cardiac output by 30–50%. Before birth the baby’s lungs are bypassed by a hole between the atria (foramen ovale) and a duct to the aorta (ductus arteriosus), which close at birth.",
       "college": "Pregnancy raises plasma volume, heart rate and stroke volume and lowers systemic vascular resistance; aortocaval compression in late pregnancy can lower venous return when lying flat. Oestrogen is cardioprotective before menopause.",
       "phd": "Peripartum cardiomyopathy is linked to a cleaved 16-kDa prolactin fragment and is treated with bromocriptine in trials. A patent foramen ovale persists in ~25% of adults and enables paradoxical embolism." }
+  },
+  "alter": {
+    "title": "Your heart",
+    "healthy": "A healthy heart: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
+    "notes": {
+      "pump": {
+        "ms": "{n} of the 17 wall segments of the left ventricle get no blood, so it squeezes with only {pct}% of its normal strength. The loop gets narrower and less blood leaves with each beat.",
+        "college": "Ischaemia in {n} of 17 segments lowers end-systolic elastance (Emax ×{emax}). The end-systolic pressure–volume line flattens, so at the same preload the end-systolic volume rises and stroke volume and ejection fraction fall."
+      },
+      "rv": {
+        "ms": "The right ventricle is short of blood too, so it pushes less blood through the lungs and the left side fills less.",
+        "college": "Right-ventricular ischaemia lowers left-ventricular filling pressure (pulmonary venous pressure ×0.88), so end-diastolic volume and stroke volume fall: the low output with clear lungs of a right-ventricular infarct."
+      },
+      "afibMech": {
+        "ms": "The upper chambers only quiver, so they no longer give the ventricle a last push of blood, and the beats come at random. Watch each loop come out a different size.",
+        "college": "With no atrial kick, the A wave and late-diastolic filling disappear, and irregular RR intervals make end-diastolic volume, and with it stroke volume, vary from beat to beat (Frank–Starling)."
+      },
+      "lbbbMech": {
+        "ms": "The left ventricle is switched on late and unevenly, so its squeeze is weaker (about 86% of normal).",
+        "college": "Activation spreads slowly through the muscle instead of the Purkinje network, so the left ventricle contracts out of step and its effective contractility falls (Emax ×0.86)."
+      },
+      "dropMech": {
+        "ms": "{rhythm}: the long pauses give the ventricle extra time to fill, so the next beat is bigger. But with fewer beats, less blood leaves the heart each minute.",
+        "college": "{rhythm}: long RR intervals raise end-diastolic volume, so the next stroke volume rises (Frank–Starling), but cardiac output (heart rate × stroke volume) falls."
+      },
+      "symMech": {
+        "ms": "Sympathetic nerves don’t only speed the heart up: they make each beat stronger (+{pct}%) and shorter, leaving more time to fill.",
+        "college": "β1 stimulation is inotropic (Emax +{pct}%), lusitropic (shorter systole, faster relaxation) and chronotropic, which is why the loop grows taller and wider."
+      },
+      "vagMech": {
+        "ms": "The vagus nerve slows the heart. Longer gaps between beats give more time to fill, but the squeeze itself stays the same.",
+        "college": "Vagal (M2) tone is chronotropic but hardly inotropic, because the ventricles have few vagal fibres. The longer diastole raises end-diastolic volume a little."
+      },
+      "loadFlow": {
+        "ms": "The coronary arteries are fed by the pressure in the aorta, now {bp} mmHg after you changed the heart’s load.",
+        "college": "Coronary perfusion pressure follows aortic pressure ({bp} mmHg), which you set with the load sliders. Left coronary flow comes mostly in diastole, because the contracting wall squeezes its vessels, and a stronger contraction squeezes them more."
+      },
+      "fastFlow": {
+        "ms": "A faster heart ({hr} beats a minute) leaves less resting time between beats, and that is when the left coronary artery fills.",
+        "college": "Tachycardia ({hr}/min) shortens diastole more than systole, cutting the time for left-ventricular, and especially subendocardial, perfusion."
+      },
+      "ecgRhythm": {
+        "ms": "The 12-lead ECG shows the rhythm you chose: {rhythm}."
+      },
+      "lbbbMask": {
+        "ms": "With left bundle branch block the whole ECG looks different, so it no longer shows the ST changes of the blocked artery, even though the wall is still starved (see the bull’s-eye).",
+        "college": "LBBB causes secondary ST–T changes and masks ischaemic ST elevation: the infarct is still on the bull’s-eye but hidden on the 12-lead, which is why the Sgarbossa criteria exist."
+      },
+      "saArtery": {
+        "ms": "The blocked {artery} fed the SA node, so the pacemaker fires about 18% slower.",
+        "college": "The SA nodal artery arises from the proximal RCA in about 60% of people. Its ischaemia slows the sinus rate (×0.82): the sinus bradycardia of an inferior infarct."
+      },
+      "avArtery": {
+        "ms": "The blocked {artery} fed the AV node, so each signal waits about 80 ms longer there: the PR interval gets longer.",
+        "college": "The AV nodal artery comes from the dominant artery at the crux. Its ischaemia slows AV conduction (PR +80 ms); blocks in an inferior infarct are usually nodal and pass off."
+      },
+      "afibAnat": {
+        "ms": "The atria are fibrillating, so here they no longer squeeze just before the ventricles contract.",
+        "college": "In atrial fibrillation the atria are electrically chaotic and mechanically still, so the atrial systole seen in sinus rhythm is gone."
+      }
+    }
   }
 }
 </script>
@@ -1209,6 +1300,96 @@ function renderSee(){
 }
 function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: META.mainTopic || "" }); }); }
 
+/* ---------- alterations: what the reader has changed, and where it shows ----------
+   A page registers alter(spec) before start():
+     title, healthy                  bar heading and the text shown with no changes
+                                     (strings, level objects or functions)
+     items() → [{id, label, section}]      the changes in force now
+     clear(id) / reset()             undo one change / all of them (then sync the page's controls)
+     notes(sectionId) → [{cause: id | [ids], html}]   "because of …" notes for a section
+     toParams() → {key: value}       the changes as URL parameters (empty values dropped)
+     fromParams(URLSearchParams)     apply them on load
+   and calls altered() after every change. */
+let ALT = null, started = false, urlTimer = 0;
+const altCache = new WeakMap();
+const altVal = v => typeof v === "function" ? v() : levelText(v);
+function fill(v, vars = {}){
+  const s = levelText(v).replace(/\{(\w+)\}/g, (m, k) => vars[k] !== undefined ? String(vars[k]) : m);
+  return linkify(s);
+}
+function secName(id){ return get(`sections.${id}.nav`) || get(`sections.${id}.title`) || id; }
+function alter(spec){
+  ALT = spec;
+  if (spec.fromParams) spec.fromParams(params);
+  if (started){ buildAlter(); altered(); }
+}
+function putHTML(node, html){ if (altCache.get(node) !== html){ node.innerHTML = html; altCache.set(node, html); } }
+function buildAlter(){
+  if (!ALT || $(".op-alter")) return;
+  const top = $(".op-top"), bar = document.createElement("div");
+  bar.className = "op-alter"; bar.setAttribute("role", "region"); bar.setAttribute("aria-label", "Your changes");
+  bar.innerHTML = `<div class="wrap op-alter-in" data-alter></div>`;
+  if (top) top.after(bar); else document.body.prepend(bar);
+  $$("[data-section]").forEach(s => {
+    if ($("[data-because]", s)) return;
+    const d = document.createElement("div"); d.className = "because"; d.setAttribute("data-because", ""); d.setAttribute("aria-live", "polite");
+    const head = $(".sec-head", s); head ? head.appendChild(d) : s.prepend(d);
+  });
+  bar.addEventListener("click", e => {
+    const go = e.target.closest("[data-alt-go]"), x = e.target.closest("[data-alt-x]");
+    if (go){ const t = document.getElementById(go.dataset.altGo); if (t) t.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); }
+    else if (x){ ALT.clear(x.dataset.altX); altered(); const f = $("[data-alt-x]", bar) || $("[data-alt-reset]", bar); if (f) f.focus(); }
+    else if (e.target.closest("[data-alt-reset]")){ ALT.reset(); altered(); }
+    else if (e.target.closest("[data-alt-share]")){
+      const b = e.target.closest("[data-alt-share]"), done = ok => { b.textContent = ok ? "Link copied" : "Copy the address bar"; setTimeout(() => { b.textContent = "Copy link"; }, 1600); };
+      writeURL(true);
+      try { navigator.clipboard.writeText(location.href).then(() => done(true), () => done(false)); } catch(err){ done(false); }
+    }
+  });
+  /* keep sticky offsets right as the header and bar change height */
+  const measure = () => {
+    const th = top && getComputedStyle(top).position === "sticky" ? top.offsetHeight : 0;
+    const bh = getComputedStyle(bar).position === "sticky" ? bar.offsetHeight : 0;
+    document.documentElement.style.setProperty("--op-top-h", th + "px");
+    document.documentElement.style.setProperty("--op-stick", (th + bh) + "px");
+    document.documentElement.style.scrollPaddingTop = (th + bh + 12) + "px";
+  };
+  if (window.ResizeObserver){ const ro = new ResizeObserver(measure); if (top) ro.observe(top); ro.observe(bar); }
+  addEventListener("resize", measure); measure();
+  setInterval(() => { if (!document.hidden) renderAlter(); }, 1000);
+}
+function renderAlter(){
+  const bar = $(".op-alter"); if (!ALT || !bar) return;
+  const items = ALT.items() || [], byId = Object.fromEntries(items.map(i => [i.id, i])), reach = {};
+  $$("[data-section]").forEach(s => {
+    const box = $("[data-because]", s); if (!box) return;
+    const notes = ((ALT.notes && ALT.notes(s.id)) || []).map(n => ({ ...n, causes: [].concat(n.cause).filter(c => byId[c]) })).filter(n => n.causes.length);
+    notes.forEach(n => n.causes.forEach(c => { if (byId[c].section !== s.id) (reach[c] ||= new Set()).add(s.id); }));
+    putHTML(box, notes.map(n => `<div class="because-note"><span class="because-from">Because of ${n.causes.map(c => `<a href="#${esc(byId[c].section)}">${esc(byId[c].label)}</a>`).join(" + ")}</span>${n.html}</div>`).join(""));
+  });
+  bar.classList.toggle("has", items.length > 0); bar.classList.toggle("empty", !items.length);
+  const list = items.map(i => {
+    const to = [...(reach[i.id] || [])];
+    const where = to.length ? `→ ${to.map(t => `<a href="#${esc(t)}">${esc(secName(t))}</a>`).join(", ")}` : "→ only here";
+    return `<li class="alt"><button type="button" class="alt-go" data-alt-go="${esc(i.section)}" title="Set in ${esc(secName(i.section))}">${esc(i.label)}</button><span class="alt-to">${where}</span><button type="button" class="alt-x" data-alt-x="${esc(i.id)}" aria-label="Undo: ${esc(i.label)}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></li>`;
+  }).join("");
+  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
+    ${items.length ? `<ul class="alt-list">${list}</ul>` : `<p class="alt-empty">${esc(altVal(ALT.healthy) || "Nothing changed yet.")}</p>`}
+    <div class="alt-act">${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+}
+/* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
+function writeURL(now){
+  if (!ALT || !ALT.toParams) return;
+  clearTimeout(urlTimer);
+  const go = () => {
+    const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString() });
+    for (const [k, v] of Object.entries(ALT.toParams() || {})) if (v !== undefined && v !== null && v !== "") p.set(k, v);
+    try { history.replaceState(history.state, "", location.pathname + "?" + p.toString() + location.hash); } catch(e){}
+  };
+  now ? go() : (urlTimer = setTimeout(go, 250));
+}
+function altered(){ renderAlter(); writeURL(); }
+
 /* ---------- animation loop ---------- */
 const ticks = [];
 const onTick = f => ticks.push(f);
@@ -1241,14 +1422,16 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow(); renderSee();
+  buildControls(); buildNav(); buildNow(); renderSee(); buildAlter();
   bindParts(); bindGlossary();
-  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); };
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); };
   subscribe((s, p) => {
     if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
+    if (s.level !== p.level || s.hour !== p.hour) writeURL();
     if (s.level !== p.level || s.phase !== p.phase) all();
     else { if (s.sel !== p.sel){ renderInspectors(); markSelected(); } if (s.hour !== p.hour) renderBack(); }
   });
+  started = true;
   all();
   loop();
   if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }
@@ -1260,7 +1443,8 @@ return {
   href, color, choice, bindParts, select, setStat, onTick, visible, start,
   tip: showTip, untip: hideTip,
   vitals: () => PHASE_BY_ID[state.phase].vitals,
-  inspector: (node, extra) => { node.__extra = extra; }
+  inspector: (node, extra) => { node.__extra = extra; },
+  alter, altered, fill
 };
 })();
 /* ===== ORGAN ENGINE JS · END ===== */
@@ -1804,12 +1988,12 @@ const condFig = buildSection($("#conductionFig"), "conduction");
 (() => {
   const host = $("#rhythmChips");
   host.innerHTML = RHYTHM_IDS.map(id => `<button type="button" class="chip" data-r="${id}" aria-pressed="${id === Heart.S.rhythm}">${esc(O.get(`rhythms.${id}.name`))}</button>`).join("");
-  host.addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (!b) return; Heart.S.rhythm = b.dataset.r; Heart.reset(); renderRhythm(); });
+  host.addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (!b) return; Heart.S.rhythm = b.dataset.r; Heart.reset(); renderRhythm(); O.altered(); });
   const tone = $("#toneSlider");
   tone.innerHTML = `<div class="sl"><label for="toneIn">Autonomic balance <output id="toneOut"></output></label>
     <input id="toneIn" type="range" min="-1" max="1" step="0.05" value="0">
     <div class="ends"><span>Vagus: rest and digest</span><span>Sympathetic: fight or flight</span></div></div>`;
-  $("#toneIn").addEventListener("input", e => { Heart.S.tone = +e.target.value; });
+  $("#toneIn").addEventListener("input", e => { Heart.S.tone = +e.target.value; O.altered(); });
 })();
 function renderRhythm(){
   $$("#rhythmChips [data-r]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.r === Heart.S.rhythm)));
@@ -1953,8 +2137,9 @@ function drawPV(){
 const MECH = [["p", "Preload (how full)", .5, 1.6, "Less filling", "More filling"], ["a", "Afterload (resistance)", .5, 2, "Wide open arteries", "Tight arteries"], ["c", "Contractility", .4, 1.8, "Weaker", "Stronger"]];
 $("#mechSliders").innerHTML = MECH.map(([k, label, lo, hi, a, b]) => `<div class="sl"><label for="m-${k}">${label}<output id="mo-${k}">×1.00</output></label>
   <input id="m-${k}" type="range" min="${lo}" max="${hi}" step="0.02" value="1"><div class="ends"><span>${a}</span><span>${b}</span></div></div>`).join("");
-MECH.forEach(([k]) => $(`#m-${k}`).addEventListener("input", e => { Heart.S.user[k] = +e.target.value; $(`#mo-${k}`).textContent = "×" + (+e.target.value).toFixed(2); }));
-$("#mechReset").addEventListener("click", () => MECH.forEach(([k]) => { Heart.S.user[k] = 1; $(`#m-${k}`).value = 1; $(`#mo-${k}`).textContent = "×1.00"; }));
+function syncMech(){ MECH.forEach(([k]) => { const v = Heart.S.user[k]; $(`#m-${k}`).value = v; $(`#mo-${k}`).textContent = "×" + v.toFixed(2); }); }
+MECH.forEach(([k]) => $(`#m-${k}`).addEventListener("input", e => { Heart.S.user[k] = +e.target.value; syncMech(); O.altered(); }));
+$("#mechReset").addEventListener("click", () => { MECH.forEach(([k]) => { Heart.S.user[k] = 1; }); syncMech(); O.altered(); });
 const RO = [["sv", "Stroke volume", "mL"], ["ef", "Ejection fraction", "%"], ["co", "Cardiac output", "L/min"], ["bp", "Aortic pressure", "mmHg"], ["edv", "End-diastolic vol.", "mL"], ["esv", "End-systolic vol.", "mL"]];
 $("#mechRO").innerHTML = RO.map(([k, l]) => `<div class="ro"><div class="l">${l}</div><div class="v" id="ro-${k}">–</div></div>`).join("");
 function renderSteps(){
@@ -2004,6 +2189,7 @@ const COR = {
     rv: { rv: true, d: "M176 322 C200 300 280 282 342 298 C348 380 352 450 360 500 C300 482 232 444 188 404 C176 384 172 352 176 322 Z" }
   }
 };
+let domChoice = null;
 const corSvg = $("#coronaryFig");
 const corRefs = { arts: [], zones: {} };
 (() => {
@@ -2045,7 +2231,7 @@ const corRefs = { arts: [], zones: {} };
   /* tools: dominance and veins */
   const tools = $("#coronary [data-tools]");
   const s1 = document.createElement("span"); s1.textContent = "Dominance"; tools.appendChild(s1);
-  O.choice(tools, { label: "Coronary dominance", options: [["right", "Right (70%)", "Right"], ["co", "Co-dominant", "Co"], ["left", "Left (10%)", "Left"]], value: "right", onChange: v => { Heart.S.dom = v; renderCoronary(); } });
+  domChoice = O.choice(tools, { label: "Coronary dominance", options: [["right", "Right (70%)", "Right"], ["co", "Co-dominant", "Co"], ["left", "Left (10%)", "Left"]], value: "right", onChange: v => { Heart.S.dom = v; renderCoronary(); O.altered(); } });
   const vb = document.createElement("button"); vb.type = "button"; vb.className = "chip"; vb.textContent = "Veins"; vb.setAttribute("aria-pressed", "true");
   vb.onclick = () => { const on = vb.getAttribute("aria-pressed") !== "true"; vb.setAttribute("aria-pressed", String(on)); svg.classList.toggle("hide-veins", !on); };
   tools.appendChild(vb);
@@ -2127,7 +2313,7 @@ O.inspector(corInsp, id => {
 });
 corInsp.addEventListener("click", e => {
   const b = e.target.closest("[data-block]"); if (!b) return;
-  Heart.S.occl = b.dataset.block || null; renderCoronary();
+  Heart.S.occl = b.dataset.block || null; renderCoronary(); O.altered();
 });
 /* 12-lead */
 const ecgC = makeCanvas($("#ecg12"));
@@ -2150,6 +2336,7 @@ function ecgCaption(){
   const up = [], down = [];
   Object.keys(LEADS).forEach(n => { const s = Heart.stFor(n); if (s >= .06) up.push(n); else if (s <= -.06) down.push(n); });
   const rh = O.get(`rhythms.${Heart.S.rhythm}.name`);
+  if (Heart.S.rhythm === "lbbb" && Heart.S.occl){ $("#ecg12cap").textContent = `Left bundle branch block hides the ST changes of the blocked artery. Rhythm: ${rh}. 1 small square = 40 ms × 0.1 mV.`; return; }
   $("#ecg12cap").textContent = (up.length || down.length)
     ? `▲ ST elevation in ${up.join(", ") || "no leads"}${down.length ? `; ▼ ST depression in ${down.join(", ")}` : ""}. Rhythm: ${rh}. 1 small square = 40 ms × 0.1 mV.`
     : `Normal ST segments in every lead. Rhythm: ${rh}. 1 small square = 40 ms × 0.1 mV.`;
@@ -2206,7 +2393,88 @@ O.onTick((dt, real) => {
   }
 });
 O.subscribe((s, p) => { if (s.level !== p.level || s.phase !== p.phase){ renderSteps(); renderRhythm(); lastPh = -1; } });
-renderSteps(); renderCoronary(); ecgCaption();
+renderSteps();
+/* =========================================================================
+   CHANGES BAR: what the reader has altered, where each change shows, and the URL
+   ========================================================================= */
+const DOM_LABEL = { co: "Co-dominant coronaries", left: "Left-dominant coronaries" };
+const LOAD_LABEL = { p: "Preload", a: "Afterload", c: "Contractility" };
+const DROPPED = ["wenck", "mobitz2", "avb3", "saArrest"];
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+const rhythmName = () => O.get(`rhythms.${Heart.S.rhythm}.name`);
+function syncHeartUI(){
+  syncMech();
+  $("#toneIn").value = Heart.S.tone;
+  if (domChoice) domChoice.set(Heart.S.dom);
+  renderRhythm(); renderCoronary(); ecgCaption();
+}
+function clearChange(id){
+  const S = Heart.S;
+  if (id === "occl") S.occl = null;
+  else if (id === "dom") S.dom = "right";
+  else if (id === "rhythm"){ S.rhythm = "sinus"; Heart.reset(); }
+  else if (id === "tone") S.tone = 0;
+  else if (id in LOAD_LABEL) S.user[id] = 1;
+}
+O.alter({
+  title: () => O.get("alter.title"),
+  healthy: () => O.levelText(O.get("alter.healthy")),
+  items(){
+    const S = Heart.S, out = [];
+    if (S.occl) out.push({ id: "occl", section: "coronary", label: `${cap1(OCCL_LABEL[S.occl])} blocked` });
+    if (S.dom !== "right") out.push({ id: "dom", section: "coronary", label: DOM_LABEL[S.dom] });
+    if (S.rhythm !== "sinus") out.push({ id: "rhythm", section: "conduction", label: rhythmName() });
+    if (Math.abs(S.tone) > .001) out.push({ id: "tone", section: "conduction", label: `${S.tone > 0 ? "Sympathetic" : "Vagal"} drive +${Math.round(Math.abs(S.tone) * 100)}%` });
+    for (const k of ["p", "a", "c"]) if (Math.abs(S.user[k] - 1) > .005) out.push({ id: k, section: "physiology", label: `${LOAD_LABEL[k]} ×${S.user[k].toFixed(2)}` });
+    return out;
+  },
+  clear(id){ clearChange(id); syncHeartUI(); },
+  reset(){ ["occl", "dom", "rhythm", "tone", "p", "a", "c"].forEach(clearChange); syncHeartUI(); },
+  notes(sec){
+    const S = Heart.S, fx = Heart.effects(), n = Heart.affectedSegs().size, R = S.rhythm, b = Heart.beat, out = [];
+    const N = (cause, key, vars) => out.push({ cause, html: O.fill(O.get(`alter.notes.${key}`), vars) });
+    const artery = S.occl ? OCCL_LABEL[S.occl] : "";
+    if (sec === "anatomy"){
+      if (R === "afib") N("rhythm", "afibAnat");
+    }
+    if (sec === "physiology"){
+      if (S.occl && n) N("occl", "pump", { n, pct: Math.round(fx.emax * 100), emax: fx.emax.toFixed(2) });
+      if (fx.rv < 1) N("occl", "rv");
+      if (R === "afib") N("rhythm", "afibMech");
+      if (R === "lbbb") N("rhythm", "lbbbMech");
+      if (DROPPED.includes(R)) N("rhythm", "dropMech", { rhythm: rhythmName() });
+      if (S.tone > .05) N("tone", "symMech", { pct: Math.round(25 * S.tone) });
+      if (S.tone < -.05) N("tone", "vagMech");
+    }
+    if (sec === "coronary"){
+      const load = ["p", "a", "c"].filter(k => Math.abs(S.user[k] - 1) > .005);
+      if (load.length) N(load, "loadFlow", { bp: `${Math.round(b.sbp)}/${Math.round(b.dbp)}` });
+      if (S.tone > .05) N("tone", "fastFlow", { hr: Math.round(b.hr) });
+      if (R === "lbbb" && S.occl) N(["rhythm", "occl"], "lbbbMask");
+      else if (R !== "sinus") N("rhythm", "ecgRhythm", { rhythm: rhythmName() });
+    }
+    if (sec === "conduction"){
+      if (fx.sa < 1) N("occl", "saArtery", { artery });
+      if (fx.pr) N(S.dom !== "right" ? ["occl", "dom"] : "occl", "avArtery", { artery });
+    }
+    return out;
+  },
+  toParams(){
+    const S = Heart.S, f = v => (Math.round(v * 100) / 100).toString();
+    return { occl: S.occl || "", dom: S.dom !== "right" ? S.dom : "", rhythm: S.rhythm !== "sinus" ? S.rhythm : "",
+      tone: Math.abs(S.tone) > .001 ? f(S.tone) : "",
+      ...Object.fromEntries(["p", "a", "c"].map(k => [k, Math.abs(S.user[k] - 1) > .005 ? f(S.user[k]) : ""])) };
+  },
+  fromParams(P){
+    const S = Heart.S, num = (k, lo, hi) => { const v = parseFloat(P.get(k)); return Number.isFinite(v) ? clamp(v, lo, hi) : null; };
+    if (OCCL_LABEL[P.get("occl")]) S.occl = P.get("occl");
+    if (["right", "co", "left"].includes(P.get("dom"))) S.dom = P.get("dom");
+    if (RHYTHM_IDS.includes(P.get("rhythm"))){ S.rhythm = P.get("rhythm"); Heart.reset(); }
+    const t = num("tone", -1, 1); if (t !== null) S.tone = t;
+    MECH.forEach(([k, , lo, hi]) => { const v = num(k, lo, hi); if (v !== null) S.user[k] = v; });
+  }
+});
+syncHeartUI();
 /* warm the model up so the traces start full */
 Heart.advance(3);
 window.__heart = Heart; /* for debugging in the console */

@@ -186,6 +186,17 @@ a{ color:inherit; }
 .alt-btn{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:4px 11px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; }
 .alt-btn:hover{ background:var(--surface-2); }
 .alt-btn.strong{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.alt-scen{ border-top:1px solid var(--line); padding-top:10px; padding-bottom:12px; }
+.alt-scen[hidden]{ display:none; }
+.alt-scen-h{ margin:0 0 8px; font-size:12px; color:var(--muted); }
+.alt-scen-list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:8px; }
+.alt-scen-list button{ text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:8px 11px; cursor:pointer; font-size:13px; line-height:1.35; }
+.alt-scen-list button:hover{ border-color:var(--line-strong); background:var(--surface-2); }
+.alt-scen-list button[aria-pressed="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+.alt-scen-list b{ display:block; font-size:13px; margin-bottom:2px; }
+.alt-scen-list span{ color:var(--muted); font-size:12.5px; }
+.delta{ font-family:var(--sans); font-size:11px; font-weight:500; color:var(--muted); margin-left:4px; white-space:nowrap; }
+.ro .delta{ display:block; margin:1px 0 0; line-height:1.2; }
 .because:empty{ display:none; }
 .because{ display:grid; gap:8px; margin-top:14px; }
 .because-note{ background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--sel); border-radius:10px; padding:9px 12px; font-family:var(--serif); font-size:15px; line-height:1.5; }
@@ -217,6 +228,7 @@ a{ color:inherit; }
   .alt-list{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
   .alt-list::-webkit-scrollbar{ display:none; }
   .alt-title span, .alt-to, .alt-btn[data-alt-share]{ display:none; }
+  .alt-scen-list{ max-height:50vh; overflow-y:auto; }
 }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 /* ===== ORGAN ENGINE CSS · END ===== */
@@ -1039,6 +1051,110 @@ canvas.trace{ display:block; width:100%; }
       "phd": "Hypothalamic amenorrhoea from energy deficit (in athletes) reflects suppressed GnRH pulsatility signalled by low leptin." }
   },
   "alter": {
+    "scenarios": [
+      {
+        "id": "mca",
+        "name": "Stroke: left middle cerebral artery",
+        "params": {
+          "stroke": "mcaL"
+        },
+        "ms": "The most common big stroke: weakness and numbness of the right face and arm, and trouble speaking.",
+        "college": "Left M1 occlusion: right face–arm > leg hemiparesis and sensory loss, aphasia (Broca’s and Wernicke’s areas), and deep infarction from the lenticulostriate branches."
+      },
+      {
+        "id": "basilar",
+        "name": "Basilar artery stroke",
+        "params": {
+          "stroke": "basilar"
+        },
+        "ms": "The artery to the brainstem and the back of the brain is blocked: dizziness, double vision, and in the worst case coma.",
+        "college": "Basilar occlusion: brainstem, cerebellar and bilateral occipital ischaemia; locked-in syndrome or coma, high mortality without recanalisation."
+      },
+      {
+        "id": "carotid",
+        "name": "Blocked carotid, saved by the circle",
+        "params": {
+          "stroke": "icaL"
+        },
+        "ms": "A whole carotid artery is blocked, yet the circle of Willis sends blood across from the other side.",
+        "college": "With a complete circle, ICA occlusion is often silent: flow reverses in A1 and the communicating arteries; only watershed zones are at risk if pressure falls."
+      },
+      {
+        "id": "faint",
+        "name": "Fainting",
+        "params": {
+          "map": "45"
+        },
+        "ms": "Blood pressure drops below what the brain can cope with, so blood flow falls and you black out.",
+        "college": "MAP below the lower autoregulatory limit: flow becomes pressure-passive; below ~20 mL/100 g/min consciousness is lost (syncope)."
+      },
+      {
+        "id": "panic",
+        "name": "Panic attack (over-breathing)",
+        "params": {
+          "paco2": "22"
+        },
+        "ms": "Breathing fast blows off CO₂, the brain’s arteries narrow and you feel dizzy and tingly.",
+        "college": "Hypocapnia (PaCO₂ 22 mmHg) causes cerebral vasoconstriction: flow falls by ~2–3% per mmHg, producing light-headedness and paraesthesiae."
+      },
+      {
+        "id": "htnDrop",
+        "name": "High blood pressure lowered too fast",
+        "params": {
+          "htn": "1",
+          "map": "75"
+        },
+        "ms": "After years of high pressure, the brain is used to it. A ‘normal’ pressure is now too low for it.",
+        "college": "Chronic hypertension shifts the autoregulation curve right; an abrupt fall to a normal MAP lands below the new lower limit and risks cerebral hypoperfusion."
+      },
+      {
+        "id": "ms",
+        "name": "Multiple sclerosis",
+        "params": {
+          "ms": "1"
+        },
+        "ms": "The immune system strips myelin off axons, so signals slow down or fail.",
+        "college": "Demyelination abolishes saltatory conduction: velocity falls, conduction can block, especially when warm (Uhthoff’s phenomenon)."
+      },
+      {
+        "id": "hyperK",
+        "name": "Very high potassium",
+        "params": {
+          "ko": "12"
+        },
+        "ms": "Too much potassium outside the cells raises their resting voltage until they can’t fire at all.",
+        "college": "Severe hyperkalaemia depolarises the membrane, inactivating Na⁺ channels: depolarisation block (most dangerous for the heart)."
+      },
+      {
+        "id": "lidocaine",
+        "name": "Local anaesthetic",
+        "params": {
+          "nablock": "1"
+        },
+        "ms": "The dentist’s injection blocks the sodium channels, so no signal can start: the tooth goes numb.",
+        "college": "Lidocaine blocks voltage-gated Na⁺ channels from the inside (use-dependent), preventing action potentials in small pain fibres first."
+      },
+      {
+        "id": "allNighter",
+        "name": "An all-nighter",
+        "params": {
+          "night": "1",
+          "hour": 3
+        },
+        "ms": "3 am and still awake: the brain stays busy while sleep pressure keeps rising.",
+        "college": "Sleep deprivation: no N3 slow oscillation, continued adenosine build-up and a circadian trough around 4–6 am."
+      },
+      {
+        "id": "lateCoffee",
+        "name": "Coffee at 4 pm",
+        "params": {
+          "coffee": "1",
+          "hour": 23.25
+        },
+        "ms": "Bedtime, but a lot of the afternoon’s caffeine is still in your blood, hiding how sleepy you are.",
+        "college": "With a ~5 h half-life, about a quarter of a 4 pm dose remains at 11 pm, antagonising adenosine A1/A2A receptors and delaying sleep onset."
+      }
+    ],
     "title": "Your brain",
     "healthy": "A healthy brain: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
     "areas": {
@@ -1406,8 +1522,13 @@ function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: M
      notes(sectionId) → [{cause: id | [ids], html}]   "because of …" notes for a section
      toParams() → {key: value}       the changes as URL parameters (empty values dropped)
      fromParams(URLSearchParams)     apply them on load
-   and calls altered() after every change. */
-let ALT = null, started = false, urlTimer = 0;
+     sync()                          (optional) refresh the page's controls after fromParams
+   and calls altered() after every change. Scenarios come from content alter.scenarios =
+   [{id, name, levels…, params:{key: value, hour?}}]: picking one resets, moves the clock
+   to params.hour if given, then applies the params like a link would. changed() says
+   whether anything is altered, and delta(now, ref, digits) gives a "▲ 12" tag for
+   readouts compared with the healthy reference. */
+let ALT = null, started = false, urlTimer = 0, scenOpen = false;
 const altCache = new WeakMap();
 const altVal = v => typeof v === "function" ? v() : levelText(v);
 function fill(v, vars = {}){
@@ -1437,6 +1558,8 @@ function buildAlter(){
     if (go){ const t = document.getElementById(go.dataset.altGo); if (t) t.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); }
     else if (x){ ALT.clear(x.dataset.altX); altered(); const f = $("[data-alt-x]", bar) || $("[data-alt-reset]", bar); if (f) f.focus(); }
     else if (e.target.closest("[data-alt-reset]")){ ALT.reset(); altered(); }
+    else if (e.target.closest("[data-alt-scen-toggle]")){ scenOpen = !scenOpen; renderAlter(); const t = $("[data-alt-scen-toggle]", bar); if (t) t.focus(); }
+    else if (e.target.closest("[data-alt-scen]")){ applyScenario(e.target.closest("[data-alt-scen]").dataset.altScen); scenOpen = false; altered(); const t = $("[data-alt-scen-toggle]", bar); if (t) t.focus(); }
     else if (e.target.closest("[data-alt-share]")){
       const b = e.target.closest("[data-alt-share]"), done = ok => { b.textContent = ok ? "Link copied" : "Copy the address bar"; setTimeout(() => { b.textContent = "Copy link"; }, 1600); };
       writeURL(true);
@@ -1451,9 +1574,38 @@ function buildAlter(){
     document.documentElement.style.setProperty("--op-stick", (th + bh) + "px");
     document.documentElement.style.scrollPaddingTop = (th + bh + 12) + "px";
   };
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && scenOpen){ scenOpen = false; renderAlter(); } });
+  document.addEventListener("click", e => { if (scenOpen && e.target.isConnected && !e.target.closest(".op-alter")){ scenOpen = false; renderAlter(); } });
   if (window.ResizeObserver){ const ro = new ResizeObserver(measure); if (top) ro.observe(top); ro.observe(bar); }
   addEventListener("resize", measure); measure();
   setInterval(() => { if (!document.hidden) renderAlter(); }, 1000);
+}
+const scenarios = () => get("alter.scenarios") || [];
+/* a scenario is "on" when the current changes are exactly its params (hour and level aside) */
+function activeScenario(){
+  if (!ALT.toParams) return null;
+  const now = Object.fromEntries(Object.entries(ALT.toParams() || {}).filter(([, v]) => v !== "" && v != null));
+  const same = (a, b) => { const x = parseFloat(a), y = parseFloat(b); return Number.isFinite(x) && Number.isFinite(y) ? Math.abs(x - y) < 1e-6 : String(a) === String(b); };
+  return scenarios().find(sc => {
+    const want = Object.fromEntries(Object.entries(sc.params || {}).filter(([k]) => k !== "hour" && k !== "level"));
+    const keys = new Set([...Object.keys(want), ...Object.keys(now)]);
+    return keys.size && [...keys].every(k => k in want && k in now && same(want[k], now[k]));
+  }) || null;
+}
+function applyScenario(id){
+  const sc = scenarios().find(x => x.id === id); if (!sc || !ALT) return;
+  const P = sc.params || {};
+  if (P.hour !== undefined) set({ hour: wrapH(+P.hour) });
+  ALT.reset();
+  ALT.fromParams(new URLSearchParams(Object.entries(P).filter(([k]) => k !== "hour").map(([k, v]) => [k, String(v)])));
+  if (ALT.sync) ALT.sync();
+}
+function changed(){ return !!(ALT && (ALT.items() || []).length); }
+function delta(now, ref, digits = 0){
+  if (!changed() || !Number.isFinite(now) || !Number.isFinite(ref)) return "";
+  const d = now - ref, f = Math.pow(10, digits);
+  if (Math.abs(d) * f < .5) return "";
+  return `<span class="delta" title="Compared with a healthy one: ${esc((Math.round(ref * f) / f).toFixed(digits))}">${d > 0 ? "▲" : "▼"}${(Math.round(Math.abs(d) * f) / f).toFixed(digits)}</span>`;
 }
 function renderAlter(){
   const bar = $(".op-alter"); if (!ALT || !bar) return;
@@ -1470,9 +1622,18 @@ function renderAlter(){
     const where = to.length ? `→ ${to.map(t => `<a href="#${esc(t)}">${esc(secName(t))}</a>`).join(", ")}` : "→ only here";
     return `<li class="alt"><button type="button" class="alt-go" data-alt-go="${esc(i.section)}" title="Set in ${esc(secName(i.section))}">${esc(i.label)}</button><span class="alt-to">${where}</span><button type="button" class="alt-x" data-alt-x="${esc(i.id)}" aria-label="Undo: ${esc(i.label)}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></li>`;
   }).join("");
-  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
+  const scs = scenarios(), on = items.length ? activeScenario() : null;
+  const scenBtn = scs.length ? `<button type="button" class="alt-btn" data-alt-scen-toggle aria-expanded="${scenOpen}">Scenarios ${scenOpen ? "▴" : "▾"}</button>` : "";
+  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${on ? ` · ${esc(on.name)}` : items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
     ${items.length ? `<ul class="alt-list">${list}</ul>` : `<p class="alt-empty">${esc(altVal(ALT.healthy) || "Nothing changed yet.")}</p>`}
-    <div class="alt-act">${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+    <div class="alt-act">${scenBtn}${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+  let panel = $(".alt-scen", bar);
+  if (!panel && scs.length){ panel = document.createElement("div"); panel.className = "wrap alt-scen"; bar.appendChild(panel); }
+  if (panel){
+    panel.hidden = !scenOpen;
+    putHTML(panel, `<p class="alt-scen-h">Start from a ready-made case. It replaces your current changes.</p><div class="alt-scen-list">${scs.map(sc =>
+      `<button type="button" data-alt-scen="${esc(sc.id)}" aria-pressed="${!!(on && on.id === sc.id)}"><b>${esc(sc.name)}</b><span>${esc(levelText(sc))}</span></button>`).join("")}</div>`);
+  }
 }
 /* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
 function writeURL(now){
@@ -1541,7 +1702,7 @@ return {
   tip: showTip, untip: hideTip,
   vitals: () => PHASE_BY_ID[state.phase].vitals,
   inspector: (node, extra) => { node.__extra = extra; },
-  alter, altered, fill
+  alter, altered, fill, changed, delta
 };
 })();
 /* ===== ORGAN ENGINE JS · END ===== */
@@ -1634,7 +1795,7 @@ const FONT = '500 11px "Schibsted Grotesk", system-ui, sans-serif', FONT_B = '60
 function txt(ctx, s, x, y, col, align = "left", font = FONT){ ctx.font = font; ctx.fillStyle = col; ctx.textAlign = align; ctx.fillText(s, x, y); }
 function line(ctx, x0, y0, x1, y1, col, w = 1, dash){ ctx.strokeStyle = col; ctx.lineWidth = w; if (dash) ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); if (dash) ctx.setLineDash([]); }
 const C = n => O.color(n);
-function ro(id, v, unit = ""){ const n = document.querySelector(`[data-ro="${id}"] .v`); if (!n) return; const h = `${esc(v)}<small>${esc(unit)}</small>`; if (n.__h !== h){ n.innerHTML = h; n.__h = h; } }
+function ro(id, v, unit = "", d = ""){ const n = document.querySelector(`[data-ro="${id}"] .v`); if (!n) return; const h = `${esc(v)}<small>${esc(unit)}</small>${d}`; if (n.__h !== h){ n.innerHTML = h; n.__h = h; } }
 function readouts(host, list){ host.innerHTML = list.map(([id, l]) => `<div class="ro" data-ro="${id}"><div class="l">${esc(l)}</div><div class="v">–</div></div>`).join(""); }
 function slider(host, { id, label, min, max, step, value, fmt, ends, onInput }){
   const d = document.createElement("div"); d.className = "sl";
@@ -2412,6 +2573,9 @@ function cbf100(map, co2, htn, metab = 1){
 const metabNow = () => MET[brainNow().key].cbf;
 const cbfNow = () => cbf100(blood.map, blood.co2, blood.htn, metabNow());
 const cbfTotal = () => cbfNow() * 14 * (1 - STROKES[blood.stroke].loss);
+/* the healthy reference at this time of day: asleep at night, default pressure and CO₂, no stroke */
+function refBrain(){ const n = proc.night; proc.night = false; const b = brainNow(); proc.night = n; return b; }
+const refCbf100 = () => cbf100(mapDefault(), co2Default(), false, MET[refBrain().key].cbf);
 const mapDefault = () => { const v = O.vitals(); return Math.round(v.dbp + (v.sbp - v.dbp) / 3); };
 const co2Default = () => ({ sleep: 43, rest: 40, meal: 40, exercise: 38 })[O.state().phase];
 const arC = makeCanvas($("#autoreg")), crC = makeCanvas($("#co2react"));
@@ -2495,9 +2659,10 @@ O.onTick((dt, real) => {
     const hr = O.state().hour, M = MET[b.key], loss = 1 - STROKES[blood.stroke].loss;
     O.setStat("state", STAGE_SHORT[b.key], b.allNighter ? "up all night" : b.asleep ? O.CONTENT.stages[b.key].name : b.key === "wake" ? "brief wake" : ({ rest: "resting", meal: "after a meal", exercise: "running" })[b.key]);
     O.setStat("rhythm", M.hz, M.band);
-    O.setStat("cbf", String(Math.round(cbfTotal() / 10) * 10), `${Math.round(cbfNow())} per 100 g`);
-    O.setStat("o2", String(Math.round(BASE.o2 * M.o2 * loss)));
-    O.setStat("glu", String(Math.round(BASE.glu * M.glu * loss)), `${Math.round(BASE.glu * M.glu * loss * 1.44)} g a day at this rate`);
+    const alt = O.changed(), RM = MET[refBrain().key], D = O.delta, hl = v => alt ? ` · healthy ${v}` : "";
+    O.setStat("cbf", String(Math.round(cbfTotal() / 10) * 10), `${Math.round(cbfNow())} per 100 g` + hl(Math.round(refCbf100() * 14 / 10) * 10));
+    O.setStat("o2", String(Math.round(BASE.o2 * M.o2 * loss)), alt ? `healthy ${Math.round(BASE.o2 * RM.o2)}` : "");
+    O.setStat("glu", String(Math.round(BASE.glu * M.glu * loss)), `${Math.round(BASE.glu * M.glu * loss * 1.44)} g a day at this rate` + hl(Math.round(BASE.glu * RM.glu)));
     O.setStat("mel", String(Math.round(melatonin(hr))), melatonin(hr) > 20 ? "night-time high" : "daytime low");
     /* neuron */
     const S = HH.S, rate = S.spikes.filter(t => S.t - t < 200).length * 5;
@@ -2505,16 +2670,17 @@ O.onTick((dt, real) => {
     apMessage();
     /* race */
     const vM = speedM(), vC = speedC();
-    ro("vM", vM.toFixed(vM < 10 ? 1 : 0), "m/s"); ro("tM", fmtT(1 / vM)); ro("vC", vC.toFixed(1), "m/s"); ro("tC", fmtT(1 / vC));
+    const vM0 = 6 * 12, vC0 = 1;
+    ro("vM", vM.toFixed(vM < 10 ? 1 : 0), "m/s", D(vM, vM0, vM < 10 ? 1 : 0)); ro("tM", fmtT(1 / vM)); ro("vC", vC.toFixed(1), "m/s", D(vC, vC0, 1)); ro("tC", fmtT(1 / vC));
     $("#raceCap").textContent = `A myelinated axon gets a signal to your toe in ${fmtT(1 / vM)}; an unmyelinated one takes ${fmtT(1 / vC)}, ${Math.round(vM / vC)} times longer. That is why you feel the sharp first pain of a stubbed toe before the slow, burning second pain.`;
     /* sleep */
     const press = proc.night && O.state().phase === "sleep" ? procSnoSleep(hr < WAKE_AT ? hr + 24 : hr) : procS(hr);
     ro("clock", fmtH(hr)); ro("stage", STAGE_SHORT[b.key]); ro("asleep", b.min >= 0 ? `${Math.floor(b.min / 60)} h ${String(Math.floor(b.min % 60)).padStart(2, "0")}` : "–", "");
-    ro("press", String(Math.round(press * 100)), "%"); ro("mel", String(Math.round(melatonin(hr))), "pg/mL"); ro("band", M.hz, "Hz");
+    ro("press", String(Math.round(press * 100)), "%", D(press * 100, procS(hr) * 100)); ro("mel", String(Math.round(melatonin(hr))), "pg/mL"); ro("band", M.hz, "Hz");
     /* blood */
-    const tot = cbfTotal(), do2 = tot * .2, use = BASE.o2 * M.o2 * loss;
-    ro("cbf", String(Math.round(tot)), "mL/min"); ro("cbf100", String(Math.round(cbfNow())), "mL"); ro("cpp", String(Math.max(0, blood.map - 10)), "mmHg");
-    ro("do2", String(Math.round(do2)), "mL/min"); ro("ext", do2 > 1 ? String(Math.min(99, Math.round(use / do2 * 100))) : "–", "%");
+    const tot = cbfTotal(), do2 = tot * .2, use = BASE.o2 * M.o2 * loss, r100 = refCbf100(), rTot = r100 * 14, rUse = BASE.o2 * RM.o2;
+    ro("cbf", String(Math.round(tot)), "mL/min", D(tot, rTot)); ro("cbf100", String(Math.round(cbfNow())), "mL", D(cbfNow(), r100)); ro("cpp", String(Math.max(0, blood.map - 10)), "mmHg", D(blood.map, mapDefault()));
+    ro("do2", String(Math.round(do2)), "mL/min", D(do2, rTot * .2)); ro("ext", do2 > 1 ? String(Math.min(99, Math.round(use / do2 * 100))) : "–", "%", do2 > 1 ? D(Math.min(99, use / do2 * 100), rUse / (rTot * .2) * 100) : "");
     cbfMessage();
   }
 });
@@ -2575,6 +2741,7 @@ O.alter({
   },
   clear(id){ clearChange(id); },
   reset(){ ALL_CHANGES.forEach(clearChange); },
+  sync(){ renderStroke(); procMessage(); renderStage(); },
   notes(sec){
     const out = [], night = proc.night && O.state().phase === "sleep", c100 = Math.round(cbfNow());
     const N = (cause, key, vars = {}) => out.push({ cause, html: O.fill(O.get(`alter.notes.${key}`), vars) });

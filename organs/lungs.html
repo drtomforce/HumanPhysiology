@@ -181,6 +181,17 @@ a{ color:inherit; }
 .alt-btn{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:4px 11px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; }
 .alt-btn:hover{ background:var(--surface-2); }
 .alt-btn.strong{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.alt-scen{ border-top:1px solid var(--line); padding-top:10px; padding-bottom:12px; }
+.alt-scen[hidden]{ display:none; }
+.alt-scen-h{ margin:0 0 8px; font-size:12px; color:var(--muted); }
+.alt-scen-list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:8px; }
+.alt-scen-list button{ text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:8px 11px; cursor:pointer; font-size:13px; line-height:1.35; }
+.alt-scen-list button:hover{ border-color:var(--line-strong); background:var(--surface-2); }
+.alt-scen-list button[aria-pressed="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+.alt-scen-list b{ display:block; font-size:13px; margin-bottom:2px; }
+.alt-scen-list span{ color:var(--muted); font-size:12.5px; }
+.delta{ font-family:var(--sans); font-size:11px; font-weight:500; color:var(--muted); margin-left:4px; white-space:nowrap; }
+.ro .delta{ display:block; margin:1px 0 0; line-height:1.2; }
 .because:empty{ display:none; }
 .because{ display:grid; gap:8px; margin-top:14px; }
 .because-note{ background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--sel); border-radius:10px; padding:9px 12px; font-family:var(--serif); font-size:15px; line-height:1.5; }
@@ -212,6 +223,7 @@ a{ color:inherit; }
   .alt-list{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
   .alt-list::-webkit-scrollbar{ display:none; }
   .alt-title span, .alt-to, .alt-btn[data-alt-share]{ display:none; }
+  .alt-scen-list{ max-height:50vh; overflow-y:auto; }
 }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 /* ===== ORGAN ENGINE CSS · END ===== */
@@ -909,6 +921,83 @@ canvas.trace{ display:block; width:100%; }
       "phd": "Lung liquid is cleared at birth by ENaC-mediated Na⁺ absorption triggered by adrenaline and O₂; failure causes transient tachypnoea of the newborn, more common after caesarean section." }
   },
   "alter": {
+    "scenarios": [
+      {
+        "id": "asthma",
+        "name": "Asthma attack",
+        "params": {
+          "cond": "asthma"
+        },
+        "ms": "Narrow, mucus-filled airways: breathing out is slow and hard, and some air gets trapped.",
+        "college": "Acute bronchospasm: high expiratory resistance, air trapping, a scooped flow–volume loop and V/Q mismatch with a low PaCO₂ from extra drive."
+      },
+      {
+        "id": "copdPlane",
+        "name": "COPD on a plane",
+        "params": {
+          "cond": "copd",
+          "alt": "2400"
+        },
+        "ms": "Cabin air at cruising height is like being on a 2,400 m mountain. Healthy lungs cope; damaged ones may not.",
+        "college": "Cabin altitude ~2,400 m (PIO₂ ~110 mmHg) moves a COPD patient down the steep part of the dissociation curve: the basis of the pre-flight hypoxic challenge test."
+      },
+      {
+        "id": "fibrosisRun",
+        "name": "Pulmonary fibrosis on a run",
+        "params": {
+          "cond": "fibrosis",
+          "hour": 17.5
+        },
+        "ms": "Scarred lungs manage at rest, but in exercise blood rushes past too fast for oxygen to cross the thick wall.",
+        "college": "Exercise shortens capillary transit time below the time needed to equilibrate across a thickened membrane: exertional desaturation from diffusion limitation."
+      },
+      {
+        "id": "pneumonia",
+        "name": "Pneumonia",
+        "params": {
+          "cond": "pneumonia"
+        },
+        "ms": "An infected lobe fills with fluid. Blood passing it can’t pick up oxygen.",
+        "college": "Lobar consolidation: shunt and low-V/Q units widen the A–a gradient and respond poorly to supplemental O₂."
+      },
+      {
+        "id": "pe",
+        "name": "Pulmonary embolism",
+        "params": {
+          "cond": "pe"
+        },
+        "ms": "A clot blocks a lung artery: air with no blood in one part, too much blood in the rest.",
+        "college": "Dead space plus over-perfusion elsewhere: hypoxaemia with hypocapnia from increased drive."
+      },
+      {
+        "id": "everest",
+        "name": "Summit of Everest",
+        "params": {
+          "alt": "8848"
+        },
+        "ms": "At 8,848 m the air has a third of the oxygen pressure of sea level: you breathe as hard as you can and blood oxygen is still very low.",
+        "college": "PB ~250 mmHg, PIO₂ ~43 mmHg: extreme hyperventilation drives PaCO₂ very low to keep PAO₂ up; the alkalosis left-shifts the curve and helps loading."
+      },
+      {
+        "id": "acclimatised",
+        "name": "A week at altitude",
+        "params": {
+          "alt": "4000",
+          "bpg": "7.5"
+        },
+        "ms": "After a week high up, red cells make more 2,3-BPG, so haemoglobin hands oxygen to the tissues more easily.",
+        "college": "Acclimatisation raises red-cell 2,3-BPG: a right shift (higher P50) that aids unloading, at a small cost to loading at low PAO₂."
+      },
+      {
+        "id": "fever",
+        "name": "Fever",
+        "params": {
+          "temp": "40.0"
+        },
+        "ms": "A hot body shifts the oxygen curve to the right: haemoglobin lets go of oxygen more easily where it’s needed.",
+        "college": "Hyperthermia right-shifts the dissociation curve (P50 rises), favouring unloading."
+      }
+    ],
     "title": "Your lungs",
     "healthy": "Healthy lungs at sea level: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
     "notes": {
@@ -1303,8 +1392,13 @@ function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: M
      notes(sectionId) → [{cause: id | [ids], html}]   "because of …" notes for a section
      toParams() → {key: value}       the changes as URL parameters (empty values dropped)
      fromParams(URLSearchParams)     apply them on load
-   and calls altered() after every change. */
-let ALT = null, started = false, urlTimer = 0;
+     sync()                          (optional) refresh the page's controls after fromParams
+   and calls altered() after every change. Scenarios come from content alter.scenarios =
+   [{id, name, levels…, params:{key: value, hour?}}]: picking one resets, moves the clock
+   to params.hour if given, then applies the params like a link would. changed() says
+   whether anything is altered, and delta(now, ref, digits) gives a "▲ 12" tag for
+   readouts compared with the healthy reference. */
+let ALT = null, started = false, urlTimer = 0, scenOpen = false;
 const altCache = new WeakMap();
 const altVal = v => typeof v === "function" ? v() : levelText(v);
 function fill(v, vars = {}){
@@ -1334,6 +1428,8 @@ function buildAlter(){
     if (go){ const t = document.getElementById(go.dataset.altGo); if (t) t.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); }
     else if (x){ ALT.clear(x.dataset.altX); altered(); const f = $("[data-alt-x]", bar) || $("[data-alt-reset]", bar); if (f) f.focus(); }
     else if (e.target.closest("[data-alt-reset]")){ ALT.reset(); altered(); }
+    else if (e.target.closest("[data-alt-scen-toggle]")){ scenOpen = !scenOpen; renderAlter(); const t = $("[data-alt-scen-toggle]", bar); if (t) t.focus(); }
+    else if (e.target.closest("[data-alt-scen]")){ applyScenario(e.target.closest("[data-alt-scen]").dataset.altScen); scenOpen = false; altered(); const t = $("[data-alt-scen-toggle]", bar); if (t) t.focus(); }
     else if (e.target.closest("[data-alt-share]")){
       const b = e.target.closest("[data-alt-share]"), done = ok => { b.textContent = ok ? "Link copied" : "Copy the address bar"; setTimeout(() => { b.textContent = "Copy link"; }, 1600); };
       writeURL(true);
@@ -1348,9 +1444,38 @@ function buildAlter(){
     document.documentElement.style.setProperty("--op-stick", (th + bh) + "px");
     document.documentElement.style.scrollPaddingTop = (th + bh + 12) + "px";
   };
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && scenOpen){ scenOpen = false; renderAlter(); } });
+  document.addEventListener("click", e => { if (scenOpen && e.target.isConnected && !e.target.closest(".op-alter")){ scenOpen = false; renderAlter(); } });
   if (window.ResizeObserver){ const ro = new ResizeObserver(measure); if (top) ro.observe(top); ro.observe(bar); }
   addEventListener("resize", measure); measure();
   setInterval(() => { if (!document.hidden) renderAlter(); }, 1000);
+}
+const scenarios = () => get("alter.scenarios") || [];
+/* a scenario is "on" when the current changes are exactly its params (hour and level aside) */
+function activeScenario(){
+  if (!ALT.toParams) return null;
+  const now = Object.fromEntries(Object.entries(ALT.toParams() || {}).filter(([, v]) => v !== "" && v != null));
+  const same = (a, b) => { const x = parseFloat(a), y = parseFloat(b); return Number.isFinite(x) && Number.isFinite(y) ? Math.abs(x - y) < 1e-6 : String(a) === String(b); };
+  return scenarios().find(sc => {
+    const want = Object.fromEntries(Object.entries(sc.params || {}).filter(([k]) => k !== "hour" && k !== "level"));
+    const keys = new Set([...Object.keys(want), ...Object.keys(now)]);
+    return keys.size && [...keys].every(k => k in want && k in now && same(want[k], now[k]));
+  }) || null;
+}
+function applyScenario(id){
+  const sc = scenarios().find(x => x.id === id); if (!sc || !ALT) return;
+  const P = sc.params || {};
+  if (P.hour !== undefined) set({ hour: wrapH(+P.hour) });
+  ALT.reset();
+  ALT.fromParams(new URLSearchParams(Object.entries(P).filter(([k]) => k !== "hour").map(([k, v]) => [k, String(v)])));
+  if (ALT.sync) ALT.sync();
+}
+function changed(){ return !!(ALT && (ALT.items() || []).length); }
+function delta(now, ref, digits = 0){
+  if (!changed() || !Number.isFinite(now) || !Number.isFinite(ref)) return "";
+  const d = now - ref, f = Math.pow(10, digits);
+  if (Math.abs(d) * f < .5) return "";
+  return `<span class="delta" title="Compared with a healthy one: ${esc((Math.round(ref * f) / f).toFixed(digits))}">${d > 0 ? "▲" : "▼"}${(Math.round(Math.abs(d) * f) / f).toFixed(digits)}</span>`;
 }
 function renderAlter(){
   const bar = $(".op-alter"); if (!ALT || !bar) return;
@@ -1367,9 +1492,18 @@ function renderAlter(){
     const where = to.length ? `→ ${to.map(t => `<a href="#${esc(t)}">${esc(secName(t))}</a>`).join(", ")}` : "→ only here";
     return `<li class="alt"><button type="button" class="alt-go" data-alt-go="${esc(i.section)}" title="Set in ${esc(secName(i.section))}">${esc(i.label)}</button><span class="alt-to">${where}</span><button type="button" class="alt-x" data-alt-x="${esc(i.id)}" aria-label="Undo: ${esc(i.label)}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></li>`;
   }).join("");
-  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
+  const scs = scenarios(), on = items.length ? activeScenario() : null;
+  const scenBtn = scs.length ? `<button type="button" class="alt-btn" data-alt-scen-toggle aria-expanded="${scenOpen}">Scenarios ${scenOpen ? "▴" : "▾"}</button>` : "";
+  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${on ? ` · ${esc(on.name)}` : items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
     ${items.length ? `<ul class="alt-list">${list}</ul>` : `<p class="alt-empty">${esc(altVal(ALT.healthy) || "Nothing changed yet.")}</p>`}
-    <div class="alt-act">${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+    <div class="alt-act">${scenBtn}${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+  let panel = $(".alt-scen", bar);
+  if (!panel && scs.length){ panel = document.createElement("div"); panel.className = "wrap alt-scen"; bar.appendChild(panel); }
+  if (panel){
+    panel.hidden = !scenOpen;
+    putHTML(panel, `<p class="alt-scen-h">Start from a ready-made case. It replaces your current changes.</p><div class="alt-scen-list">${scs.map(sc =>
+      `<button type="button" data-alt-scen="${esc(sc.id)}" aria-pressed="${!!(on && on.id === sc.id)}"><b>${esc(sc.name)}</b><span>${esc(levelText(sc))}</span></button>`).join("")}</div>`);
+  }
 }
 /* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
 function writeURL(now){
@@ -1438,7 +1572,7 @@ return {
   tip: showTip, untip: hideTip,
   vitals: () => PHASE_BY_ID[state.phase].vitals,
   inspector: (node, extra) => { node.__extra = extra; },
-  alter, altered, fill
+  alter, altered, fill, changed, delta
 };
 })();
 /* ===== ORGAN ENGINE JS · END ===== */
@@ -1485,7 +1619,8 @@ const content = (P, p50) => 1.34 * HB * sat(P, p50) + .03 * P;   /* mL O₂ per 
    LUNG: control → mechanics → gas exchange
    ========================================================================= */
 const MDT = .002, REC_N = 3000, CHEM_N = 800;
-const Lung = (() => {
+/* a factory: the page runs the lungs you change, and an untouched healthy pair as the reference */
+const makeLung = () => {
   const S = {
     t: 0, cond: "healthy", user: { C: 1, R: 1 }, alt: 0, co2: false, mode: null, modeT: 0, ff: false, msg: "",
     temp: 37, bpg: 5, fetal: false, tempTouched: false,
@@ -1662,7 +1797,8 @@ const Lung = (() => {
   FORCED = forcedCurve(CONDITIONS.healthy);
   return { S, rec, chem, cond, body, PB, PIO2, advance, setCond, settle, exchange, forced: () => FORCED, hypoxia,
     startSpiro(){ if (S.man || S.mode === "hold") return; S.man = { stage: 0, t: 0, v0: S.V }; } };
-})();
+};
+const Lung = makeLung(), RefLung = makeLung();
 
 /* =========================================================================
    CANVAS HELPERS
@@ -1925,7 +2061,7 @@ readouts("#spiroRO", [["fev1", "FEV₁"], ["fvc", "FVC"], ["ratio", "FEV₁/FVC"
 readouts("#odcRO", [["p50", "P50"], ["ph", "pH"], ["sa", "Arterial sat."], ["sv", "Venous sat."], ["unload", "O₂ unloaded"]]);
 readouts("#abgRO", [["pao2", "PaO₂"], ["paco2", "PaCO₂"], ["aa", "A–a gradient"], ["sao2", "SaO₂"], ["ph2", "pH"], ["shunt", "Shunt"]]);
 readouts("#ctlRO", [["ve2", "Ventilation"], ["pao2b", "PaO₂"], ["paco2b", "PaCO₂"], ["drive", "Hypoxic drive"]]);
-function ro(k, v, u){ $$(`[data-ro="${k}"]`).forEach(n => { const h = `${v}${u ? `<small>${u}</small>` : ""}`; if (n.__h !== h){ n.innerHTML = h; n.__h = h; } }); }
+function ro(k, v, u, d = ""){ $$(`[data-ro="${k}"]`).forEach(n => { const h = `${v}${u ? `<small>${u}</small>` : ""}${d}`; if (n.__h !== h){ n.innerHTML = h; n.__h = h; } }); }
 /* altitude sliders (two, kept in step) */
 $$("[data-altitude]").forEach((host, i) => {
   host.innerHTML = `<div class="sl"><label for="alt${i}">Altitude <output data-alt-out></output></label><input id="alt${i}" data-alt type="range" min="0" max="8848" step="50" value="0">
@@ -1980,10 +2116,14 @@ function drawBreath(){
   let s0 = null; ctx.fillStyle = "rgba(63,143,224,.08)";
   eachRec(R, REC_N, t0, now, (i, t) => { const ins = R.flow[i] > .005; if (ins && s0 == null) s0 = t; if (!ins && s0 != null){ ctx.fillRect(X(s0), 6, X(t) - X(s0), h - 12); s0 = null; } });
   if (s0 != null) ctx.fillRect(X(s0), 6, X(now) - X(s0), h - 12);
-  const rows = [["Pleural pressure (cmH₂O)", R.ppl, C("--blood-co2")], ["Alveolar pressure (cmH₂O)", R.palv, C("--s2")], ["Airflow (L/s, + = in)", R.flow, C("--air")], ["Volume above FRC (L)", R.v, ink]];
+  const rows = [["Pleural pressure (cmH₂O)", R.ppl, C("--blood-co2")], ["Alveolar pressure (cmH₂O)", R.palv, C("--s2")], ["Airflow (L/s, + = in)", R.flow, C("--air"), RefLung.rec.flow], ["Volume above FRC (L)", R.v, ink, RefLung.rec.v]];
+  /* healthy lungs, dashed, on the same clock (both models run in step) */
+  const RR = RefLung.rec, dtR = RefLung.S.t - now, ghost = O.changed();
+  if (ghost) txt(ctx, "Dashed: healthy lungs", L + gw, 14, muted, "right");
   const rh = (h - 12) / 4;
-  rows.forEach(([label, arr, col], r) => {
+  rows.forEach(([label, arr, col, ref], r) => {
     let lo = 1e9, hi = -1e9; eachRec(R, REC_N, t0, now, i => { lo = Math.min(lo, arr[i]); hi = Math.max(hi, arr[i]); });
+    if (ghost && ref) eachRec(RR, REC_N, t0 + dtR, now + dtR, i => { lo = Math.min(lo, ref[i]); hi = Math.max(hi, ref[i]); });
     if (r === 1 || r === 2){ const m = Math.max(Math.abs(lo), Math.abs(hi), r === 1 ? 1 : .5) * 1.15; lo = -m; hi = m; }
     else { const pad = Math.max(.2, (hi - lo) * .15); lo -= pad; hi += pad; if (r === 0) hi = Math.min(hi, 2); }
     const y0 = 6 + r * rh + 14, gh = rh - 22, Y = v => y0 + gh - (v - lo) / (hi - lo) * gh;
@@ -1991,6 +2131,8 @@ function drawBreath(){
     line(ctx, L, y0 + gh + .5, L + gw, y0 + gh + .5, lineC);
     if (lo < 0 && hi > 0){ line(ctx, L, Y(0), L + gw, Y(0), C("--line-strong"), 1, [3, 4]); txt(ctx, "0", L - 5, Y(0) + 4, muted, "right"); }
     txt(ctx, hi.toFixed(1), L - 5, y0 + 8, muted, "right"); txt(ctx, lo.toFixed(1), L - 5, y0 + gh, muted, "right");
+    if (ghost && ref){ ctx.strokeStyle = muted; ctx.lineWidth = 1.4; ctx.setLineDash([3, 4]); ctx.beginPath(); let g = true;
+      eachRec(RR, REC_N, t0 + dtR, now + dtR, (i, t) => { const y = Y(ref[i]); g ? ctx.moveTo(X(t - dtR), y) : ctx.lineTo(X(t - dtR), y); g = false; }); ctx.stroke(); ctx.setLineDash([]); }
     ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); let f = true;
     eachRec(R, REC_N, t0, now, (i, t) => { const y = Y(arr[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; }); ctx.stroke();
   });
@@ -2233,7 +2375,7 @@ function drawChemo(){
    ========================================================================= */
 let roT = 0, simT = 0;
 O.onTick((dt, real) => {
-  Lung.advance(Math.min(dt, .05)); simT += dt;
+  Lung.advance(Math.min(dt, .05)); RefLung.advance(Math.min(dt, .05)); simT += dt;
   if (O.visible(anat.svg)) animateAnatomy();
   if (O.visible(acin.svg)){ animateAcinus(simT); }
   if (O.visible(aw.svg)) animateAirway(simT);
@@ -2253,14 +2395,17 @@ O.onTick((dt, real) => {
   if (roT > .25){
     roT = 0;
     const S = Lung.S, c = Lung.cond(), F = Lung.forced(), vt = S.mode === "hold" ? 0 : Math.round((S.vtLast || S.VTt) * 1000), rr = S.mode === "hold" ? 0 : S.f;
-    O.setStat("rr", S.mode === "hold" ? "0" : rr.toFixed(0), S.mode === "hold" ? "holding your breath" : undefined);
-    O.setStat("vt", String(vt)); O.setStat("ve", S.VE.toFixed(1)); O.setStat("pao2", String(Math.round(S.PaO2))); O.setStat("paco2", String(Math.round(S.PaCO2))); O.setStat("spo2", String(Math.round(S.SaO2 * 100)));
-    ro("rr", rr.toFixed(0), "/min"); ro("vt", vt, "mL"); ro("ve", S.VE.toFixed(1), "L/min"); ro("tau", (c.C * S.user.C * c.R * S.user.R).toFixed(2), "s");
+    const Q = RefLung.S, alt = O.changed(), qvt = Math.round((Q.vtLast || Q.VTt) * 1000), hl = v => alt ? `healthy ${v}` : "", D = O.delta;
+    O.setStat("rr", S.mode === "hold" ? "0" : rr.toFixed(0), S.mode === "hold" ? "holding your breath" : hl(Q.f.toFixed(0)));
+    O.setStat("vt", String(vt), hl(qvt)); O.setStat("ve", S.VE.toFixed(1), hl(Q.VE.toFixed(1))); O.setStat("pao2", String(Math.round(S.PaO2)), hl(Math.round(Q.PaO2)));
+    O.setStat("paco2", String(Math.round(S.PaCO2)), hl(Math.round(Q.PaCO2))); O.setStat("spo2", String(Math.round(S.SaO2 * 100)), hl(Math.round(Q.SaO2 * 100)));
+    ro("rr", rr.toFixed(0), "/min", D(rr, Q.f)); ro("vt", vt, "mL", D(vt, qvt)); ro("ve", S.VE.toFixed(1), "L/min", D(S.VE, Q.VE, 1)); ro("tau", (c.C * S.user.C * c.R * S.user.R).toFixed(2), "s");
     ro("fev1", (F.fev1).toFixed(2), "L"); ro("fvc", F.fvc.toFixed(2), "L"); ro("ratio", Math.round(F.fev1 / F.fvc * 100), "%"); ro("pef", F.pef.toFixed(1), "L/s"); ro("tlc", c.tlc.toFixed(1), "L"); ro("rv", c.rv.toFixed(1), "L");
-    ro("p50", S.p50.toFixed(1), "mmHg"); ro("ph", S.pH.toFixed(2)); ro("sa", Math.round(S.SaO2 * 100), "%"); ro("sv", Math.round(S.SvO2 * 100), "%");
-    ro("unload", Math.round((S.SaO2 - S.SvO2) * 1.34 * HB), "mL/L");
-    ro("pao2", Math.round(S.PaO2), "mmHg"); ro("paco2", Math.round(S.PaCO2), "mmHg"); ro("aa", Math.round(S.Aa + S.diff), "mmHg"); ro("sao2", Math.round(S.SaO2 * 100), "%"); ro("ph2", S.pH.toFixed(2)); ro("shunt", Math.round(c.shunt * 100), "%");
-    ro("ve2", S.VE.toFixed(1), "L/min"); ro("pao2b", Math.round(S.PaO2), "mmHg"); ro("paco2b", Math.round(S.PaCO2), "mmHg"); ro("drive", Lung.hypoxia() > .05 ? "×" + (1 + Lung.hypoxia()).toFixed(1) : "none");
+    ro("p50", S.p50.toFixed(1), "mmHg", D(S.p50, Q.p50, 1)); ro("ph", S.pH.toFixed(2), "", D(S.pH, Q.pH, 2)); ro("sa", Math.round(S.SaO2 * 100), "%", D(S.SaO2 * 100, Q.SaO2 * 100)); ro("sv", Math.round(S.SvO2 * 100), "%", D(S.SvO2 * 100, Q.SvO2 * 100));
+    ro("unload", Math.round((S.SaO2 - S.SvO2) * 1.34 * HB), "mL/L", D((S.SaO2 - S.SvO2) * 1.34 * HB, (Q.SaO2 - Q.SvO2) * 1.34 * HB));
+    ro("pao2", Math.round(S.PaO2), "mmHg", D(S.PaO2, Q.PaO2)); ro("paco2", Math.round(S.PaCO2), "mmHg", D(S.PaCO2, Q.PaCO2)); ro("aa", Math.round(S.Aa + S.diff), "mmHg", D(S.Aa + S.diff, Q.Aa + Q.diff));
+    ro("sao2", Math.round(S.SaO2 * 100), "%", D(S.SaO2 * 100, Q.SaO2 * 100)); ro("ph2", S.pH.toFixed(2), "", D(S.pH, Q.pH, 2)); ro("shunt", Math.round(c.shunt * 100), "%");
+    ro("ve2", S.VE.toFixed(1), "L/min", D(S.VE, Q.VE, 1)); ro("pao2b", Math.round(S.PaO2), "mmHg", D(S.PaO2, Q.PaO2)); ro("paco2b", Math.round(S.PaCO2), "mmHg", D(S.PaCO2, Q.PaCO2)); ro("drive", Lung.hypoxia() > .05 ? "×" + (1 + Lung.hypoxia()).toFixed(1) : "none");
     $$("[data-alt-out]").forEach(n => n.textContent = `${Lung.S.alt.toLocaleString()} m · ${Math.round(Lung.PB())} mmHg`);
     $("#tempOut").textContent = S.temp.toFixed(1) + " °C"; $("#tempIn").value = S.temp; $("#bpgOut").textContent = S.bpg.toFixed(1) + " mM";
     renderCtl();
@@ -2316,7 +2461,8 @@ O.alter({
     return out;
   },
   clear(id){ clearChange(id); if (id === "alt" || id === "co2") Lung.settle(); syncLungUI(); },
-  reset(){ ALL_CHANGES.forEach(clearChange); Lung.settle(); syncLungUI(); },
+  reset(){ ALL_CHANGES.forEach(clearChange); Lung.settle(); RefLung.settle(); syncLungUI(); },
+  sync(){ Lung.settle(); RefLung.settle(); syncLungUI(); },
   notes(sec){
     const S = Lung.S, c = Lung.cond(), out = [], hyp = Lung.hypoxia();
     const v = { cond: condName(), pao2: Math.round(S.PaO2), paco2: Math.round(S.PaCO2), aa: Math.round(S.Aa + S.diff), ve: S.VE.toFixed(1),
@@ -2358,14 +2504,14 @@ O.alter({
     const S = Lung.S, num = (k, lo, hi) => { const x = parseFloat(P.get(k)); return Number.isFinite(x) ? clamp(x, lo, hi) : null; };
     if (COND_IDS.includes(P.get("cond"))) Lung.setCond(P.get("cond"));
     MECH.forEach(([k, , lo, hi]) => { const x = num(LOAD_PARAM[k], lo, hi); if (x !== null) S.user[k] = x; });
-    const a = num("alt", 0, 8848); if (a !== null) S.alt = Math.round(a / 50) * 50;
+    const a = num("alt", 0, 8848); if (a !== null) S.alt = Math.min(8848, Math.round(a / 50) * 50);
     const t = num("temp", 34, 41); if (t !== null){ S.temp = t; S.tempTouched = true; }
     const b = num("bpg", 2, 9); if (b !== null) S.bpg = b;
     S.fetal = P.get("fetal") === "1"; S.co2 = P.get("co2") === "1";
   }
 });
 syncLungUI();
-Lung.settle(); Lung.advance(6);
+Lung.settle(); Lung.advance(6); RefLung.settle(); RefLung.advance(6);
 window.__lung = Lung; /* for debugging in the console */
 O.start();
 })();

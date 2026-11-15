@@ -176,6 +176,17 @@ a{ color:inherit; }
 .alt-btn{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:4px 11px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; }
 .alt-btn:hover{ background:var(--surface-2); }
 .alt-btn.strong{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.alt-scen{ border-top:1px solid var(--line); padding-top:10px; padding-bottom:12px; }
+.alt-scen[hidden]{ display:none; }
+.alt-scen-h{ margin:0 0 8px; font-size:12px; color:var(--muted); }
+.alt-scen-list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:8px; }
+.alt-scen-list button{ text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:8px 11px; cursor:pointer; font-size:13px; line-height:1.35; }
+.alt-scen-list button:hover{ border-color:var(--line-strong); background:var(--surface-2); }
+.alt-scen-list button[aria-pressed="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+.alt-scen-list b{ display:block; font-size:13px; margin-bottom:2px; }
+.alt-scen-list span{ color:var(--muted); font-size:12.5px; }
+.delta{ font-family:var(--sans); font-size:11px; font-weight:500; color:var(--muted); margin-left:4px; white-space:nowrap; }
+.ro .delta{ display:block; margin:1px 0 0; line-height:1.2; }
 .because:empty{ display:none; }
 .because{ display:grid; gap:8px; margin-top:14px; }
 .because-note{ background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--sel); border-radius:10px; padding:9px 12px; font-family:var(--serif); font-size:15px; line-height:1.5; }
@@ -207,6 +218,7 @@ a{ color:inherit; }
   .alt-list{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
   .alt-list::-webkit-scrollbar{ display:none; }
   .alt-title span, .alt-to, .alt-btn[data-alt-share]{ display:none; }
+  .alt-scen-list{ max-height:50vh; overflow-y:auto; }
 }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 /* ===== ORGAN ENGINE CSS · END ===== */
@@ -922,6 +934,97 @@ canvas.trace{ display:block; width:100%; }
       "phd": "Peripartum cardiomyopathy is linked to a cleaved 16-kDa prolactin fragment and is treated with bromocriptine in trials. A patent foramen ovale persists in ~25% of adults and enables paradoxical embolism." }
   },
   "alter": {
+    "scenarios": [
+      {
+        "id": "inferiorMI",
+        "name": "Inferior heart attack",
+        "params": {
+          "occl": "rcaProx"
+        },
+        "ms": "The right coronary artery is blocked: the bottom wall dies, the heart slows and signals take longer to reach the ventricles.",
+        "college": "Proximal RCA occlusion: inferior and RV infarction with sinus bradycardia and AV-nodal delay; ST elevation in II, III and aVF."
+      },
+      {
+        "id": "inferiorCHB",
+        "name": "Inferior heart attack with complete heart block",
+        "params": {
+          "occl": "rcaProx",
+          "rhythm": "avb3"
+        },
+        "ms": "Same blocked artery, but now no signals get through the AV node: a slow backup pacemaker keeps the ventricles going.",
+        "college": "Inferior STEMI with third-degree AV block: AV dissociation and a narrow junctional escape rhythm, usually nodal and transient."
+      },
+      {
+        "id": "anteriorMI",
+        "name": "Large anterior heart attack",
+        "params": {
+          "occl": "ladProx"
+        },
+        "ms": "The main artery down the front is blocked near its start, so a big part of the pump stops squeezing.",
+        "college": "Proximal LAD occlusion: anterior, septal and apical infarction with a large fall in Emax, EF and stroke volume; ST elevation V1–V4."
+      },
+      {
+        "id": "lbbbMI",
+        "name": "Heart attack hidden by LBBB",
+        "params": {
+          "occl": "ladProx",
+          "rhythm": "lbbb"
+        },
+        "ms": "A heart attack in someone whose left bundle branch is blocked: the wall is starved but the ECG can’t show it clearly.",
+        "college": "LBBB masks ischaemic ST elevation; the bull’s-eye shows the infarct, the 12-lead does not (think Sgarbossa)."
+      },
+      {
+        "id": "failure",
+        "name": "Heart failure",
+        "params": {
+          "p": "1.4",
+          "a": "1.3",
+          "c": "0.5"
+        },
+        "ms": "A weak, overfilled heart: it squeezes poorly, the body holds on to fluid and tightens the arteries to keep up the pressure.",
+        "college": "HFrEF: low contractility with compensatory preload (fluid retention) and afterload (sympathetic and RAAS vasoconstriction); low EF, high EDV."
+      },
+      {
+        "id": "htn",
+        "name": "High blood pressure",
+        "params": {
+          "a": "1.8"
+        },
+        "ms": "Tight arteries make the heart push against a much higher pressure, so each beat ejects less.",
+        "college": "Raised afterload: the loop narrows and rises, ESV increases and SV falls at fixed contractility (until hypertrophy compensates)."
+      },
+      {
+        "id": "fastAF",
+        "name": "Fast atrial fibrillation",
+        "params": {
+          "rhythm": "afib",
+          "tone": "0.6"
+        },
+        "ms": "The atria quiver and stress hormones push the rate up: fast, irregular beats with little time to fill.",
+        "college": "AF with rapid ventricular response: loss of atrial kick plus short, irregular diastolic filling times lower SV and CO."
+      },
+      {
+        "id": "athlete",
+        "name": "Athlete’s heart at rest",
+        "params": {
+          "tone": "-0.6",
+          "p": "1.3"
+        },
+        "ms": "A trained heart beats slowly at rest but pumps a lot with each beat.",
+        "college": "High vagal tone and a larger, compliant ventricle: resting bradycardia with a large EDV and stroke volume."
+      },
+      {
+        "id": "sepsis",
+        "name": "Septic shock",
+        "params": {
+          "a": "0.55",
+          "p": "0.7",
+          "tone": "0.8"
+        },
+        "ms": "Infection makes the arteries go floppy and fluid leaks out of the blood: the heart races to keep the pressure up.",
+        "college": "Distributive shock: low SVR and reduced venous return with reflex tachycardia; high output but low arterial pressure."
+      }
+    ],
     "title": "Your heart",
     "healthy": "A healthy heart: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
     "notes": {
@@ -1309,8 +1412,13 @@ function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: M
      notes(sectionId) → [{cause: id | [ids], html}]   "because of …" notes for a section
      toParams() → {key: value}       the changes as URL parameters (empty values dropped)
      fromParams(URLSearchParams)     apply them on load
-   and calls altered() after every change. */
-let ALT = null, started = false, urlTimer = 0;
+     sync()                          (optional) refresh the page's controls after fromParams
+   and calls altered() after every change. Scenarios come from content alter.scenarios =
+   [{id, name, levels…, params:{key: value, hour?}}]: picking one resets, moves the clock
+   to params.hour if given, then applies the params like a link would. changed() says
+   whether anything is altered, and delta(now, ref, digits) gives a "▲ 12" tag for
+   readouts compared with the healthy reference. */
+let ALT = null, started = false, urlTimer = 0, scenOpen = false;
 const altCache = new WeakMap();
 const altVal = v => typeof v === "function" ? v() : levelText(v);
 function fill(v, vars = {}){
@@ -1340,6 +1448,8 @@ function buildAlter(){
     if (go){ const t = document.getElementById(go.dataset.altGo); if (t) t.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" }); }
     else if (x){ ALT.clear(x.dataset.altX); altered(); const f = $("[data-alt-x]", bar) || $("[data-alt-reset]", bar); if (f) f.focus(); }
     else if (e.target.closest("[data-alt-reset]")){ ALT.reset(); altered(); }
+    else if (e.target.closest("[data-alt-scen-toggle]")){ scenOpen = !scenOpen; renderAlter(); const t = $("[data-alt-scen-toggle]", bar); if (t) t.focus(); }
+    else if (e.target.closest("[data-alt-scen]")){ applyScenario(e.target.closest("[data-alt-scen]").dataset.altScen); scenOpen = false; altered(); const t = $("[data-alt-scen-toggle]", bar); if (t) t.focus(); }
     else if (e.target.closest("[data-alt-share]")){
       const b = e.target.closest("[data-alt-share]"), done = ok => { b.textContent = ok ? "Link copied" : "Copy the address bar"; setTimeout(() => { b.textContent = "Copy link"; }, 1600); };
       writeURL(true);
@@ -1354,9 +1464,38 @@ function buildAlter(){
     document.documentElement.style.setProperty("--op-stick", (th + bh) + "px");
     document.documentElement.style.scrollPaddingTop = (th + bh + 12) + "px";
   };
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && scenOpen){ scenOpen = false; renderAlter(); } });
+  document.addEventListener("click", e => { if (scenOpen && e.target.isConnected && !e.target.closest(".op-alter")){ scenOpen = false; renderAlter(); } });
   if (window.ResizeObserver){ const ro = new ResizeObserver(measure); if (top) ro.observe(top); ro.observe(bar); }
   addEventListener("resize", measure); measure();
   setInterval(() => { if (!document.hidden) renderAlter(); }, 1000);
+}
+const scenarios = () => get("alter.scenarios") || [];
+/* a scenario is "on" when the current changes are exactly its params (hour and level aside) */
+function activeScenario(){
+  if (!ALT.toParams) return null;
+  const now = Object.fromEntries(Object.entries(ALT.toParams() || {}).filter(([, v]) => v !== "" && v != null));
+  const same = (a, b) => { const x = parseFloat(a), y = parseFloat(b); return Number.isFinite(x) && Number.isFinite(y) ? Math.abs(x - y) < 1e-6 : String(a) === String(b); };
+  return scenarios().find(sc => {
+    const want = Object.fromEntries(Object.entries(sc.params || {}).filter(([k]) => k !== "hour" && k !== "level"));
+    const keys = new Set([...Object.keys(want), ...Object.keys(now)]);
+    return keys.size && [...keys].every(k => k in want && k in now && same(want[k], now[k]));
+  }) || null;
+}
+function applyScenario(id){
+  const sc = scenarios().find(x => x.id === id); if (!sc || !ALT) return;
+  const P = sc.params || {};
+  if (P.hour !== undefined) set({ hour: wrapH(+P.hour) });
+  ALT.reset();
+  ALT.fromParams(new URLSearchParams(Object.entries(P).filter(([k]) => k !== "hour").map(([k, v]) => [k, String(v)])));
+  if (ALT.sync) ALT.sync();
+}
+function changed(){ return !!(ALT && (ALT.items() || []).length); }
+function delta(now, ref, digits = 0){
+  if (!changed() || !Number.isFinite(now) || !Number.isFinite(ref)) return "";
+  const d = now - ref, f = Math.pow(10, digits);
+  if (Math.abs(d) * f < .5) return "";
+  return `<span class="delta" title="Compared with a healthy one: ${esc((Math.round(ref * f) / f).toFixed(digits))}">${d > 0 ? "▲" : "▼"}${(Math.round(Math.abs(d) * f) / f).toFixed(digits)}</span>`;
 }
 function renderAlter(){
   const bar = $(".op-alter"); if (!ALT || !bar) return;
@@ -1373,9 +1512,18 @@ function renderAlter(){
     const where = to.length ? `→ ${to.map(t => `<a href="#${esc(t)}">${esc(secName(t))}</a>`).join(", ")}` : "→ only here";
     return `<li class="alt"><button type="button" class="alt-go" data-alt-go="${esc(i.section)}" title="Set in ${esc(secName(i.section))}">${esc(i.label)}</button><span class="alt-to">${where}</span><button type="button" class="alt-x" data-alt-x="${esc(i.id)}" aria-label="Undo: ${esc(i.label)}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2 2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></li>`;
   }).join("");
-  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
+  const scs = scenarios(), on = items.length ? activeScenario() : null;
+  const scenBtn = scs.length ? `<button type="button" class="alt-btn" data-alt-scen-toggle aria-expanded="${scenOpen}">Scenarios ${scenOpen ? "▴" : "▾"}</button>` : "";
+  putHTML($("[data-alter]", bar), `<p class="alt-title"><i></i>${esc(altVal(ALT.title) || "Your changes")}<span class="muted" style="font-weight:400">${on ? ` · ${esc(on.name)}` : items.length ? ` · ${items.length} change${items.length > 1 ? "s" : ""}` : ""}</span></p>
     ${items.length ? `<ul class="alt-list">${list}</ul>` : `<p class="alt-empty">${esc(altVal(ALT.healthy) || "Nothing changed yet.")}</p>`}
-    <div class="alt-act">${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+    <div class="alt-act">${scenBtn}${items.length ? `<button type="button" class="alt-btn" data-alt-share>Copy link</button><button type="button" class="alt-btn strong" data-alt-reset>Reset all</button>` : ""}</div>`);
+  let panel = $(".alt-scen", bar);
+  if (!panel && scs.length){ panel = document.createElement("div"); panel.className = "wrap alt-scen"; bar.appendChild(panel); }
+  if (panel){
+    panel.hidden = !scenOpen;
+    putHTML(panel, `<p class="alt-scen-h">Start from a ready-made case. It replaces your current changes.</p><div class="alt-scen-list">${scs.map(sc =>
+      `<button type="button" data-alt-scen="${esc(sc.id)}" aria-pressed="${!!(on && on.id === sc.id)}"><b>${esc(sc.name)}</b><span>${esc(levelText(sc))}</span></button>`).join("")}</div>`);
+  }
 }
 /* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
 function writeURL(now){
@@ -1444,7 +1592,7 @@ return {
   tip: showTip, untip: hideTip,
   vitals: () => PHASE_BY_ID[state.phase].vitals,
   inspector: (node, extra) => { node.__extra = extra; },
-  alter, altered, fill
+  alter, altered, fill, changed, delta
 };
 })();
 /* ===== ORGAN ENGINE JS · END ===== */
@@ -1527,7 +1675,8 @@ const PRESET = { sleep: { c: .95, a: .95, p: 1.0 }, rest: { c: 1, a: 1, p: 1 }, 
 const RHYTHM_IDS = ["sinus", "avb1", "wenck", "mobitz2", "avb3", "rbbb", "lbbb", "afib", "saArrest"];
 const DT = 0.00025, REC_DT = 0.002, REC_N = 4096;
 
-const Heart = (() => {
+/* a factory: the page runs the heart you change, and an untouched healthy one as the reference */
+const makeHeart = () => {
   const S = {
     t: 0, Vlv: 125, Vla: 60, Pa: 85, Plv: 5, Pla: 8, Qmv: 0, Qav: 0, el: 0, lca: 0, rca: 0,
     rhythm: "sinus", tone: 0, user: { p: 1, a: 1, c: 1 }, dom: "right", occl: null,
@@ -1701,7 +1850,8 @@ const Heart = (() => {
   }
   return { S, rec, beat, advance, ecg, stFor, apSA, apV, sinusRate, affected, affectedSegs, effects, qtFor,
     reset(){ S.wk = 0; S.m2 = 0; S.nextAF = S.t + .2; if (S.nextP < S.t) S.nextP = S.t + .1; } };
-})();
+};
+const Heart = makeHeart(), RefHeart = makeHeart();
 
 /* =========================================================================
    GEOMETRY: frontal section (shared by the anatomy and conduction figures)
@@ -1947,8 +2097,7 @@ function makeCanvas(node){
 const FONT = '500 11px "Schibsted Grotesk", system-ui, sans-serif', FONT_B = '600 11px "Schibsted Grotesk", system-ui, sans-serif';
 function txt(ctx, s, x, y, col, align = "left", font = FONT){ ctx.font = font; ctx.fillStyle = col; ctx.textAlign = align; ctx.fillText(s, x, y); }
 /* samples from the recording inside [t0, t1] */
-function eachSample(t0, t1, f){
-  const R = Heart.rec;
+function eachSample(t0, t1, f, R = Heart.rec){
   for (let j = 0; j < R.n; j++){
     const i = (R.i - R.n + j + REC_N) % REC_N, t = R.t[i];
     if (t < t0 || t > t1) continue;
@@ -2118,6 +2267,13 @@ function drawPV(){
   txt(ctx, "End-systolic line", X(vEnd) + 4, Y(Emax * (vEnd - V0)) + 12, muted);
   ctx.beginPath(); for (let v = V0; v <= vmax; v += 2){ const p = .55 * (Math.exp(.025 * (v - V0)) - 1); if (p > pmax) break; v === V0 ? ctx.moveTo(X(v), Y(p)) : ctx.lineTo(X(v), Y(p)); } ctx.stroke(); ctx.setLineDash([]);
   txt(ctx, "End-diastolic curve", X(150), Y(.55 * (Math.exp(.025 * 140) - 1)) - 8, muted, "right");
+  /* the healthy heart's last beat, dashed, once anything is changed */
+  if (O.changed()){
+    const RR = RefHeart.rec, rn = RefHeart.S.t, rrr = 60 / Math.max(30, RefHeart.beat.hr);
+    ctx.strokeStyle = muted; ctx.lineWidth = 1.6; ctx.setLineDash([3, 4]); ctx.beginPath(); let f = true;
+    eachSample(rn - rrr * 1.02, rn, i => { const x = X(RR.vlv[i]), y = Y(RR.plv[i]); f ? ctx.moveTo(x, y) : ctx.lineTo(x, y); f = false; }, RR); ctx.stroke(); ctx.setLineDash([]);
+    txt(ctx, "Dashed: a healthy heart", L + gw, T + 10, muted, "right");
+  }
   /* the loop: the last beat bright, earlier ones faint */
   const rr = 60 / Math.max(30, Heart.beat.hr), R_ = Heart.rec;
   for (const [a, b, alpha] of [[now - 3 * rr, now - rr, .25], [now - rr * 1.02, now, 1]]){
@@ -2367,7 +2523,7 @@ function drawCorFlow(){
    ========================================================================= */
 let statT = 0, capT = 0;
 O.onTick((dt, real) => {
-  Heart.advance(Math.min(dt, .05));
+  Heart.advance(Math.min(dt, .05)); RefHeart.advance(Math.min(dt, .05));
   if (O.visible(anat.svg)) animateSection(anat, dt);
   if (O.visible(condFig.svg)){ animateSection(condFig, dt); animateConduction(condFig); }
   if (O.visible($("#apStrip"))) drawAP();
@@ -2380,14 +2536,16 @@ O.onTick((dt, real) => {
   statT += real;
   if (statT > .25){
     statT = 0;
-    const b = Heart.beat;
-    O.setStat("hr", String(Math.round(b.hr)), `SA node ${Math.round(Heart.S.rhythm === "saArrest" ? 0 : Heart.sinusRate())}/min`);
-    O.setStat("bp", `${Math.round(b.sbp)}/${Math.round(b.dbp)}`);
-    O.setStat("sv", String(Math.round(b.sv)));
-    O.setStat("co", b.co.toFixed(1));
-    O.setStat("ef", String(Math.round(b.ef)));
-    const ro = { sv: [Math.round(b.sv), "mL"], ef: [Math.round(b.ef), "%"], co: [b.co.toFixed(1), "L/min"], bp: [`${Math.round(b.sbp)}/${Math.round(b.dbp)}`, "mmHg"], edv: [Math.round(b.edv), "mL"], esv: [Math.round(b.esv), "mL"] };
-    for (const [k, [v, u]] of Object.entries(ro)){ const n = $("#ro-" + k), html = `${v}<small>${u}</small>`; if (n.innerHTML !== html) n.innerHTML = html; }
+    const b = Heart.beat, r = RefHeart.beat, alt = O.changed();
+    const healthy = (v, u = "") => alt ? `healthy ${v}${u}` : "";
+    O.setStat("hr", String(Math.round(b.hr)), `SA node ${Math.round(Heart.S.rhythm === "saArrest" ? 0 : Heart.sinusRate())}/min` + (alt ? ` · healthy ${Math.round(r.hr)}` : ""));
+    O.setStat("bp", `${Math.round(b.sbp)}/${Math.round(b.dbp)}`, healthy(`${Math.round(r.sbp)}/${Math.round(r.dbp)}`));
+    O.setStat("sv", String(Math.round(b.sv)), healthy(Math.round(r.sv), " mL"));
+    O.setStat("co", b.co.toFixed(1), healthy(r.co.toFixed(1), " L/min"));
+    O.setStat("ef", String(Math.round(b.ef)), healthy(Math.round(r.ef), "%"));
+    const ro = { sv: [Math.round(b.sv), "mL", O.delta(b.sv, r.sv)], ef: [Math.round(b.ef), "%", O.delta(b.ef, r.ef)], co: [b.co.toFixed(1), "L/min", O.delta(b.co, r.co, 1)],
+      bp: [`${Math.round(b.sbp)}/${Math.round(b.dbp)}`, "mmHg", O.delta(b.sbp, r.sbp)], edv: [Math.round(b.edv), "mL", O.delta(b.edv, r.edv)], esv: [Math.round(b.esv), "mL", O.delta(b.esv, r.esv)] };
+    for (const [k, [v, u, d]] of Object.entries(ro)){ const n = $("#ro-" + k), html = `${v}<small>${u}</small>${d}`; if (n.innerHTML !== html) n.innerHTML = html; }
     $("#toneOut").textContent = Heart.S.rhythm === "saArrest" ? "SA node silent" : Heart.S.rhythm === "afib" ? "atria fibrillating" : `SA node ${Math.round(Heart.sinusRate())}/min`;
     if ((capT += 1) % 4 === 0) ecgCaption();
   }
@@ -2430,6 +2588,7 @@ O.alter({
   },
   clear(id){ clearChange(id); syncHeartUI(); },
   reset(){ ["occl", "dom", "rhythm", "tone", "p", "a", "c"].forEach(clearChange); syncHeartUI(); },
+  sync: syncHeartUI,
   notes(sec){
     const S = Heart.S, fx = Heart.effects(), n = Heart.affectedSegs().size, R = S.rhythm, b = Heart.beat, out = [];
     const N = (cause, key, vars) => out.push({ cause, html: O.fill(O.get(`alter.notes.${key}`), vars) });
@@ -2476,7 +2635,7 @@ O.alter({
 });
 syncHeartUI();
 /* warm the model up so the traces start full */
-Heart.advance(3);
+Heart.advance(3); RefHeart.advance(3);
 window.__heart = Heart; /* for debugging in the console */
 O.start();
 })();

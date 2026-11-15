@@ -12,6 +12,49 @@ The README describes what already exists. This file only lists what doesn't exis
 | Body systems animated on the body | 6: circulatory, nervous, endocrine, respiratory, digestive, urinary | 4: immune & lymphatic, muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | One per new system, plus cross-system journeys |
 
+## Next up
+
+Two pieces of supporting work come before the next organ page: an export utility, then a better body view on phones. Both reach every page, so later pages get them without extra work.
+
+### A. Export: figures, animations, context and settings
+
+An **Export** button in the top bar of `index.html` and of every organ page. It opens a small menu for the figure in focus, or for the whole page. Build it once in the shared engine (`organs/_template.html` → `node organs/sync-engine.mjs`), with a copy in `index.html`, so every page gets the same menu.
+
+- **Still illustrations**
+  - **SVG** for the vector figures: the body scene (`#scene`), the anatomy figures, close-ups and diagrams. Clone the node and copy computed styles inline, because the CSS variables and classes don't travel with the file. Resolve colours for the current theme (light or dark), keep the `viewBox`, and add a `<title>` and `<desc>`.
+  - **PNG** for everything, at 1×, 2× or 4×. Canvases (the ECG, the traces on the organ pages) come from `toDataURL`. SVG figures are drawn onto a canvas through an `Image`. Offer a transparent or a solid background.
+  - **A caption strip**, on by default: figure name, time of day, phase, reading level, active changes or scenario, and the page link. Shared copies then say what they show.
+- **Animations**
+  - **WebM** (or MP4 where the browser records only that, as Safari does) from `MediaRecorder` on a canvas `captureStream()`. SVG figures are rendered frame by frame onto an offscreen canvas while recording.
+  - **Length**: one heartbeat, one breath, a set number of seconds, or a whole journey or cascade from start to end, so loops come out seamless.
+  - **Animated GIF** as a fallback for slides and chats, with a small inline encoder (no build step). Keep it short and low frame rate to hold the size down.
+  - **PNG frame sequence** in a ZIP for people who want to edit the frames.
+  - Recording follows the reduced-motion setting and the current playback speed. While it records, show a progress bar and a cancel button.
+- **Context and settings**
+  - **JSON file**: page, topic, reading level, hour, playing state, shown and live systems, the journey or cascade being followed and how far along it is, and on organ pages every control value, the `alter()` changes, the scenario and the healthy-reference toggle. Add a schema version number.
+  - **Import**: the same menu loads such a file, or a file dropped onto the page, and restores the view exactly. Check the version and ignore keys it doesn't know.
+  - **Link**: copy the shareable link (it already exists on the organ pages) and add one to the body view with the same parameters.
+  - **Data**: the visible traces and readouts (vitals, Wiggers diagram, spirometry, GFR and so on) as **CSV**, with units in the headers.
+- **Done when**: every SVG figure and canvas on every page exports as SVG or PNG and as WebM or GIF. A settings file round-trips and restores the same view. Exported files open in a browser, Inkscape and PowerPoint/Keynote. A headless test exports each figure once and checks the file is valid.
+
+### B. Mobile view of the body on the starting page
+
+On a 390 × 664 phone (iPhone 13) the body is only about 150 px wide, inside a 390 × 410 scene. The figure is crowded, and parts of it are covered.
+
+- **What goes wrong now**
+  - The 13 organ labels sit on top of the body and on top of each other (Ears/Throat, Liver/Kidneys/Pancreas). They hide the organs they point to, and the tap targets overlap.
+  - The body-systems switches sit over the right side of the body and cut off the "Skin" label.
+  - The day-window clock and the moment text ("Exercise") collide with the Ears and Brain labels.
+  - In landscape (750 × 342) the scene is taller than the screen, so the legs are cut off and the vitals sit below the fold.
+- **Plan**
+  - **Let the body fill the width**: use a taller scene and a `viewBox` cropped to the body on narrow screens, so the figure is about twice as wide. Allow pinch-zoom and pan, and double-tap an organ to zoom to it.
+  - **Labels on demand**: hide the text labels below about 600 px and keep small numbered dots, or show labels only for the system that's live. Tapping a dot shows its name in a tooltip. Tap areas at least 44 px, and a layout check that moves dots apart so they don't overlap.
+  - **Move the overlays off the body**: the systems switches go to a horizontal scrolling chip row (or a bottom sheet) under the scene. The day window and the moment text go into a slim bar above it.
+  - **Landscape**: put the scene and the vitals side by side, with the scene height capped at the viewport (`100svh` minus the bars).
+  - **Panel as a bottom sheet**: the topic panel slides up over the scene with a drag handle, instead of opening far below it, so the body stays in view while you read.
+  - **Speed**: on small screens, fewer particles and a lower frame rate when the scene is off screen, so older phones don't stutter.
+- **Done when**: at 360, 390 and 430 px wide (portrait) and 667–932 px wide (landscape) no labels overlap, no control covers the body, every tap target is at least 44 px, and the page has no horizontal scroll. A Playwright check takes screenshots at these sizes and fails if label boxes overlap.
+
 ## What a finished deep-dive page includes
 
 These are the conventions the heart, lungs and brain pages set. Each new page should meet them.
@@ -226,11 +269,14 @@ These span several organs and are best built as their own pages (for example `ex
 ## Suggested order
 
 1. ~~Kidneys page~~ (done).
-2. ~~Gut page~~ (done), then the liver and pancreas pages, which complete the trio and build on the bite journeys and the insulin/glucagon channels.
-3. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.
-4. Muscles and bones pages, then the muscles & skeleton system on the body.
-5. Skin page and the skin system on the body (heat balance).
-6. Eyes, ears and throat pages.
-7. Endocrine glands, and blood & vessels as new organs with pages.
-8. Reproductive system and organs.
-9. Cross-organ explorations and the extra sections on the heart, lungs and brain.
+2. ~~Gut page~~ (done).
+3. **Export utility** ([A](#a-export-figures-animations-context-and-settings)): figures, animations, context and settings, on every page.
+4. **Mobile view of the body** ([B](#b-mobile-view-of-the-body-on-the-starting-page)) on the starting page.
+5. The liver and pancreas pages, which complete the trio and build on the bite journeys and the insulin/glucagon channels.
+6. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.
+7. Muscles and bones pages, then the muscles & skeleton system on the body.
+8. Skin page and the skin system on the body (heat balance).
+9. Eyes, ears and throat pages.
+10. Endocrine glands, and blood & vessels as new organs with pages.
+11. Reproductive system and organs.
+12. Cross-organ explorations and the extra sections on the heart, lungs and brain.

@@ -27,6 +27,12 @@
              aortic pressure minus the squeeze of the contracting wall.
              ECG: P, QRS and T waves summed per lead (12 leads), widened for bundle
              branch block and shifted by the ST pattern of a blocked artery.
+   PLETH     A fingertip pulse oximeter: the aortic reservoir pressure, the forward
+             ejection wave (impedance × aortic flow) and a spread-out wave reflected
+             from the lower body, smoothed on the way to the finger. ART sets the
+             arteries (age, stiffness, a narrowing, skin tone); its compliance also
+             feeds the heart's Windkessel. Features (foot, peaks, notch, ΔT, SI, RI,
+             PTT, PI) are measured from the simulated curve each beat.
    CORONARY  The coronary tree (segments, dominance), the AHA 17-segment
              territories each segment feeds, and each segment's ST signature.
    FIGURES   Frontal section (anatomy, flow, conduction), Wiggers diagram and
@@ -233,7 +239,7 @@ a{ color:inherit; }
   --cond:#f2b705; --cond-line:#8a6400; --wave-a:#ff9a3c; --wave-v:#ff7a2e;
   --lad:#2a78d6; --lcx:#eb6834; --rca:#1baf7a; --ischemia:#4a2a2a; --vein-c:#5a62b8;
   --paper:#fbefee; --paper-line:#efc9c6; --paper-bold:#e3a9a5; --trace:#261D1B;
-  --tr-lv:#261D1B; --tr-ao:#eb6834; --tr-la:#2a78d6;
+  --tr-lv:#261D1B; --tr-ao:#eb6834; --tr-la:#2a78d6; --tr-pleth:#16879a;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -242,7 +248,7 @@ a{ color:inherit; }
     --cond:#ffd23f; --cond-line:#ffe9a0;
     --lad:#3987e5; --lcx:#d95926; --rca:#199e70; --ischemia:#160c0c; --vein-c:#8a92e6;
     --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c; --trace:#EEE6DE;
-    --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0;
+    --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0; --tr-pleth:#45c4d8;
   }
 }
 :root[data-theme="dark"]{
@@ -251,12 +257,22 @@ a{ color:inherit; }
   --cond:#ffd23f; --cond-line:#ffe9a0;
   --lad:#3987e5; --lcx:#d95926; --rca:#199e70; --ischemia:#160c0c; --vein-c:#8a92e6;
   --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c; --trace:#EEE6DE;
-  --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0;
+  --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0; --tr-pleth:#45c4d8;
 }
 #anatomyFig, #conductionFig{ max-height:600px; margin:0 auto; }
 canvas.cor3d{ display:block; width:100%; touch-action:pan-y; cursor:grab; border-radius:12px; outline-offset:3px; }
 .cor-views{ margin-top:-2px; }
 .cor-parts{ margin-top:8px; }
+/* pulse oximeter */
+.feat-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:10px; margin-top:12px; }
+.feat{ background:var(--bg); border-radius:12px; padding:10px 12px; min-width:0; }
+.feat b{ display:block; font-size:13.5px; margin-bottom:3px; }
+.feat > span{ display:block; font-family:var(--serif); font-size:14px; line-height:1.5; color:var(--ink); }
+.feat svg{ display:block; width:100%; height:46px; margin:2px 0 6px; color:var(--tr-pleth); }
+.feat svg .base{ stroke:var(--line-strong); }
+.feat .tag{ display:inline-block; font-size:10.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-left:6px; }
+.art-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+.pulse-sub{ margin:22px 0 4px; font-family:var(--serif); font-weight:400; font-size:22px; letter-spacing:-.01em; }
 .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 #bullseye{ max-width:260px; margin:6px auto 0; display:block; }
 .h-myo{ fill:var(--myo); stroke:var(--myo-line); stroke-width:1.5; }
@@ -398,6 +414,36 @@ canvas.trace{ display:block; width:100%; }
           <p class="prose small muted" style="margin-top:12px" data-text="sections.physiology.loopNote"></p>
         </div>
       </aside>
+    </div>
+    <div class="sec-grid" style="margin-top:20px" id="pulseox">
+      <div class="panel fig">
+        <h3>The pulse at the fingertip: a pulse oximeter’s pleth</h3>
+        <canvas class="trace" id="pleth" height="440" aria-label="A pulse oximeter screen: the ECG and the fingertip pulse curve scrolling, with the last pulse drawn larger and its features labelled"></canvas>
+        <div class="legend">
+          <span><i style="--c:var(--trace)"></i>ECG, lead II</span>
+          <span><i style="--c:var(--tr-pleth)"></i>Fingertip pulse (pleth)</span>
+          <span><i style="--c:var(--muted)"></i>Dashed: healthy 25-year-old</span>
+        </div>
+        <p class="cap" id="plethCap">Monitors scale the pleth to fill the screen, and so does this one: the perfusion index gives its real size. Each pulse arrives at the finger a little after the R wave, once the ventricle has squeezed and the wave has run down the arm.</p>
+      </div>
+      <aside class="side">
+        <div class="panel">
+          <h3>The arteries between heart and finger</h3>
+          <div class="art-chips" id="artChips"></div>
+          <div id="artText"></div>
+          <div class="readouts" id="plethRO"></div>
+          <p class="note" data-text="pulse.roNote"></p>
+        </div>
+      </aside>
+    </div>
+    <div class="panel" style="margin-top:20px">
+      <h3 class="pulse-sub">Reading the pulse curve</h3>
+      <p class="prose" data-text="pulse.intro"></p>
+      <div class="feat-grid" id="pulseFeatures"></div>
+      <h3 class="pulse-sub">What disease does to it</h3>
+      <p class="prose" data-text="pulse.diseaseIntro"></p>
+      <div class="feat-grid" id="pulseDisease"></div>
+      <p class="prose small muted" style="margin-top:14px" data-text="pulse.caveat"></p>
     </div>
   </section>
 
@@ -930,6 +976,212 @@ canvas.trace{ display:block; width:100%; }
       "college": "Pregnancy raises plasma volume, heart rate and stroke volume and lowers systemic vascular resistance; aortocaval compression in late pregnancy can lower venous return when lying flat. Oestrogen is cardioprotective before menopause.",
       "phd": "Peripartum cardiomyopathy is linked to a cleaved 16-kDa prolactin fragment and is treated with bromocriptine in trials. A patent foramen ovale persists in ~25% of adults and enables paradoxical embolism." }
   },
+  "pulse": {
+    "roNote": {
+      "ms": "The oximeter here only listens to the heart and arteries; the oxygen number assumes healthy lungs.",
+      "college": "SpO₂ is fixed near normal on this page because the heart model has no lungs; see the lungs page for gas exchange. Stiffness index uses a height of 1.75 m. Reflection index is the diastolic peak (or inflection) as a share of the systolic peak.",
+      "phd": "SpO₂ is fixed because this page has no gas-exchange model. Stiffness index = height (1.75 m) / ΔT; reflection index = b/a height ratio; both are measured on the simulated waveform each beat, so they inherit the model's simplifications (a single lumped reflection site, set timing)."
+    },
+    "intro": {
+      "ms": "The wiggly line on a pulse oximeter isn’t just a beat counter. Its shape tells you about the heart, the arteries and the small blood vessels in your finger. Here is what each part means.",
+      "hs": "The pleth curve is a record of how much blood is in your fingertip from moment to moment. Its parts come from different places: the push of the heart, the echo of the pulse from the lower body, and the tone of the small vessels in the skin.",
+      "college": "The fingertip photoplethysmogram (PPG, ‘pleth’) is a volume pulse. Its shape is the forward wave from left-ventricular ejection, transmitted and smoothed along the arm, plus waves reflected from the lower body and from the arm’s own branch points, filtered by the compliance of the small vessels. Each feature below has been linked, more or less firmly, to a part of the circulation.",
+      "phd": "Pulse-wave analysis of the PPG borrows the vocabulary of central pressure analysis (forward and reflected waves), but the PPG is a volume signal from a compliant, sympathetically controlled vascular bed, so its features mix arterial stiffness, wave reflection and local vasomotor tone. The wave-separation view used here is a teaching model; reservoir–wave and transmission-line models explain the same shapes differently."
+    },
+    "features": [
+      {
+        "name": "What the oximeter actually measures",
+        "ms": "The clip shines red and infrared light through your finger. Each heartbeat pushes a little extra blood in, so a little less light gets through. That flicker, turned upside down, is the pulse curve.",
+        "hs": "Oxygen-rich and oxygen-poor haemoglobin absorb red and infrared light differently. Comparing the pulsing part of the signal at the two colours gives SpO₂; the pulsing infrared signal, flipped so more blood points up, is the pleth.",
+        "college": "PPG measures the change in tissue blood volume, mostly in small arteries, arterioles and arteriovenous anastomoses. SpO₂ comes from the ‘ratio of ratios’, R = (AC/DC)red ÷ (AC/DC)infrared, read off an empirical calibration curve. Because it is volume rather than pressure, the pleth is smoother and later than an arterial-line trace.",
+        "phd": "Clinical monitors band-pass filter and auto-scale the pleth, so its height on screen means little and its shape can be distorted; shape analysis needs research-grade PPG with flat filters. Probe contact pressure changes transmural pressure and with it the shape, and venous and non-pulsatile tissue signals add to the light path."
+      },
+      {
+        "name": "Foot, upstroke and crest time",
+        "ms": "The curve starts to climb when the pulse reaches your finger. In healthy young people it climbs fast.",
+        "hs": "The foot is the moment the pulse wave arrives. The steep climb that follows is blood surging in during the heart’s squeeze. The time from foot to peak (crest time) is about 0.1–0.2 s and gets longer when the arteries are stiff or narrowed.",
+        "college": "The upstroke (anacrotic limb) follows left-ventricular ejection, low-pass filtered by the arterial tree. Crest time lengthens with arterial stiffness, because the late reflected wave builds the peak, and with an upstream stenosis, which slows filling. It is one of the better single PPG features for classifying high versus low pulse wave velocity (Alty et al., 2007).",
+        "phd": "Maximal upslope correlates loosely with dP/dt and contractility but is dominated by local compliance and filtering. Foot detection (intersecting tangents, or the peak of the second derivative) sets every timing feature, so its method matters more than is often reported."
+      },
+      {
+        "name": "Systolic peak",
+        "ms": "The top of the first bump is the main push of blood from the heart.",
+        "hs": "The systolic peak is mainly the forward wave: blood ejected by the left ventricle, carried down the arm. Its height (compared with the steady background) is the perfusion index.",
+        "college": "The first (systolic) peak is formed mainly by the forward pressure wave transmitted from the aortic root along the subclavian and brachial arteries. In young people it is the highest point; with stiffening, the merged reflected wave can make a later, higher peak.",
+        "phd": "The PPG systolic peak corresponds roughly to the brachial–radial pressure peak, which in the young is amplified relative to central pressure. PPG-derived estimates of central augmentation index assume this transfer is stable, which it is not across vasomotor states."
+      },
+      {
+        "name": "Dicrotic notch",
+        "ms": "The little dip after the first bump happens around the time the aortic valve snaps shut.",
+        "hs": "The dicrotic notch is the dip between the two humps. It roughly marks the end of the heart’s squeeze, when the aortic valve closes, smoothed and delayed by the time it reaches the finger. It fades as arteries stiffen.",
+        "college": "In the aorta the incisura is a sharp dip at valve closure; at the finger the notch is softened and shaped by the timing of the reflected wave. Dawber graded it from class 1 (a distinct notch) to class 4 (no notch) and found the higher classes more often in people with coronary heart disease (Dawber et al., 1973).",
+        "phd": "The PPG notch is not a direct marker of aortic valve closure: it is a trough between forward and reflected components, so its timing shifts with reflection timing and vasomotor tone. Ejection-time estimates from it are biased compared with central recordings."
+      },
+      {
+        "name": "Diastolic peak: the reflected wave",
+        "ms": "The second, smaller bump is an echo. The pulse bounces back from where the big arteries split in your belly and legs.",
+        "hs": "Part of each pulse reflects from places where arteries branch and narrow, mostly in the lower body, and comes back up. In stretchy arteries the echo arrives late, after the heart has stopped squeezing, so you see a second hump.",
+        "college": "The diastolic peak is attributed mainly to the wave reflected from the lower body (aortic bifurcation and lower-limb resistance vessels), returning up the aorta and down the arm. Its delay after the systolic peak, ΔT, falls as aortic pulse wave velocity rises.",
+        "phd": "Millasseau et al. (2002) showed ΔT scales with body height and correlates with carotid–femoral PWV (r ≈ 0.65); the interpretation as a single discrete reflection is debated, since distributed reflections and the Windkessel reservoir produce similar shapes."
+      },
+      {
+        "name": "Stiffness index (SI)",
+        "ms": "Stiff arteries make the echo come back sooner. Dividing your height by that delay gives a rough speed of the pulse: faster means stiffer.",
+        "hs": "SI = height ÷ ΔT. It is roughly the speed of the pulse wave along the aorta: around 5–7 m/s in healthy young adults and 10 m/s or more in people with stiff arteries.",
+        "college": "SI (m/s) = body height ÷ time between systolic and diastolic peaks (or inflection). It rises with age and with cardiovascular risk factors and correlates moderately with carotid–femoral PWV, the reference measure of aortic stiffness. It is a screening and research index, not a validated replacement.",
+        "phd": "Path length is assumed proportional to height, ΔT detection fails when the diastolic peak is absent (common in older and stiffer subjects, exactly where SI matters most), and vasomotor tone shifts the inflection point. Agreement with cfPWV at the individual level is limited."
+      },
+      {
+        "name": "Reflection index (RI)",
+        "ms": "How big the echo is compared with the main bump. Tight small vessels make a bigger echo.",
+        "hs": "RI is the height of the diastolic hump as a percentage of the systolic peak. It goes up when small arteries tighten and down when they relax.",
+        "college": "RI (b/a × 100%) reflects mainly the tone of small arteries rather than large-artery stiffness: it falls after nitroglycerin and rises with vasoconstrictors (Millasseau et al., 2000). It has been used to study endothelial function by giving salbutamol and nitroglycerin.",
+        "phd": "Because RI depends on vasomotor tone, room temperature, posture and time since the last meal must be controlled; even then its reproducibility is modest. The PPG ‘reflection’ amplitude may partly reflect microvascular compliance rather than reflected pressure."
+      },
+      {
+        "name": "Pulse transit time (PTT)",
+        "ms": "The time from the heart’s electrical spark (the ECG spike) to the pulse arriving at your finger. Stiff, hard arteries carry it faster.",
+        "hs": "PTT is the delay between the ECG R wave and the foot of the pleth, about 200–300 ms. It includes the time the ventricle takes to build up pressure and the time the wave takes to travel to the finger. It gets shorter when blood pressure rises or arteries stiffen.",
+        "college": "ECG-to-PPG transit time = pre-ejection period + arterial transit time. Because PWV rises with distending pressure, PTT falls as blood pressure rises, which is the basis of cuffless blood-pressure devices. The pre-ejection period varies with contractility and loading, which blurs the link.",
+        "phd": "Cuffless BP from PTT or pulse arrival time needs per-person calibration that drifts within hours to days, and it tracks vasomotor changes poorly; current standards (ISO 81060-3, IEEE 1708) set validation requirements few devices meet. Sudden PTT lengthening during sleep is used as a marker of arousals."
+      },
+      {
+        "name": "Amplitude and perfusion index (PI)",
+        "ms": "The height of each bump shows how much blood surges into the fingertip. Warm fingers give big bumps; cold or squeezed fingers give tiny ones.",
+        "hs": "PI is the pulsing part of the signal as a percentage of the steady part. It mostly shows how open the small vessels in the skin are, and only partly how strong the heartbeat is.",
+        "college": "PI = AC/DC × 100% (infrared). It ranges widely between people, from under 0.5% to over 10%, and depends far more on sympathetic skin vasomotor tone than on stroke volume. A sudden fall suggests vasoconstriction (cold, pain, hypovolaemia); a rise follows vasodilation and successful regional nerve blocks.",
+        "phd": "A low PI is the main cause of SpO₂ dropout and error, and of the false readings that occur with motion. PI has some prognostic value in critical illness (low PI after resuscitation is linked to poor outcome), but its between-person variability limits absolute thresholds."
+      },
+      {
+        "name": "Beat-to-beat changes",
+        "ms": "The bumps may get a bit bigger and smaller as you breathe. Big swings, or bumps of random sizes, can be a sign of trouble.",
+        "hs": "Breathing changes the pressure in the chest and so the filling of the heart, making the pulse swell and shrink slightly. Large swings suggest low blood volume. Random heights and gaps suggest atrial fibrillation; in that rhythm some weak beats don’t reach the finger at all.",
+        "college": "Respiratory variation of pleth amplitude (ΔPOP, or the pleth variability index) above about 13–15% predicts fluid responsiveness in mechanically ventilated patients with regular rhythm (Cannesson et al., 2007). Pulsus paradoxus (tamponade, severe asthma) is an exaggerated fall on inspiration; pulsus alternans (alternating strong and weak beats) signals severe left-ventricular failure.",
+        "phd": "PVI is unreliable with spontaneous breathing, low tidal volumes, arrhythmias, an open chest or a raised intra-abdominal pressure, and is confounded by changes in vasomotor tone. In atrial fibrillation, short RR intervals yield small or absent pulses (a pulse deficit), so the oximeter’s pulse rate can read well below the ECG heart rate."
+      },
+      {
+        "name": "Second derivative (APG)",
+        "ms": "Scientists also look at how fast the curve’s slope changes. That gives a pattern of up-and-down waves that changes with age.",
+        "hs": "Taking the ‘acceleration’ of the pleth (its second derivative) brings out five waves, called a to e. Their pattern changes steadily with age and with stiff arteries.",
+        "college": "The acceleration plethysmogram has a, b, c, d and e waves in early systole and late systole. The b/a ratio rises (becomes less negative) and d/a falls with age; Takazawa et al. (1998) combined them as an ‘ageing index’, (b − c − d − e)/a, that tracks age and arterial stiffness.",
+        "phd": "Second-derivative indices are very sensitive to noise and to the device’s filtering, so values from different devices aren’t comparable. Machine-learning models on raw PPG now estimate ‘vascular age’ and detect atrial fibrillation from smartwatches, the latter well enough for regulatory clearance."
+      }
+    ],
+    "diseaseIntro": {
+      "ms": "These sketches show how some illnesses change the pulse curve. The ones marked ‘try it’ can be switched on in the simulation above.",
+      "hs": "Each sketch shows a few seconds of pleth on the same scale. Those marked ‘try it’ you can set above with the artery buttons or the rhythm buttons in the conduction section.",
+      "college": "Stylised waveforms on a common scale (healthy peak = 1). ‘Try it’ marks the ones the simulation produces from its own heart and artery model; the others are drawn from the literature.",
+      "phd": "Stylised waveforms on a common scale. Where marked ‘try it’, the simulation generates them from the lumped heart model and the reflection/filter model of the arm; the others are sketched from published recordings."
+    },
+    "diseases": [
+      {
+        "id": "healthy",
+        "name": "Healthy young adult",
+        "sim": "young",
+        "ms": "A sharp first bump, a clear dip, then a smaller second bump.",
+        "college": "Fast upstroke, distinct dicrotic notch (Dawber class 1), clear diastolic peak about 0.3 s after the systolic one: SI ≈ 6 m/s."
+      },
+      {
+        "id": "athero",
+        "name": "Widespread atherosclerosis",
+        "sim": "athero",
+        "ms": "Stiff, hardened arteries: one pointed, triangular hill, no dip and no second bump.",
+        "hs": "Stiff arteries bring the echo back during the squeeze, so the two humps merge into one late, triangular peak with no notch and a straight slope down. The pulse also arrives at the finger sooner.",
+        "college": "Arterial stiffening, which accompanies diffuse atherosclerosis, hypertension, diabetes and chronic kidney disease, raises PWV: the reflected wave merges into late systole, the notch and diastolic peak vanish (Dawber class 4), crest time lengthens, SI rises above 10 m/s and PTT shortens. Dillon and Hertzman described this triangular, notchless finger pulse in arteriosclerosis and hypertension in 1941.",
+        "phd": "These changes mark stiffness (arteriosclerosis) more than plaque itself; the two usually travel together, and ageing alone does much the same. Prospective data link loss of the notch and a high SI with cardiovascular events, but the predictive gain over standard risk factors is small, and PPG has no place in diagnosing coronary disease."
+      },
+      {
+        "id": "stenosis",
+        "name": "Narrowed artery before the probe",
+        "sim": "stenosis",
+        "ms": "A blocked-up artery on the way to the finger or toe: the bump is small, late and rounded.",
+        "hs": "A narrowing upstream (subclavian artery for a finger, leg arteries for a toe) damps the pulse: smaller, later, slower to rise and rounded, with no notch. The difference between left and right is the giveaway.",
+        "college": "A significant stenosis acts as a low-pass filter: lower amplitude, longer rise time and transit time, a rounded monophasic shape. Comparing toe or finger PPGs side to side detects peripheral arterial disease with useful accuracy (Allen et al., 2008), but the ankle–brachial index and duplex ultrasound remain the standard tests."
+      },
+      {
+        "id": "as",
+        "name": "Aortic stenosis",
+        "ms": "A tight aortic valve lets blood out slowly: a small, slow, late bump.",
+        "college": "Pulsus parvus et tardus: low amplitude and a slow upstroke with a delayed peak, because ejection through the narrowed valve is prolonged. At the finger the effect is muted, since the arm’s filtering already slows the upstroke.",
+        "phd": "Upstroke time and ejection duration from PPG correlate with valve gradient in small series, but heart rate, LV function and coexisting stiffness confound them; echocardiography is the test."
+      },
+      {
+        "id": "ar",
+        "name": "Aortic regurgitation",
+        "ms": "A leaky aortic valve: big, bounding beats that rise and fall very fast.",
+        "college": "A large stroke volume and diastolic backflow into the ventricle give a tall, steep upstroke and a rapid collapse (the ‘water-hammer’ pulse), sometimes with two systolic peaks (pulsus bisferiens). The diastolic part sinks toward the baseline."
+      },
+      {
+        "id": "alternans",
+        "name": "Severe heart failure",
+        "ms": "A weak heart: small bumps, and sometimes every other beat is weaker.",
+        "college": "Low stroke volume and intense vasoconstriction give a small, damped pleth. Pulsus alternans, alternate strong and weak beats in a regular rhythm, reflects alternating calcium cycling in failing myocytes and is a sign of severe left-ventricular dysfunction."
+      },
+      {
+        "id": "hypo",
+        "name": "Low blood volume on a ventilator",
+        "ms": "Not enough blood: the bumps swell and shrink a lot with each breath.",
+        "college": "In ventilated patients with hypovolaemia, each breath lowers venous return and stroke volume, so the pleth amplitude swings in time with ventilation. A swing (ΔPOP or PVI) above about 13–15% predicts that a fluid bolus will raise cardiac output. Pulsus paradoxus in tamponade or severe asthma looks similar during spontaneous breathing."
+      },
+      {
+        "id": "af",
+        "name": "Atrial fibrillation",
+        "simRhythm": "afib",
+        "ms": "The beats come at random, with random sizes. Some are so weak they hardly show.",
+        "college": "Irregular intervals and amplitudes: after a short RR interval the ventricle has little time to fill (Frank–Starling), so the pulse is small or missing, creating a pulse deficit. Smartwatch PPG detects AF from this irregularity."
+      }
+    ],
+    "caveat": {
+      "ms": "The pulse curve gives clues, not diagnoses. Doctors use other tests to check arteries and valves.",
+      "hs": "The shape of the pleth varies a lot between healthy people and with temperature, posture and how tightly the clip is attached. It gives useful hints, but stiff arteries, narrowed arteries and valve disease are diagnosed with other tests.",
+      "college": "What is established: SpO₂ measurement; the effects of vasomotor tone on PI and RI; side-to-side damping with peripheral arterial disease; the loss of notch and earlier reflection with age and stiffness. What is uncertain: how well single-site PPG indices estimate aortic PWV or cardiovascular risk in an individual. The reference tests are carotid–femoral PWV, ankle–brachial index, echocardiography and imaging.",
+      "phd": "Key sources: Dillon & Hertzman 1941; Dawber et al. 1973; Takazawa et al. 1998; Millasseau et al. 2000, 2002; Allen 2007 (review); Allen et al. 2008; Cannesson et al. 2007; Charlton et al. 2022 (PPG pulse-wave analysis review). Most PPG morphology studies are small, single-device and cross-sectional; external validation and device-independent standards are still lacking."
+    },
+    "arts": {
+      "young": {
+        "name": "Healthy, 25",
+        "ms": "Young arteries are stretchy. The pulse shoots up, then a second, smaller bump arrives: an echo of the same pulse bouncing back from the legs.",
+        "hs": "Elastic arteries carry the pulse slowly (about 5–6 m/s), so the wave reflected from the lower body gets back late, after the heart has stopped squeezing. That gives two humps, a sharp systolic peak and a smaller diastolic peak, with a notch between them.",
+        "college": "Low pulse wave velocity means the reflected wave returns about 0.3 s after the systolic peak, in diastole: a clear diastolic peak and notch (Dawber class 1). Stiffness index ≈ height/ΔT ≈ 5–7 m/s.",
+        "phd": "In young adults the reflected wave adds to diastolic rather than systolic pressure, which lowers ventricular afterload and supports coronary perfusion. The large-to-small artery stiffness gradient also shields the microcirculation from pulsatile energy."
+      },
+      "older": {
+        "name": "Healthy, 70",
+        "ms": "With age, arteries get stiffer, like an old rubber band. The echo comes back sooner and the two bumps start to run together.",
+        "hs": "Stiffer arteries carry the pulse faster, so the reflected wave returns earlier and lands closer to the systolic peak. The notch gets shallower and the second hump becomes a shoulder. The top number of the blood pressure rises.",
+        "college": "Elastin fragmentation and collagen build-up in the aortic wall roughly double aortic PWV between 20 and 80 years. ΔT shortens, the notch flattens (Dawber class 2–3) and pulse pressure widens (in the model, aortic compliance is set to 70%).",
+        "phd": "Ageing stiffens the aorta far more than muscular arteries, so the stiffness gradient narrows or reverses; less pulsatile energy is reflected back and more reaches high-flow, low-resistance organs such as the brain and kidney (Mitchell’s hypothesis for small-vessel disease)."
+      },
+      "athero": {
+        "name": "Widespread atherosclerosis",
+        "ms": "Hardened arteries are stiff pipes. The echo comes back almost at once and merges with the main pulse, so the curve turns into one pointed hill with no dip.",
+        "hs": "In widespread atherosclerosis, often with high blood pressure, diabetes or kidney disease, the big arteries are stiff. The pulse travels fast, the reflected wave arrives during the squeeze and adds to it: one late, triangular peak, no dicrotic notch and a straight slope down. Systolic pressure and pulse pressure go up (see the Wiggers diagram).",
+        "college": "Arterial stiffening (arteriosclerosis) accompanies diffuse atherosclerosis. High PWV brings the reflected wave into late systole: the diastolic peak and notch disappear (Dawber class 4), crest time lengthens, ΔT shortens so SI rises above 10 m/s, and ECG-to-finger transit time shortens. Here aortic compliance is cut to 45%, which widens pulse pressure in the whole page’s heart model.",
+        "phd": "Late-systolic augmentation raises left-ventricular afterload and lowers diastolic coronary perfusion pressure, linking stiffness to hypertrophy and subendocardial ischaemia. On the second derivative, b/a rises and d/a falls, as with ageing. In this model the reflection timing is set directly, not derived from a transmission-line model."
+      },
+      "stenosis": {
+        "name": "+ narrowed arm artery",
+        "ms": "Now plaque also narrows the artery leading to the hand. The pulse squeezes through a bottleneck and arrives late, small and smoothed out, like a wave behind a harbour wall.",
+        "hs": "Stiff arteries plus a narrowing (stenosis) upstream of the probe, such as in the subclavian artery. The pulse is damped: smaller, later, slower to rise, rounded, with no notch. The perfusion index falls. The other arm would look different, which is how this is spotted.",
+        "college": "A haemodynamically significant stenosis acts as a resistor–capacitor low-pass filter: amplitude falls, rise time and pulse transit time lengthen, and the waveform turns monophasic. Subclavian stenosis also gives a lower blood pressure in that arm (> 15 mmHg difference between arms is a marker of vascular disease). Same logic applies to toe PPG in leg PAD.",
+        "phd": "Side-to-side differences in amplitude and timing are more informative than absolute shape, because shape varies widely between people. Distal to a stenosis, resting SpO₂ usually stays correct as long as the signal is strong enough to read; the damping changes the shape, not the red/infrared ratio."
+      },
+      "cold": {
+        "name": "Cold hands",
+        "ms": "Cold fingers squeeze their small blood vessels nearly shut to save heat. The pulse gets tiny and the oximeter may struggle to read.",
+        "hs": "Vasoconstriction (cold, pain, fear, shock) narrows the skin’s small arteries. The pulse’s size and the perfusion index fall sharply and the signal gets noisy; the oximeter may say ‘low signal’. The second hump gets relatively bigger.",
+        "college": "Sympathetic α-adrenergic constriction of digital arterioles and arteriovenous anastomoses cuts the pulsatile signal (PI well under 1%). Reflection index rises with vasoconstriction. Warming the hand or moving the probe to the earlobe or forehead helps.",
+        "phd": "Because finger PI is dominated by sympathetic skin tone, a sudden fall is an early sign of nociception or hypovolaemia, and a rise after a brachial plexus block shows the block is working. Low perfusion is the main cause of SpO₂ dropout and error."
+      },
+      "warm": {
+        "name": "Warm, vasodilated",
+        "ms": "Warm, relaxed fingers open their vessels wide. The pulse is big and the second bump almost disappears.",
+        "hs": "Vasodilation (warmth, after exercise, some drugs, septic shock) makes the pulse large, with a high perfusion index. Less of the wave reflects back, so the second hump and the notch sink toward the bottom.",
+        "college": "Vasodilation lowers wave reflection from the small arteries: RI falls and the notch moves down the downslope, as after sublingual nitroglycerin. The PI rises, often above 5%.",
+        "phd": "A high finger PI in a hypotensive patient favours distributive over cardiogenic or hypovolaemic shock, though PI alone is not specific. Pleth variability with ventilation is still interpretable if vasomotor tone is stable."
+      }
+    }
+  },
   "alter": {
     "scenarios": [
       {
@@ -999,6 +1251,15 @@ canvas.trace{ display:block; width:100%; }
         },
         "ms": "The atria quiver and stress hormones push the rate up: fast, irregular beats with little time to fill.",
         "college": "AF with rapid ventricular response: loss of atrial kick plus short, irregular diastolic filling times lower SV and CO."
+      },
+      {
+        "id": "athero",
+        "name": "Widespread atherosclerosis",
+        "params": {
+          "art": "athero"
+        },
+        "ms": "Hardened, stiff arteries: blood pressure swings wider and the fingertip pulse loses its notch and second bump.",
+        "college": "Aortic compliance ×0.45 and early wave reflection: wide pulse pressure, a triangular notchless pleth, short ΔT and a high stiffness index."
       },
       {
         "id": "athlete",
@@ -1076,6 +1337,9 @@ canvas.trace{ display:block; width:100%; }
         "ms": "The blocked {artery} fed the AV node, so each signal waits about 80 ms longer there: the PR interval gets longer.",
         "college": "The AV nodal artery comes from the dominant artery at the crux. Its ischaemia slows AV conduction (PR +80 ms); blocks in an inferior infarct are usually nodal and pass off."
       },
+      "stiffMech": {"ms": "Stiff arteries can’t stretch to soak up each beat (here they stretch only {pct}% as much as young ones), so the top number of the blood pressure goes up and the bottom number falls: {bp} mmHg. Look at the wide swing of the aortic trace.", "college": "Aortic compliance ×{pct}%: the same stroke volume enters a stiffer Windkessel, so pulse pressure widens (now {bp} mmHg), the pattern of isolated systolic hypertension. Afterload rises while mean pressure barely changes. Real stiff aortas add late-systolic augmentation from early wave reflection, which this lumped model leaves out."},
+      "stiffFlow": {"ms": "Stiff arteries let the pressure between beats drop to {dbp} mmHg, and the left coronary artery fills between beats, so it gets a little less blood.", "college": "With a stiff aorta diastolic pressure falls (now {dbp} mmHg), and with it the driving pressure for diastolic left-coronary flow, while systolic load rises: a mismatch that favours subendocardial ischaemia."},
+      "afibPleth": {"ms": "Look at the fingertip pulse: with random gaps, some beats are too weak to feel, so the pulse counted at the finger can be lower than the heart rate.", "college": "Short RR intervals give small stroke volumes that barely reach the finger: the oximeter’s pulse rate can read below the ECG rate (pulse deficit)."},
       "afibAnat": {
         "ms": "The atria are fibrillating, so here they no longer squeeze just before the ventricles contract.",
         "college": "In atrial fibrillation the atria are electrically chaotic and mechanically still, so the atrial systole seen in sinus rhythm is gone."
@@ -1086,6 +1350,10 @@ canvas.trace{ display:block; width:100%; }
 </script>
 <script type="application/json" id="organ-glossary">
 {
+  "dicrotic notch": { "def": "The small dip in an arterial pulse curve between its systolic and diastolic parts, around the time the aortic valve closes.", "match": ["dicrotic notch", "notch"] },
+  "perfusion index": { "def": "The pulsing part of a pulse oximeter signal as a percentage of the steady part: how strongly blood pulses into the tissue under the probe.", "match": ["perfusion index"] },
+  "pulse wave velocity": { "def": "How fast the pressure pulse travels along the arteries: about 5–6 m/s in a young aorta, faster when arteries are stiff.", "match": ["pulse wave velocity", "PWV"] },
+  "reflected wave": { "def": "Part of the pulse that bounces back from where arteries branch and narrow, mostly in the lower body.", "match": ["reflected wave", "echo"] },
   "systole": { "def": "The part of the heartbeat when the ventricles contract and push blood out.", "match": ["systole", "systolic"] },
   "diastole": { "def": "The part of the heartbeat when the ventricles relax and fill with blood.", "match": ["diastole", "diastolic"] },
   "stroke volume": { "def": "The amount of blood one ventricle pumps out in one beat, about 70 mL at rest.", "match": ["stroke volume"] },
@@ -1671,18 +1939,32 @@ const LATERAL = new Set(["I", "aVL", "V5", "V6"]), RIGHTP = new Set(["V1", "V2",
 const PRESET = { sleep: { c: .95, a: .95, p: 1.0 }, rest: { c: 1, a: 1, p: 1 }, meal: { c: 1.02, a: .96, p: 1.0 }, exercise: { c: 2.7, a: .36, p: 2.0 } };
 const RHYTHM_IDS = ["sinus", "avb1", "wenck", "mobitz2", "avb3", "rbbb", "lbbb", "afib", "saArrest"];
 const DT = 0.00025, REC_DT = 0.002, REC_N = 4096;
+/* the arteries between the heart and a fingertip pulse oximeter.
+   comp: aortic compliance (it feeds the heart's Windkessel, so it changes blood pressure);
+   ptt: aortic valve to finger (s); dT: delay of the wave reflected from the lower body (s);
+   k: its size; tau: smoothing by the vessels on the way (s); tone: how far the fingertip
+   vessels swell with each pulse (sets the perfusion index) */
+const ART = {
+  young:    { comp: 1,   ptt: .13, dT: .32, k: .42, tau: .032, tone: 1 },
+  older:    { comp: .7,  ptt: .1,  dT: .27, k: .55, tau: .036, tone: .8 },
+  athero:   { comp: .45, ptt: .07, dT: .215, k: .72, tau: .04,  tone: .5 },
+  stenosis: { comp: .45, ptt: .2,  dT: .19, k: .55, tau: .1,   tone: .22 },
+  cold:     { comp: 1,   ptt: .15, dT: .29, k: .58, tau: .045, tone: .18 },
+  warm:     { comp: 1,   ptt: .14, dT: .32, k: .25, tau: .03,  tone: 2.2 }
+};
+const ART_IDS = Object.keys(ART);
 
 /* a factory: the page runs the heart you change, and an untouched healthy one as the reference */
 const makeHeart = () => {
   const S = {
     t: 0, Vlv: 125, Vla: 60, Pa: 85, Plv: 5, Pla: 8, Qmv: 0, Qav: 0, el: 0, lca: 0, rca: 0,
-    rhythm: "sinus", tone: 0, user: { p: 1, a: 1, c: 1 }, dom: "right", occl: null,
+    rhythm: "sinus", tone: 0, user: { p: 1, a: 1, c: 1 }, dom: "right", occl: null, art: "young",
     hr: 68, mech: { ...PRESET.rest },
     P: [], V: [], pend: [], nextP: 0.3, wk: 0, m2: 0, lastV: -1, tvPrev: -1, nextAF: 0.4,
     phase: 3, aopen: 0, mopen: 1
   };
   const rec = { i: 0, n: 0, t: new Float64Array(REC_N), plv: new Float32Array(REC_N), pao: new Float32Array(REC_N), pla: new Float32Array(REC_N),
-    vlv: new Float32Array(REC_N), lca: new Float32Array(REC_N), rca: new Float32Array(REC_N), ph: new Uint8Array(REC_N), el: new Float32Array(REC_N) };
+    vlv: new Float32Array(REC_N), qav: new Float32Array(REC_N), lca: new Float32Array(REC_N), rca: new Float32Array(REC_N), ph: new Uint8Array(REC_N), el: new Float32Array(REC_N) };
   let recAcc = 0;
   const cyc = { minV: 1e9, maxPa: 0, minPa: 1e9 };
   const beat = { hr: 68, sv: 70, edv: 125, esv: 55, ef: 60, sbp: 120, dbp: 76, co: 4.8, n: 0 };
@@ -1761,7 +2043,7 @@ const makeHeart = () => {
     const Pla = (.15 + .25 * ea) * (S.Vla - 20) + 2;
     const Ppv = 10 * m.p * u.p * fx.rv, R = 1.15 * m.a * u.a;
     const Qpv = (Ppv - Pla) / .03, Qmv = Math.max(0, (Pla - Plv) / .006), Qav = Math.max(0, (Plv - S.Pa) / .008);
-    S.Vla += (Qpv - Qmv) * dt; S.Vlv += (Qmv - Qav) * dt; S.Pa += (Qav - S.Pa / R) / 1.1 * dt;
+    S.Vla += (Qpv - Qmv) * dt; S.Vlv += (Qmv - Qav) * dt; S.Pa += (Qav - S.Pa / R) / (1.1 * ART[S.art].comp) * dt;
     S.Vlv = Math.max(V0 + 1, S.Vlv);
     S.Plv = Plv; S.Pla = Pla; S.Qmv = Qmv; S.Qav = Qav; S.Qpv = Qpv; S.el = el; S.Emax = Emax; S.Qout = S.Pa / R;
     /* coronary flow: perfusion pressure minus the squeeze of the wall around the vessels */
@@ -1776,7 +2058,7 @@ const makeHeart = () => {
   }
   function record(){
     const i = rec.i;
-    rec.t[i] = S.t; rec.plv[i] = S.Plv; rec.pao[i] = S.Pa; rec.pla[i] = S.Pla; rec.vlv[i] = S.Vlv; rec.lca[i] = S.lca; rec.rca[i] = S.rca; rec.ph[i] = S.phase; rec.el[i] = S.el;
+    rec.t[i] = S.t; rec.plv[i] = S.Plv; rec.pao[i] = S.Pa; rec.pla[i] = S.Pla; rec.vlv[i] = S.Vlv; rec.qav[i] = S.Qav; rec.lca[i] = S.lca; rec.rca[i] = S.rca; rec.ph[i] = S.phase; rec.el[i] = S.el;
     rec.i = (i + 1) % REC_N; rec.n = Math.min(REC_N, rec.n + 1);
   }
   function advance(dt){
@@ -2989,6 +3271,234 @@ function drawCorFlow(){
 }
 
 /* =========================================================================
+   PULSE OXIMETER: the fingertip pleth, its features and the disease sketches
+   ========================================================================= */
+const HEIGHT_M = 1.75;
+/* aortic pressure at any recent time (the recording is evenly spaced) */
+function recAt(R, arr, t){
+  if (!R.n) return 0;
+  const L = (R.i - 1 + REC_N) % REC_N, k = clamp(Math.round((R.t[L] - t) / REC_DT), 0, R.n - 1);
+  return arr[(L - k + REC_N) % REC_N];
+}
+/* the pleth over [t0, t1], arriving ptt after the aortic valve: the slow reservoir pressure of the
+   aorta, the forward wave of ejection (characteristic impedance × aortic flow, larger in a stiff aorta)
+   and a copy of that wave reflected back from the lower body dT later, all smoothed by the vessels on
+   the way. Breathing swings its size a little, more when the heart is short of filling. */
+function plethSeries(H, art, t0, t1){
+  const P = ART[art], st = REC_DT, warm = Math.ceil((8 * P.tau + .05) / st);
+  const n = Math.max(2, Math.floor((t1 - t0) / st) + 1), N = n + warm;
+  const f = new Float32Array(N), t = new Float64Array(n), y = new Float32Array(n);
+  const a = st / (P.tau + st), base = H.beat.dbp * .9;
+  const R = H.rec, Zc = .06 / Math.sqrt(P.comp);
+  /* the reflection comes from many sites, so its wave is spread out in time */
+  const refl = tt => { let s = 0; for (let q = -3; q <= 3; q++) s += recAt(R, R.qav, tt - P.dT + q * .018) * (4 - Math.abs(q)); return s / 16; };
+  const x = tt => .38 * (recAt(R, R.pao, tt) - base) + Zc * (recAt(R, R.qav, tt) + P.k * refl(tt));
+  let y1 = x(t0 - warm * st - P.ptt), y2 = y1;
+  for (let j = 0; j < N; j++){
+    y1 += a * (x(t0 + (j - warm) * st - P.ptt) - y1); y2 += a * (y1 - y2); f[j] = y2;
+  }
+  const m = .025 + .14 * Math.max(0, 1 - H.S.user.p * Math.min(1, H.S.mech.p));
+  for (let j = 0; j < n; j++){
+    const J = j + warm, tj = t0 + j * st;
+    t[j] = tj; y[j] = f[J] * (1 + m * Math.sin(2 * Math.PI * tj / 4));
+  }
+  return { t, y, n, art };
+}
+/* find each pulse: foot, systolic peak, notch, diastolic peak (or the reflected wave's inflection) */
+function plethBeats(H, ser){
+  const P = ART[ser.art], { t, y, n } = ser, st = REC_DT, out = [];
+  const ix = tt => Math.round((tt - t[0]) / st);
+  const d = j => (y[Math.min(n - 1, j + 1)] - y[Math.max(0, j - 1)]) / (2 * st);
+  for (const v of H.S.V){
+    const a0 = ix(v.t + .04), a1 = ix(v.t + .16 + P.ptt + 3 * P.tau);
+    if (a0 < 2 || a1 >= n - 2) continue;
+    let jm = a0, dm = -1e9; for (let j = a0; j <= a1; j++){ const dj = d(j); if (dj > dm){ dm = dj; jm = j; } }
+    let jf = jm; for (let j = jm; j > Math.max(1, jm - Math.round(.2 / st)); j--) if (y[j] <= y[jf]) jf = j; else if (y[j] > y[jf] + 1e-3) break;
+    if (out.length && jf <= out[out.length - 1].jf + 20) continue;
+    out.push({ v, jf, jm, slope: dm });
+  }
+  for (let i = 0; i < out.length; i++){
+    const b = out[i]; b.je = i + 1 < out.length ? out[i + 1].jf : -1;
+    if (b.je < 0) continue;
+    const je = b.je;
+    let jp = b.jm; while (jp < je - 2 && d(jp) > 0) jp++;
+    b.jp = jp; b.amp = y[jp] - y[b.jf];
+    b.jn = -1; b.jd = -1; b.ji = -1; b.kind = "none";
+    /* a notch then a second peak? */
+    let j = jp + 2; while (j < je - 6 && d(j) < 0) j++;
+    if (j < je - 6 && y[j] > y[b.jf] + .05 * b.amp){ const jn = j; while (j < je - 3 && d(j) >= 0) j++; if (j - jn > 3 && y[j] - y[jn] > .004 * b.amp){ b.jn = jn; b.jd = j; b.kind = "peak"; } }
+    /* else the reflected wave came first and built the peak: a shoulder on the upstroke */
+    if (b.kind === "none"){
+      let best = -1, bv = 1e9;
+      for (let k = b.jm + 3; k < jp - 3; k++){ const dk = d(k); if (dk < d(k - 2) && dk <= d(k + 2) && dk < bv){ bv = dk; best = k; } }
+      if (best > 0 && bv < .6 * b.slope && t[jp] - t[best] > .04){ b.ji = best; b.kind = "early"; }
+    }
+    /* else a shoulder on the downslope: where the slope comes closest to flat */
+    if (b.kind === "none"){
+      let best = -1, bv = -1e9;
+      for (let k = jp + Math.round(.03 / st); k < Math.min(je - 4, jp + Math.round(.45 / st)); k++){ const dk = d(k); if (dk > d(k - 2) && dk >= d(k + 2) && dk > bv && dk < 0){ bv = dk; best = k; } }
+      if (best > 0 && bv > -.45 * b.slope){ b.ji = best; b.kind = "late"; }
+    }
+  }
+  return out;
+}
+/* numbers for the last complete pulse, plus the pulse rate the oximeter would count */
+function plethMeasure(H, ser){
+  const beats = plethBeats(H, ser), { t, y } = ser, full = beats.filter(b => b.je > 0);
+  if (!full.length) return null;
+  const maxA = Math.max(...full.map(b => b.amp)), felt = full.filter(b => b.amp > .3 * maxA);
+  const last = [...full].reverse().find(b => b.amp > .3 * maxA) || full[full.length - 1];
+  const sys = last.kind === "early" ? last.ji : last.jp, refl = last.kind === "peak" ? last.jd : last.kind === "late" ? last.ji : last.kind === "early" ? last.jp : -1;
+  const dT = refl > 0 ? Math.abs(t[refl] - t[sys]) : NaN;
+  const A = y[last.jp] - y[last.jf];
+  /* when the echo builds the peak itself there is no separate diastolic part to compare */
+  const ri = refl > 0 && last.kind !== "early" ? (y[refl] - y[last.jf]) / A * 100 : NaN;
+  const pr = felt.length > 2 ? 60 * (felt.length - 1) / (t[felt[felt.length - 1].jf] - t[felt[0].jf]) : NaN;
+  const meanA = felt.reduce((s, b) => s + b.amp, 0) / Math.max(1, felt.length);
+  const pi = 4 * ART[ser.art].tone * meanA / 46;
+  return { beats, last, sys, refl, dT, ri, si: HEIGHT_M / dT, ptt: (t[last.jf] - last.v.t) * 1000, crest: (t[last.jp] - t[last.jf]) * 1000, pr, pi, A };
+}
+const plC = makeCanvas($("#pleth"));
+let plethInfo = null, plethRef = null;
+function drawPleth(){
+  const { ctx, w, h } = plC, H = Heart, S = H.S, now = S.t, W = w < 420 ? 3.2 : 4.6, t0 = now - W;
+  ctx.clearRect(0, 0, w, h);
+  const ink = O.color("--ink"), muted = O.color("--muted"), line = O.color("--line"), col = O.color("--tr-pleth");
+  const ser = plethSeries(H, S.art, t0 - 1.6, now), info = plethMeasure(H, ser);
+  const ref = plethSeries(RefHeart, "young", RefHeart.S.t - 4, RefHeart.S.t), refInfo = plethMeasure(RefHeart, ref);
+  plethInfo = info; plethRef = refInfo;
+  /* --- the scrolling monitor --- */
+  const numW = w >= 460 ? 92 : 0, L = 8, gw = w - L - 8 - numW, eTop = 16, eH = h * .14, pTop = eTop + eH + 22, pH = h * .27;
+  const X = tt => L + (tt - t0) / W * gw;
+  txt(ctx, "ECG II", L, eTop - 4, muted, "left", FONT_B);
+  trace(ctx, L, gw, t0, now, tt => eTop + eH * .75 - H.ecg("II", tt) * eH * .6, O.color("--trace"), 1.5, 1.5);
+  txt(ctx, "Pleth", L, pTop - 6, muted, "left", FONT_B);
+  let lo = 1e9, hi = -1e9; for (let j = 0; j < ser.n; j++) if (ser.t[j] >= t0){ lo = Math.min(lo, ser.y[j]); hi = Math.max(hi, ser.y[j]); }
+  const span = Math.max(1e-3, hi - lo), Yp = v => pTop + pH - (v - lo) / span * pH;
+  ctx.beginPath(); let first = true;
+  for (let j = 0; j < ser.n; j++){ const tt = ser.t[j]; if (tt < t0) continue; const x = X(tt), yy = Yp(ser.y[j]); first ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy); first = false; }
+  ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.stroke();
+  ctx.lineTo(X(now), pTop + pH); ctx.lineTo(X(Math.max(t0, ser.t[0])), pTop + pH); ctx.closePath(); ctx.globalAlpha = .12; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
+  /* R wave → foot for the last measured pulse */
+  if (info){
+    const b = info.last, xr = X(b.v.t), xf = X(ser.t[b.jf]);
+    if (xr > L){
+      ctx.strokeStyle = muted; ctx.setLineDash([2, 3]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(xr + .5, eTop + eH * .2); ctx.lineTo(xr + .5, pTop + pH + 6); ctx.moveTo(xf + .5, Yp(ser.y[b.jf])); ctx.lineTo(xf + .5, pTop + pH + 6); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = ink; ctx.lineWidth = 1.2; const yb = pTop + pH + 6; ctx.beginPath(); ctx.moveTo(xr, yb - 4); ctx.lineTo(xr, yb); ctx.lineTo(xf, yb); ctx.lineTo(xf, yb - 4); ctx.stroke();
+      txt(ctx, `PTT ${Math.round(info.ptt)} ms`, (xr + xf) / 2, yb + 12, ink, "center");
+    }
+  }
+  if (numW){
+    const nx = w - numW + 6, weak = info && info.pi < .4;
+    const big = (lab, val, unit, y0, c) => { txt(ctx, lab, nx, y0, muted, "left", FONT_B); txt(ctx, val, nx, y0 + 26, c, "left", '400 26px "Literata", Georgia, serif'); txt(ctx, unit, nx + 4 + ctx.measureText(val).width, y0 + 26, muted); };
+    big("SpO₂", weak ? "--" : String(S.art === "older" || S.art === "athero" || S.art === "stenosis" ? 97 : 98), "%", eTop + 4, col);
+    big("Pulse", info && Number.isFinite(info.pr) ? String(Math.round(info.pr)) : "--", "/min", eTop + 50, ink);
+    big("PI", info ? info.pi.toFixed(1) : "--", "%", eTop + 96, ink);
+    if (weak) txt(ctx, "Low signal", nx, eTop + 138, O.color("--tr-ao"), "left", FONT_B);
+  }
+  /* --- the last pulse, enlarged and labelled, over a healthy one --- */
+  const bTop = pTop + pH + 62, bH = h - bTop - 30, bL = 30, bw = w - bL - 12;
+  txt(ctx, "Last pulse, scaled to its own height" + (info ? ` · crest time ${Math.round(info.crest)} ms` : ""), 8, bTop - 30, muted, "left", FONT_B);
+  if (!info) return;
+  const dur = b => b && b.je > 0 ? (b.je - b.jf) * REC_DT : .9;
+  const Tm = clamp(Math.max(dur(info.last), refInfo ? dur(refInfo.last) : 0, .8), .8, 1.5);
+  const bx = s => bL + s / Tm * bw, by = v => bTop + bH - v * bH * .8;
+  ctx.strokeStyle = line; ctx.lineWidth = 1;
+  for (let s = 0; s <= Tm + 1e-6; s += .2){ ctx.beginPath(); ctx.moveTo(bx(s) + .5, bTop); ctx.lineTo(bx(s) + .5, bTop + bH); ctx.stroke(); txt(ctx, `${Math.round(s * 1000)}`, bx(s), bTop + bH + 13, muted, "center"); }
+  txt(ctx, "ms after the foot", bL + bw, bTop + bH + 26, muted, "right");
+  ctx.beginPath(); ctx.moveTo(bL, by(0) + .5); ctx.lineTo(bL + bw, by(0) + .5); ctx.stroke();
+  const beatPath = (sr, b, fn) => { const base = sr.y[b.jf], A = sr.y[b.jp] - base; ctx.beginPath(); for (let j = b.jf; j <= b.je; j++){ const x = bx((j - b.jf) * REC_DT), yy = by((sr.y[j] - base) / A); j === b.jf ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy); } fn(); };
+  const showRef = refInfo && (S.art !== "young" || O.changed());
+  if (showRef){ ctx.setLineDash([4, 4]); ctx.strokeStyle = muted; ctx.lineWidth = 1.6; beatPath(ref, refInfo.last, () => ctx.stroke()); ctx.setLineDash([]); }
+  const b = info.last, base = ser.y[b.jf];
+  beatPath(ser, b, () => { ctx.strokeStyle = col; ctx.lineWidth = 2.6; ctx.stroke(); });
+  const P = j => [bx((j - b.jf) * REC_DT), by((ser.y[j] - base) / info.A)];
+  const dot = (j, label, dy = -9, align = "center") => { const [x, yy] = P(j); ctx.fillStyle = O.color("--surface"); ctx.beginPath(); ctx.arc(x, yy, 5, 0, 7); ctx.fill(); ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(x, yy, 3.2, 0, 7); ctx.fill(); txt(ctx, label, x + (align === "left" ? 8 : 0), yy + dy, ink, align, FONT_B); return [x, yy]; };
+  dot(b.jf, "Foot", 16, "left");
+  const narrow = bw < 320;
+  if (b.kind === "early"){ dot(b.ji, narrow ? "Forward" : "Forward wave", 14, "left"); dot(b.jp, narrow ? "Peak" : "Late systolic peak (merged echo)"); }
+  else dot(b.jp, "Systolic peak");
+  if (b.kind === "peak"){ dot(b.jn, "Notch", 16); dot(b.jd, narrow ? "Diastolic" : "Diastolic peak (echo)", -9, "left"); }
+  else if (b.kind === "late") dot(b.ji, narrow ? "Echo" : "Reflected wave (shoulder)", -9, "left");
+  /* crest time and ΔT brackets */
+  const yb = bTop - 2, br = (j0, j1, label, yy) => { const x0 = P(j0)[0], x1 = P(j1)[0]; ctx.strokeStyle = ink; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(x0, yy + 4); ctx.lineTo(x0, yy); ctx.lineTo(x1, yy); ctx.lineTo(x1, yy + 4); ctx.stroke(); txt(ctx, label, (x0 + x1) / 2, yy - 4, ink, "center"); };
+  if (info.refl > 0) br(Math.min(info.sys, info.refl), Math.max(info.sys, info.refl), narrow && b.kind === "early" ? "" : `ΔT ${Math.round(info.dT * 1000)} ms`, yb);
+}
+/* the artery chips and readouts */
+(() => {
+  $("#artChips").innerHTML = ART_IDS.map(id => `<button type="button" class="chip" data-art="${id}" aria-pressed="${id === Heart.S.art}">${esc(O.get(`pulse.arts.${id}.name`))}</button>`).join("");
+  $("#artChips").addEventListener("click", e => { const b = e.target.closest("[data-art]"); if (!b) return; Heart.S.art = b.dataset.art; renderArt(); O.altered(); });
+  const PRO = [["spo2", "SpO₂"], ["pr", "Pulse rate"], ["pi", "Perfusion index"], ["ptt", "ECG → finger"], ["crest", "Crest time"], ["dt", "ΔT (echo delay)"], ["si", "Stiffness index"], ["ri", "Reflection index"]];
+  $("#plethRO").innerHTML = PRO.map(([k, l]) => `<div class="ro"><div class="l">${l}</div><div class="v" id="pro-${k}">–</div></div>`).join("");
+})();
+function renderArt(){
+  $$("#artChips [data-art]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.art === Heart.S.art)));
+  const a = O.get(`pulse.arts.${Heart.S.art}`);
+  $("#artText").innerHTML = `<p class="lvl" style="margin-top:14px">${esc(a.name)}</p><p class="prose">${O.text(a)}</p>`;
+}
+function renderPlethRO(){
+  const i = plethInfo, r = plethRef, put = (k, html) => { const n = $("#pro-" + k); if (n && n.innerHTML !== html) n.innerHTML = html; };
+  const has = v => i && Number.isFinite(v), rv = v => r && Number.isFinite(v) ? v : NaN;
+  const weak = i && i.pi < .4;
+  put("spo2", weak ? `--<small>low signal</small>` : `${Heart.S.art === "older" || Heart.S.art === "athero" || Heart.S.art === "stenosis" ? 97 : 98}<small>%</small>`);
+  put("pr", has(i && i.pr) ? `${Math.round(i.pr)}<small>/min</small>${O.delta(i.pr, rv(r && r.pr))}` : "–");
+  put("pi", i ? `${i.pi.toFixed(1)}<small>%</small>${O.delta(i.pi, rv(r && r.pi), 1)}` : "–");
+  put("ptt", has(i && i.ptt) ? `${Math.round(i.ptt)}<small>ms</small>${O.delta(i.ptt, rv(r && r.ptt))}` : "–");
+  put("crest", has(i && i.crest) ? `${Math.round(i.crest)}<small>ms</small>${O.delta(i.crest, rv(r && r.crest))}` : "–");
+  put("dt", has(i && i.dT) ? `${Math.round(i.dT * 1000)}<small>ms</small>${O.delta(i.dT * 1000, rv(r && r.dT * 1000))}` : `–<small>no echo seen</small>`);
+  put("si", has(i && i.si) ? `${i.si.toFixed(1)}<small>m/s</small>${O.delta(i.si, rv(r && r.si), 1)}` : "–");
+  put("ri", has(i && i.ri) ? `${Math.round(i.ri)}<small>%</small>${O.delta(i.ri, rv(r && r.ri))}` : i && i.last.kind === "early" ? `–<small>merged</small>` : "–");
+  const hr = Heart.beat.hr;
+  $("#plethCap").textContent = i && Number.isFinite(i.pr) && hr - i.pr > 6
+    ? `Pulse deficit: the ECG counts ${Math.round(hr)} beats a minute but only ${Math.round(i.pr)} reach the finger strongly enough to count. Weak beats after short gaps barely fill the arteries.`
+    : "Monitors scale the pleth to fill the screen, and so does this one: the perfusion index gives its real size. Each pulse reaches the finger a little after the R wave, once the ventricle has built up pressure and the wave has run down the arm.";
+}
+/* disease sketches: a stylised pulse built from a forward wave, a reflected wave and the diastolic run-off */
+function sketchBeat(s, o){
+  const g = (c, w) => Math.exp(-((s - c) ** 2) / (2 * w * w));
+  const c = o.c ?? .13, up = s < c ? g(c, o.r ?? .05) : g(c, o.f ?? .09);
+  let v = up + (o.k ?? .45) * g(c + (o.dT ?? .29), o.w ?? .07) + (o.bis ?? 0) * g(c + .1, .035);
+  v += (o.tail ?? .22) * smooth(c - .05, c + .05, s) * Math.exp(-Math.max(0, s - c) / .55);
+  return v * (o.a ?? 1);
+}
+const SKETCH = {
+  healthy:  { beats: [1, 1, 1], rr: .85, o: {} },
+  athero:   { beats: [1, 1, 1], rr: .85, o: { c: .13, r: .06, f: .1, k: .95, dT: .12, w: .09, tail: .18, a: .78 } },
+  stenosis: { beats: [1, 1, 1], rr: .85, o: { c: .26, r: .12, f: .22, k: .15, dT: .2, w: .12, tail: .1, a: .4 } },
+  as:       { beats: [1, 1, 1], rr: .85, o: { c: .26, r: .11, f: .15, k: .35, dT: .3, w: .08, a: .55 } },
+  ar:       { beats: [1, 1, 1], rr: .85, o: { c: .1, r: .035, f: .06, k: .12, dT: .3, bis: .75, tail: .02, a: 1.25 } },
+  alternans:{ beats: [1, .55, 1, .55], rr: .7, o: { c: .15, r: .07, f: .11, k: .3, a: .5 } },
+  hypo:     { beats: [1, .86, .64, .58, .74, .95], rr: .55, o: { c: .12, r: .05, f: .08, k: .3, dT: .22, a: .75 } },
+  af:       { beats: [1, .45, .95, .3, .8, .6], rrs: [.9, .42, .78, .36, .62, .7], o: {} }
+};
+function sketchSVG(id){
+  const S = SKETCH[id], Wt = 2.6, Wpx = 240, Hpx = 46, pts = [];
+  const starts = []; let t = .05; S.beats.forEach((_, i) => { starts.push(t); t += S.rrs ? S.rrs[i] : S.rr; });
+  for (let k = 0; k <= 160; k++){
+    const s = k / 160 * Wt; let v = 0;
+    starts.forEach((t0, i) => { if (s >= t0 - .25) v += sketchBeat(s - t0, S.o) * S.beats[i]; });
+    pts.push(`${(k / 160 * Wpx).toFixed(1)},${(Hpx - 3 - clamp(v / 1.35, 0, 1) * (Hpx - 6)).toFixed(1)}`);
+  }
+  return `<svg viewBox="0 0 ${Wpx} ${Hpx}" preserveAspectRatio="none" aria-hidden="true"><line class="base" x1="0" y1="${Hpx - 2.5}" x2="${Wpx}" y2="${Hpx - 2.5}" stroke-width="1" vector-effect="non-scaling-stroke"/><polyline points="${pts.join(" ")}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function renderPulse(){
+  $("#pulseFeatures").innerHTML = (O.get("pulse.features") || []).map(f => `<div class="feat"><b>${esc(f.name)}</b><span>${O.text(f)}</span></div>`).join("");
+  $("#pulseDisease").innerHTML = (O.get("pulse.diseases") || []).map(d => {
+    const tryIt = d.sim || d.simRhythm;
+    const btn = d.sim ? ` data-try-art="${d.sim}"` : d.simRhythm ? ` data-try-rhythm="${d.simRhythm}"` : "";
+    return `<div class="feat"><b>${esc(d.name)}${tryIt ? `<button type="button" class="chip" style="margin-left:8px;padding:2px 9px;font-size:11.5px"${btn}>Try it</button>` : ""}</b>${sketchSVG(d.id)}<span>${O.text(d)}</span></div>`;
+  }).join("");
+}
+$("#pulseDisease").addEventListener("click", e => {
+  const b = e.target.closest("[data-try-art],[data-try-rhythm]"); if (!b) return;
+  if (b.dataset.tryArt){ Heart.S.art = b.dataset.tryArt; renderArt(); }
+  if (b.dataset.tryRhythm){ Heart.S.rhythm = b.dataset.tryRhythm; Heart.reset(); renderRhythm(); }
+  O.altered();
+  $("#pulseox").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+renderArt(); renderPulse();
+
+/* =========================================================================
    FRAME LOOP and wiring
    ========================================================================= */
 let statT = 0, capT = 0;
@@ -3001,6 +3511,7 @@ O.onTick((dt, real) => {
   if (O.visible($("#pvloop"))) drawPV();
   if (O.visible($("#ecg12"))) draw12();
   if (O.visible($("#corFlow"))) drawCorFlow();
+  if (O.visible($("#pleth"))) drawPleth();
   if (O.visible(Cor3D.node)){ Cor3D.step(dt, real); Cor3D.draw(); }
   const ph = Heart.S.phase;
   if (ph !== lastPh){ lastPh = ph; $$("#cycleSteps li").forEach(li => li.classList.toggle("on", +li.dataset.ph === ph)); }
@@ -3018,16 +3529,18 @@ O.onTick((dt, real) => {
       bp: [`${Math.round(b.sbp)}/${Math.round(b.dbp)}`, "mmHg", O.delta(b.sbp, r.sbp)], edv: [Math.round(b.edv), "mL", O.delta(b.edv, r.edv)], esv: [Math.round(b.esv), "mL", O.delta(b.esv, r.esv)] };
     for (const [k, [v, u, d]] of Object.entries(ro)){ const n = $("#ro-" + k), html = `${v}<small>${u}</small>${d}`; if (n.innerHTML !== html) n.innerHTML = html; }
     $("#toneOut").textContent = Heart.S.rhythm === "saArrest" ? "SA node silent" : Heart.S.rhythm === "afib" ? "atria fibrillating" : `SA node ${Math.round(Heart.sinusRate())}/min`;
+    renderPlethRO();
     if ((capT += 1) % 4 === 0) ecgCaption();
   }
 });
-O.subscribe((s, p) => { if (s.level !== p.level || s.phase !== p.phase){ renderSteps(); renderRhythm(); lastPh = -1; } });
+O.subscribe((s, p) => { if (s.level !== p.level || s.phase !== p.phase){ renderSteps(); renderRhythm(); renderArt(); renderPulse(); lastPh = -1; } });
 renderSteps();
 /* =========================================================================
    CHANGES BAR: what the reader has altered, where each change shows, and the URL
    ========================================================================= */
 const DOM_LABEL = { co: "Co-dominant coronaries", left: "Left-dominant coronaries" };
 const LOAD_LABEL = { p: "Preload", a: "Afterload", c: "Contractility" };
+const ART_LABEL = { older: "Arteries of a 70-year-old", athero: "Widespread atherosclerosis", stenosis: "Atherosclerosis with a narrowed arm artery", cold: "Cold, constricted fingers", warm: "Warm, vasodilated fingers" };
 const DROPPED = ["wenck", "mobitz2", "avb3", "saArrest"];
 const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
 const rhythmName = () => O.get(`rhythms.${Heart.S.rhythm}.name`);
@@ -3035,7 +3548,7 @@ function syncHeartUI(){
   syncMech();
   $("#toneIn").value = Heart.S.tone;
   if (domChoice) domChoice.set(Heart.S.dom);
-  renderRhythm(); renderCoronary(); ecgCaption();
+  renderRhythm(); renderCoronary(); ecgCaption(); renderArt();
 }
 function clearChange(id){
   const S = Heart.S;
@@ -3043,6 +3556,7 @@ function clearChange(id){
   else if (id === "dom") S.dom = "right";
   else if (id === "rhythm"){ S.rhythm = "sinus"; Heart.reset(); }
   else if (id === "tone") S.tone = 0;
+  else if (id === "art") S.art = "young";
   else if (id in LOAD_LABEL) S.user[id] = 1;
 }
 O.alter({
@@ -3055,10 +3569,11 @@ O.alter({
     if (S.rhythm !== "sinus") out.push({ id: "rhythm", section: "conduction", label: rhythmName() });
     if (Math.abs(S.tone) > .001) out.push({ id: "tone", section: "conduction", label: `${S.tone > 0 ? "Sympathetic" : "Vagal"} drive +${Math.round(Math.abs(S.tone) * 100)}%` });
     for (const k of ["p", "a", "c"]) if (Math.abs(S.user[k] - 1) > .005) out.push({ id: k, section: "physiology", label: `${LOAD_LABEL[k]} ×${S.user[k].toFixed(2)}` });
+    if (S.art !== "young") out.push({ id: "art", section: "physiology", label: ART_LABEL[S.art] });
     return out;
   },
   clear(id){ clearChange(id); syncHeartUI(); },
-  reset(){ ["occl", "dom", "rhythm", "tone", "p", "a", "c"].forEach(clearChange); syncHeartUI(); },
+  reset(){ ["occl", "dom", "rhythm", "tone", "p", "a", "c", "art"].forEach(clearChange); syncHeartUI(); },
   sync: syncHeartUI,
   notes(sec){
     const S = Heart.S, fx = Heart.effects(), n = Heart.affectedSegs().size, R = S.rhythm, b = Heart.beat, out = [];
@@ -3075,11 +3590,14 @@ O.alter({
       if (DROPPED.includes(R)) N("rhythm", "dropMech", { rhythm: rhythmName() });
       if (S.tone > .05) N("tone", "symMech", { pct: Math.round(25 * S.tone) });
       if (S.tone < -.05) N("tone", "vagMech");
+      if (ART[S.art].comp < 1) N("art", "stiffMech", { pct: Math.round(ART[S.art].comp * 100), bp: `${Math.round(b.sbp)}/${Math.round(b.dbp)}` });
+      if (R === "afib") N("rhythm", "afibPleth");
     }
     if (sec === "coronary"){
       const load = ["p", "a", "c"].filter(k => Math.abs(S.user[k] - 1) > .005);
       if (load.length) N(load, "loadFlow", { bp: `${Math.round(b.sbp)}/${Math.round(b.dbp)}` });
       if (S.tone > .05) N("tone", "fastFlow", { hr: Math.round(b.hr) });
+      if (ART[S.art].comp < 1) N("art", "stiffFlow", { dbp: Math.round(b.dbp) });
       if (R === "lbbb" && S.occl) N(["rhythm", "occl"], "lbbbMask");
       else if (R !== "sinus") N("rhythm", "ecgRhythm", { rhythm: rhythmName() });
     }
@@ -3092,7 +3610,7 @@ O.alter({
   toParams(){
     const S = Heart.S, f = v => (Math.round(v * 100) / 100).toString();
     return { occl: S.occl || "", dom: S.dom !== "right" ? S.dom : "", rhythm: S.rhythm !== "sinus" ? S.rhythm : "",
-      tone: Math.abs(S.tone) > .001 ? f(S.tone) : "",
+      tone: Math.abs(S.tone) > .001 ? f(S.tone) : "", art: S.art !== "young" ? S.art : "",
       ...Object.fromEntries(["p", "a", "c"].map(k => [k, Math.abs(S.user[k] - 1) > .005 ? f(S.user[k]) : ""])) };
   },
   fromParams(P){
@@ -3101,6 +3619,7 @@ O.alter({
     if (["right", "co", "left"].includes(P.get("dom"))) S.dom = P.get("dom");
     if (RHYTHM_IDS.includes(P.get("rhythm"))){ S.rhythm = P.get("rhythm"); Heart.reset(); }
     const t = num("tone", -1, 1); if (t !== null) S.tone = t;
+    if (ART_IDS.includes(P.get("art"))) S.art = P.get("art");
     MECH.forEach(([k, , lo, hi]) => { const v = num(k, lo, hi); if (v !== null) S.user[k] = v; });
   }
 });

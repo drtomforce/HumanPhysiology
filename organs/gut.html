@@ -244,6 +244,55 @@ a{ color:inherit; }
 }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 /* ===== ORGAN ENGINE CSS · END ===== */
+/* ===== EXPORT ENGINE CSS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+.xp-btn{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 12px 6px 10px; font:inherit; font-size:13px; font-weight:500; color:var(--ink); cursor:pointer; white-space:nowrap; min-height:32px; }
+.xp-btn:hover{ background:var(--surface-2); }
+.xp-btn[aria-expanded="true"]{ background:var(--ink); color:var(--surface); border-color:var(--ink); }
+.xp{ position:fixed; z-index:60; width:min(400px, calc(100vw - 16px)); overflow-y:auto; overscroll-behavior:contain; background:var(--surface); color:var(--ink); border:1px solid var(--line-strong); border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08); padding:14px 16px 12px; font-family:var(--sans); font-size:14px; line-height:1.4; }
+.xp[hidden]{ display:none; }
+.xp.sheet{ left:0; right:0; bottom:0; top:auto !important; width:auto; max-height:82vh !important; border-radius:18px 18px 0 0; border-bottom:0; padding-bottom:calc(14px + env(safe-area-inset-bottom, 0px)); }
+.xp-head{ display:flex; align-items:center; justify-content:space-between; margin:0 0 8px; }
+.xp-head h2{ font-family:var(--serif); font-size:20px; font-weight:500; margin:0; letter-spacing:-.01em; }
+.xp-x{ border:0; background:transparent; width:32px; height:32px; border-radius:50%; display:grid; place-items:center; cursor:pointer; color:var(--muted); padding:0; }
+.xp-x:hover{ background:var(--surface-2); color:var(--ink); }
+.xp-field{ display:grid; gap:4px; margin:0 0 4px; }
+.xp-field > span, .xp-opt > span{ font-size:12px; color:var(--muted); font-weight:500; }
+.xp select{ font:inherit; font-size:13.5px; color:var(--ink); background:var(--bg); border:1px solid var(--line-strong); border-radius:10px; padding:7px 9px; min-height:36px; width:100%; min-width:0; }
+.xp-sec{ border-top:1px solid var(--line); margin-top:12px; padding-top:10px; }
+.xp-sec h3{ font-size:12px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:0 0 8px; }
+.xp-opts{ display:grid; gap:8px; margin-bottom:10px; }
+.xp-opt{ display:grid; grid-template-columns:88px minmax(0,1fr); align-items:center; gap:8px; }
+.xp-seg{ display:inline-flex; background:var(--surface-2); border-radius:999px; padding:3px; justify-self:start; flex-wrap:wrap; }
+.xp-seg button{ border:0; background:transparent; padding:5px 11px; border-radius:999px; cursor:pointer; font:inherit; font-size:12.5px; font-weight:500; color:var(--muted); min-height:28px; }
+.xp-seg button[aria-checked="true"]{ background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--line); }
+.xp-check{ display:flex; gap:8px; align-items:flex-start; font-size:13px; color:var(--ink); cursor:pointer; }
+.xp-check input{ margin:2px 0 0; width:16px; height:16px; accent-color:var(--accent); flex:none; }
+.xp-acts{ display:flex; flex-wrap:wrap; gap:6px; }
+.xp-b{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:6px 13px; font:inherit; font-size:13px; font-weight:500; color:var(--ink); cursor:pointer; min-height:34px; }
+.xp-b:hover:not(:disabled){ background:var(--surface-2); }
+.xp-b:disabled{ opacity:.45; cursor:default; }
+.xp-note{ margin:8px 0 0; font-size:12.5px; color:var(--muted); }
+.xp-job{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; align-items:center; margin-top:12px; padding:10px 12px; background:var(--bg); border-radius:12px; }
+.xp-job[hidden]{ display:none; }
+.xp-bar{ grid-column:1 / -1; height:6px; border-radius:3px; background:var(--line); overflow:hidden; }
+.xp-bar i{ display:block; height:100%; width:0; background:var(--accent); transition:width .15s; }
+.xp-job span{ font-size:12.5px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.xp-status{ margin:10px 0 0; font-size:12.5px; color:var(--muted); min-height:1em; overflow-wrap:anywhere; }
+.xp-status:empty{ display:none; }
+.xp-status.bad, .xp-toast.bad{ color:#c2414b; }
+.xp-toast{ position:fixed; left:50%; bottom:20px; z-index:61; transform:translate(-50%, 10px); max-width:min(480px, calc(100vw - 32px)); background:var(--ink); color:var(--surface); font-family:var(--sans); font-size:13px; padding:8px 14px; border-radius:10px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; }
+.xp-toast.on{ opacity:1; transform:translate(-50%, 0); }
+.xp-toast.bad{ background:#c2414b; color:#fff; }
+.xp-drop{ position:fixed; inset:0; z-index:62; display:none; place-items:center; background:color-mix(in srgb, var(--bg) 80%, transparent); border:3px dashed var(--accent); pointer-events:none; }
+.xp-drop.on{ display:grid; }
+.xp-drop p{ font-family:var(--serif); font-size:22px; margin:0; background:var(--surface); padding:14px 20px; border-radius:14px; border:1px solid var(--line); }
+@media (max-width: 640px){
+  .xp-btn{ padding:6px 10px; }
+  .xp-b{ min-height:44px; padding:8px 14px; }
+  .xp-seg button{ min-height:36px; }
+  .xp select{ min-height:44px; }
+}
+/* ===== EXPORT ENGINE CSS · END ===== */
 </style>
 <style>
 /* ---------- gut-specific styles ---------- */
@@ -390,7 +439,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid">
       <div class="panel fig">
         <div class="fig-tools" id="anatTools"></div>
-        <svg id="tractFig" viewBox="0 0 560 620" role="img" aria-label="The digestive tract from the oesophagus to the anus, with the latest meal moving through it"></svg>
+        <svg id="tractFig" data-export-name="Digestive tract" viewBox="0 0 560 620" role="img" aria-label="The digestive tract from the oesophagus to the anus, with the latest meal moving through it"></svg>
         <div class="legend"><span><i class="dot" style="--c:var(--chyme)"></i>The meal</span><span><i class="dot" style="--c:var(--acid)"></i>Acid</span><span><i class="dot" style="--c:var(--s6)"></i>Waste and bacteria</span></div>
       </div>
       <aside class="side">
@@ -407,7 +456,7 @@ canvas.trace{ display:block; width:100%; }
       <div class="panel fig">
         <h3>Zoom in</h3>
         <div class="fig-tools" id="zoomTools"></div>
-        <svg id="zoomFig" viewBox="0 0 560 400" role="img" aria-label="A close-up of the gut wall, a gastric gland or a villus"></svg>
+        <svg id="zoomFig" data-export-name="Gut wall close-up" viewBox="0 0 560 400" role="img" aria-label="A close-up of the gut wall, a gastric gland or a villus"></svg>
         <p class="cap" data-text="sections.anatomy.zoomCap"></p>
       </div>
       <aside class="side">
@@ -430,7 +479,7 @@ canvas.trace{ display:block; width:100%; }
       <div class="panel fig">
         <h3>Slow waves and spikes in the muscle</h3>
         <div class="fig-tools" id="siteTools"><span>Record from</span></div>
-        <canvas class="trace" id="swTrace" height="300" aria-label="Smooth-muscle membrane potential with slow waves, spikes and the force they make"></canvas>
+        <canvas class="trace" id="swTrace" data-export-name="Slow waves and spikes" height="300" aria-label="Smooth-muscle membrane potential with slow waves, spikes and the force they make"></canvas>
         <div class="legend"><span><i style="--c:var(--s4)"></i>Membrane potential</span><span><i class="dash" style="--c:var(--acid)"></i>Spike threshold</span><span><i style="--c:var(--muscle)"></i>Contraction force</span></div>
         <p class="cap" data-text="sections.motility.swCap"></p>
       </div>
@@ -446,7 +495,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid" style="margin-top:20px">
       <div class="panel fig">
         <h3 id="tubeTitle">Inside the tube</h3>
-        <canvas class="trace" id="tube" height="230" aria-label="A length of gut contracting, with its contents moving"></canvas>
+        <canvas class="trace" id="tube" data-export-name="Peristalsis" height="230" aria-label="A length of gut contracting, with its contents moving"></canvas>
         <div class="legend"><span><i style="--c:var(--muscle)"></i>Contracting ring</span><span><i class="dot" style="--c:var(--chyme)"></i>Contents</span><span>Flow follows from the squeeze: what a ring pushes out must go somewhere.</span></div>
       </div>
       <aside class="side">
@@ -460,7 +509,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid" style="margin-top:20px">
       <div class="panel fig">
         <h3>The meal clock: emptying the stomach</h3>
-        <canvas class="trace" id="emptyChart" height="320" aria-label="Percent of the meal left in the stomach, and the amount reaching the colon, over the hours after eating"></canvas>
+        <canvas class="trace" id="emptyChart" data-export-name="Gastric emptying" height="320" aria-label="Percent of the meal left in the stomach, and the amount reaching the colon, over the hours after eating"></canvas>
         <div class="legend"><span><i style="--c:var(--chyme)"></i>Meal left in the stomach</span><span><i style="--c:var(--s6)"></i>Reached the colon</span><span><i class="dash" style="--c:var(--line-strong)"></i>Healthy gut, same meal</span><span><i class="dot" style="--c:var(--ink)"></i>Now</span></div>
       </div>
       <aside class="side">
@@ -486,7 +535,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid">
       <div class="panel fig">
         <h3>The parietal cell: pumping acid</h3>
-        <svg id="parietalFig" viewBox="0 0 560 370" role="img" aria-label="A parietal cell with its receptors, the proton pump in the canaliculus and bicarbonate leaving into the blood"></svg>
+        <svg id="parietalFig" data-export-name="Parietal cell" viewBox="0 0 560 370" role="img" aria-label="A parietal cell with its receptors, the proton pump in the canaliculus and bicarbonate leaving into the blood"></svg>
         <div class="legend"><span><i class="dot" style="--c:var(--acid)"></i>H⁺</span><span><i class="dot" style="--c:var(--cl)"></i>Cl⁻</span><span><i class="dot" style="--c:var(--k)"></i>K⁺</span><span><i class="dot" style="--c:var(--base)"></i>HCO₃⁻</span><span><i class="dot" style="--c:var(--nerve-2)"></i>ACh</span><span><i class="dot" style="--c:var(--s4)"></i>Gastrin</span><span><i class="dot" style="--c:var(--s3)"></i>Histamine</span></div>
       </div>
       <aside class="side">
@@ -502,7 +551,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid" style="margin-top:20px">
       <div class="panel fig">
         <h3>Three phases of acid secretion</h3>
-        <canvas class="trace" id="acidChart" height="320" aria-label="Gastric pH, acid output and gastrin over the hours around a meal"></canvas>
+        <canvas class="trace" id="acidChart" data-export-name="Acid and gastrin around a meal" height="320" aria-label="Gastric pH, acid output and gastrin over the hours around a meal"></canvas>
         <div class="legend"><span><i style="--c:var(--acid)"></i>Acid output</span><span><i style="--c:var(--s1)"></i>Stomach pH</span><span><i style="--c:var(--s4)"></i>Gastrin</span><span><i class="dash" style="--c:var(--line-strong)"></i>Healthy gut, same meal</span></div>
       </div>
       <aside class="side">
@@ -518,7 +567,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid" style="margin-top:20px">
       <div class="panel fig">
         <h3>Absorption: inside an enterocyte</h3>
-        <svg id="absorbFig" viewBox="0 0 560 360" role="img" aria-label="Enterocytes on a villus taking up sugars, amino acids, fats, salt and water, with a crypt cell secreting chloride"></svg>
+        <svg id="absorbFig" data-export-name="Absorption on a villus" viewBox="0 0 560 360" role="img" aria-label="Enterocytes on a villus taking up sugars, amino acids, fats, salt and water, with a crypt cell secreting chloride"></svg>
         <div class="legend"><span><i class="dot" style="--c:var(--glu)"></i>Glucose, galactose</span><span><i class="dot" style="--c:var(--fru)"></i>Fructose</span><span><i class="dot" style="--c:var(--aa)"></i>Amino acids, peptides</span><span><i class="dot" style="--c:var(--fat)"></i>Fat</span><span><i class="dot" style="--c:var(--na)"></i>Na⁺</span><span><i class="dot" style="--c:var(--cl)"></i>Cl⁻</span><span><i class="dot" style="--c:var(--water)"></i>Water</span><span><i class="sq" style="--c:var(--s1)"></i>Lactose</span></div>
       </div>
       <aside class="side">
@@ -547,7 +596,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid">
       <div class="panel fig">
         <h3>Messages from the gut to the brain</h3>
-        <svg id="axisFig" viewBox="0 0 560 400" role="img" aria-label="Hormone cells along the gut and vagal nerve fibres carrying signals of fullness to the brainstem and hypothalamus"></svg>
+        <svg id="axisFig" data-export-name="Gut–brain axis" viewBox="0 0 560 400" role="img" aria-label="Hormone cells along the gut and vagal nerve fibres carrying signals of fullness to the brainstem and hypothalamus"></svg>
         <div class="legend"><span><i class="dot" style="--c:var(--s2)"></i>Ghrelin</span><span><i class="dot" style="--c:var(--s3)"></i>CCK</span><span><i class="dot" style="--c:var(--s1)"></i>GLP-1</span><span><i class="dot" style="--c:var(--s5)"></i>PYY</span><span><i style="--c:var(--nerve-2)"></i>Vagal impulses</span></div>
       </div>
       <aside class="side">
@@ -563,7 +612,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid" style="margin-top:20px">
       <div class="panel fig">
         <h3>Hunger and fullness through the meal</h3>
-        <canvas class="trace" id="satChart" height="320" aria-label="Ghrelin, CCK, GLP-1, PYY, hunger and fullness over the hours around a meal"></canvas>
+        <canvas class="trace" id="satChart" data-export-name="Hunger and fullness hormones" height="320" aria-label="Ghrelin, CCK, GLP-1, PYY, hunger and fullness over the hours around a meal"></canvas>
         <div class="legend"><span><i style="--c:var(--ink)"></i>Fullness (0–10)</span><span><i style="--c:var(--muted)"></i>Hunger (0–10)</span><span><i style="--c:var(--s2)"></i>Ghrelin</span><span><i style="--c:var(--s3)"></i>CCK</span><span><i style="--c:var(--s1)"></i>GLP-1</span><span><i style="--c:var(--s5)"></i>PYY</span><span><i class="dash" style="--c:var(--line-strong)"></i>Healthy gut, same meal</span></div>
       </div>
       <aside class="side">
@@ -576,7 +625,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid" style="margin-top:20px">
       <div class="panel fig">
         <h3>The colon’s microbes</h3>
-        <canvas class="trace" id="microbeFig" height="280" aria-label="Bacteria in the colon, coloured by group, fermenting fibre"></canvas>
+        <canvas class="trace" id="microbeFig" data-export-name="Colon microbes" height="280" aria-label="Bacteria in the colon, coloured by group, fermenting fibre"></canvas>
         <div class="comp" id="compNow" aria-label="Make-up of the community now"></div>
         <div class="comp ref" id="compRef" aria-label="Make-up of a healthy community on 25 g of fibre a day"></div>
         <div class="comp-key" id="compKey"></div>
@@ -1797,16 +1846,129 @@ const ticks = [];
 const onTick = f => ticks.push(f);
 const seen = new WeakMap();
 const vio = new IntersectionObserver(es => es.forEach(e => seen.set(e.target, e.isIntersecting)), { rootMargin: "120px" });
-function visible(node){ if (!seen.has(node)){ seen.set(node, true); vio.observe(node); } return seen.get(node) && !document.hidden; }
+/* held: the Export menu is stepping the page frame by frame, and every figure draws */
+let held = false;
+function visible(node){ if (!seen.has(node)){ seen.set(node, true); vio.observe(node); } return held || (seen.get(node) && !document.hidden); }
 function loop(){
   let last = performance.now();
   function frame(t){
     const real = Math.min(.05, (t - last) / 1000); last = t;
     const dt = state.paused ? 0 : real * state.speed;
-    for (const f of ticks) f(dt, real);
+    if (!held) for (const f of ticks) f(dt, real);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+}
+function hold(on){ held = !!on; }
+function step(dt){ for (const f of ticks) f(dt, dt); }
+
+/* ---------- export: the adapter the shared Export menu works through ----------
+   Pages can add tables to the CSV with exportData(() => [{name, columns, rows}]) and
+   animation lengths with exportLengths(() => [{id, label, seconds}]) (simulated seconds). */
+const dataFns = [], lengthFns = [];
+const exportData = f => dataFns.push(f), exportLengths = f => lengthFns.push(f);
+const clockText = h => { const m = Math.floor(wrapH(h) * 60 + 1e-6); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+function shareURL(){
+  const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString() });
+  if (ALT && ALT.toParams) for (const [k, v] of Object.entries(ALT.toParams() || {})) if (v !== undefined && v !== null && v !== "") p.set(k, v);
+  return location.href.split(/[?#]/)[0] + "?" + p.toString();
+}
+/* every control in the sections, so a settings file brings back views the URL doesn't carry */
+const ctlRoots = () => $$("[data-section]").map(s => [s.id, s]);
+const ctlSkip = n => n.closest("[data-inspector], [data-because], [data-lens], .op-alter");
+const radios = s => $$("[role=radiogroup]", s).filter(n => !ctlSkip(n));
+const tabs = s => $$("[role=tab][aria-selected]", s).filter(n => !ctlSkip(n));
+const toggles = s => $$("button[aria-pressed]", s).filter(n => !ctlSkip(n) && !n.closest("[role=radiogroup]"));
+function readControls(){
+  const out = {};
+  for (const [id, s] of ctlRoots()){
+    $$("input[id], select[id]", s).filter(n => !ctlSkip(n)).forEach(n => { out["#" + n.id] = n.type === "checkbox" || n.type === "radio" ? n.checked : n.value; });
+    radios(s).forEach((g, i) => { const b = $("[aria-checked=true]", g); if (b && b.dataset.v !== undefined) out[`${id}/rg${i}`] = b.dataset.v; });
+    tabs(s).forEach((b, i) => { if (b.getAttribute("aria-selected") === "true") out[`${id}/tab${i}`] = true; });
+    toggles(s).forEach((b, i) => { out[`${id}/bp${i}`] = b.getAttribute("aria-pressed") === "true"; });
+  }
+  return out;
+}
+function writeControls(c){
+  if (!c || typeof c !== "object") return;
+  /* modes first (they can rebuild a section), then tabs, toggles and finally sliders */
+  for (const [id, s] of ctlRoots()){
+    radios(s).forEach((g, i) => { const v = c[`${id}/rg${i}`]; if (v === undefined) return; const b = $$("[data-v]", g).find(x => x.dataset.v === String(v)); if (b && b.getAttribute("aria-checked") !== "true") b.click(); });
+    tabs(s).forEach((b, i) => { if (c[`${id}/tab${i}`] && b.getAttribute("aria-selected") !== "true") b.click(); });
+    toggles(s).forEach((b, i) => { const v = c[`${id}/bp${i}`]; if (typeof v === "boolean" && (b.getAttribute("aria-pressed") === "true") !== v) b.click(); });
+  }
+  for (const [k, v] of Object.entries(c)){
+    if (k[0] !== "#") continue;
+    const n = document.getElementById(k.slice(1)); if (!n || ctlSkip(n)) continue;
+    if (n.type === "checkbox" || n.type === "radio"){ if (n.checked !== !!v) n.click(); }
+    else if (n.value !== String(v)){ n.value = String(v); n.dispatchEvent(new Event("input", { bubbles: true })); n.dispatchEvent(new Event("change", { bubbles: true })); }
+  }
+}
+function getView(){
+  const sc = ALT && changed() ? activeScenario() : null;
+  return { level: state.level, hour: Math.round(state.hour * 1000) / 1000, phase: state.phase, speed: state.speed, paused: state.paused,
+    selected: { ...state.sel },
+    changes: ALT && ALT.toParams ? Object.fromEntries(Object.entries(ALT.toParams() || {}).filter(([, v]) => v !== "" && v != null)) : {},
+    scenario: sc ? sc.id : null, controls: readControls() };
+}
+function setView(v){
+  const patch = {};
+  if (LEVEL_INDEX[v.level] !== undefined) patch.level = v.level;
+  if (Number.isFinite(+v.hour)) patch.hour = wrapH(+v.hour);
+  if (Number.isFinite(+v.speed) && +v.speed > 0) patch.speed = +v.speed;
+  if (typeof v.paused === "boolean") patch.paused = v.paused;
+  if (v.selected && typeof v.selected === "object") patch.sel = { ...v.selected };
+  set(patch);
+  if (ALT){
+    ALT.reset();
+    if (ALT.fromParams) ALT.fromParams(new URLSearchParams(Object.entries(v.changes || {}).map(([k, x]) => [k, String(x)])));
+    if (ALT.sync) ALT.sync();
+  }
+  writeControls(v.controls);
+  if (ALT) altered();
+  markSelected(); renderInspectors();
+}
+/* readouts: the hero stats and every .ro tile, with the value, unit and change kept apart */
+function readValue(n){
+  const c = n.cloneNode(true), d = c.querySelector(".delta"), dv = d ? d.textContent.trim() : "";
+  if (d) d.parentNode.removeChild(d);
+  const smalls = [...c.querySelectorAll("small")], unit = smalls.map(x => x.textContent.trim()).join(" ");
+  smalls.forEach(x => x.parentNode.removeChild(x));
+  return [c.textContent.trim(), unit, dv];
+}
+function readouts(){
+  const rows = [];
+  $$("[data-stat]").forEach(n => {
+    const [v, u, d] = readValue($(".v", n));
+    rows.push(["Now", $(".l", n).textContent.trim(), v, u || ((META.stats || []).find(s => s.id === n.dataset.stat) || {}).unit || "", d, ($(".u", n) || {}).textContent || ""]);
+  });
+  $$("[data-section]").forEach(s => $$(".ro", s).forEach(n => {
+    const l = $(".l", n), v = $(".v", n); if (!l || !v) return;
+    const [x, u, d] = readValue(v); rows.push([secName(s.id), l.textContent.trim(), x, u, d, ""]);
+  }));
+  return { name: "Readouts", columns: ["Section", "Reading", "Value", "Unit", "Change from healthy", "Note"], rows };
+}
+function mountExport(){
+  if (!window.Exporter) return;
+  Exporter.mount({
+    page: { id: META.id || location.pathname.split("/").pop().replace(/\.html$/, ""), name: META.name },
+    base: "../",
+    host: $("[data-controls]") || $(".op-bar"),
+    caption: () => {
+      const items = ALT ? ALT.items() || [] : [], sc = items.length ? activeScenario() : null;
+      return { when: `${clockText(state.hour)} · ${PHASE_BY_ID[state.phase].label}`, level: LEVELS[LEVEL_INDEX[state.level]].label,
+        changes: sc ? `Scenario: ${sc.name}` : items.length ? "Changed: " + items.map(i => i.label).join(", ") : "Healthy" };
+    },
+    link: shareURL, getState: getView, setState: setView,
+    data: () => [readouts(), ...dataFns.flatMap(f => [].concat(f() || []))],
+    clock: { hold, step, speed: () => state.speed },
+    lengths: () => {
+      const own = lengthFns.flatMap(f => [].concat(f() || []));
+      if (own.length) return own;
+      const v = PHASE_BY_ID[state.phase].vitals;
+      return [{ id: "beat", label: "One heartbeat", seconds: 60 / v.hr }, { id: "breath", label: "One breath", seconds: 60 / v.rr }];
+    }
+  });
 }
 
 /* ---------- glossary tooltips ---------- */
@@ -1824,7 +1986,7 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow(); renderSee(); buildAlter();
+  buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
   bindParts(); bindGlossary();
   const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); };
   subscribe((s, p) => {
@@ -1846,10 +2008,844 @@ return {
   tip: showTip, untip: hideTip,
   vitals: () => PHASE_BY_ID[state.phase].vitals,
   inspector: (node, extra) => { node.__extra = extra; },
-  alter, altered, fill, changed, delta
+  alter, altered, fill, changed, delta,
+  hold, step, exportData, exportLengths
 };
 })();
 /* ===== ORGAN ENGINE JS · END ===== */
+/* ===== EXPORT ENGINE JS · BEGIN (edit in organs/_template.html, then run node organs/sync-engine.mjs) ===== */
+/* The Export menu, shared by ../index.html and every organ page. A page hands it an adapter:
+     Exporter.mount({
+       page: {id, name}, base: "" | "../",      which page this is, and the path to the site root
+       host: element,                          the Export button goes at its end
+       figures() → [{id, name, node, section?}]   optional; default: every svg[role=img] and
+                                               canvas[aria-label] with an id inside [data-section],
+                                               named by its data-export-name (else its aria-label)
+       caption() → {when, level, changes}      what the caption strip says about the view
+       link() → url                            a shareable link to this view
+       getState() → {…}, setState({…})         the view as plain data, and back
+       data() → [{name, columns:[…], rows:[[…]]}]   tables for the CSV export
+       clock: {hold(on), step(dt), speed()}    stop the page's own loop, and advance it by dt
+       lengths() → [{id, label, seconds}]      ready-made animation lengths (a beat, a breath)
+       ride() → null | {label, restart(), progress() → 0–1, done() → bool}   a journey to record whole
+     })
+   Still pictures: SVG (computed styles inlined, so theme colours travel) or PNG at 1×, 2×, 4×.
+   Animations: WebM through WebCodecs with its own small muxer (MediaRecorder where WebCodecs is
+   missing), an animated GIF with its own encoder, or a ZIP of PNG frames. Frames are rendered
+   one by one while the page's clock is held, so files come out smooth however slow the drawing.
+   Settings: a JSON file (schema humanphysiology.view) that loads back through the menu or by
+   dropping it on the page; a link; and the readouts and traces as CSV. No dependencies. */
+window.Exporter = (() => {
+"use strict";
+const SCHEMA = "humanphysiology.view", VERSION = 1;
+const NS = "http://www.w3.org/2000/svg";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let A = null;
+class Cancelled extends Error {}
+
+/* ---------- figures ---------- */
+/* a name for the menu from a figure's aria-label: up to a colon, or to a word like "showing" */
+function shortName(label){
+  let s = String(label || "").split(/[:;(]/)[0].trim();
+  const m = s.slice(16).search(/ (showing|seen|with|that|where|over the|against|for the|from the|as it|while|on the same|in six) /);
+  if (m >= 0) s = s.slice(0, 16 + m);
+  if (s.length > 56){ const cut = s.slice(0, 56); s = cut.slice(0, Math.max(30, cut.lastIndexOf(" "))).replace(/[,\s]+$/, "") + "…"; }
+  return s;
+}
+function autoFigures(){
+  return $$("[data-section] svg[role=img][id], [data-section] canvas[aria-label][id]").map(node => {
+    const sec = node.closest("[data-section]"), t = sec && $("[data-title]", sec);
+    return { id: node.id, node, section: t ? t.textContent.trim() : "", name: node.dataset.exportName || shortName(node.getAttribute("aria-label")), desc: node.getAttribute("aria-label") || "" };
+  });
+}
+function figures(){
+  const list = (A && A.figures ? A.figures() : autoFigures()).filter(f => f && f.node && f.node.isConnected);
+  list.forEach(f => { f.canvas = f.node instanceof HTMLCanvasElement; if (!f.desc) f.desc = f.node.getAttribute("aria-label") || f.name; });
+  return list;
+}
+const isShown = n => !!(n.offsetParent || n.getClientRects().length) && getComputedStyle(n).visibility !== "hidden";
+function figSize(f){
+  const r = f.node.getBoundingClientRect();
+  if (r.width > 1 && r.height > 1) return { w: r.width, h: r.height };
+  if (f.canvas) return { w: f.node.width / 2 || 600, h: f.node.height / 2 || 300 };
+  const vb = f.node.viewBox && f.node.viewBox.baseVal;
+  return vb && vb.width ? { w: vb.width, h: vb.height } : { w: 600, h: 400 };
+}
+/* the figure in focus: the last one touched, if it is still on screen, else the most visible one */
+let lastFig = null;
+document.addEventListener("pointerdown", e => { const n = e.target.closest && e.target.closest("svg[id], canvas[id]"); if (n) lastFig = n; }, true);
+function focusedFigure(list){
+  const vh = innerHeight, vw = innerWidth;
+  const seen = f => { const r = f.node.getBoundingClientRect(); return Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0)) * Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0)); };
+  const last = list.find(f => f.node === lastFig);
+  if (last && seen(last) > 0) return last;
+  let best = list[0], bs = -1;
+  for (const f of list){ const s = seen(f); if (s > bs){ bs = s; best = f; } }
+  return best;
+}
+
+/* ---------- colours of the current theme ---------- */
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function backdrop(node){
+  for (let n = node.parentElement; n; n = n.parentElement){
+    const c = getComputedStyle(n).backgroundColor;
+    if (c && c !== "transparent" && !/rgba\([^)]*,\s*0\)$/.test(c)) return c;
+  }
+  return cssVar("--bg") || "#ffffff";
+}
+
+/* ---------- SVG with its styles inlined ---------- */
+/* inherited properties are written where they differ from the parent; the others where
+   they differ from a bare element of the same kind */
+const INH = ["fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-opacity", "stroke-dasharray", "stroke-dashoffset",
+  "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "font-family", "font-size", "font-weight", "font-style", "letter-spacing",
+  "word-spacing", "text-anchor", "dominant-baseline", "visibility", "paint-order", "marker-start", "marker-mid", "marker-end",
+  "shape-rendering", "color-interpolation-filters", "clip-rule"];
+const OWN = ["opacity", "filter", "clip-path", "mask", "stop-color", "stop-opacity", "mix-blend-mode", "vector-effect", "flood-color",
+  "flood-opacity", "lighting-color", "isolation", "text-decoration-line", "overflow"];
+const NONRENDER = new Set(["defs", "clipPath", "mask", "marker", "pattern", "symbol", "linearGradient", "radialGradient", "filter"]);
+const DROP = new Set(["script", "style", "foreignObject", "title", "desc"]);
+let probe = null;
+const defaults = {};
+function ownDefaults(tag){
+  if (defaults[tag]) return defaults[tag];
+  if (!probe){
+    probe = document.createElementNS(NS, "svg"); probe.setAttribute("aria-hidden", "true");
+    probe.style.cssText = "position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden";
+    document.body.appendChild(probe);
+  }
+  const e = document.createElementNS(NS, tag); probe.appendChild(e);
+  const cs = getComputedStyle(e), d = {};
+  for (const p of OWN) d[p] = cs.getPropertyValue(p);
+  e.remove();
+  return (defaults[tag] = d);
+}
+const urlFix = v => v.replace(/url\((["']?)[^)"'#]*#([^)"']+)\1\)/g, "url(#$2)");
+function clean(n, root){
+  for (const a of [...n.attributes]){
+    const k = a.name;
+    /* var(--…) in an attribute means nothing outside the page; the inlined computed style carries the colour */
+    if (k === "class" || k === "style" || k === "tabindex" || k.startsWith("data-") || k.startsWith("on") || a.value.includes("var(") || (!root && (k === "role" || k.startsWith("aria-")))) n.removeAttribute(k);
+  }
+}
+function inline(src, dst, parentVals, inNR){
+  const tag = src.localName, nr = inNR || NONRENDER.has(tag);
+  const cs = getComputedStyle(src);
+  if (!nr && parentVals && cs.display === "none"){ dst.remove(); return; }
+  const vals = {}, out = [];
+  for (const p of INH){ const v = cs.getPropertyValue(p); vals[p] = v; if (!parentVals || parentVals[p] !== v) out.push(`${p}:${urlFix(v)}`); }
+  const d = ownDefaults(tag);
+  for (const p of OWN){ const v = cs.getPropertyValue(p); if (v !== d[p]) out.push(`${p}:${urlFix(v)}`); }
+  /* CSS transforms (from a style or a class), but not plain transform attributes */
+  if (cs.transform !== "none" && (src.style.transform || !src.hasAttribute("transform")) && tag !== "svg")
+    out.push(`transform:${cs.transform}`, `transform-origin:${cs.transformOrigin}`, `transform-box:${cs.transformBox}`);
+  clean(dst, !parentVals);
+  if (out.length) dst.setAttribute("style", out.join(";"));
+  const sk = src.children, dk = [...dst.children];
+  for (let i = 0; i < dk.length; i++){
+    if (DROP.has(dk[i].localName)){ dk[i].remove(); continue; }
+    inline(sk[i], dk[i], vals, nr);
+  }
+}
+function refsIn(root){
+  const out = [], re = /url\(#([^)]+)\)/g;
+  for (const n of [root, ...root.querySelectorAll("*")]) for (const a of n.attributes){
+    let m; re.lastIndex = 0;
+    while ((m = re.exec(a.value))) out.push(m[1]);
+    if (a.localName === "href" && a.value[0] === "#") out.push(a.value.slice(1));
+  }
+  return out;
+}
+/* gradients, markers or symbols the figure uses but that live in another svg on the page */
+function addMissingRefs(svg){
+  const have = new Set([...svg.querySelectorAll("[id]")].map(n => n.id)), defs = document.createElementNS(NS, "defs");
+  const todo = refsIn(svg);
+  while (todo.length){
+    const id = todo.pop(); if (have.has(id)) continue; have.add(id);
+    const src = document.getElementById(id); if (!(src instanceof SVGElement)) continue;
+    const c = src.cloneNode(true); inline(src, c, null, true); clean(c, false); defs.appendChild(c);
+    c.querySelectorAll("[id]").forEach(n => have.add(n.id));
+    todo.push(...refsIn(c));
+  }
+  if (defs.firstChild) svg.insertBefore(defs, svg.firstChild);
+}
+function figureSVGNode(f){
+  const { w, h } = figSize(f), src = f.node, c = src.cloneNode(true);
+  inline(src, c, null, false); addMissingRefs(c);
+  if (!c.getAttribute("viewBox")){ const vb = src.viewBox && src.viewBox.baseVal; c.setAttribute("viewBox", vb && vb.width ? `${vb.x} ${vb.y} ${vb.width} ${vb.height}` : `0 0 ${w} ${h}`); }
+  c.removeAttribute("id"); c.removeAttribute("role"); c.removeAttribute("aria-label"); c.removeAttribute("aria-hidden");
+  c.setAttribute("x", 0); c.setAttribute("y", 0); c.setAttribute("width", w); c.setAttribute("height", h);
+  return { node: c, w, h };
+}
+
+/* ---------- caption strip ---------- */
+const FONT = cssVar("--sans") || "system-ui, sans-serif";
+let mctx = null;
+function fit(s, px, weight, max){
+  mctx = mctx || document.createElement("canvas").getContext("2d");
+  mctx.font = `${weight} ${px}px ${FONT}`;
+  if (mctx.measureText(s).width <= max) return s;
+  let lo = 0, hi = s.length;
+  while (lo < hi){ const m = (lo + hi + 1) >> 1; if (mctx.measureText(s.slice(0, m) + "…").width <= max) lo = m; else hi = m - 1; }
+  return s.slice(0, lo).trimEnd() + "…";
+}
+/* greedy word wrap into at most n lines; the last one ends in … if text is left over */
+function wrap(s, px, wt, max, n){
+  const words = String(s).split(/\s+/).filter(Boolean), out = [];
+  let from = 0;
+  for (let i = 1; i <= words.length; i++){
+    if (i < words.length){ const next = words.slice(from, i + 1).join(" "); if (fit(next, px, wt, max) === next) continue; }
+    if (out.length === n - 1){ out.push(fit(words.slice(from).join(" "), px, wt, max)); return out; }
+    out.push(fit(words.slice(from, i).join(" "), px, wt, max)); from = i;
+  }
+  return out;
+}
+function captionText(f){
+  const c = (A.caption && A.caption()) || {};
+  let link = ""; try { link = A.link ? A.link() : location.href; } catch(e){ link = location.href; }
+  return { name: f.name, where: [A.page.name, f.section].filter(Boolean).join(" › "), view: [c.when, c.level, c.changes].filter(Boolean).join(" · "), link };
+}
+/* rows of [text, style]: the figure's name, where it is, the view (time, level, changes) and the link */
+const CAP = { pad: 10, styles: [[13, 600, 18], [12, 400, 16], [11, 400, 15]] };
+function captionRows(f, w){
+  const t = captionText(f), max = w - CAP.pad * 2, rows = [];
+  const add = (s, st, n) => { if (s) wrap(s, CAP.styles[st][0], CAP.styles[st][1], max, n).forEach(x => rows.push([x, st])); };
+  add(t.name, 0, 2); add(t.where, 1, 2); add(t.view, 1, 4); add(t.link, 2, 1);
+  return rows;
+}
+const capHeight = rows => CAP.pad * 2 + rows.reduce((s, r) => s + CAP.styles[r[1]][2], 0) - 2;
+function captionSVG(rows, w, y0){
+  const ink = cssVar("--ink") || "#222", muted = cssVar("--muted") || "#666", line = cssVar("--line") || "#ccc";
+  const g = document.createElementNS(NS, "g"); g.setAttribute("transform", `translate(0 ${y0})`);
+  g.setAttribute("style", `font-family:${FONT}`);
+  const rule = document.createElementNS(NS, "path"); rule.setAttribute("d", `M0 0.5H${w}`); rule.setAttribute("stroke", line); g.appendChild(rule);
+  let y = CAP.pad;
+  rows.forEach(([s, st]) => {
+    const [px, wt, lh] = CAP.styles[st]; y += lh;
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", CAP.pad); t.setAttribute("y", y - 4); t.setAttribute("font-size", px); t.setAttribute("font-weight", wt);
+    t.setAttribute("fill", st ? muted : ink); t.textContent = s;
+    g.appendChild(t);
+  });
+  return g;
+}
+/* a vector figure with an optional background and caption, as one SVG document */
+function composeSVG(f, o){
+  const { node: fig, w, h } = figureSVGNode(f);
+  const rows = o.caption ? captionRows(f, w) : null, ch = rows ? capHeight(rows) : 0, H = h + ch, t = captionText(f);
+  const out = document.createElementNS(NS, "svg");
+  out.setAttribute("xmlns", NS); out.setAttribute("version", "1.1");
+  out.setAttribute("width", Math.round(w * (o.scale || 1))); out.setAttribute("height", Math.round(H * (o.scale || 1)));
+  out.setAttribute("viewBox", `0 0 ${w} ${H}`);
+  const title = document.createElementNS(NS, "title"); title.textContent = `${f.name} · ${A.page.name}`; out.appendChild(title);
+  const desc = document.createElementNS(NS, "desc"); desc.textContent = [f.desc, t.where, t.view, t.link].filter(Boolean).join(". "); out.appendChild(desc);
+  if (o.bg){ const r = document.createElementNS(NS, "rect"); r.setAttribute("width", w); r.setAttribute("height", H); r.setAttribute("fill", backdrop(f.node)); out.appendChild(r); }
+  out.appendChild(fig);
+  if (rows) out.appendChild(captionSVG(rows, w, h));
+  return { svg: '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(out), w, h: H, figH: h };
+}
+function loadImage(src){
+  return new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = () => rej(new Error("The figure could not be drawn as a picture.")); img.src = src; });
+}
+async function svgImage(str){
+  const url = URL.createObjectURL(new Blob([str], { type: "image/svg+xml;charset=utf-8" }));
+  try { return await loadImage(url); } finally { URL.revokeObjectURL(url); }
+}
+
+/* ---------- drawing a frame ---------- */
+/* canvases are redrawn at the export resolution: the page's canvas helper reads
+   window.__exportDpr and exposes node.__fit(); the clock is held so the page can't race us */
+function hiRes(f, scale, on){
+  if (!f.canvas || typeof f.node.__fit !== "function") return false;
+  if (on) window.__exportDpr = Math.max(1, scale); else delete window.__exportDpr;
+  f.node.__fit();
+  return true;
+}
+/* one frame of the figure, with background and caption, on canvas cv (made if absent) */
+async function frame(f, o, cv, cap){
+  const scale = o.scale || 1;
+  if (f.canvas){
+    const { w, h } = figSize(f), ch = cap ? cap.height / scale : 0;
+    const W = even(w * scale, o.even), H = even((h + ch) * scale, o.even);
+    cv = cv || document.createElement("canvas");
+    if (cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; }
+    const x = cv.getContext("2d");
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, W, H);
+    if (o.bg){ x.fillStyle = backdrop(f.node); x.fillRect(0, 0, W, H); }
+    x.imageSmoothingQuality = "high";
+    x.drawImage(f.node, 0, 0, W, Math.round(h * scale));
+    if (cap) x.drawImage(cap, 0, Math.round(h * scale), W, H - Math.round(h * scale));
+    return cv;
+  }
+  const c = composeSVG(f, { ...o, caption: false, bg: false });
+  const img = await svgImage(c.svg);
+  const ch = cap ? cap.height / scale : 0, W = even(c.w * scale, o.even), H = even((c.h + ch) * scale, o.even);
+  cv = cv || document.createElement("canvas");
+  if (cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; }
+  const x = cv.getContext("2d");
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, W, H);
+  if (o.bg){ x.fillStyle = backdrop(f.node); x.fillRect(0, 0, W, H); }
+  x.drawImage(img, 0, 0, W, Math.round(c.h * scale));
+  if (cap) x.drawImage(cap, 0, Math.round(c.h * scale), W, H - Math.round(c.h * scale));
+  return cv;
+}
+const even = (v, on) => { v = Math.max(2, Math.round(v)); return on && v % 2 ? v + 1 : v; };
+/* the caption strip alone, rasterised once per export */
+async function captionBitmap(f, o){
+  if (!o.caption) return null;
+  const { w } = figSize(f), rows = captionRows(f, w), ch = capHeight(rows), s = o.scale || 1;
+  const out = document.createElementNS(NS, "svg");
+  out.setAttribute("xmlns", NS); out.setAttribute("width", Math.round(w * s)); out.setAttribute("height", Math.round(ch * s)); out.setAttribute("viewBox", `0 0 ${w} ${ch}`);
+  out.appendChild(captionSVG(rows, w, 0));
+  const img = await svgImage(new XMLSerializer().serializeToString(out));
+  const cv = document.createElement("canvas"); cv.width = Math.round(w * s); cv.height = Math.round(ch * s);
+  cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+  return cv;
+}
+/* run fn with the page's clock held and the canvas drawn at the export resolution */
+async function withClock(f, scale, fn){
+  const clock = A.clock || {};
+  if (clock.hold) clock.hold(true);
+  const hr = hiRes(f, scale, true);
+  try {
+    if (clock.step) clock.step(0);
+    return await fn();
+  } finally {
+    if (hr){ hiRes(f, scale, false); if (clock.step) clock.step(0); }
+    if (clock.hold) clock.hold(false);
+  }
+}
+
+/* ---------- files ---------- */
+const toBlob = (cv, type = "image/png", q) => new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("The browser could not make the picture.")), type, q));
+const bytes = async b => new Uint8Array(await b.arrayBuffer());
+function fileBase(f){
+  const st = A.getState ? A.getState() : {}, h = Number.isFinite(st.hour) ? st.hour : null;
+  const hh = h == null ? "" : "-" + String(Math.floor(h)).padStart(2, "0") + String(Math.floor((h % 1) * 60)).padStart(2, "0");
+  return `humanphysiology-${A.page.id}${f ? "-" + f.id : ""}${hh}`.replace(/[^\w.-]+/g, "-");
+}
+let saveHook = null; /* tests catch the file instead of downloading it */
+function save(blob, name){
+  if (saveHook){ saveHook(blob, name); return; }
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = name; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  status(`Saved ${name} (${size(blob.size)}).`);
+}
+const size = n => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1048576).toFixed(1)} MB`;
+function concat(parts){
+  let n = 0; for (const p of parts) n += p.length;
+  const out = new Uint8Array(n); let o = 0;
+  for (const p of parts){ out.set(p, o); o += p.length; }
+  return out;
+}
+const utf8 = s => new TextEncoder().encode(s);
+
+/* ZIP, stored (PNG and WebM are compressed already) */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zip(files){
+  const d = new Date(), time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const local = [], central = []; let off = 0;
+  for (const f of files){
+    const name = utf8(f.name), data = f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, time, true); h.setUint16(12, date, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true);
+    h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    local.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, time, true); c.setUint16(14, date, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+    c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const cd = concat(central), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+  e.setUint32(12, cd.length, true); e.setUint32(16, off, true);
+  return new Blob([...local, cd, new Uint8Array(e.buffer)], { type: "application/zip" });
+}
+
+/* CSV, with units in the headers */
+function csv(t){
+  const cell = v => { if (v == null) return ""; const s = typeof v === "number" ? (Number.isInteger(v) ? String(v) : String(+v.toPrecision(6))) : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  return "﻿" + [t.columns, ...t.rows].map(r => r.map(cell).join(",")).join("\r\n") + "\r\n";
+}
+
+/* ---------- WebM: VP9 or VP8 from WebCodecs, in a minimal Matroska container ---------- */
+function uintB(n){ const b = []; do { b.unshift(n % 256); n = Math.floor(n / 256); } while (n > 0); return new Uint8Array(b); }
+function vint(n){
+  for (let len = 1; len <= 8; len++) if (n < Math.pow(2, 7 * len) - 1){
+    const b = new Uint8Array(len); let v = n;
+    for (let i = len - 1; i >= 0; i--){ b[i] = v % 256; v = Math.floor(v / 256); }
+    b[0] |= 1 << (8 - len); return b;
+  }
+  throw new Error("too big");
+}
+const f64 = x => { const b = new Uint8Array(8); new DataView(b.buffer).setFloat64(0, x); return b; };
+const E = (id, ...kids) => { const body = concat(kids.flat()); return concat([uintB(id), vint(body.length), body]); };
+function muxWebM(chunks, { w, h, codec, fps }){
+  const dur = chunks.length ? chunks[chunks.length - 1].t + 1000 / fps : 0;
+  const head = E(0x1A45DFA3, E(0x4286, uintB(1)), E(0x42F7, uintB(1)), E(0x42F2, uintB(4)), E(0x42F3, uintB(8)), E(0x4282, utf8("webm")), E(0x4287, uintB(4)), E(0x4285, uintB(2)));
+  const info = E(0x1549A966, E(0x2AD7B1, uintB(1000000)), E(0x4489, f64(dur)), E(0x4D80, utf8("HumanPhysiology")), E(0x5741, utf8("HumanPhysiology")));
+  const tracks = E(0x1654AE6B, E(0xAE, E(0xD7, uintB(1)), E(0x73C5, uintB(1)), E(0x83, uintB(1)), E(0x9C, uintB(0)), E(0x86, utf8(codec)),
+    E(0x23E383, uintB(Math.round(1e9 / fps))), E(0xE0, E(0xB0, uintB(w)), E(0xBA, uintB(h)))));
+  const clusters = []; let cur = null;
+  for (const c of chunks){
+    if (!cur || c.key || c.t - cur.t > 30000){ cur = { t: c.t, blocks: [] }; clusters.push(cur); }
+    const rel = Math.round(c.t - cur.t), hd = new Uint8Array([0x81, (rel >> 8) & 255, rel & 255, c.key ? 0x80 : 0]);
+    cur.blocks.push(E(0xA3, hd, c.data));
+  }
+  const seg = E(0x18538067, info, tracks, ...clusters.map(c => E(0x1F43B675, E(0xE7, uintB(Math.round(c.t))), ...c.blocks)));
+  return new Blob([head, seg], { type: "video/webm" });
+}
+async function webCodecsSink(w, h, fps){
+  if (!window.VideoEncoder || !window.VideoFrame) return null;
+  const bitrate = Math.round(Math.min(16e6, Math.max(1.5e6, w * h * fps * .12)));
+  for (const [codec, id] of [["vp09.00.10.08", "V_VP9"], ["vp8", "V_VP8"]]){
+    const cfg = { codec, width: w, height: h, bitrate, framerate: fps };
+    let ok = false; try { ok = (await VideoEncoder.isConfigSupported(cfg)).supported; } catch(e){}
+    if (!ok) continue;
+    const chunks = []; let err = null;
+    const enc = new VideoEncoder({
+      output: ch => { const b = new Uint8Array(ch.byteLength); ch.copyTo(b); chunks.push({ t: ch.timestamp / 1000, key: ch.type === "key", data: b }); },
+      error: e => { err = e; }
+    });
+    enc.configure(cfg);
+    return {
+      ext: "webm", label: "WebM",
+      async add(cv, i){
+        if (err) throw err;
+        const vf = new VideoFrame(cv, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
+        enc.encode(vf, { keyFrame: i % Math.max(1, Math.round(fps * 2)) === 0 }); vf.close();
+        while (enc.encodeQueueSize > 3) await sleep(4);
+      },
+      async finish(){ await enc.flush(); enc.close(); if (err) throw err; chunks.sort((a, b) => a.t - b.t); return muxWebM(chunks, { w, h, codec: id, fps }); },
+      abort(){ try { enc.close(); } catch(e){} }
+    };
+  }
+  return null;
+}
+/* no WebCodecs (older Safari and Firefox): record the canvas in real time, MP4 where WebM is missing */
+function recorderSink(cv, fps){
+  if (!window.MediaRecorder || !cv.captureStream) return null;
+  const type = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4;codecs=avc1", "video/mp4"].find(t => MediaRecorder.isTypeSupported(t));
+  if (!type) return null;
+  const stream = cv.captureStream(0), track = stream.getVideoTracks()[0], parts = [];
+  const rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 8e6 });
+  rec.ondataavailable = e => { if (e.data.size) parts.push(e.data); };
+  rec.start(); let t0 = performance.now();
+  return {
+    ext: type.includes("mp4") ? "mp4" : "webm", label: type.includes("mp4") ? "MP4" : "WebM", realtime: true,
+    async add(_, i){
+      const wait = t0 + i * 1000 / fps - performance.now();
+      if (wait > 0) await sleep(wait); else t0 -= wait;
+      if (track.requestFrame) track.requestFrame();
+    },
+    finish(){ return new Promise(r => { rec.onstop = () => r(new Blob(parts, { type: type.split(";")[0] })); setTimeout(() => rec.stop(), 1000 / fps + 30); }); },
+    abort(){ try { rec.stop(); } catch(e){} }
+  };
+}
+
+/* ---------- GIF: one median-cut palette for the whole clip, LZW, looping ---------- */
+function medianCut(hist, n){
+  let cols = [];
+  for (let k = 0; k < 32768; k++) if (hist[k]) cols.push([k >> 10, (k >> 5) & 31, k & 31, hist[k]]);
+  const boxes = [cols];
+  while (boxes.length < n){
+    let bi = -1, best = 0, axis = 0;
+    boxes.forEach((b, i) => {
+      if (b.length < 2) return;
+      for (let a = 0; a < 3; a++){
+        let lo = 31, hi = 0, cnt = 0;
+        for (const c of b){ if (c[a] < lo) lo = c[a]; if (c[a] > hi) hi = c[a]; cnt += c[3]; }
+        const score = (hi - lo) * Math.sqrt(cnt);
+        if (score > best){ best = score; bi = i; axis = a; }
+      }
+    });
+    if (bi < 0) break;
+    const b = boxes[bi].sort((p, q) => p[axis] - q[axis]);
+    let tot = 0; for (const c of b) tot += c[3];
+    let acc = 0, cut = 1;
+    for (let i = 0; i < b.length - 1; i++){ acc += b[i][3]; if (acc >= tot / 2){ cut = i + 1; break; } }
+    boxes.splice(bi, 1, b.slice(0, cut), b.slice(cut));
+  }
+  return boxes.filter(b => b.length).map(b => {
+    let r = 0, g = 0, bl = 0, c = 0;
+    for (const x of b){ r += x[0] * x[3]; g += x[1] * x[3]; bl += x[2] * x[3]; c += x[3]; }
+    return [r / c * 255 / 31, g / c * 255 / 31, bl / c * 255 / 31].map(v => Math.round(Math.min(255, v)));
+  });
+}
+function lzw(px, minCode = 8){
+  const clear = 1 << minCode, eoi = clear + 1, out = [];
+  let size = minCode + 1, next = eoi + 1, cur = 0, bits = 0, dict = new Map();
+  const emit = c => { cur |= c << bits; bits += size; while (bits >= 8){ out.push(cur & 255); cur >>>= 8; bits -= 8; } };
+  emit(clear);
+  let prefix = px[0];
+  for (let i = 1; i < px.length; i++){
+    const k = px[i], key = (prefix << 8) | k, v = dict.get(key);
+    if (v !== undefined){ prefix = v; continue; }
+    emit(prefix);
+    if (next === 4096){ emit(clear); dict = new Map(); size = minCode + 1; next = eoi + 1; }
+    else { if (next >= (1 << size)) size++; dict.set(key, next++); }
+    prefix = k;
+  }
+  emit(prefix); emit(eoi);
+  if (bits > 0) out.push(cur & 255);
+  return out;
+}
+function gifSink(maxW, delayCs){
+  const frames = []; let W = 0, H = 0, work = null;
+  return {
+    ext: "gif", label: "GIF",
+    async add(cv){
+      if (!work){ const k = Math.min(1, maxW / cv.width); W = Math.max(2, Math.round(cv.width * k)); H = Math.max(2, Math.round(cv.height * k)); work = document.createElement("canvas"); work.width = W; work.height = H; }
+      const x = work.getContext("2d", { willReadFrequently: true });
+      x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.drawImage(cv, 0, 0, W, H);
+      frames.push(x.getImageData(0, 0, W, H).data);
+    },
+    async finish(progress){
+      const hist = new Uint32Array(32768), step = Math.max(1, Math.floor(frames.length * W * H / 4e6));
+      for (const d of frames) for (let i = 0; i < d.length; i += 4 * step) hist[((d[i] >> 3) << 10) | ((d[i + 1] >> 3) << 5) | (d[i + 2] >> 3)]++;
+      const pal = medianCut(hist, 256); while (pal.length < 256) pal.push([0, 0, 0]);
+      const lut = new Int16Array(32768).fill(-1);
+      const near = k => {
+        const r = (k >> 10) * 8 + 4, g = ((k >> 5) & 31) * 8 + 4, b = (k & 31) * 8 + 4; let bi = 0, bd = 1e9;
+        for (let i = 0; i < 256; i++){ const p = pal[i], d = (p[0] - r) ** 2 * 3 + (p[1] - g) ** 2 * 4 + (p[2] - b) ** 2 * 2; if (d < bd){ bd = d; bi = i; } }
+        return (lut[k] = bi);
+      };
+      const le = n => [n & 255, (n >> 8) & 255];
+      const out = [utf8("GIF89a"), new Uint8Array([...le(W), ...le(H), 0xF7, 0, 0]), new Uint8Array(pal.flat()),
+        new Uint8Array([0x21, 0xFF, 0x0B, ...utf8("NETSCAPE2.0"), 3, 1, 0, 0, 0])];
+      const idx = new Uint8Array(W * H);
+      for (let f = 0; f < frames.length; f++){
+        const d = frames[f];
+        for (let i = 0, j = 0; j < idx.length; i += 4, j++){ const k = ((d[i] >> 3) << 10) | ((d[i + 1] >> 3) << 5) | (d[i + 2] >> 3); const v = lut[k]; idx[j] = v >= 0 ? v : near(k); }
+        const data = lzw(idx), blocks = [];
+        for (let i = 0; i < data.length; i += 255){ const n = Math.min(255, data.length - i); blocks.push(n, ...data.slice(i, i + n)); }
+        out.push(new Uint8Array([0x21, 0xF9, 4, 0x04, ...le(delayCs), 0, 0, 0x2C, 0, 0, 0, 0, ...le(W), ...le(H), 0, 8]), new Uint8Array(blocks), new Uint8Array([0]));
+        frames[f] = null;
+        if (progress && f % 4 === 0){ progress(f / frames.length); await sleep(0); }
+      }
+      out.push(new Uint8Array([0x3B]));
+      return new Blob(out, { type: "image/gif" });
+    },
+    abort(){ frames.length = 0; }
+  };
+}
+function framesSink(base){
+  const files = [];
+  return {
+    ext: "zip", label: "PNG frames",
+    async add(cv, i){ files.push({ name: `${base}/frame-${String(i + 1).padStart(4, "0")}.png`, data: await bytes(await toBlob(cv)) }); },
+    async finish(){ return zip(files); },
+    abort(){ files.length = 0; }
+  };
+}
+
+/* ---------- recording ---------- */
+let job = null;
+async function record(f, o, kind){
+  if (job) return;
+  const clock = A.clock || {}, speed = Math.max(.01, clock.speed ? clock.speed() : 1);
+  const len = o.length, ride = len.ride ? (A.ride && A.ride()) : null;
+  if (len.ride && !ride){ status("There is no journey running to record. Start one first.", true); return; }
+  const gif = kind === "gif", delay = gif ? Math.max(4, Math.round(100 / Math.min(o.fps, 20))) : 0, fps = gif ? 100 / delay : o.fps;
+  const vo = { ...o, bg: kind === "frames" ? o.bg : true, even: kind === "video", scale: kind === "gif" ? Math.min(o.scale, 2) : o.scale };
+  /* keep video frames inside 1920 px and GIFs small */
+  const { w } = figSize(f); if (kind === "video" && w * vo.scale > 1920) vo.scale = 1920 / w;
+  const max = ride ? 120 : len.seconds;
+  const total = Math.max(2, Math.round(max / (ride ? 1 : speed) * fps));
+  job = { cancel: false, kind };
+  showJob(0, `Recording ${f.name}…`);
+  let sink = null;
+  try {
+    await withClock(f, vo.scale, async () => {
+      if (ride) ride.restart();
+      if (clock.step) clock.step(0);
+      const cap = await captionBitmap(f, vo);
+      const cv = await frame(f, vo, null, cap);
+      sink = kind === "gif" ? gifSink(Math.min(800, cv.width), delay)
+        : kind === "frames" ? framesSink(fileBase(f))
+        : (await webCodecsSink(cv.width, cv.height, fps)) || recorderSink(cv, fps);
+      if (!sink) throw new Error("This browser can't record video. Try the GIF or the PNG frames.");
+      for (let i = 0; i < total; i++){
+        if (job.cancel) throw new Cancelled();
+        if (i){ clock.step && clock.step(speed / fps); await frame(f, vo, cv, cap); }
+        await sink.add(cv, i);
+        const p = ride ? Math.max(i / total, ride.progress()) : (i + 1) / total;
+        showJob(p * (gif ? .7 : .95), `Recording ${f.name}: frame ${i + 1}${ride ? "" : ` of ${total}`}`);
+        if (ride && ride.done()) break;
+        if (!sink.realtime && i % 3 === 2) await sleep(0);
+      }
+    });
+    showJob(gif ? .7 : .96, gif ? "Encoding the GIF…" : "Finishing the file…");
+    const blob = await sink.finish(p => showJob(.7 + .3 * p, "Encoding the GIF…"));
+    save(blob, `${fileBase(f)}.${sink.ext}`);
+  } catch(e){
+    if (sink && sink.abort) sink.abort();
+    status(e instanceof Cancelled ? "Recording cancelled." : (e && e.message) || "The recording failed.", !(e instanceof Cancelled));
+  } finally { job = null; showJob(null); }
+}
+
+/* ---------- stills, settings and data ---------- */
+async function exportStill(f, o, type){
+  if (type === "svg"){
+    if (f.canvas){ status("This figure is drawn on a canvas, so it exports as PNG only.", true); return; }
+    const c = composeSVG(f, { ...o, scale: 1 });
+    save(new Blob([c.svg], { type: "image/svg+xml" }), `${fileBase(f)}.svg`);
+    return;
+  }
+  const blob = await withClock(f, o.scale, async () => toBlob(await frame(f, o, null, await captionBitmap(f, o))));
+  save(blob, `${fileBase(f)}${o.scale > 1 ? "@" + o.scale + "x" : ""}.png`);
+}
+function settings(){
+  return { schema: SCHEMA, version: VERSION, page: A.page.id, title: A.page.name, saved: new Date().toISOString(),
+    link: A.link ? A.link() : location.href, state: A.getState ? A.getState() : {} };
+}
+function pageHref(id){ return (A.base || "") + (id === "body" ? "index.html" : `organs/${encodeURIComponent(id)}.html`); }
+async function applySettings(obj){
+  if (!obj || obj.schema !== SCHEMA || typeof obj.state !== "object") throw new Error("That isn't a HumanPhysiology settings file.");
+  if (!(obj.version >= 1)) throw new Error("That settings file has no version number.");
+  if (obj.page !== A.page.id){
+    try { sessionStorage.setItem("humanphysiology.import", JSON.stringify(obj)); } catch(e){}
+    status(`Opening the ${obj.title || obj.page} page…`);
+    location.href = pageHref(obj.page);
+    return;
+  }
+  await A.setState(obj.state);
+  status(obj.version > VERSION ? "Loaded. The file is from a newer version, so some settings may be missing." : `Loaded the view saved ${obj.saved ? new Date(obj.saved).toLocaleString() : ""}.`.replace(" .", "."));
+}
+async function readFile(file){
+  try { await applySettings(JSON.parse(await file.text())); }
+  catch(e){ status(e instanceof SyntaxError ? "That file isn't valid JSON." : e.message, true); }
+}
+async function copyLink(){
+  const url = A.link ? A.link() : location.href;
+  try { await navigator.clipboard.writeText(url); status("Link copied."); }
+  catch(e){ status("Copy this link: " + url); }
+}
+function exportData(){
+  const tables = (A.data ? A.data() : []).filter(t => t && t.rows && t.rows.length);
+  if (!tables.length){ status("There are no readings to export here.", true); return; }
+  const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (tables.length === 1){ save(new Blob([csv(tables[0])], { type: "text/csv" }), `${fileBase()}-${slug(tables[0].name)}.csv`); return; }
+  save(zip(tables.map(t => ({ name: `${slug(t.name)}.csv`, data: utf8(csv(t)) }))), `${fileBase()}-data.zip`);
+}
+async function exportAll(o){
+  const list = figures().filter(f => isShown(f.node)), files = [];
+  job = { cancel: false };
+  try {
+    for (let i = 0; i < list.length; i++){
+      const f = list[i];
+      if (job.cancel) throw new Cancelled();
+      showJob(i / list.length, `Figure ${i + 1} of ${list.length}: ${f.name}`);
+      if (!f.canvas) files.push({ name: `${f.id}.svg`, data: utf8(composeSVG(f, { ...o, scale: 1 }).svg) });
+      const png = await withClock(f, o.scale, async () => toBlob(await frame(f, o, null, await captionBitmap(f, o))));
+      files.push({ name: `${f.id}.png`, data: await bytes(png) });
+      await sleep(0);
+    }
+    files.push({ name: "settings.json", data: utf8(JSON.stringify(settings(), null, 2)) });
+    (A.data ? A.data() : []).filter(t => t && t.rows && t.rows.length).forEach(t => files.push({ name: `data-${t.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.csv`, data: utf8(csv(t)) }));
+    save(zip(files), `${fileBase()}-figures.zip`);
+  } catch(e){ status(e instanceof Cancelled ? "Cancelled." : e.message, !(e instanceof Cancelled)); }
+  finally { job = null; showJob(null); }
+}
+
+/* ---------- the menu ---------- */
+const OPT_KEY = "humanphysiology.export";
+let opt = { scale: 2, bg: true, caption: true, fps: 30, len: "beat" };
+try { Object.assign(opt, JSON.parse(store.get(OPT_KEY) || "{}")); } catch(e){}
+let menu = null, btn = null, figList = [];
+function seg(name, options, value){
+  return `<div class="xp-seg" role="radiogroup" aria-label="${esc(name)}">${options.map(([v, l]) => `<button type="button" role="radio" data-opt="${esc(name)}" data-v="${esc(v)}" aria-checked="${String(v) === String(value)}">${esc(l)}</button>`).join("")}</div>`;
+}
+function lengths(){
+  const l = (A.lengths ? A.lengths() : []).filter(x => x && x.seconds > 0);
+  const fixed = [3, 5, 10].map(s => ({ id: "s" + s, label: `${s} seconds`, seconds: s }));
+  const r = A.ride && A.ride();
+  return [...l, ...fixed, ...(r ? [{ id: "ride", label: r.label || "The whole journey", ride: true }] : [])];
+}
+const fmtS = s => s < 10 ? `${s.toFixed(1)} s` : `${Math.round(s)} s`;
+function renderMenu(){
+  figList = figures();
+  const cur = focusedFigure(figList.filter(f => isShown(f.node))) || figList[0];
+  const lens = lengths(); if (!lens.some(l => l.id === opt.len)) opt.len = lens[0].id;
+  const groups = [];
+  figList.forEach(f => { const g = f.section || ""; let G = groups.find(x => x.g === g); if (!G) groups.push(G = { g, items: [] }); G.items.push(f); });
+  const optHTML = f => `<option value="${esc(f.id)}"${f === cur ? " selected" : ""}${isShown(f.node) ? "" : " disabled"}>${esc(f.name)}</option>`;
+  menu.innerHTML = `
+    <div class="xp-head"><h2 id="xpTitle">Export</h2><button type="button" class="xp-x" data-xp="close" aria-label="Close"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2 2 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
+    ${figList.length ? `<label class="xp-field"><span>Figure</span><select data-xp-fig>${groups.map(G => G.g ? `<optgroup label="${esc(G.g)}">${G.items.map(optHTML).join("")}</optgroup>` : G.items.map(optHTML).join("")).join("")}</select></label>
+    <section class="xp-sec" aria-labelledby="xpPic"><h3 id="xpPic">Picture</h3>
+      <div class="xp-opts">
+        <div class="xp-opt"><span>Size</span>${seg("scale", [[1, "1×"], [2, "2×"], [4, "4×"]], opt.scale)}</div>
+        <div class="xp-opt"><span>Background</span>${seg("bg", [["1", "Page colour"], ["0", "Transparent"]], opt.bg ? "1" : "0")}</div>
+        <label class="xp-check"><input type="checkbox" data-opt-caption${opt.caption ? " checked" : ""}> Caption strip: what it shows, the time, the level, your changes and the link</label>
+      </div>
+      <div class="xp-acts"><button type="button" class="xp-b" data-xp="svg">SVG</button><button type="button" class="xp-b" data-xp="png">PNG</button></div>
+      <p class="xp-note" data-xp-fignote></p>
+    </section>
+    <section class="xp-sec" aria-labelledby="xpAnim"><h3 id="xpAnim">Animation</h3>
+      <div class="xp-opts">
+        <label class="xp-opt"><span>Length</span><select data-opt-len>${lens.map(l => `<option value="${esc(l.id)}"${l.id === opt.len ? " selected" : ""}>${esc(l.label)}${l.seconds && !/^s\d+$/.test(l.id) ? ` (${fmtS(l.seconds)})` : ""}</option>`).join("")}</select></label>
+        <div class="xp-opt"><span>Frames</span>${seg("fps", [[30, "30 /s"], [15, "15 /s"]], opt.fps)}</div>
+      </div>
+      <div class="xp-acts"><button type="button" class="xp-b" data-xp="video">Video</button><button type="button" class="xp-b" data-xp="gif">GIF</button><button type="button" class="xp-b" data-xp="frames">PNG frames (ZIP)</button></div>
+      <p class="xp-note">Recorded frame by frame at the page's speed${(A.clock && A.clock.speed && A.clock.speed() !== 1) ? ` (now ${A.clock.speed()}×)` : ""}, so loops of a beat or a breath join up.${reducedMotion ? " Your device asks for reduced motion, so some movements are left out here and in the recording too." : ""}</p>
+    </section>` : `<p class="xp-note">There are no figures on this view.</p>`}
+    <div class="xp-job" data-xp-job hidden><div class="xp-bar"><i></i></div><span data-xp-jobtext></span><button type="button" class="xp-b" data-xp="cancel">Cancel</button></div>
+    <section class="xp-sec" aria-labelledby="xpPage"><h3 id="xpPage">This view</h3>
+      <div class="xp-acts">
+        <button type="button" class="xp-b" data-xp="save">Save settings</button><button type="button" class="xp-b" data-xp="load">Load settings…</button>
+        <button type="button" class="xp-b" data-xp="link">Copy link</button><button type="button" class="xp-b" data-xp="csv">Data (CSV)</button>
+        ${figList.length > 1 ? `<button type="button" class="xp-b" data-xp="all">All figures (ZIP)</button>` : ""}
+      </div>
+      <p class="xp-note">A settings file brings back this exact view: level, time, systems, your changes and every control. Load one here, or drop it anywhere on the page.</p>
+      <input type="file" accept="application/json,.json" data-xp-file hidden>
+    </section>
+    <p class="xp-status" data-xp-status role="status" aria-live="polite"></p>`;
+  syncNote();
+}
+function current(){ const sel = $("[data-xp-fig]", menu); return figList.find(f => f.id === (sel && sel.value)) || figList[0]; }
+function syncNote(){
+  const n = $("[data-xp-fignote]", menu), f = current(); if (!n || !f) return;
+  const svgB = $('[data-xp="svg"]', menu); if (svgB) svgB.disabled = f.canvas;
+  const { w, h } = figSize(f);
+  n.textContent = f.canvas ? `Drawn on a canvas: PNG only, ${Math.round(w * opt.scale)} × ${Math.round(h * opt.scale)} px.` : `Vector figure: SVG keeps it sharp at any size. PNG ${Math.round(w * opt.scale)} × ${Math.round(h * opt.scale)} px.`;
+}
+function status(msg, bad){
+  const n = menu && $("[data-xp-status]", menu);
+  if (n && !menu.hidden){ n.textContent = msg; n.classList.toggle("bad", !!bad); return; }
+  toast(msg, bad);
+}
+let toastT = 0;
+function toast(msg, bad){
+  let t = $(".xp-toast");
+  if (!t){ t = document.createElement("div"); t.className = "xp-toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+  t.textContent = msg; t.classList.toggle("bad", !!bad); t.classList.add("on");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 4000);
+}
+function showJob(p, text){
+  const box = menu && $("[data-xp-job]", menu); if (!box) return;
+  box.hidden = p == null;
+  $$(".xp-sec .xp-b", menu).forEach(b => { b.disabled = p != null || (b.dataset.xp === "svg" && current() && current().canvas); });
+  if (p == null) return;
+  $(".xp-bar i", box).style.width = (Math.max(0, Math.min(1, p)) * 100).toFixed(1) + "%";
+  $("[data-xp-jobtext]", box).textContent = text || "";
+}
+function place(){
+  if (menu.hidden) return;
+  const r = btn.getBoundingClientRect(), phone = innerWidth <= 640;
+  menu.classList.toggle("sheet", phone);
+  if (phone){ menu.style.top = menu.style.right = ""; return; }
+  const top = Math.max(8, Math.min(r.bottom + 8, innerHeight - 200));
+  menu.style.top = top + "px"; menu.style.right = Math.max(8, innerWidth - r.right) + "px";
+  menu.style.maxHeight = (innerHeight - top - 12) + "px";
+}
+function open(){
+  if (!menu.hidden) return;
+  renderMenu(); menu.hidden = false; btn.setAttribute("aria-expanded", "true"); place();
+  const f = $("[data-xp-fig]", menu) || $(".xp-b", menu); if (f) f.focus();
+}
+function close(){
+  if (menu.hidden) return;
+  if (job){ job.cancel = true; }
+  menu.hidden = true; btn.setAttribute("aria-expanded", "false"); btn.focus();
+}
+function saveOpt(){ store.set(OPT_KEY, JSON.stringify(opt)); }
+function buildMenu(){
+  btn = document.createElement("button");
+  btn.type = "button"; btn.className = "xp-btn"; btn.setAttribute("aria-haspopup", "dialog"); btn.setAttribute("aria-expanded", "false");
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5v7.5M3.8 5.8 7 9l3.2-3.2M2 10.5v1.8h10v-1.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Export</span>`;
+  (A.host || document.body).appendChild(btn);
+  menu = document.createElement("div");
+  menu.className = "xp"; menu.hidden = true; menu.setAttribute("role", "dialog"); menu.setAttribute("aria-labelledby", "xpTitle");
+  document.body.appendChild(menu);
+  btn.addEventListener("click", () => menu.hidden ? open() : close());
+  addEventListener("resize", place);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !menu.hidden){ e.preventDefault(); job ? (job.cancel = true) : close(); } });
+  document.addEventListener("pointerdown", e => { if (!menu.hidden && !job && !menu.contains(e.target) && !btn.contains(e.target)) close(); });
+  menu.addEventListener("change", e => {
+    if (e.target.matches("[data-xp-fig]")) syncNote();
+    else if (e.target.matches("[data-opt-caption]")){ opt.caption = e.target.checked; saveOpt(); }
+    else if (e.target.matches("[data-opt-len]")){ opt.len = e.target.value; saveOpt(); }
+    else if (e.target.matches("[data-xp-file]") && e.target.files[0]){ readFile(e.target.files[0]); e.target.value = ""; }
+  });
+  menu.addEventListener("click", async e => {
+    const s = e.target.closest("[data-opt]");
+    if (s){
+      const k = s.dataset.opt, v = s.dataset.v;
+      opt[k] = k === "bg" ? v === "1" : +v; saveOpt();
+      $$(`[data-opt="${k}"]`, menu).forEach(b => b.setAttribute("aria-checked", String(b === s)));
+      syncNote(); return;
+    }
+    const b = e.target.closest("[data-xp]"); if (!b || b.disabled) return;
+    const act = b.dataset.xp, f = current(), o = { scale: opt.scale, bg: opt.bg, caption: opt.caption, fps: opt.fps };
+    if (act === "close") return close();
+    if (act === "cancel"){ if (job) job.cancel = true; return; }
+    if (job) return;
+    try {
+      if (act === "svg" || act === "png"){ status("Drawing…"); await exportStill(f, o, act); }
+      else if (act === "video" || act === "gif" || act === "frames"){ o.length = lengths().find(l => l.id === opt.len) || lengths()[0]; await record(f, o, act); }
+      else if (act === "save") save(new Blob([JSON.stringify(settings(), null, 2)], { type: "application/json" }), `${fileBase()}.json`);
+      else if (act === "load") $("[data-xp-file]", menu).click();
+      else if (act === "link") await copyLink();
+      else if (act === "csv") exportData();
+      else if (act === "all") await exportAll(o);
+    } catch(err){ status((err && err.message) || "The export failed.", true); }
+  });
+  /* drop a settings file anywhere on the page */
+  let depth = 0;
+  const hasFile = e => e.dataTransfer && [...e.dataTransfer.types].includes("Files");
+  const veil = document.createElement("div"); veil.className = "xp-drop"; veil.innerHTML = "<p>Drop a settings file to load that view</p>"; document.body.appendChild(veil);
+  addEventListener("dragenter", e => { if (!hasFile(e)) return; depth++; veil.classList.add("on"); });
+  addEventListener("dragleave", e => { if (!hasFile(e)) return; if (--depth <= 0){ depth = 0; veil.classList.remove("on"); } });
+  addEventListener("dragover", e => { if (hasFile(e)) e.preventDefault(); });
+  addEventListener("drop", e => {
+    if (!hasFile(e)) return;
+    e.preventDefault(); depth = 0; veil.classList.remove("on");
+    const file = [...e.dataTransfer.files].find(f => /json$/i.test(f.type) || /\.json$/i.test(f.name));
+    if (file) readFile(file); else toast("Only settings files (.json) can be dropped here.", true);
+  });
+}
+
+function mount(adapter){
+  A = adapter;
+  buildMenu();
+  /* a settings file loaded on another page and handed over */
+  let handed = null;
+  try { handed = sessionStorage.getItem("humanphysiology.import"); if (handed) sessionStorage.removeItem("humanphysiology.import"); } catch(e){}
+  if (handed){ try { const obj = JSON.parse(handed); if (obj.page === A.page.id) setTimeout(() => applySettings(obj).catch(e => toast(e.message, true)), 60); } catch(e){} }
+}
+
+return {
+  mount, open, close, figures, settings, applySettings, SCHEMA, VERSION,
+  /* for tests and for pages that want a file without the menu */
+  svg: (id, o = {}) => { const f = figures().find(x => x.id === id); return f && !f.canvas ? composeSVG(f, { caption: true, bg: true, ...o, scale: 1 }).svg : null; },
+  png: async (id, o = {}) => { const f = figures().find(x => x.id === id); if (!f) return null; o = { scale: 1, bg: true, caption: true, ...o }; return withClock(f, o.scale, async () => toBlob(await frame(f, o, null, await captionBitmap(f, o)))); },
+  record: async (id, kind, o = {}) => {
+    const f = figures().find(x => x.id === id); if (!f) return null;
+    let blob = null;
+    o = { scale: 1, bg: true, caption: true, fps: 15, length: { seconds: 1 }, ...o };
+    saveHook = b => { blob = b; };
+    try { await record(f, o, kind); } finally { saveHook = null; }
+    return blob;
+  },
+  data: () => (A.data ? A.data() : []).map(t => ({ ...t, csv: csv(t) })),
+  zip, csv
+};
+})();
+/* ===== EXPORT ENGINE JS · END ===== */
 </script>
 <script>
 /* =============================================================================
@@ -2098,11 +3094,12 @@ function makeCanvas(node){
   const baseH = +node.getAttribute("height") || 300, c = { node, ctx: node.getContext("2d"), w: 0, h: 0, dirty: true };
   const fit = () => {
     const cw = Math.max(200, node.getBoundingClientRect().width || 300), h = Math.round(Math.min(baseH, Math.max(baseH * .66, cw * .9)));
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = window.__exportDpr || Math.min(2, window.devicePixelRatio || 1);
     node.style.height = h + "px"; node.width = Math.round(cw * dpr); node.height = Math.round(h * dpr);
     c.w = cw; c.h = h; c.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); c.dirty = true;
   };
   new ResizeObserver(fit).observe(node); fit();
+  node.__fit = fit; /* the Export menu refits at its own resolution */
   return c;
 }
 const FONT = '500 11px "Schibsted Grotesk", system-ui, sans-serif', FONT_B = '600 11px "Schibsted Grotesk", system-ui, sans-serif';

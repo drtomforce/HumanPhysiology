@@ -14,28 +14,17 @@ The README describes what already exists. This file only lists what doesn't exis
 
 ## Next up
 
-Two pieces of supporting work come before the next organ page: an export utility, then a better body view on phones. Both reach every page, so later pages get them without extra work.
+The better body view on phones comes before the next organ page. It reaches every visitor on a phone, so later pages get it without extra work.
 
-### A. Export: figures, animations, context and settings
-
-An **Export** button in the top bar of `index.html` and of every organ page. It opens a small menu for the figure in focus, or for the whole page. Build it once in the shared engine (`organs/_template.html` → `node organs/sync-engine.mjs`), with a copy in `index.html`, so every page gets the same menu.
-
-- **Still illustrations**
-  - **SVG** for the vector figures: the body scene (`#scene`), the anatomy figures, close-ups and diagrams. Clone the node and copy computed styles inline, because the CSS variables and classes don't travel with the file. Resolve colours for the current theme (light or dark), keep the `viewBox`, and add a `<title>` and `<desc>`.
-  - **PNG** for everything, at 1×, 2× or 4×. Canvases (the ECG, the traces on the organ pages) come from `toDataURL`. SVG figures are drawn onto a canvas through an `Image`. Offer a transparent or a solid background.
-  - **A caption strip**, on by default: figure name, time of day, phase, reading level, active changes or scenario, and the page link. Shared copies then say what they show.
-- **Animations**
-  - **WebM** (or MP4 where the browser records only that, as Safari does) from `MediaRecorder` on a canvas `captureStream()`. SVG figures are rendered frame by frame onto an offscreen canvas while recording.
-  - **Length**: one heartbeat, one breath, a set number of seconds, or a whole journey or cascade from start to end, so loops come out seamless.
-  - **Animated GIF** as a fallback for slides and chats, with a small inline encoder (no build step). Keep it short and low frame rate to hold the size down.
-  - **PNG frame sequence** in a ZIP for people who want to edit the frames.
-  - Recording follows the reduced-motion setting and the current playback speed. While it records, show a progress bar and a cancel button.
-- **Context and settings**
-  - **JSON file**: page, topic, reading level, hour, playing state, shown and live systems, the journey or cascade being followed and how far along it is, and on organ pages every control value, the `alter()` changes, the scenario and the healthy-reference toggle. Add a schema version number.
-  - **Import**: the same menu loads such a file, or a file dropped onto the page, and restores the view exactly. Check the version and ignore keys it doesn't know.
-  - **Link**: copy the shareable link (it already exists on the organ pages) and add one to the body view with the same parameters.
-  - **Data**: the visible traces and readouts (vitals, Wiggers diagram, spirometry, GFR and so on) as **CSV**, with units in the headers.
-- **Done when**: every SVG figure and canvas on every page exports as SVG or PNG and as WebM or GIF. A settings file round-trips and restores the same view. Exported files open in a browser, Inkscape and PowerPoint/Keynote. A headless test exports each figure once and checks the file is valid.
+### A. Export: figures, animations, context and settings ✅ Done
+Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
+- **Overlays on the body**: the body's SVG and PNG leave out what is drawn over the scene in HTML (the organ labels, the big clock, the journey cards). The caption strip gives the time instead. Draw the labels into the export, or offer a "screen as you see it" capture.
+- **Fonts**: exported SVGs name Literata and Schibsted Grotesk, but don't embed them, so PNGs and SVGs opened elsewhere fall back to system fonts. Embed a subset as a data URL when the files are needed for print.
+- **Canvas figures** are PNG only. The traces could also be written out as SVG paths from their recordings.
+- **MP4**: there is no MP4 muxer of our own. Safari without WebCodecs records through `MediaRecorder` in real time, so a figure that is slow to draw comes out slower than real time there.
+- **Data**: the gut page exports its readouts but not yet its meal-clock traces (emptying, acid, hormones). The body exports its vitals through the day, not the live ECG strip.
+- **Settings by position**: a settings file finds radio groups, toggles and tabs by their order in each section. If a page's controls change order, an older file could set the wrong one. Give every control a stable id.
+- **Other apps and browsers**: the files are checked in Chromium. Open them once in Inkscape, PowerPoint and Keynote, and try the menu in Safari and Firefox.
 
 ### B. Mobile view of the body on the starting page
 
@@ -68,6 +57,7 @@ These are the conventions the heart, lungs and brain pages set. Each new page sh
 7. **Healthy reference** through `OrganPage.delta()`: dashed healthy traces, ▲/▼ readouts and the healthy value in the hero stats.
 8. **Wired into `index.html`**: an entry in `ORGAN_PAGES`, links in both directions that carry `level` and `hour`, and glossary terms for every new word.
 9. **README** updated with a paragraph for the page.
+10. **Export**: every figure has an id, an `aria-label` and a `data-export-name`; canvases are sized by a helper that reads `window.__exportDpr` and sets `node.__fit`; live recordings are added to the CSV with `OrganPage.exportData()`, and `node tests/export-check.mjs <page>` passes.
 
 ---
 
@@ -263,14 +253,14 @@ These span several organs and are best built as their own pages (for example `ex
 - **Quizzes**: a short check-your-understanding set per section at each reading level.
 - **Accessibility**: keyboard access to every figure and slider, text alternatives for the animated figures, a reduced-motion mode, and colour-blind-safe system colours.
 - **Performance**: `index.html` is ~800 KB. Consider splitting it into modules once more systems are added, keeping the no-build, open-in-a-browser promise.
-- **Tests**: a headless check (Playwright) that every page loads without errors, every scenario applies and resets cleanly, and the sync engine is up to date (`node organs/sync-engine.mjs --check`).
+- **Tests**: `tests/export-check.mjs` already loads every page without errors and applies one scenario. Extend it (or add a sibling) so every scenario applies and resets cleanly, and the sync engine is up to date (`node organs/sync-engine.mjs --check`).
 - **Glossary**: add every new term from the pages above, with its match forms.
 
 ## Suggested order
 
 1. ~~Kidneys page~~ (done).
 2. ~~Gut page~~ (done).
-3. **Export utility** ([A](#a-export-figures-animations-context-and-settings)): figures, animations, context and settings, on every page.
+3. ~~Export utility~~ (done).
 4. **Mobile view of the body** ([B](#b-mobile-view-of-the-body-on-the-starting-page)) on the starting page.
 5. The liver and pancreas pages, which complete the trio and build on the bite journeys and the insulin/glucagon channels.
 6. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.

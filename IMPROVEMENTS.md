@@ -8,13 +8,13 @@ The README describes what already exists. This file only lists what doesn't exis
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 13: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat | New organs: see [New organs for the body](#new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 5: heart, lungs, brain, kidneys, stomach & gut | 8 existing organs + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 6: heart, lungs, brain, kidneys, stomach & gut, liver | 7 existing organs + any new ones |
 | Body systems animated on the body | 6: circulatory, nervous, endocrine, respiratory, digestive, urinary | 4: immune & lymphatic, muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | One per new system, plus cross-system journeys |
 
 ## Next up
 
-Both items here are done. The next step is the liver and pancreas pages (see [Suggested order](#suggested-order)).
+Both items here are done. The liver page is built; the next step is the pancreas page (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -66,14 +66,15 @@ Built as planned below; see the README for what it covers. Still open for this p
 - **Scenarios**: dehydration, diabetes insipidus (central vs nephrogenic), SIADH, acute kidney injury (prerenal, renal, postrenal), chronic kidney disease, an SGLT2 inhibitor, a loop diuretic.
 
 ### 1.2 Stomach & gut (`organs/gut.html`) ✅ Done
-Built as planned below; see the README for what it covers. Still open for this page: tie the enterocyte and the meal clock to the body’s bite journeys (open the page at the stage a bite has reached), an interactive enzyme cascade you can step through (trypsinogen → trypsin is a list for now), serotonin and the enterochromaffin cells (with IBS and anti-nausea drugs), bile acids and the enterohepatic circulation once the liver page exists, and the oesophagus and reflux, which belong with the throat page.
+Built as planned below; see the README for what it covers. Still open for this page: tie the enterocyte and the meal clock to the body’s bite journeys (open the page at the stage a bite has reached), an interactive enzyme cascade you can step through (trypsinogen → trypsin is a list for now), serotonin and the enterochromaffin cells (with IBS and anti-nausea drugs), bile acids and the enterohepatic circulation (the liver page now exists, so the loop can be shared between the two), and the oesophagus and reflux, which belong with the throat page.
 - **Anatomy**: the GI tract from oesophagus to rectum, then wall layers (mucosa, submucosa, muscularis with Meissner's and Auerbach's plexuses, serosa), gastric glands (parietal, chief, G and D cells) and a villus with its crypt.
 - **Motility**: slow waves from the interstitial cells of Cajal, with spike bursts on top that make contractions. Peristalsis versus segmentation, the migrating motor complex, gastric emptying rate by meal type (liquid, carbohydrate, fat), and the gastrocolic reflex.
 - **Secretion and digestion**: the parietal cell (H⁺/K⁺-ATPase, the alkaline tide) and the cephalic, gastric and intestinal phases with gastrin, histamine, ACh and somatostatin. Enzyme cascades (trypsinogen → trypsin), with brush-border enzymes and transporters tied to the existing bite journeys.
 - **The gut–brain axis and microbiome**: vagal afferents, enteroendocrine cells (CCK, GLP-1, PYY, ghrelin) and satiety. Bacterial fermentation to short-chain fatty acids, and how fibre intake changes the community.
 - **Scenarios**: peptic ulcer (H. pylori or NSAIDs), a proton-pump inhibitor, lactose intolerance, coeliac disease (flattened villi), cholera (CFTR secretion and oral rehydration), gastroparesis, constipation vs diarrhoea.
 
-### 1.3 Liver (`organs/liver.html`)
+### 1.3 Liver (`organs/liver.html`) ✅ Done
+Built as planned below; see the README for what it covers. Still open for this page: the enterohepatic circulation of bile acids as its own interactive section (it is a readout and a paragraph for now, and needs the gut page's ileum to tie into), an ammonia and urea-cycle section with hepatic encephalopathy, a drug of the reader's choosing followed through absorption, first pass, effect and clearance (the first-pass table is static apart from this liver's extraction), regeneration after a resection or an injury over weeks, zonation beyond three zones, and carrying a condition across to the pancreas page once it exists (fatty liver and insulin resistance belong to both).
 - **Anatomy**: lobes and Couinaud segments, the dual blood supply (portal vein ~75%, hepatic artery ~25%), the lobule and the acinus with zones 1–3, sinusoids, hepatocytes, Kupffer and stellate cells, bile canaliculi.
 - **Metabolism through the day**: glycogen filling after meals and emptying overnight, gluconeogenesis, ketogenesis in a long fast, and lipoprotein output (VLDL), all driven by the body's existing insulin and glucagon channels.
 - **Detoxification and drugs**: phase I (CYP450) and phase II conjugation, first-pass metabolism, and an interactive paracetamol overdose (glutathione depletion, NAPQI, zone 3 necrosis, the N-acetylcysteine antidote). Ethanol metabolism, with alcohol dehydrogenase and its zero-order kinetics.
@@ -254,7 +255,7 @@ These span several organs and are best built as their own pages (for example `ex
 2. ~~Gut page~~ (done).
 3. ~~Export utility~~ (done).
 4. ~~Mobile view of the body~~ (done).
-5. **The liver and pancreas pages**, which complete the trio and build on the bite journeys and the insulin/glucagon channels.
+5. ~~Liver page~~ (done). **The pancreas page**, which completes the trio and builds on the bite journeys and the insulin/glucagon channels.
 6. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.
 7. Muscles and bones pages, then the muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).

@@ -342,7 +342,7 @@ a{ color:inherit; }
   --myo:#c46a5e; --myo-2:#a9544a; --myo-line:#8e4239; --peri:#ecd9c4; --fat:#ecc97a;
   --blood-o2:#d9464f; --blood-co2:#6f72bf; --valve:#f6ead3; --valve-line:#b49a72;
   --cond:#f2b705; --cond-line:#8a6400; --wave-a:#ff9a3c; --wave-v:#ff7a2e;
-  --lad:#2a78d6; --lcx:#eb6834; --rca:#1baf7a; --ischemia:#4a2a2a; --vein-c:#5a62b8;
+  --lad:#e3202e; --lcx:#f2734f; --rca:#9b1236; --ischemia:#4a2a2a; --vein-c:#2b4fae; --vein-2:#4e9ee6;
   --paper:#fbefee; --paper-line:#efc9c6; --paper-bold:#e3a9a5; --trace:#261D1B;
   --tr-lv:#261D1B; --tr-ao:#eb6834; --tr-la:#2a78d6; --tr-pleth:#16879a;
 }
@@ -351,7 +351,7 @@ a{ color:inherit; }
     --myo:#9c4c43; --myo-2:#863f37; --myo-line:#d07a6e; --peri:#3a2f28; --fat:#8a7340;
     --blood-o2:#d9555d; --blood-co2:#7b7fd0; --valve:#e9dcc4; --valve-line:#8f7a5a;
     --cond:#ffd23f; --cond-line:#ffe9a0;
-    --lad:#3987e5; --lcx:#d95926; --rca:#199e70; --ischemia:#160c0c; --vein-c:#8a92e6;
+    --lad:#ff4655; --lcx:#ff9572; --rca:#d83466; --ischemia:#160c0c; --vein-c:#5f86f0; --vein-2:#8fd0ff;
     --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c; --trace:#EEE6DE;
     --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0; --tr-pleth:#45c4d8;
   }
@@ -360,7 +360,7 @@ a{ color:inherit; }
   --myo:#9c4c43; --myo-2:#863f37; --myo-line:#d07a6e; --peri:#3a2f28; --fat:#8a7340;
   --blood-o2:#d9555d; --blood-co2:#7b7fd0; --valve:#e9dcc4; --valve-line:#8f7a5a;
   --cond:#ffd23f; --cond-line:#ffe9a0;
-  --lad:#3987e5; --lcx:#d95926; --rca:#199e70; --ischemia:#160c0c; --vein-c:#8a92e6;
+  --lad:#ff4655; --lcx:#ff9572; --rca:#d83466; --ischemia:#160c0c; --vein-c:#5f86f0; --vein-2:#8fd0ff;
   --paper:#201a18; --paper-line:#3a2b29; --paper-bold:#57403c; --trace:#EEE6DE;
   --tr-lv:#EEE6DE; --tr-ao:#e8743f; --tr-la:#5b9cf0; --tr-pleth:#45c4d8;
 }
@@ -405,12 +405,23 @@ canvas.cor3d{ display:block; width:100%; touch-action:pan-y; cursor:grab; border
 .cond-mode .v-o2, .cond-mode .v-co2{ opacity:.45; }
 .wave{ pointer-events:none; mix-blend-mode:normal; }
 .bull path{ stroke:var(--surface); stroke-width:2; cursor:default; }
+.bull .pat{ stroke:none; pointer-events:none; }
 .bull text{ font:600 10.5px var(--sans); fill:var(--ink); pointer-events:none; }
 .bull .hit text{ fill:var(--surface); }
 .legend{ display:flex; gap:12px; flex-wrap:wrap; font-size:12.5px; color:var(--ink); margin-top:8px; }
 .legend span{ display:inline-flex; align-items:center; gap:6px; }
 .legend i{ width:14px; height:4px; border-radius:2px; background:var(--c); }
 .legend i.dot{ width:9px; height:9px; border-radius:50%; }
+/* vessel swatches: the same stripe as on the 3D model, so they don't depend on colour alone */
+.legend i.ves{ width:24px; height:7px; border-radius:4px; --st:rgba(255,255,255,.85); }
+.legend i.st-solid{ background:linear-gradient(var(--st), var(--st)) center/100% 1.6px no-repeat, var(--c); }
+.legend i.st-dash{ background:repeating-linear-gradient(90deg, var(--st) 0 4px, transparent 4px 7px) center/100% 1.6px no-repeat, var(--c); }
+.legend i.st-double{ background:linear-gradient(var(--st), var(--st)) 0 1.3px/100% 1.3px no-repeat, linear-gradient(var(--st), var(--st)) 0 4.4px/100% 1.3px no-repeat, var(--c); }
+.legend i.st-vein{ background:linear-gradient(90deg, var(--vein-c) 50%, var(--vein-2) 50%); }
+.legend i.st-line-dash{ background:repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 8px); }
+.legend i.pat-hatch{ background:repeating-linear-gradient(45deg, var(--c) 0 2px, var(--surface) 2px 3.2px); }
+.legend i.pat-dots{ background:radial-gradient(circle, var(--surface) 1px, transparent 1.4px) 0 0/4px 4px, var(--c); }
+.legend i.sq{ width:11px; height:11px; border-radius:3px; }
 canvas.trace{ display:block; width:100%; }
 .readouts{ display:grid; grid-template-columns:repeat(auto-fit, minmax(92px,1fr)); gap:8px; margin-top:12px; }
 .ro{ background:var(--bg); border-radius:10px; padding:7px 10px; }
@@ -565,10 +576,10 @@ canvas.trace{ display:block; width:100%; }
         <div class="fig-tools cor-views" id="corViews"><span>View</span></div>
         <canvas id="corCanvas" data-export-name="3D heart and coronary arteries" class="cor3d" height="560" tabindex="0" role="img" aria-label="A beating 3D heart with its coronary arteries and veins. Drag or use the arrow keys to turn it; the buttons below pick each vessel."></canvas>
         <div class="legend">
-          <span><i style="--c:var(--lad)"></i>Left anterior descending (LAD)</span>
-          <span><i style="--c:var(--lcx)"></i>Circumflex (LCx)</span>
-          <span><i style="--c:var(--rca)"></i>Right coronary (RCA)</span>
-          <span><i style="--c:var(--vein-c)"></i>Cardiac veins</span>
+          <span><i class="ves st-solid" style="--c:var(--lad)"></i>Left anterior descending (LAD)</span>
+          <span><i class="ves st-dash" style="--c:var(--lcx)"></i>Circumflex (LCx)</span>
+          <span><i class="ves st-double" style="--c:var(--rca)"></i>Right coronary (RCA)</span>
+          <span><i class="ves st-vein"></i>Cardiac veins (no stripe)</span>
         </div>
         <div class="chips cor-parts" id="corParts" aria-label="Vessels on the model"></div>
         <p class="cap">Drag to turn the heart (arrow keys work too). White dots are blood: in the left coronary they surge between beats, when the squeeze lets go. Dashed vessels are on the far side. Tap an artery, then block it: the starved wall darkens and bulges out instead of squeezing.</p>
@@ -595,7 +606,7 @@ canvas.trace{ display:block; width:100%; }
           <canvas class="trace" id="corFlow" data-export-name="Coronary blood flow" height="190" aria-label="Blood flow in the left and right coronary arteries"></canvas>
           <div class="legend">
             <span><i style="--c:var(--lad)"></i>Left coronary</span>
-            <span><i style="--c:var(--rca)"></i>Right coronary</span>
+            <span><i class="st-line-dash" style="--c:var(--rca)"></i>Right coronary (dashed)</span>
           </div>
           <p class="prose small muted" style="margin-top:10px" data-text="sections.coronary.flowNote"></p>
         </div>
@@ -4329,7 +4340,7 @@ const Cor3D = (() => {
     const col = {
       myo: rgb(O.color("--myo")), myo2: rgb(O.color("--myo-2")), fat: rgb(O.color("--fat")), isch: rgb(O.color("--ischemia")),
       o2: rgb(O.color("--blood-o2")), co2: rgb(O.color("--blood-co2")), peri: rgb(O.color("--peri")), sel: rgb(O.color("--sel")),
-      vein: rgb(O.color("--vein-c")), grey: rgb(O.color("--line-strong")), ink: O.color("--ink"), muted: O.color("--muted"), surface: O.color("--surface")
+      vein: rgb(O.color("--vein-c")), vein2: rgb(O.color("--vein-2")), surf: rgb(O.color("--surface")), grey: rgb(O.color("--line-strong")), ink: O.color("--ink"), muted: O.color("--muted"), surface: O.color("--surface")
     };
     const atrium = cmix(col.myo, col.myo2, .55), selPart = (O.state().sel || {}).coronary;
     const items = [];
@@ -4390,7 +4401,7 @@ const Cor3D = (() => {
     if (Heart.S.occl) drawLumen(ctx, col);
   }
   function vesselRGB(v, col){
-    if (v.kind === "v") return col.vein;
+    if (v.kind === "v") return v.part === "acv" ? col.vein2 : col.vein;
     const own = ownerOf(v), c = rgb(O.color(ART_VAR[own]));
     return aff.has(v.seg) && Heart.S.occl ? cmix(c, col.grey, .72) : c;
   }
@@ -4401,9 +4412,18 @@ const Cor3D = (() => {
     const ends = i0 === 0 || i1 === v.n - 1;
     ctx.lineCap = ends ? "round" : "butt";
     if (part === selPart || part === hover){ path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(col.sel, 1, part === selPart ? .95 : .55); ctx.lineWidth = wpx + 7; ctx.stroke(); }
-    path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(c, .55); ctx.lineWidth = wpx + 1.6; ctx.stroke();
+    /* a surface-coloured outline lifts the red arteries off the red heart wall */
+    path(ctx, v, i0, i1); ctx.strokeStyle = v.kind === "v" ? rgbs(c, .6) : rgbs(col.surf, 1, .85); ctx.lineWidth = wpx + 2.2; ctx.stroke();
     path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(c, 1); ctx.lineWidth = wpx; ctx.stroke();
-    path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(cmix(c, [255, 255, 255], .5), 1, .7); ctx.lineWidth = Math.max(.8, wpx * .28); ctx.stroke();
+    /* a stripe down the middle tells the arteries apart without colour: LAD solid, circumflex dashed,
+       RCA double; veins have none */
+    if (v.kind === "a"){
+      const st = rgbs(cmix(c, [255, 255, 255], .6), 1, .85), fam = ownerOf(v), sw = Math.max(.8, wpx * .26);
+      ctx.save(); ctx.strokeStyle = st;
+      if (fam === "rca" && wpx > 4){ path(ctx, v, i0, i1); ctx.lineWidth = wpx * .62; ctx.stroke(); path(ctx, v, i0, i1); ctx.strokeStyle = rgbs(c, 1); ctx.lineWidth = wpx * .3; ctx.stroke(); }
+      else { if (fam === "lcx") ctx.setLineDash([Math.max(3, wpx * .9), Math.max(2, wpx * .6)]); path(ctx, v, i0, i1); ctx.lineWidth = sw; ctx.stroke(); }
+      ctx.restore();
+    }
     for (let k = i0; k < i1; k++) pickSegs.push({ x0: v.sp[k * 2], y0: v.sp[k * 2 + 1], x1: v.sp[k * 2 + 2], y1: v.sp[k * 2 + 3], w: wpx, part, z: it.z });
     /* blood in the vessel */
     const stalled = v.kind === "a" && aff.has(v.seg) && Heart.S.occl;
@@ -4594,27 +4614,34 @@ const bull = $("#bullseye"), bullSegs = {};
     const [x0, y0] = P(r1, a0), [x1, y1] = P(r1, a1), [x2, y2] = P(r0, a1), [x3, y3] = P(r0, a0), big = a1 - a0 > 180 ? 1 : 0;
     return `M${x0} ${y0} A${r1} ${r1} 0 ${big} 0 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 ${big} 1 ${x3} ${y3} Z`;
   };
+  /* territory patterns, so the map doesn't rely on the three shades of red alone: LAD plain, circumflex hatched, RCA dotted */
+  const defs = el("defs", {}, bull);
+  const hatch = el("pattern", { id: "bullHatch", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+  el("rect", { x: 0, y: 0, width: 2.2, height: 6, style: "fill:var(--surface);opacity:.6" }, hatch);
+  const dots = el("pattern", { id: "bullDots", width: 6, height: 6, patternUnits: "userSpaceOnUse" }, defs);
+  el("circle", { cx: 3, cy: 3, r: 1.3, style: "fill:var(--surface);opacity:.75" }, dots);
   const add = (n, d, tx, ty) => {
-    const g = el("g", {}, bull), p = el("path", { d }, g), t = el("text", { x: tx, y: ty, "text-anchor": "middle" }, g); t.textContent = n;
+    const g = el("g", {}, bull), p = el("path", { d }, g), ov = el("path", { d, class: "pat" }, g), t = el("text", { x: tx, y: ty, "text-anchor": "middle" }, g); t.textContent = n;
     p.addEventListener("pointermove", e => O.tip(p, `<b>${n} · ${SEG_NAMES[n]}</b><br>${esc(bullInfo(n))}`, e.clientX, e.clientY));
     p.addEventListener("pointerleave", () => O.untip(p));
-    bullSegs[n] = { g, p };
+    bullSegs[n] = { g, p, ov };
   };
   const ring = (first, count, r0, r1) => { const span = 360 / count; for (let k = 0; k < count; k++){ const c = k * span, a = c - span / 2, rm = (r0 + r1) / 2; add(first + k, arc(r0, r1, a, a + span), cx - rm * Math.sin(c * Math.PI / 180), cy - rm * Math.cos(c * Math.PI / 180) + 4); } };
   ring(1, 6, 74, 104); ring(7, 6, 46, 74); ring(13, 4, 20, 46);
-  const g = el("g", {}, bull), p = el("circle", { cx, cy, r: 20 }, g), t = el("text", { x: cx, y: cy + 4, "text-anchor": "middle" }, g); t.textContent = 17;
+  const g = el("g", {}, bull), p = el("circle", { cx, cy, r: 20 }, g), ov = el("circle", { cx, cy, r: 20, class: "pat" }, g), t = el("text", { x: cx, y: cy + 4, "text-anchor": "middle" }, g); t.textContent = 17;
   p.addEventListener("pointermove", e => O.tip(p, `<b>17 · Apex</b><br>${esc(bullInfo(17))}`, e.clientX, e.clientY)); p.addEventListener("pointerleave", () => O.untip(p));
-  bullSegs[17] = { g, p };
+  bullSegs[17] = { g, p, ov };
   const lab = (s, x, y) => { const n = el("text", { x, y, "text-anchor": "middle", style: "font-weight:500;fill:var(--muted)" }, bull); n.textContent = s; };
   lab("Anterior", 110, -6); lab("Inferior", 110, 230); lab("Septal", -16, 114); lab("Lateral", 236, 114);
-  $("#bullLegend").innerHTML = `<span><i class="dot" style="--c:var(--lad)"></i>LAD</span><span><i class="dot" style="--c:var(--lcx)"></i>Circumflex</span><span><i class="dot" style="--c:var(--rca)"></i>RCA</span><span><i class="dot" style="--c:var(--ischemia);outline:1px solid var(--line-strong)"></i>Starved of blood</span>`;
+  $("#bullLegend").innerHTML = `<span><i class="sq" style="--c:color-mix(in srgb, var(--lad) 62%, var(--surface))"></i>LAD</span><span><i class="sq pat-hatch" style="--c:color-mix(in srgb, var(--lcx) 62%, var(--surface))"></i>Circumflex (hatched)</span><span><i class="sq pat-dots" style="--c:color-mix(in srgb, var(--rca) 62%, var(--surface))"></i>RCA (dotted)</span><span><i class="dot" style="--c:var(--ischemia);outline:1px solid var(--line-strong)"></i>Starved of blood</span>`;
 })();
 function bullInfo(n){ const o = segOwner(n, Heart.S.dom); return `Usually fed by the ${{ lad: "LAD", lcx: "circumflex", rca: "RCA" }[o]}` + (Heart.affectedSegs().has(n) ? " · now ischaemic" : ""); }
 function renderBull(){
   const segs = Heart.affectedSegs();
-  for (const [n, { g, p }] of Object.entries(bullSegs)){
+  for (const [n, { g, p, ov }] of Object.entries(bullSegs)){
     const o = segOwner(+n, Heart.S.dom), hit = segs.has(+n);
     p.style.fill = hit ? "var(--ischemia)" : `color-mix(in srgb, ${ART_COLOR[o]} 62%, var(--surface))`;
+    ov.style.fill = hit || o === "lad" ? "none" : o === "lcx" ? "url(#bullHatch)" : "url(#bullDots)";
     g.classList.toggle("hit", hit);
   }
 }
@@ -4678,10 +4705,11 @@ function drawCorFlow(){
   if (s0 != null) ctx.fillRect(X(s0), T, X(now) - X(s0), gh);
   txt(ctx, "Grey = systole", L, 12, muted);
   ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(L, T + gh + .5); ctx.lineTo(L + gw, T + gh + .5); ctx.stroke();
-  for (const [arr, col] of [[R_.rca, O.color("--rca")], [R_.lca, O.color("--lad")]]){
-    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); let f = true;
+  for (const [arr, col, dash] of [[R_.rca, O.color("--rca"), [6, 4]], [R_.lca, O.color("--lad"), []]]){
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.setLineDash(dash); ctx.beginPath(); let f = true;
     eachSample(t0, now, (i, t) => { const y = Y(arr[i]); f ? ctx.moveTo(X(t), y) : ctx.lineTo(X(t), y); f = false; }); ctx.stroke();
   }
+  ctx.setLineDash([]);
   txt(ctx, "Relative flow", L + gw, 12, muted, "right");
 }
 

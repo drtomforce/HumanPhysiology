@@ -125,7 +125,7 @@ One canonical value per shared quantity. Every page uses these values or explain
 | Tidal volume, breathing rate, dead space | ~500 mL × 14/min (~7 L/min); dead space ~150 mL (VD/VT ~0.3) | Fast jog: 26/min × 1.85 L ≈ 48 L/min (VE/VO₂ ≈ 24), dead space ~0.3 L (VD/VT ~0.16) | body, lungs, engine | West ch. 2, 10; Wasserman, *Principles of Exercise Testing* |
 | GFR, renal blood flow | ~125 mL/min; RBF ~1.1–1.2 L/min (~20–25% of CO) | GFR −15% asleep, −25% in the run, up to +20–25% after a protein meal | body, kidneys | Boron & Boulpaep ch. 34 |
 | Urine output per day | ~1.2–1.5 L in six voids; bladder ~450 mL | osmolality ~530 by day, ~900–1000 overnight | body, kidneys | Boron & Boulpaep ch. 38 |
-| Fasting and after-meal blood glucose | 84–92 mg/dL (4.7–5.1 mmol/L) | peaks ~125–130 mg/dL, 30–60 min after a meal | body, pancreas, liver | ADA Standards of Care 2026 |
+| Fasting and after-meal blood glucose | 4.7–5.1 mmol/L | peaks ~6.9–7.2 mmol/L, 30–60 min after a meal | body, pancreas, liver | ADA Standards of Care 2026 |
 | Liver glycogen | ~50–110 g (0.45–0.95 of ~110 g); ~5 g/h overnight | ~20 g used in the ~1 h run (HGO ~5 mg/kg/min) | body, liver | Rothman et al. 1991; Wasserman 2009 |
 | Insulin and glucagon timing | insulin lags glucose by ~20–30 min | insulin falls and glucagon rises in the run | body, pancreas, liver | Boron & Boulpaep ch. 51 |
 | Sleep architecture | ~5 cycles of ~90 min in 7.5 h | N1 ~4%, N2 ~49%, N3 ~20%, REM ~26%; first REM after ~80 min | body, brain | AASM Manual; Carskadon & Dement |

@@ -759,7 +759,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
     <div class="vitals" id="vitals" aria-label="Vital signs">
       <div class="vt"><div class="vt-top"><span class="vt-label">Heart</span><canvas id="ecg" aria-hidden="true"></canvas></div><div class="vt-val"><b id="vHr">70</b><span>bpm</span></div><div class="vt-sub" id="vSv" title="Stroke volume: blood pumped per beat">70 mL/beat</div></div>
       <div class="vt"><div class="vt-top"><span class="vt-label">Breathing</span><span class="breath" aria-hidden="true"><i id="vBrDot"></i></span></div><div class="vt-val"><b id="vBr">14</b><span>/min</span></div><div class="vt-sub" id="vVt" title="Tidal volume: air per breath">500 mL/breath</div></div>
-      <div class="vt"><div class="vt-top"><span class="vt-label">Glucose</span><svg class="gtrace" viewBox="0 0 96 22" preserveAspectRatio="none" aria-hidden="true" id="vGluSvg"></svg></div><div class="vt-val"><b id="vGlu">90</b><span>mg/dL</span></div><div class="vt-sub" id="vGluMm">5.0 mmol/L</div></div>
+      <div class="vt"><div class="vt-top"><span class="vt-label">Glucose</span><svg class="gtrace" viewBox="0 0 96 22" preserveAspectRatio="none" aria-hidden="true" id="vGluSvg"></svg></div><div class="vt-val"><b id="vGlu">5.0</b><span>mmol/L</span></div><div class="vt-sub" title="Usual fasting range">fasting 4.0–5.5</div></div>
       <div class="vt"><div class="vt-top"><span class="vt-label">Core temp</span></div><div class="vt-val"><b id="vTemp">36.8</b><span>°C</span></div><div class="tbar" aria-hidden="true"><i id="vTempMk"></i></div></div>
       <div class="vt vt-wide vt-circ">
         <span class="vt-label">Blood pressure</span><div class="vt-val"><b id="vBp">118/76</b><span>mmHg</span></div>
@@ -955,7 +955,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       "phases": {
         "sleep": {
           "ms": "The pancreas is a long, flat organ tucked behind your stomach. At night, while you’re not eating, it releases a hormone called glucagon. Glucagon tells your liver to put sugar into your blood, so your blood sugar doesn’t drop too low before breakfast.",
-          "hs": "The pancreas has two jobs: it makes digestive enzymes, and it makes hormones in tiny clusters of cells called islets. Alpha cells in the islets release glucagon, which raises blood sugar. Beta cells release insulin, which lowers it. Overnight, insulin is low and glucagon helps keep blood glucose at around 4–5.5 mmol/L (70–100 mg/dL).",
+          "hs": "The pancreas has two jobs: it makes digestive enzymes, and it makes hormones in tiny clusters of cells called islets. Alpha cells in the islets release glucagon, which raises blood sugar. Beta cells release insulin, which lowers it. Overnight, insulin is low and glucagon helps keep blood glucose at around 4–5.5 mmol/L.",
           "college": "Islets of Langerhans make up only 1–2% of pancreatic mass, yet they receive a disproportionate share of its blood flow. Basal insulin secretion continues during fasting, pulsing roughly every 5–10 minutes. It restrains lipolysis and hepatic glucose output. Insulin sensitivity is lower in the evening and at night than in the morning, so the same meal produces a bigger glucose rise late in the day.",
           "phd": "β-cells have their own circadian clocks. Deleting Clock or Bmal1 in mouse β-cells impairs insulin exocytosis and causes diabetes (Marcheva et al. 2010). Pulsatile insulin delivery to the liver works better than continuous delivery, and losing this pulsatility is an early feature of type 2 diabetes. Paracrine signalling also shapes counter-regulatory responses, for example somatostatin from δ-cells and insulin acting on α-cells."
         },
@@ -2802,7 +2802,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "name": "Through the heart to a thigh muscle",
         "ms": "The rest of the glucose rides the blood through the heart and lungs and out to your muscles.",
         "hs": "From the liver, glucose goes through the right heart, the lungs and the left heart, then out in the arteries. Blood sugar peaks about 30–60 minutes after a meal.",
-        "college": "In healthy people the post-meal glucose peak stays below about 7.8 mmol/L (140 mg/dL) and returns to baseline within 2–3 hours. Most of the meal’s glucose ends up in skeletal muscle, under insulin’s influence.",
+        "college": "In healthy people the post-meal glucose peak stays below about 7.8 mmol/L and returns to baseline within 2–3 hours. Most of the meal’s glucose ends up in skeletal muscle, under insulin’s influence.",
         "phd": "Continuous glucose monitoring shows that people respond very differently to the same foods, and these differences can be predicted in part from the gut microbiome (Zeevi et al., 2015)."
       },
       "glut4Bite": {
@@ -3126,7 +3126,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "name": "Riding to the kidney",
         "ms": "The urea travels in your blood to your kidneys.",
         "hs": "Urea dissolves in the blood and is carried through the heart and lungs to the kidneys.",
-        "college": "Blood urea nitrogen is normally about 7–20 mg/dL. It rises with protein intake, dehydration and falling GFR.",
+        "college": "Blood urea is normally about 2.5–7.8 mmol/L. It rises with protein intake, dehydration and falling GFR.",
         "phd": "Urea moves across most cell membranes through UT-B transporters, including those of red blood cells, which keeps red cells from shrinking as they pass through the urea-rich medulla."
       },
       "proximalUrea": {
@@ -3134,7 +3134,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "ms": "Some of the urea soaks back into the blood here, but most of it carries on.",
         "hs": "As water is taken back, urea becomes more concentrated in the tubule, so about half of it leaks back into the blood.",
         "college": "Urea is reabsorbed passively in the proximal tubule as water reabsorption concentrates it; about 40–50% of filtered urea returns here.",
-        "phd": "Because urea reabsorption depends on water reabsorption, the BUN:creatinine ratio rises in dehydration (prerenal azotaemia), a classic bedside clue."
+        "phd": "Because urea reabsorption depends on water reabsorption, the urea:creatinine ratio rises in dehydration (prerenal azotaemia), a classic bedside clue."
       },
       "henleUrea": {
         "name": "Loop of Henle: urea comes back in",
@@ -3168,7 +3168,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "name": "SGLT2 takes it back",
         "ms": "Pumps in the first part of the tube grab the sugar and send it back to the blood, so none is wasted.",
         "hs": "The SGLT2 transporter pulls glucose into the tubule cells together with sodium. Only when blood sugar is very high (above about 10 mmol/L) can these pumps not keep up, and sugar spills into the urine, as in untreated diabetes.",
-        "college": "SGLT2 in the early proximal tubule (S1–S2) takes back about 90% of filtered glucose, and SGLT1 further along takes the rest. Glucose leaves the cell through GLUT2. The renal threshold is about 10 mmol/L (180 mg/dL).",
+        "college": "SGLT2 in the early proximal tubule (S1–S2) takes back about 90% of filtered glucose, and SGLT1 further along takes the rest. Glucose leaves the cell through GLUT2. The renal threshold is about 10 mmol/L.",
         "phd": "SGLT2 inhibitors (gliflozins) make the kidney spill 60–80 g of glucose a day. Beyond lowering glucose, they reduce heart-failure hospitalisation and slow kidney disease (EMPA-REG, DAPA-HF, EMPA-KIDNEY), probably partly by restoring tubuloglomerular feedback."
       },
       "peritubular": {
@@ -9369,8 +9369,7 @@ const Vitals = (() => {
     ph = p;
     setText("vHr", String(Math.round(p.heartRate)));
     setText("vBr", String(Math.round(p.breathRate)));
-    setText("vGlu", String(Math.round(p.glucose)));
-    setText("vGluMm", (p.glucose / 18).toFixed(1) + " mmol/L");
+    setText("vGlu", (p.glucose / 18).toFixed(1));
     setText("vTemp", p.coreTemp.toFixed(1));
     setText("vBp", Math.round(p.sbp) + "/" + Math.round(p.dbp));
     setText("vSv", Math.round(p.strokeVol) + " mL/beat");
@@ -10624,7 +10623,7 @@ const EXPORT_VITALS = [
   ["sbp", "Systolic blood pressure", "mmHg", 0], ["dbp", "Diastolic blood pressure", "mmHg", 0],
   ["breathRate", "Breathing rate", "breaths/min", 1], ["tidalVol", "Tidal volume", "mL", 0], ["ve", "Minute ventilation", "L/min", 1],
   ["spo2", "Arterial O2 saturation", "%", 1], ["svo2", "Mixed venous O2 saturation", "%", 1], ["paco2", "Arterial CO2", "mmHg", 1],
-  ["vo2", "O2 uptake", "mL/min", 0], ["glucose", "Blood glucose", "mg/dL", 0], ["coreTemp", "Core temperature", "°C", 2],
+  ["vo2", "O2 uptake", "mL/min", 0], ["glucose", "Blood glucose", "mmol/L", 1, 1 / 18], ["coreTemp", "Core temperature", "°C", 2],
   ["insulin", "Insulin", "relative 0-1", 2], ["glucagon", "Glucagon", "relative 0-1", 2], ["cortisol", "Cortisol", "relative 0-1", 2],
   ["melatonin", "Melatonin", "relative 0-1", 2], ["adrenaline", "Adrenaline", "relative 0-1", 2],
   ["vagal", "Vagal tone", "relative 0-1", 2], ["sympathetic", "Sympathetic tone", "relative 0-1", 2],
@@ -10633,7 +10632,7 @@ const EXPORT_VITALS = [
 function bodyData(){
   const probe = Physio.at(12), cols = EXPORT_VITALS.filter(([k]) => Number.isFinite(probe[k]));
   const round = (v, d) => Math.round(v * Math.pow(10, d)) / Math.pow(10, d);
-  const row = h => { const p = Physio.at(h); return [fmtTime(h), PHASE_BY_ID[p.phase].label, ...cols.map(([k, , , d]) => round(p[k], d))]; };
+  const row = h => { const p = Physio.at(h); return [fmtTime(h), PHASE_BY_ID[p.phase].label, ...cols.map(([k, , , d, f = 1]) => round(p[k] * f, d))]; };
   const head = ["Time", "Phase", ...cols.map(([, l, u]) => `${l} (${u})`)];
   const s = store.get(), nowRow = row(s.hour); nowRow[0] = fmtTime(s.hour);
   const day = []; for (let i = 0; i < 96; i++) day.push(row(i / 4));

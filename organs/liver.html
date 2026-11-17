@@ -568,7 +568,7 @@ canvas.trace{ display:block; width:100%; }
       <div class="panel fig">
         <h3>Alcohol: one drink an hour, whatever you do</h3>
         <canvas class="trace" id="etohChart" data-export-name="Blood alcohol" height="300" aria-label="Blood alcohol over the hours after drinking, absorbed quickly and removed at a steady rate by alcohol dehydrogenase"></canvas>
-        <div class="legend"><span><i style="--c:var(--etoh)"></i>Blood alcohol</span><span><i class="dash" style="--c:var(--napqi)"></i>UK driving limit</span><span><i style="--c:var(--s5)"></i>Acetaldehyde (relative)</span></div>
+        <div class="legend"><span><i style="--c:var(--etoh)"></i>Blood alcohol</span><span><i class="dash" style="--c:var(--napqi)"></i>Driving limits: UK 80, most of Europe 50</span><span><i style="--c:var(--s5)"></i>Acetaldehyde (relative)</span></div>
       </div>
       <aside class="side">
         <div class="panel">
@@ -1569,7 +1569,7 @@ canvas.trace{ display:block; width:100%; }
   "integumentary": {
    "ms": "If bilirubin builds up, skin and the whites of the eyes turn yellow. That is called jaundice.",
    "hs": "Jaundice shows first in the whites of the eyes, then the skin. Blocked bile can make skin itch. Long-standing liver disease can show as red palms, small spider-shaped blood vessels and easy bruising.",
-   "college": "Scleral icterus appears at ~40–50 µmol/L (2.5–3 mg/dL). Spider naevi and palmar erythema reflect high oestrogen; bruising reflects low clotting factors and platelets. Cholestatic itch, xanthelasma (high cholesterol in PBC) and the skin of chronic alcohol use are other clues.",
+   "college": "Scleral icterus appears at ~40–50 µmol/L. Spider naevi and palmar erythema reflect high oestrogen; bruising reflects low clotting factors and platelets. Cholestatic itch, xanthelasma (high cholesterol in PBC) and the skin of chronic alcohol use are other clues.",
    "phd": "Elastin in the sclera binds bilirubin avidly, which is why icterus appears early and fades late. Porphyria cutanea tarda (UROD deficiency, triggered by iron, alcohol, hepatitis C) is a liver disease that shows on the skin as blisters on sun-exposed areas."
   },
   "reproductive": {
@@ -4941,7 +4941,8 @@ function drawEtoh(){
   panel(ctx, x0, top, pw, h, ticks, v => String(v));
   txt(ctx, "Blood alcohol (mg per 100 mL)", x0 + 4, top + 11, C("--ink"), "left", FONT_B);
   for (let t = 0; t <= ETOH_H; t += 2) txt(ctx, String((DRINK_DAY + t) % 24).padStart(2, "0") + ":00", X(t), H2 - 8, C("--muted"), t === 0 ? "left" : t === ETOH_H ? "right" : "center");
-  line(ctx, x0, Y(.8), x1, Y(.8), C("--napqi"), 1.4, [6, 4]); txt(ctx, "80", x1 - 2, Y(.8) - 4, C("--napqi"), "right");
+  line(ctx, x0, Y(.8), x1, Y(.8), C("--napqi"), 1.4, [6, 4]); txt(ctx, "80 UK", x1 - 2, Y(.8) - 4, C("--napqi"), "right");
+  line(ctx, x0, Y(.5), x1, Y(.5), C("--napqi"), 1.2, [2, 3]); txt(ctx, "50 Europe", x1 - 2, Y(.5) - 4, C("--napqi"), "right");
   const ser = (arr, f, col, w, dash) => { const pts = []; for (let i = 0; i < arr.length; i += 3) pts.push([X(i * ETOH_DT), f(arr[i])]); poly(ctx, pts, col, w, dash); };
   if (P.etoh > 0){
     if (Sim.func < .98) ser(HE.bac, Y, C("--line-strong"), 1.5, [5, 4]);
@@ -5002,7 +5003,7 @@ stoneB.addEventListener("click", () => { P.stone = !P.stone; changed("liver"); }
 readouts("#flowRO", [["qp", "Portal vein"], ["qa", "Hepatic artery"], ["pct", "From the portal vein"], ["hvpg", "Portal pressure (HVPG)"], ["shunt", "Bypassing the liver"], ["func", "Working liver"]]);
 readouts("#metRO", [["hgo", "Glucose released"], ["gngp", "From new glucose"], ["gly", "Glycogen"], ["glu", "Blood glucose"], ["ket", "Ketones"], ["ins", "Insulin"], ["share", "Meal glucose kept"], ["vldl", "VLDL fat out"]]);
 readouts("#paraRO", [["lvl", "Level now"], ["c4", "Level at 4 h"], ["gsh", "Glutathione"], ["nec", "Liver cells lost"], ["alt", "ALT"], ["inr", "INR"]]);
-readouts("#etohRO", [["bac", "Peak blood alcohol"], ["zero", "Back to zero"], ["over", "Over the UK limit"], ["grams", "Alcohol"]]);
+readouts("#etohRO", [["bac", "Peak blood alcohol"], ["zero", "Back to zero"], ["over", "Over the UK limit (80)"], ["overEU", "Over the European limit (50)"], ["grams", "Alcohol"]]);
 readouts("#bileRO", [["tb", "Total bilirubin"], ["ucb", "Unconjugated"], ["cb", "Conjugated"], ["ubili", "Urine bilirubin"], ["uuro", "Urine urobilinogen"], ["balt", "ALT"], ["alp", "ALP"]]);
 readouts("#acidRO", [["back", "Bile acids returned"], ["vitk", "Vitamin K absorbed"]]);
 
@@ -5092,6 +5093,7 @@ function renderAll(){
   ro("bac", P.etoh ? f0(E.peak * 100) : "–", P.etoh ? "mg/100 mL" : "", P.etoh ? D(E.peak * 100, Sim.HE.peak * 100) : "");
   ro("zero", P.etoh && E.zeroAt ? clockTxt(DRINK_DAY + E.zeroAt) : P.etoh ? "after 11:00" : "–", "", "");
   ro("over", P.etoh && E.overFrom !== null ? f1((E.overTo || ETOH_H) - E.overFrom) : P.etoh ? "0" : "–", P.etoh ? "h" : "", "");
+  ro("overEU", P.etoh ? f1(E.bac.filter(b => b >= .5).length * ETOH_DT) : "–", P.etoh ? "h" : "", "");
   ro("grams", f0(P.etoh * 8), "g", "");
   /* first pass */
   const fp = O.get("drugs");

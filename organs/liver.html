@@ -566,13 +566,13 @@ canvas.trace{ display:block; width:100%; }
     </div>
     <div class="sec-grid" style="margin-top:20px">
       <div class="panel fig">
-        <h3>Alcohol: one drink an hour, whatever you do</h3>
+        <h3>Alcohol: one unit an hour, whatever you do</h3>
         <canvas class="trace" id="etohChart" data-export-name="Blood alcohol" height="300" aria-label="Blood alcohol over the hours after drinking, absorbed quickly and removed at a steady rate by alcohol dehydrogenase"></canvas>
         <div class="legend"><span><i style="--c:var(--etoh)"></i>Blood alcohol</span><span><i class="dash" style="--c:var(--napqi)"></i>Driving limits: UK 80, most of Europe 50</span><span><i style="--c:var(--s5)"></i>Acetaldehyde (relative)</span></div>
       </div>
       <aside class="side">
         <div class="panel">
-          <h3>Drinks with dinner</h3>
+          <h3>Alcohol with dinner</h3>
           <div class="sliders" id="etohSliders"></div>
           <div class="readouts" id="etohRO"></div>
           <p class="prose small muted" style="margin-top:10px" data-text="sections.detox.etohNote"></p>
@@ -787,9 +787,9 @@ canvas.trace{ display:block; width:100%; }
     "phd": "Shunting can raise the bioavailability of high-extraction drugs (morphine, propranolol, midazolam, simvastatin) several-fold, while their systemic clearance, which is flow-limited, falls less. For low-extraction drugs it is CLint and protein binding that matter. The figures here are illustrative: real values vary widely between people."
    },
    "etohNote": {
-    "ms": "Your liver can only break down about one drink an hour, no matter how much you drink. Drinking more just makes it take longer.",
-    "hs": "Alcohol dehydrogenase works flat out even at low blood alcohol, so the level falls by a fixed amount each hour (zero-order kinetics), about one UK unit (8 g) an hour. Coffee, cold showers and sleep don’t speed it up.",
-    "college": "ADH has a Km of ~0.05–0.1 g/L, so above ~0.2 g/L elimination is saturated at ~0.15 g/L/h (Widmark β). Ethanol → acetaldehyde (ADH, and CYP2E1 when induced) → acetate (ALDH2), turning NAD⁺ into NADH; the high NADH/NAD⁺ blocks gluconeogenesis and fatty-acid oxidation, causing hypoglycaemia in a fast and fat in the liver.",
+    "ms": "Your liver can only break down about one unit of alcohol an hour, no matter how much you drink. Drinking more just makes it take longer. A unit is less than a drink: a pint of beer or a big glass of wine is more than 2 units. Here a 70 kg man eating dinner goes over the UK driving limit at about 7 units (3 pints). A woman, a smaller person or someone with an empty stomach needs less. No number of drinks makes driving safe.",
+    "hs": "Alcohol dehydrogenase works flat out even at low blood alcohol, so the level falls by a fixed amount each hour (zero-order kinetics), about one UK unit (8 g, 10 mL of pure alcohol) an hour. Coffee, cold showers and sleep don’t speed it up. A pint (568 mL) of 4% beer or a 175 mL glass of 13% wine is about 2.3 units; a 25 mL spirit is 1. With dinner, a 70 kg man in this model passes the UK limit (80 mg/100 mL) at about 7 units and the European limit (50) at about 5. Women, lighter people and anyone drinking on an empty stomach reach the limits on less, and a level under the limit still slows reactions.",
+    "college": "ADH has a Km of ~0.05–0.1 g/L, so above ~0.2 g/L elimination is saturated at ~0.15 g/L/h (Widmark β). Ethanol → acetaldehyde (ADH, and CYP2E1 when induced) → acetate (ALDH2), turning NAD⁺ into NADH; the high NADH/NAD⁺ blocks gluconeogenesis and fatty-acid oxidation, causing hypoglycaemia in a fast and fat in the liver. Peak blood alcohol ≈ dose ÷ (r × body mass) minus what is cleared while absorbing: r is ~0.68 L/kg in men and ~0.55 in women, and food slows absorption and lowers the peak by roughly a third. So the same number of units gives women and lighter people a higher peak.",
     "phd": "The model uses a Widmark volume of 0.68 L/kg, first-order absorption slowed by food, and Michaelis–Menten elimination (Vmax 0.15 g/L/h, Km 0.08 g/L). ALDH2*2 carriers accumulate acetaldehyde (flushing, cancer risk); chronic drinking induces CYP2E1, which speeds ethanol clearance and paracetamol bioactivation alike."
    }
   },
@@ -1389,7 +1389,7 @@ canvas.trace{ display:block; width:100%; }
     "cyp",
     "gng"
    ],
-   "ms": "The enzyme that breaks down alcohol. It works at a fixed speed, so the liver can only clear about one drink an hour.",
+   "ms": "The enzyme that breaks down alcohol. It works at a fixed speed, so the liver can only clear about one unit (8 g of alcohol) an hour.",
    "hs": "ADH turns ethanol into acetaldehyde, which ALDH turns into acetate. Both steps turn NAD⁺ into NADH. The enzyme is saturated even at low blood alcohol, so it removes a fixed amount each hour.",
    "college": "Cytosolic ADH handles ~80–90% of ethanol at ~7 g/h in a 70 kg adult; CYP2E1 (the MEOS) adds more in chronic drinkers. The high NADH/NAD⁺ ratio blocks gluconeogenesis, the TCA cycle and β-oxidation, and promotes lipogenesis: hypoglycaemia, lactic acidosis, ketoacidosis and fatty liver.",
    "phd": "ADH1B*2 (fast ADH) and ALDH2*2 (inactive ALDH) both raise acetaldehyde, causing flushing and protecting against alcohol dependence but raising oesophageal cancer risk in those who drink. Disulfiram inhibits ALDH."
@@ -1793,7 +1793,7 @@ canvas.trace{ display:block; width:100%; }
      "fat": "18",
      "etoh": "10"
     },
-    "ms": "Heavy drinking over years has made the liver fatty and scarred. Ten drinks tonight take the liver all night to clear.",
+    "ms": "Heavy drinking over years has made the liver fatty and scarred. Ten units tonight (about four pints) take the liver all night to clear.",
     "college": "Steatosis with bridging fibrosis (F3) and 10 units at dinner: zero-order clearance over ~10 h, NADH-driven suppression of gluconeogenesis and raised portal pressure."
    },
    {
@@ -4016,7 +4016,7 @@ const G = p => O.get(p);
      portal()   blood flow in and out, and portal pressure (HVPG)
      metab()    fuel, minute by minute, over the day or a three-day fast
      para()     a paracetamol dose over four days (glutathione, NAPQI, necrosis)
-     alcohol()  drinks with dinner, Michaelis–Menten (≈ zero-order) clearance
+     alcohol()  units with dinner, Michaelis–Menten (≈ zero-order) clearance
      bile()     bilirubin production, uptake, conjugation and export (steady state)
    Values are typical for a 70 kg adult and simplified for teaching.
    ========================================================================= */
@@ -4032,7 +4032,7 @@ const V = { tf: 14, tp: 6, fastPlay: false, paraPlay: false, dayPlay: false, lab
 const MUSCLE = [[0,0],[6.5,0],[7,.15],[16.8,.12],[17.1,1],[17.95,1],[18.3,.2],[19,.1],[22.5,.05],[23,0]];
 const MEALS = [{ t: 7.25, share: .25, name: "Breakfast" }, { t: 12.25, share: .35, name: "Lunch" }, { t: 19, share: .40, name: "Dinner" }];
 const FAST0 = 19;                          /* the fast starts with dinner at 19:00 */
-const DRINK_DAY = 19, DRINK_FAST = 24;     /* drinks with dinner, or on the second evening of a fast */
+const DRINK_DAY = 19, DRINK_FAST = 24;     /* alcohol with dinner, or on the second evening of a fast */
 
 /* how much of the liver works: fibrosis, hepatitis, cells killed by paracetamol */
 const liverFunc = (p, nec = 0) => (1 - .45 * Math.pow(p.fib / 4, 1.5)) * (p.hep ? .5 : 1) * (1 - .85 * nec);
@@ -4949,7 +4949,7 @@ function drawEtoh(){
     const amax = Math.max(...E.ald) || 1; ser(E.ald, v => top + h - h * .45 * v / amax, C("--s5"), 1.4);
     ser(E.bac, Y, C("--etoh"), 2.6);
     if (E.peak > .25){ const t1 = 2.5, t2 = Math.min(ETOH_H - .5, (E.zeroAt || ETOH_H) - 1); if (t2 > t1 + 1){ txt(ctx, "falls ~15 mg/100 mL an hour: about one unit", X((t1 + t2) / 2), Y(bacAt(E, (t1 + t2) / 2)) - 10, C("--ink"), "center"); } }
-  } else txt(ctx, "Add some drinks", x0 + pw / 2, top + h / 2, C("--muted"), "center");
+  } else txt(ctx, "Add some alcohol", x0 + pw / 2, top + h / 2, C("--muted"), "center");
 }
 function drawCharts(){ Object.values(charts).forEach(c => { c.dirty = false; }); drawDay(); drawPara(); drawEtoh(); }
 
@@ -4991,7 +4991,7 @@ doseS.addEventListener("input", () => { P.para = +doseS.value; changed("para"); 
 tpS.addEventListener("input", () => { V.tp = +tpS.value; onParaClock(); });
 $("#tpNow").addEventListener("click", () => { if (!P.para){ P.para = 20; changed("para"); } V.tp = 0; V.paraPlay = true; syncUI(); onParaClock(); });
 tpPlay.addEventListener("click", () => { V.paraPlay = !V.paraPlay; if (V.paraPlay && V.tp >= PH) V.tp = 0; syncUI(); });
-const etohS = slider($("#etohSliders"), { id: "etohS", label: "Drinks (UK units, 8 g each)", min: 0, max: 15, step: 1, value: P.etoh, ends: ["None", "15 units"] });
+const etohS = slider($("#etohSliders"), { id: "etohS", label: "UK units (8 g alcohol each)", min: 0, max: 15, step: 1, value: P.etoh, ends: ["None", "15 units"] });
 etohS.addEventListener("input", () => { P.etoh = +etohS.value; changed("metab"); });
 
 const bileBtns = $("#bileBtns");
@@ -5124,7 +5124,7 @@ function renderAll(){
    ========================================================================= */
 const LABEL = {
   carb: () => `${P.carb} g carbohydrate a day`, fat: () => `Liver fat ${P.fat}%`, fast: () => "Three days without food", fib: () => `Fibrosis F${P.fib}`, hep: () => "Acute hepatitis",
-  para: () => `${P.para} g paracetamol`, nac: () => P.nac < 0 ? "No NAC" : `NAC at ${P.nac} h`, etoh: () => `${P.etoh} drinks with dinner`,
+  para: () => `${P.para} g paracetamol`, nac: () => P.nac < 0 ? "No NAC" : `NAC at ${P.nac} h`, etoh: () => `${P.etoh} ${P.etoh === 1 ? "unit" : "units"} with dinner`,
   haem: () => "Haemolysis", gilbert: () => "Gilbert’s syndrome", stone: () => "Gallstone in the bile duct"
 };
 const SECTION = { carb: "metabolism", fat: "metabolism", fast: "metabolism", fib: "anatomy", hep: "anatomy", para: "detox", nac: "detox", etoh: "detox", haem: "bile", gilbert: "bile", stone: "bile" };

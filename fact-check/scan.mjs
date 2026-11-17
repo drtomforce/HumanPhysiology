@@ -22,7 +22,8 @@
      node fact-check/scan.mjs --mark <status>     set the status of the selected items (ok, fixed, n/a, "issue #12")
          [--note "…"]                             … with a note
    Select with --page <id> (repeatable) and --prefix <key prefix> (repeatable); --all with --list
-   lists every item, not just the unchecked ones. --mark only touches items whose hash is current.
+   lists every item, not just the unchecked ones. --mark only touches items whose hash is current;
+   add --unchecked to leave rows that already have a status (ok, fixed, an issue) alone.
    No dependencies. */
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -178,6 +179,7 @@ for (const { id: page, path, engine } of pageFiles()){
   if (markStatus){
     for (const [key, row] of Object.entries(ledger.pages[page] || {})){
       if (!prefixed(key) || !items.has(key) || row.hash !== hash(squash(items.get(key)))) continue;
+      if (flag("--unchecked") && row.status !== "unchecked") continue;
       row.status = markStatus; row.checked = today; delete row.was;
       if (note != null){ if (note) row.note = note; else delete row.note; }
       marked++;

@@ -1,6 +1,6 @@
 # Filled in by the app's "Report a problem" form (the REPORTER block in
 # organs/_template.html). The field ids are the URL parameters it sets, and the
-# dropdown options must match its CATEGORIES labels. The "context" JSON says where
+# category input is filled with its CATEGORIES labels. The "context" JSON says where
 # the text comes from and holds a link that reopens the page as the reader saw it.
 name: Report a problem
 description: Something wrong or unclear in HumanPhysiology. Easiest from the app itself; select the text and press "Report this".
@@ -12,17 +12,13 @@ body:
       value: |
         Thanks for helping!
         The fastest way to report is from the app: select the words that are wrong and press **Report this**, which fills in everything below.
-  - type: dropdown
+  # An input, not a dropdown: GitHub only prefills text fields from the URL,
+  # so a dropdown would ignore the app's ?category= and need picking by hand.
+  - type: input
     id: category
     attributes:
       label: What kind of problem?
-      options:
-        - Factual error
-        - Wrong for this reading level
-        - Typo or wording
-        - Visual or animation bug
-        - Something doesn't work
-        - Suggestion
+      description: "One of: Factual error · Wrong for this reading level · Typo or wording · Visual or animation bug · Something doesn't work · Suggestion"
     validations:
       required: true
   - type: textarea

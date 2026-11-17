@@ -779,9 +779,9 @@ canvas.trace{ display:block; width:100%; }
       },
       "angina": {
         "ms": "Fatty plaques narrow arteries slowly. Narrow one here, then change the effort: the heart needs more blood when it works harder, and a narrowed artery may not let enough through.",
-        "hs": "A narrowed artery can still feed the heart at rest, because the tiny vessels beyond it open up. During effort the heart needs more blood than can squeeze through: the muscle runs short of oxygen and hurts. That is angina, and it goes away with rest.",
-        "college": "Resting flow is preserved until a stenosis narrows ~85% of the diameter, because arterioles dilate to compensate; what is lost first is the coronary flow reserve. When demand (heart rate × systolic pressure) exceeds the capped supply, the subendocardium becomes ischaemic: ST depression, hypokinesis, angina.",
-        "phd": "The model uses Gould’s stenosis relation (ΔP = fQ + sQ², viscous and separation losses), a microvascular resistance that can fall to a quarter of rest (CFR 4) and a diastolic-time factor for the left ventricle. FFR is distal over aortic pressure at maximal hyperaemia; ≤ 0.80 predicts benefit from revascularisation better than angiographic percent stenosis."
+        "hs": "A narrowed artery can still feed the heart at rest, because the tiny vessels beyond it open up. During effort the heart needs more blood than can squeeze through: the muscle runs short of oxygen and hurts. That is angina, and it goes away with rest. The left main is the most dangerous place: it feeds most of the left ventricle, so even a half-narrowed left main causes angina.",
+        "college": "Resting flow is preserved until a stenosis narrows ~85% of the diameter (~75% in the left main, which feeds three quarters of the left ventricle, so ≥50% there counts as significant; ~88% in small side branches, which carry little flow), because arterioles dilate to compensate; what is lost first is the coronary flow reserve. When demand (heart rate × systolic pressure) exceeds the capped supply, the subendocardium becomes ischaemic: ST depression, hypokinesis, angina.",
+        "phd": "The model uses Gould’s stenosis relation (ΔP = fQ + sQ², viscous and separation losses), a microvascular resistance that can fall to a quarter of rest (CFR 4) and a diastolic-time factor for the left ventricle. The left main’s loss coefficients are ×10, for the combined LAD and circumflex flow through one lesion, and the side branches’ ×0.5 (FFR depends on the myocardial mass supplied). Subendocardial ST depression scales with the ischaemic territory and is halved over the circumflex’s electrically silent wall. FFR is distal over aortic pressure at maximal hyperaemia; ≤ 0.80 predicts benefit from revascularisation better than angiographic percent stenosis."
       },
       "hint": {
         "ms": "Tap one of the coloured arteries.",
@@ -1379,6 +1379,17 @@ canvas.trace{ display:block; width:100%; }
         },
         "ms": "The right coronary artery is narrowed by 90%: the bottom wall is short of blood even at rest.",
         "college": "Critical 90% RCA stenosis: maximal flow falls below resting demand, giving ischaemia at rest, the picture of unstable angina."
+      },
+      {
+        "id": "marginal",
+        "name": "Narrowed side branch on exercise",
+        "params": {
+          "occl": "om",
+          "sten": "80",
+          "hour": 17.5
+        },
+        "ms": "A small side branch on the left side of the heart is 80% narrowed. During exercise a strip of the side wall runs short of blood, but the ECG hardly shows it: look at the bull’s-eye.",
+        "college": "80% obtuse marginal stenosis on exertion: lateral subendocardial ischaemia (segments 5, 11, 12, 16) with mild hypokinesis, yet near-normal ST segments, because the circumflex territory is electrically silent and the territory small. Ischaemia can be real and hard to see; imaging or FFR finds it."
       },
       {
         "id": "lbbbMI",
@@ -3409,9 +3420,16 @@ const ART_IDS = Object.keys(ART);
    exit, ∝ (1/area − 1)²). So a 50% narrowing barely matters, 70% caps flow near what exercise needs, and beyond
    ~85% even resting flow can't get through. */
 const R_MIN = .25;
-function maxFlow(sten, pn){
+/* The left main carries the flow for both the LAD and the circumflex, about three quarters of the left ventricle, so
+   the same percent narrowing loses far more pressure there (the loss grows with the flow, and with its square). Its
+   larger loss makes ≥50% significant, against ≥70% elsewhere: angina on exercise from ~50%, ischaemia at rest from ~75%.
+   Side branches (diagonal, obtuse marginal, PDA) feed little muscle, so little flow crosses the lesion and it loses less
+   pressure: they look worse on an angiogram than they are (most >75% side-branch lesions have a normal FFR). Exercise
+   angina from ~75%, ischaemia at rest from ~88%. */
+const STEN_LOSS = { lm: 10, d1: .5, om: .5, pda: .5 };
+function maxFlow(sten, pn, k = 1){
   if (sten >= 100) return 0;
-  const a = (1 - sten / 100) ** 2, f = .0002 * (1 / (a * a) - 1), q = .0002 * (1 / a - 1) ** 2, b = R_MIN + f;
+  const a = (1 - sten / 100) ** 2, f = k * .0002 * (1 / (a * a) - 1), q = k * .0002 * (1 / a - 1) ** 2, b = R_MIN + f;
   return q < 1e-9 ? pn / b : (-b + Math.sqrt(b * b + 4 * q * pn)) / (2 * q);
 }
 /* the share of its main channel's flow (left or right coronary) that a blocked segment carries */
@@ -3445,7 +3463,7 @@ const makeHeart = () => {
     /* supply: the most flow the artery can carry at this perfusion pressure; the left ventricle is perfused
        mostly in diastole, which a fast heart shortens */
     const pn = (b.sbp + 2 * b.dbp) / 3 / 90, left = !S.occl || owner(S.occl, S.dom) !== "rca";
-    const dia = left ? Math.sqrt(clamp(.75 - .0019 * b.hr, .3, .72) / .62) : 1, q = maxFlow(sten, pn);
+    const dia = left ? Math.sqrt(clamp(.75 - .0019 * b.hr, .3, .72) / .62) : 1, q = maxFlow(sten, pn, STEN_LOSS[S.occl] || 1);
     sd.healthy = maxFlow(0, pn) * dia;
     sd.supply = Math.max(.12, q * dia);                 /* collaterals bring a little even past a complete block */
     sd.ffr = sten >= 100 ? 0 : q * R_MIN / pn;          /* pressure beyond the narrowing ÷ aortic pressure, at full dilation */
@@ -3569,10 +3587,13 @@ const makeHeart = () => {
     if (transmural()) a.forEach(seg => { s += (ST_SIG[seg] || {})[name] || 0; });
     else {
       /* subendocardial ischaemia depresses ST, a little more in the leads facing the starved wall, but it localises
-         poorly: V4–V6 show it most often whichever artery is narrowed. Much of the left ventricle → ST up in aVR. */
-      let face = 0; a.forEach(seg => { const v = (ST_SIG[seg] || {})[name] || 0; if (v > 0) face += v; });
-      s = name === "aVR" ? iL * (S.occl === "lm" || S.occl === "ladProx" ? .1 : .04)
-        : -iL * (.5 * Math.min(.3, face) + (["V4", "V5", "V6"].includes(name) ? .1 : ["I", "II", "aVF"].includes(name) ? .04 : 0));
+         poorly: V4–V6 show it most often whichever artery is narrowed. Much of the left ventricle → ST up in aVR.
+         The shift grows with how much wall is starved (full size from 8 of 17 segments), and the circumflex's lateral
+         and posterior wall is half hidden from the 12 leads, so a narrowed marginal can leave the ECG nearly normal. */
+      let face = 0, n = 0; a.forEach(seg => { const v = (ST_SIG[seg] || {})[name] || 0; if (v > 0) face += v; n += (OWN[seg] || []).length; });
+      const size = Math.sqrt(Math.min(1, n / 8)) * (owner(S.occl, S.dom) === "lcx" ? .5 : 1);
+      s = size * (name === "aVR" ? iL * (S.occl === "lm" || S.occl === "ladProx" ? .1 : .04)
+        : -iL * (.5 * Math.min(.3, face) + (["V4", "V5", "V6"].includes(name) ? .1 : ["I", "II", "aVF"].includes(name) ? .04 : 0)));
     }
     return clamp(s, -.3, .38);
   }
@@ -4826,11 +4847,12 @@ corInsp.addEventListener("click", e => {
 /* ---------- narrowing an artery: supply, demand and angina ---------- */
 /* where the reader stands: no narrowing, narrowed but enough blood, angina on effort, ischaemia at rest, infarct */
 function stenStatus(){
-  const S = Heart.S, sd = Heart.supply(), fx = Heart.effects(), lab = S.occl ? OCCL_LABEL[S.occl] : "";
+  const S = Heart.S, fx = Heart.effects(), lab = S.occl ? OCCL_LABEL[S.occl] : "";
   const atRest = O.state().phase === "rest" || O.state().phase === "sleep";
   if (!S.occl || !S.sten) return { id: "none", sym: "", title: "No narrowing", text: "Pick an artery and slide to narrow it.", c: "var(--line-strong)" };
   if (S.sten >= 100) return { id: "mi", sym: "✕", title: "Blocked: a heart attack", text: `Nothing gets past the clot in the ${lab}, so the full thickness of its wall dies: ST elevation, not angina.`, c: "var(--ischemia)" };
-  if (fx.level < .05 && sd.ratio >= 1) return { id: "ok", sym: "✓", title: "Enough blood, for now", text: `The small vessels beyond the plaque have opened up to make up for it. ${atRest ? "Raise the effort to see whether it can keep up." : "Even this effort is covered."}`, c: "var(--accent)" };
+  /* a trace of ischaemia shows as a perfusion defect (the bull's-eye) before it causes pain: the ischaemic cascade */
+  if (fx.level < .12) return { id: "ok", sym: "✓", title: "Enough blood, for now", text: `The small vessels beyond the plaque have opened up to make up for it. ${atRest ? "Raise the effort to see whether it can keep up." : "Even this effort is covered."}`, c: "var(--accent)" };
   if (atRest) return { id: "rest", sym: "!", title: "Ischaemia even at rest", text: `So little gets through the ${lab} that the wall is short of blood without any effort: unstable angina, a warning of a heart attack.`, c: "var(--rca)" };
   return { id: "angina", sym: "!", title: "Angina: demand outruns supply", text: `The wall beyond the ${lab} needs more blood than the narrowing lets through. Its inner layer is starved: chest pain, ST depression, a weaker squeeze. Rest relieves it.`, c: "var(--sel)" };
 }

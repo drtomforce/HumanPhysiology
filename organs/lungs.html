@@ -661,8 +661,8 @@ canvas.trace{ display:block; width:100%; }
       "phd": "Carbohydrate loading can raise VCO₂ enough to precipitate hypercapnia in patients with limited ventilatory reserve, the rationale (now debated) for high-fat feeds in ventilated patients."
     },
     "exercise": {
-      "ms": "You’re running! You breathe about 38 times a minute and much more deeply, moving ten times as much air as at rest.",
-      "hs": "In the run, breathing rises to ~38/min and almost 2 L per breath, about 70 L/min. Breathing out becomes active, using the belly muscles. Blood oxygen stays high even though muscles use eight times more.",
+      "ms": "You’re jogging fast! You breathe about 26 times a minute and much more deeply, moving about seven times as much air as at rest.",
+      "hs": "In the run, a fast jog, breathing rises to ~26/min and almost 2 L per breath, about 48 L/min. Breathing out becomes active, using the belly muscles. Blood oxygen stays high even though muscles use eight times more.",
       "college": "Exercise hyperpnoea is matched to CO₂ production (central command, muscle afferents and the chemoreflex), so PaCO₂ barely changes in moderate exercise and falls above the lactate threshold. Recruiting apical lung units and capillaries keeps PaO₂ up as cardiac output triples.",
       "phd": "Some highly trained athletes develop exercise-induced arterial hypoxaemia: capillary transit time falls below the time needed for diffusion equilibrium at very high cardiac outputs. The mechanism of exercise hyperpnoea remains debated."
     }
@@ -1530,7 +1530,7 @@ const PHASES = [
   { id: "sleep", label: "Sleep", rep: 3, color: "#5b62b3", vitals: { hr: 52, sbp: 105, dbp: 63, rr: 11.5, sv: 74, temp: 36.5 } },
   { id: "rest", label: "Rest", rep: 10.5, color: "#2f8f83", vitals: { hr: 68, sbp: 118, dbp: 76, rr: 14, sv: 69, temp: 36.9 } },
   { id: "meal", label: "Meal", rep: 12.75, color: "#d08a26", vitals: { hr: 74, sbp: 117, dbp: 76, rr: 14, sv: 69, temp: 37 } },
-  { id: "exercise", label: "Exercise", rep: 17.5, color: "#d9473a", vitals: { hr: 152, sbp: 165, dbp: 76, rr: 38, sv: 106, temp: 37.9 } }
+  { id: "exercise", label: "Exercise", rep: 17.5, color: "#d9473a", vitals: { hr: 152, sbp: 165, dbp: 76, rr: 26, sv: 106, temp: 37.9 } }
 ];
 const PHASE_BY_ID = Object.fromEntries(PHASES.map(p => [p.id, p]));
 const SCHEDULE = [
@@ -2973,7 +2973,7 @@ const ZONES = [{ name: "Top (apex)", V: .22, Q: .07 }, { name: "Middle", V: .33,
 /* the body in each part of the day: O₂ use (mL/min), respiratory quotient,
    cardiac output (L/min), breathing rate, core temperature */
 const BODY = { sleep: { vo2: 215, rq: .82, co: 4.6, f: 11.5, temp: 36.5 }, rest: { vo2: 265, rq: .82, co: 5.2, f: 14, temp: 36.9 },
-  meal: { vo2: 290, rq: .9, co: 5.6, f: 14, temp: 37 }, exercise: { vo2: 2000, rq: .95, co: 16, f: 38, temp: 37.9 } };
+  meal: { vo2: 290, rq: .9, co: 5.6, f: 14, temp: 37 }, exercise: { vo2: 2000, rq: .95, co: 16, f: 26, temp: 37.9 } };
 
 /* haemoglobin: Hill curve with a shifting P50 */
 const HB = 150, N_HILL = 2.7;
@@ -3004,13 +3004,16 @@ const makeLung = () => {
   const PIO2 = () => .2093 * (PB() - 47);
   const PICO2 = () => S.co2 ? .05 * (PB() - 47) : 0;
   const vco2 = () => body().vo2 * body().rq;
-  const VEphase = () => ({ sleep: 6.2, rest: 7, meal: 7.6, exercise: 70 })[O.state().phase];
+  const VEphase = () => ({ sleep: 6.2, rest: 7, meal: 7.6, exercise: 48 })[O.state().phase];
+  /* dead space per breath, L: the condition's (anatomical ~0.15 L) plus ~0.15 L more in the run,
+     as bigger breaths reach more poorly perfused units; VD/VT still falls, from ~0.3 to ~0.16 */
+  const vdNow = () => cond().vd + (O.state().phase === "exercise" ? .15 : 0);
 
   /* --- control: what ventilation the brainstem asks for (L/min) --- */
   function hypoxia(){ return clamp(14 / Math.max(1, S.PaO2 - 25) - .19, 0, 3); }
   function command(){
     const ph = O.state().phase, G = 2 * (ph === "sleep" ? .6 : 1) * (S.cond === "copd" ? .6 : 1), hyp = hypoxia();
-    let ve = 28 * vco2() / 1000 * (ph === "exercise" ? 1.12 : 1) + G * (S.PaCO2 - 40) * (1 + hyp) + 5 * hyp + cond().drive;
+    let ve = 28 * vco2() / 1000 * (ph === "exercise" ? .9 : 1) + G * (S.PaCO2 - 40) * (1 + hyp) + 5 * hyp + cond().drive;
     return Math.max(0, ve);
   }
   function control(dt){
@@ -3026,7 +3029,7 @@ const makeLung = () => {
   }
   /* --- gas stores: CO₂ slow (20 L), O₂ fast (6 L) --- */
   function gases(dt){
-    const VA = Math.max(0, S.VE - S.f * cond().vd) / 60;   /* L/s */
+    const VA = Math.max(0, S.VE - S.f * vdNow()) / 60;   /* L/s */
     const k = S.ff ? 10 : 1;
     S.PACO2 += (.863 * vco2() / 60 + VA * PICO2() - VA * S.PACO2) / 20 * dt * k;
     S.PAO2 += (VA * (PIO2() - S.PAO2) - .863 * body().vo2 / 60) / 6 * dt * k;
@@ -3038,11 +3041,11 @@ const makeLung = () => {
   /* --- V/Q and diffusion: an A–a gradient from three zones and a shunt --- */
   function exchange(){
     const ph = O.state().phase, c = cond();
-    const hco3 = 24 - (ph === "exercise" ? 4 : 0);
+    const hco3 = 24 - (ph === "exercise" ? 1.5 : 0);   /* a little lactate near the ventilatory threshold */
     S.pH = 6.1 + Math.log10(hco3 / (.03 * S.PaCO2));
     if (!S.tempTouched) S.temp = body().temp;
     S.p50 = 26.8 * Math.pow(10, .48 * (7.4 - S.pH)) * Math.exp(.024 * (S.temp - 37)) * Math.pow(S.bpg / 5, .3) * (S.fetal ? .71 : 1);
-    const VA = Math.max(1, S.VE - S.f * c.vd), Q = body().co, vo2 = body().vo2, pio2 = PIO2();
+    const VA = Math.max(1, S.VE - S.f * vdNow()), Q = body().co, vo2 = body().vo2, pio2 = PIO2();
     if (S.mode === "hold") return;
     /* ventilation and blood flow per zone (totals preserved) */
     const vw = ZONES.map((z, i) => z.V * c.V[i]), qw = ZONES.map((z, i) => z.Q * c.Q[i]);

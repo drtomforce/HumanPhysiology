@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* Fact-check scan: keeps fact-check/ledger.json in step with the pages (see FACTUAL_CHECK.md).
 
-   What it reads, per page (index.html is page "body", organs/<id>.html is page "<id>"):
+   What it reads, per page (index.html is page "body", organs/<id>.html is page "<id>", and the shared
+   ORGAN ENGINE JS block of organs/_template.html is page "engine"):
      - every string and number in the <script type="application/json"> blocks, keyed like the
        in-app reporter: "<block id>:<json path>", e.g. body-content:topics.heart.phases.exercise.college
      - every top-level `const UPPERCASE = [ … ]` or `{ … }` in the page's own scripts (the shared
@@ -46,7 +47,9 @@ function die(msg){ console.error(msg); process.exit(2); }
 /* ---------- reading the pages ---------- */
 function pageFiles(){
   const organs = readdirSync(join(root, "organs")).filter(f => f.endsWith(".html") && f !== "_template.html").sort();
-  return [{ id: "body", path: join(root, "index.html") }, ...organs.map(f => ({ id: f.replace(/\.html$/, ""), path: join(root, "organs", f) }))];
+  return [{ id: "body", path: join(root, "index.html") }, ...organs.map(f => ({ id: f.replace(/\.html$/, ""), path: join(root, "organs", f) })),
+    /* the shared ORGAN ENGINE JS, once (it is synced into every organ page): phase vitals, schedule, rhythm */
+    { id: "engine", path: join(root, "organs", "_template.html"), engine: true }];
 }
 const hash = s => createHash("sha1").update(s).digest("hex").slice(0, 12);
 const squash = s => s.replace(/\s+/g, " ").trim();
@@ -65,8 +68,10 @@ function jsonItems(html, out){
   }
 }
 
-/* the page's own JS: inline <script> blocks that aren't JSON, without the synced engine blocks */
-function ownScript(html){
+/* the page's own JS: inline <script> blocks that aren't JSON, without the synced engine blocks
+   (or, for the "engine" page, only the ORGAN ENGINE JS block) */
+function ownScript(html, engine){
+  if (engine) return (html.match(/\/\* ===== ORGAN ENGINE JS · BEGIN[\s\S]*?\/\* ===== ORGAN ENGINE JS · END ===== \*\//) || [""])[0];
   const js = [...html.matchAll(/<script(?![^>]*type="application\/json")[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join("\n");
   return js.replace(/\/\* ===== ([A-Z ]+) · BEGIN[\s\S]*?\/\* ===== \1 · END ===== \*\//g, "");
 }
@@ -102,8 +107,8 @@ function topLevelParts(lit){
   return parts.map(p => p.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\n)\s*\/\/[^\n]*/g, "$1").trim()).filter(Boolean);
 }
 
-function codeItems(html, ignore, out){
-  const js = ownScript(html);
+function codeItems(html, ignore, out, engine){
+  const js = ownScript(html, engine);
   const seen = {};
   for (const m of js.matchAll(/^const ([A-Z][A-Z0-9_]*) *= *([\[{])/gm)){
     const name = m[1];
@@ -144,12 +149,12 @@ const today = new Date().toISOString().slice(0, 10);
 const report = [];
 let dirty = false, unchecked = 0, marked = 0;
 
-for (const { id: page, path } of pageFiles()){
+for (const { id: page, path, engine } of pageFiles()){
   if (!selected(page)) continue;
   const html = readFileSync(path, "utf8");
   const items = new Map();
-  jsonItems(html, items);
-  codeItems(html, new Set(ledger.ignore[page] || []), items);
+  if (!engine) jsonItems(html, items);
+  codeItems(html, new Set(ledger.ignore[page] || []), items, engine);
 
   const rows = ledger.pages[page] || {};
   const fresh = [], changed = [], removed = Object.keys(rows).filter(k => !items.has(k));

@@ -31,6 +31,7 @@ A ledger records what has been checked (see [Keeping up with nightly builds](#ke
 
 The scope is defined by pattern, not by a list of today's pages, so new pages and systems are covered automatically.
 
+0. **The shared organ engine**: the `ORGAN ENGINE JS` block of `organs/_template.html` is scanned once as page `engine` (phase vitals, schedule, the beat and breath loop), because the organ pages' copies are skipped.
 1. **Text**: every string and number in every `<script type="application/json">` block in `index.html` and `organs/*.html`, except `organs/_template.html`:
    - `#body-content`, `#body-glossary` and `#body-hours` in `index.html`;
    - `#organ-meta`, `#organ-content` and `#organ-glossary` on each organ page.
@@ -117,11 +118,11 @@ One canonical value per shared quantity. Every page uses these values or explain
 | Stroke volume | ~70 mL | ~105 mL upright running (+~50%) | body, heart | Guyton & Hall ch. 9; Rowell 1993 |
 | Cardiac output | ~5 L/min (~4 asleep) | ~16 L/min at VO₂ 2 L/min; >20 possible | body, heart, kidneys, liver | Guyton & Hall ch. 20, 21 |
 | Blood pressure | ~118/76 awake, ~10–15% lower asleep | SBP ~165, DBP flat in the run | body, heart | ESC/ESH 2023 (dipping); ACSM |
-| O₂ uptake (VO₂) | ~250 mL/min awake, ~210 asleep | ~2.0 L/min in the run | body, lungs | 3.5 mL/kg/min = 1 MET; ACSM |
+| O₂ uptake (VO₂) | ~250 mL/min awake, ~210 asleep | ~2.0 L/min in the run, a fast jog (~8 METs, about the ventilatory threshold for an average adult) | body, lungs | 3.5 mL/kg/min = 1 MET; ACSM |
 | SpO₂ / SaO₂ | 97–98% awake, ~96% asleep | ~97% in the run | body, heart, lungs | West's Respiratory Physiology ch. 6 |
-| PaO₂ / PaCO₂ | ~94 / 40 mmHg awake; PaCO₂ +3–7 asleep | PaCO₂ ~40 until the respiratory compensation point | body, lungs, brain | West ch. 5, 6, 9 |
+| PaO₂ / PaCO₂ | ~94 / 40 mmHg awake; PaCO₂ +3–7 asleep | ~94 / 40 in the run (a fast jog, below respiratory compensation); pH ~7.37 | body, lungs, brain | West ch. 5, 6, 9 |
 | Mixed venous O₂ saturation | ~70% | ~30–35% in the run | body, heart, lungs | Fick; Guyton & Hall ch. 41 |
-| Tidal volume, breathing rate, dead space | ~500 mL × 14/min (~7 L/min); dead space ~150 mL | VT ~1.9 L; rate under review ([issue](#status)) | body, lungs | West ch. 2, 10 |
+| Tidal volume, breathing rate, dead space | ~500 mL × 14/min (~7 L/min); dead space ~150 mL (VD/VT ~0.3) | Fast jog: 26/min × 1.85 L ≈ 48 L/min (VE/VO₂ ≈ 24), dead space ~0.3 L (VD/VT ~0.16) | body, lungs, engine | West ch. 2, 10; Wasserman, *Principles of Exercise Testing* |
 | GFR, renal blood flow | ~125 mL/min; RBF ~1.1–1.2 L/min (~20–25% of CO) | GFR −15% asleep, −25% in the run, up to +20–25% after a protein meal | body, kidneys | Boron & Boulpaep ch. 34 |
 | Urine output per day | ~1.2–1.5 L in six voids; bladder ~450 mL | osmolality ~530 by day, ~900–1000 overnight | body, kidneys | Boron & Boulpaep ch. 38 |
 | Fasting and after-meal blood glucose | 84–92 mg/dL (4.7–5.1 mmol/L) | peaks ~125–130 mg/dL, 30–60 min after a meal | body, pancreas, liver | ADA Standards of Care 2026 |
@@ -153,15 +154,16 @@ The backlog, in order of exposure: the body view is what every reader sees first
 
 | # | Page / part | Items | Checked | Last check | Open issues |
 |---|---|---|---|---|---|
-| 1 | `index.html` body view (phases, systems, journeys, hours, model numbers) | 2602 | 1% (the `PHYSIO` keyframes, `Physio.at()`, sleep cycles, voids) | 2026-11-17 | 1 to file: run ventilation |
+| 1 | `index.html` body view (phases, systems, journeys, hours, model numbers) | 2602 | 2% (the `PHYSIO` keyframes, `Physio.at()`, sleep cycles, voids, exercise breathing text) | 2026-11-17 | |
 | 2 | Heart | 1111 | 0% | | |
-| 3 | Lungs | 743 | 0% | | |
+| 3 | Lungs | 743 | 1% (the run's breathing model and text) | 2026-11-17 | |
 | 4 | Kidneys | 1128 | 0% | | |
 | 5 | Brain | 1027 | 0% (`SLEEP_CYCLES` fixed with the body view) | 2026-11-17 | |
 | 6 | Stomach & gut | 1342 | 0% | | |
 | 7 | Liver | 934 | 0% | | |
 | 8 | Pancreas | 910 | 0% | | |
 | 9 | Glossaries (included in the counts above) | | 0% | | |
+| 10a | Shared organ engine (`engine`: phase vitals, schedule, beat and breath loop) | 9 | 56% | 2026-11-17 | |
 | 10 | `README.md` (not in the ledger; check by hand) | | 0% | | |
 
 Item counts come from `node fact-check/scan.mjs` on 2026-11-17. A glossary's items are the `body-glossary:` and `organ-glossary:` keys on each page.

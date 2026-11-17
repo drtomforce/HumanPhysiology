@@ -8,13 +8,13 @@ The README describes what already exists. This file only lists what doesn't exis
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 13: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat | New organs: see [New organs for the body](#new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 6: heart, lungs, brain, kidneys, stomach & gut, liver | 7 existing organs + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 7: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas | 6 existing organs + any new ones |
 | Body systems animated on the body | 6: circulatory, nervous, endocrine, respiratory, digestive, urinary | 4: immune & lymphatic, muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | One per new system, plus cross-system journeys |
 
 ## Next up
 
-Both items here are done. The liver page is built; the next step is the pancreas page (see [Suggested order](#suggested-order)).
+Both items here are done. The liver and pancreas pages are built; the next step is the immune & lymphatic system on the body (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -81,7 +81,13 @@ Built as planned below; see the README for what it covers. Still open for this p
 - **Bile and bilirubin**: haem → bilirubin → conjugation → bile → urobilinogen loop. Use this section to sort jaundice into pre-hepatic, hepatic and post-hepatic, with urine and stool colour.
 - **Scenarios**: fatty liver, cirrhosis with portal hypertension (varices, ascites, caput medusae), hepatitis, a gallstone blocking the common bile duct, a paracetamol overdose, a long fast.
 
-### 1.4 Pancreas (`organs/pancreas.html`)
+### 1.4 Pancreas (`organs/pancreas.html`) ✅ Done
+Built as planned below; see the README for what it covers. What changed from the plan, and what is still open for this page:
+- **Electrical bursts are drawn, not solved**: the β-cell's plateau fraction comes from the coupling chain (glucokinase → ATP/ADP → K_ATP), but the bursts themselves are not a channel-level model (Chay–Keizer or similar). A real ion-channel β-cell, with gap-junction coupling across an islet, would let readers block channels one by one as on the brain page.
+- **Glucagon counter-regulation** is a simple rule (low glucose, intra-islet insulin, stress), without a separate adrenaline or cortisol channel; exercise is not yet a test you can run, and the body's insulin and glucagon channels are not yet driven by this model (or the reverse).
+- **The day**: the tests run on their own clocks (three hours, or a meal), not on the body's hour. A day of meals with insulin doses (carbohydrate counting, a pump) would tie it to the body and the liver page's day.
+- **More scenarios**: MODY (glucokinase and HNF1A), neonatal diabetes treated with a sulfonylurea, an insulinoma, gestational diabetes, chronic pancreatitis with type 3c diabetes, SGLT2 inhibitors (shared with the kidneys page) and DPP-4 inhibitors.
+- **Exocrine**: the enzyme cascade is a list, not a step-through; the phases of secretion (cephalic, gastric, intestinal) are shown on one meal clock rather than separated; a secretin test and faecal elastase could be added. Carrying a condition across to the liver page (fatty liver and insulin resistance) and the gut page (enzyme capsules, steatorrhoea) is still to do.
 - **Anatomy**: head, body and tail, the duct system and sphincter of Oddi, acini, and the islets of Langerhans (α, β, δ, PP cells).
 - **The β-cell**: glucose → GLUT2 → ATP/ADP → K_ATP channel closes → depolarisation → Ca²⁺ → insulin granules, with first- and second-phase release. Sliders for glucose, a sulfonylurea and GLP-1 (incretin effect).
 - **Glucose control**: an oral glucose tolerance test and a clamp, driven by a minimal model of glucose and insulin (Bergman), showing insulin sensitivity versus secretion. Glucagon counter-regulation.
@@ -255,8 +261,8 @@ These span several organs and are best built as their own pages (for example `ex
 2. ~~Gut page~~ (done).
 3. ~~Export utility~~ (done).
 4. ~~Mobile view of the body~~ (done).
-5. ~~Liver page~~ (done). **The pancreas page**, which completes the trio and builds on the bite journeys and the insulin/glucagon channels.
-6. Immune & lymphatic system on the body, with the spleen and lymph nodes as a new organ.
+5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
+6. **Immune & lymphatic system on the body**, with the spleen and lymph nodes as a new organ.
 7. Muscles and bones pages, then the muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).
 9. Eyes, ears and throat pages.

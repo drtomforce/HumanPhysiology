@@ -446,6 +446,18 @@ canvas.trace{ display:block; width:100%; }
 .btn{ border:1px solid var(--ink); background:var(--ink); color:var(--surface); border-radius:999px; padding:6px 13px; font-size:13px; font-weight:500; cursor:pointer; }
 .btn.ghost{ background:transparent; color:var(--ink); border-color:var(--line-strong); }
 .btn:hover{ opacity:.9; }
+.sten-where{ display:flex; align-items:center; gap:10px; margin:12px 0 10px; font-size:13px; font-weight:500; }
+.sten-where select{ flex:1; min-width:0; font:inherit; font-weight:400; padding:6px 8px; border-radius:8px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); }
+.sten-effort{ margin-top:10px; }
+.sd{ margin-top:12px; display:grid; gap:7px; font-size:12.5px; }
+.sd .bar{ display:grid; grid-template-columns:118px 1fr 44px; align-items:center; gap:8px; }
+.sd .bar .t{ height:10px; border-radius:5px; background:var(--surface-2); position:relative; overflow:hidden; }
+.sd .bar .t i{ position:absolute; inset:0 auto 0 0; border-radius:5px; background:var(--c); }
+.sd .bar .t i.need{ background:repeating-linear-gradient(135deg, var(--ink) 0 3px, color-mix(in srgb, var(--ink) 55%, transparent) 3px 6px); }
+.sd .bar b{ font-weight:600; font-variant-numeric:tabular-nums; text-align:right; }
+.sd .status{ padding:8px 10px; border-radius:10px; background:var(--bg); border-left:3px solid var(--c, var(--ink)); }
+.sd .status b{ display:block; margin-bottom:2px; }
+.sd .fine{ color:var(--muted); font-size:11.5px; }
 .alert{ margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--bg); border-left:3px solid var(--ink); font-size:13.5px; }
 .alert b{ display:block; margin-bottom:2px; }
 .two{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
@@ -601,6 +613,18 @@ canvas.trace{ display:block; width:100%; }
         <p class="cap" id="ecg12cap"></p>
       </div>
       <aside class="side">
+        <div class="panel" id="stenPanel">
+          <h3>Narrow an artery: angina</h3>
+          <p class="prose small" data-text="sections.coronary.angina"></p>
+          <div class="sten-where"><label for="stenWhere">Where</label><select id="stenWhere"></select></div>
+          <div class="sliders">
+            <div class="sl"><label for="stenIn">Narrowing (of its width) <output id="stenOut">none</output></label>
+              <input id="stenIn" type="range" min="0" max="100" step="5" value="0">
+              <div class="ends"><span>Open</span><span>Blocked</span></div></div>
+          </div>
+          <div class="fig-tools sten-effort" id="stenEffort"><span>Effort</span></div>
+          <div class="sd" id="stenMeter" aria-live="polite"></div>
+        </div>
         <div class="panel">
           <h3>Flow in the coronary arteries through each beat</h3>
           <canvas class="trace" id="corFlow" data-export-name="Coronary blood flow" height="190" aria-label="Blood flow in the left and right coronary arteries"></canvas>
@@ -752,6 +776,12 @@ canvas.trace{ display:block; width:100%; }
         "hs": "Two coronary arteries leave the aorta just above the aortic valve. The left one splits into the left anterior descending (LAD) and the circumflex; the right one runs in the groove on the right. Tap an artery to see what it feeds, then block it to see what happens to the heart and the ECG.",
         "college": "The left main splits into the LAD (anterior wall, anterior two-thirds of the septum, apex) and the circumflex (lateral wall); the RCA feeds the right ventricle and usually the inferior wall and the SA and AV nodes. Whichever artery gives the posterior descending artery is ‘dominant’. Block a segment to see its territory, ST changes and the effect on pumping.",
         "phd": "Coronary anatomy is variable: ~70% right-dominant, ~10% left-dominant, ~20% co-dominant. ECG localisation by ST elevation is probabilistic and modified by dominance, collaterals and wraparound LADs. The model shows the textbook mapping onto the AHA 17-segment model."
+      },
+      "angina": {
+        "ms": "Fatty plaques narrow arteries slowly. Narrow one here, then change the effort: the heart needs more blood when it works harder, and a narrowed artery may not let enough through.",
+        "hs": "A narrowed artery can still feed the heart at rest, because the tiny vessels beyond it open up. During effort the heart needs more blood than can squeeze through: the muscle runs short of oxygen and hurts. That is angina, and it goes away with rest.",
+        "college": "Resting flow is preserved until a stenosis narrows ~85% of the diameter, because arterioles dilate to compensate; what is lost first is the coronary flow reserve. When demand (heart rate × systolic pressure) exceeds the capped supply, the subendocardium becomes ischaemic: ST depression, hypokinesis, angina.",
+        "phd": "The model uses Gould’s stenosis relation (ΔP = fQ + sQ², viscous and separation losses), a microvascular resistance that can fall to a quarter of rest (CFR 4) and a diastolic-time factor for the left ventricle. FFR is distal over aortic pressure at maximal hyperaemia; ≤ 0.80 predicts benefit from revascularisation better than angiographic percent stenosis."
       },
       "hint": {
         "ms": "Tap one of the coloured arteries.",
@@ -1330,6 +1360,27 @@ canvas.trace{ display:block; width:100%; }
         "college": "Proximal LAD occlusion: anterior, septal and apical infarction with a large fall in Emax, EF and stroke volume; ST elevation V1–V4."
       },
       {
+        "id": "angina",
+        "name": "Angina on exercise",
+        "params": {
+          "occl": "ladProx",
+          "sten": "75",
+          "hour": 17.5
+        },
+        "ms": "A fatty plaque narrows the LAD by three quarters. At rest it is fine, but during exercise the heart needs more blood than can get through: chest pain that goes away with rest.",
+        "college": "75% proximal LAD stenosis with exertion: demand (rate–pressure product) outgrows the capped flow, causing subendocardial ischaemia with ST depression and anterior hypokinesis. Switch the effort to Rest to watch it resolve."
+      },
+      {
+        "id": "unstable",
+        "name": "Angina at rest",
+        "params": {
+          "occl": "rcaProx",
+          "sten": "90"
+        },
+        "ms": "The right coronary artery is narrowed by 90%: the bottom wall is short of blood even at rest.",
+        "college": "Critical 90% RCA stenosis: maximal flow falls below resting demand, giving ischaemia at rest, the picture of unstable angina."
+      },
+      {
         "id": "lbbbMI",
         "name": "Heart attack hidden by LBBB",
         "params": {
@@ -1406,6 +1457,22 @@ canvas.trace{ display:block; width:100%; }
       "pump": {
         "ms": "{n} of the 17 wall segments of the left ventricle get no blood, so it squeezes with only {pct}% of its normal strength. The loop gets narrower and less blood leaves with each beat.",
         "college": "Ischaemia in {n} of 17 segments lowers end-systolic elastance (Emax ×{emax}). The end-systolic pressure–volume line flattens, so at the same preload the end-systolic volume rises and stroke volume and ejection fraction fall."
+      },
+      "pumpIsch": {
+        "ms": "{n} of the 17 wall segments are short of blood, so the left ventricle squeezes with {pct}% of its strength until the effort eases.",
+        "college": "Ischaemia of the subendocardium in {n} of 17 segments makes them hypokinetic (Emax ×{emax}): end-systolic volume rises and stroke volume falls while demand exceeds supply, and recovers with rest."
+      },
+      "stenOk": {
+        "ms": "The {artery} is {pct}% narrowed, but at this effort the tiny vessels beyond it open wider to make up for it: the wall gets enough blood. Turn up the effort to see if it still can.",
+        "college": "{pct}% diameter stenosis of the {artery}: resting flow is preserved by arteriolar dilation (autoregulation), at the cost of coronary flow reserve. Supply can reach {get}× resting flow against a demand of {need}× (FFR {ffr})."
+      },
+      "angina": {
+        "ms": "The heart is working harder, so its wall needs {need}× its resting blood, but only {get}× can get through the {pct}% narrowed {artery}. The inner layer runs short of oxygen: that is angina, felt as chest pressure. Rest and it goes away.",
+        "college": "Demand ischaemia: the rate–pressure product raises oxygen demand to {need}× rest, while the {pct}% stenosis caps flow at {get}× (FFR {ffr}). The subendocardium suffers first (highest wall stress, perfused only in a shortened diastole), giving ST depression, hypokinesis and stable angina that resolves when demand falls."
+      },
+      "anginaRest": {
+        "ms": "The {artery} is so narrow ({pct}%) that even at rest not enough blood gets through. Chest pain at rest is a warning that a heart attack may be close.",
+        "college": "Critical stenosis ({pct}%): maximal flow ({get}×) no longer covers resting demand ({need}×), so ischaemia occurs at rest. Rest angina is unstable angina, an acute coronary syndrome usually caused by a ruptured plaque with a non-occlusive thrombus."
       },
       "rv": {
         "ms": "The right ventricle is short of blood too, so it pushes less blood through the lungs and the left side fills less.",
@@ -1492,6 +1559,10 @@ canvas.trace{ display:block; width:100%; }
   "ST elevation": { "def": "A raised segment between the QRS and T wave, a sign of injury from blocked blood supply.", "match": ["ST elevation"] },
   "depolarise": { "def": "When the inside of a cell becomes less negative, firing an electrical signal.", "match": ["depolarise", "depolarises", "depolarising", "depolarisation"] },
   "ischaemia": { "def": "Too little blood flow for a tissue’s needs.", "match": ["ischaemia", "ischaemic"] },
+  "angina": { "def": "Chest pain or pressure when the heart muscle gets less blood than it needs, typically during effort; it eases with rest.", "match": ["angina"] },
+  "stenosis": { "def": "A narrowing of a vessel or valve.", "match": ["stenosis"] },
+  "FFR": { "def": "Fractional flow reserve: blood pressure beyond a narrowing divided by aortic pressure, with the vessels fully widened. Below 0.80 the narrowing limits flow.", "match": ["FFR", "fractional flow reserve"] },
+  "ST depression": { "def": "A lowered segment between the QRS and T wave, the usual ECG sign of ischaemia of the inner layer of the heart wall.", "match": ["ST depression"] },
   "dominant": { "def": "The coronary artery that gives off the posterior descending artery.", "match": ["dominant", "dominance"] },
   "Windkessel": { "def": "German for ‘air chamber’: the stretchy aorta storing part of each beat and releasing it between beats.", "match": ["Windkessel"] },
   "baroreceptors": { "def": "Stretch sensors in the aorta and carotid arteries that measure blood pressure.", "match": ["baroreceptors", "baroreceptor", "baroreflexes"] },
@@ -3331,11 +3402,25 @@ const ART = {
 };
 const ART_IDS = Object.keys(ART);
 
+/* A NARROWED CORONARY ARTERY (Gould). Pressure and flow are relative to rest: mean aortic pressure 90 mmHg = 1,
+   resting flow = 1. The small vessels beyond can open to a quarter of their resting resistance (R_MIN), so a healthy
+   artery can carry about 4× its resting flow (the coronary flow reserve). The pressure lost across a stenosis rises
+   with the flow through it: linearly (viscous friction, ∝ 1/area²) and with its square (the jet's lost energy at the
+   exit, ∝ (1/area − 1)²). So a 50% narrowing barely matters, 70% caps flow near what exercise needs, and beyond
+   ~85% even resting flow can't get through. */
+const R_MIN = .25;
+function maxFlow(sten, pn){
+  if (sten >= 100) return 0;
+  const a = (1 - sten / 100) ** 2, f = .0002 * (1 / (a * a) - 1), q = .0002 * (1 / a - 1) ** 2, b = R_MIN + f;
+  return q < 1e-9 ? pn / b : (-b + Math.sqrt(b * b + 4 * q * pn)) / (2 * q);
+}
+/* the share of its main channel's flow (left or right coronary) that a blocked segment carries */
+const flowShare = (seg, dom) => seg === "lm" ? .9 : owner(seg, dom) === "rca" ? .85 : .55;
 /* a factory: the page runs the heart you change, and an untouched healthy one as the reference */
 const makeHeart = () => {
   const S = {
     t: 0, Vlv: 125, Vla: 60, Pa: 85, Plv: 5, Pla: 8, Qmv: 0, Qav: 0, el: 0, lca: 0, rca: 0,
-    rhythm: "sinus", tone: 0, user: { p: 1, a: 1, c: 1 }, dom: "right", occl: null, art: "young",
+    rhythm: "sinus", tone: 0, user: { p: 1, a: 1, c: 1 }, dom: "right", occl: null, sten: 100, art: "young",
     hr: 68, mech: { ...PRESET.rest },
     P: [], V: [], pend: [], nextP: 0.3, wk: 0, m2: 0, lastV: -1, tvPrev: -1, nextAF: 0.4,
     phase: 3, aopen: 0, mopen: 1
@@ -3346,11 +3431,37 @@ const makeHeart = () => {
   const cyc = { minV: 1e9, maxPa: 0, minPa: 1e9 };
   const beat = { hr: 68, sv: 70, edv: 125, esv: 55, ef: 60, sbp: 120, dbp: 76, co: 4.8, n: 0 };
 
-  function affected(){ return S.occl ? new Set(downstream(S.occl, S.dom)) : new Set(); }
+  /* oxygen supply and demand beyond a narrowing. A complete block starves the full thickness of the wall at once
+     (transmural: ST elevation, a heart attack). A partial one only starves it when the heart's demand outgrows what
+     can get through, and then the inner layer first (subendocardial: ST depression, angina), easing again with rest. */
+  const sd = { demand: 1, supply: 4, healthy: 4, ratio: 4, ffr: 1, level: 0 };
+  let iL = 0;
+  const transmural = () => !!S.occl && S.sten >= 100;
+  function updateSupply(dt){
+    const b = beat, sten = S.occl ? S.sten : 0;
+    /* demand follows the rate–pressure product (heart rate × systolic pressure, 1 at a resting 68/min and 118 mmHg)
+       and, more weakly, how hard the muscle contracts */
+    sd.demand = b.hr * b.sbp / (68 * 118) * Math.pow(S.mech.c * S.user.c * (1 + .25 * Math.max(0, S.tone)), .2);
+    /* supply: the most flow the artery can carry at this perfusion pressure; the left ventricle is perfused
+       mostly in diastole, which a fast heart shortens */
+    const pn = (b.sbp + 2 * b.dbp) / 3 / 90, left = !S.occl || owner(S.occl, S.dom) !== "rca";
+    const dia = left ? Math.sqrt(clamp(.75 - .0019 * b.hr, .3, .72) / .62) : 1, q = maxFlow(sten, pn);
+    sd.healthy = maxFlow(0, pn) * dia;
+    sd.supply = Math.max(.12, q * dia);                 /* collaterals bring a little even past a complete block */
+    sd.ffr = sten >= 100 ? 0 : q * R_MIN / pn;          /* pressure beyond the narrowing ÷ aortic pressure, at full dilation */
+    sd.ratio = sd.supply / Math.max(.1, sd.demand);
+    const target = sten >= 100 ? 1 : sten > 0 ? clamp((1 - sd.ratio) / .45) : 0;
+    iL += (target - iL) * (1 - Math.exp(-dt / 2.5));     /* ischaemia builds and fades over a few seconds */
+    sd.level = sten >= 100 ? 1 : iL;
+  }
+  /* the segments starved now: the whole territory when blocked, and when narrowed only while demand outruns supply */
+  function affected(){ return S.occl && S.sten > 0 && (transmural() || iL > .03) ? new Set(downstream(S.occl, S.dom)) : new Set(); }
   function affectedSegs(){ const a = affected(), out = new Set(); a.forEach(s => (OWN[s] || []).forEach(n => out.add(n))); return out; }
   function effects(){
-    const a = affected(), segs = affectedSegs();
-    return { sa: a.has("rcaProx") ? .82 : 1, pr: a.has("pl") ? .08 : 0, emax: 1 - .85 * segs.size / 17, rv: a.has("rcaProx") ? .88 : 1 };
+    const a = affected(), segs = affectedSegs(), tr = transmural(), L = tr ? 1 : iL;
+    /* a starved inner layer only weakens the wall (hypokinesis); a full-thickness infarct stops it, and only an
+       infarct takes out the nodes' arteries and the right ventricle */
+    return { sa: tr && a.has("rcaProx") ? .82 : 1, pr: tr && a.has("pl") ? .08 : 0, emax: 1 - .85 * segs.size / 17 * (tr ? 1 : .6 * L), rv: tr && a.has("rcaProx") ? .88 : 1, level: L, transmural: tr };
   }
   function sinusRate(){
     const base = O.vitals().hr * (S.tone >= 0 ? 1 + .55 * S.tone : 1 + .42 * S.tone);
@@ -3425,8 +3536,8 @@ const makeHeart = () => {
     S.Plv = Plv; S.Pla = Pla; S.Qmv = Qmv; S.Qav = Qav; S.Qpv = Qpv; S.el = el; S.Emax = Emax; S.Qout = S.Pa / R;
     /* coronary flow: perfusion pressure minus the squeeze of the wall around the vessels */
     S.lca = Math.max(0, S.Pa - .9 * el * Plv) / 95; S.rca = Math.max(0, S.Pa - .22 * el * Plv) / 95;
-    /* a blocked artery: flow beyond the clot falls to what collaterals bring */
-    if (S.occl){ const own = owner(S.occl, S.dom); if (own === "rca") S.rca *= .15; else S.lca *= S.occl === "lm" ? .1 : .45; }
+    /* a blocked artery: flow beyond the clot falls to what collaterals bring; a narrowed one carries at most what fits through */
+    if (S.occl && S.sten > 0){ const m = transmural() ? 0 : Math.min(1, sd.ratio), k = 1 - flowShare(S.occl, S.dom) * (1 - m); if (owner(S.occl, S.dom) === "rca") S.rca *= k; else S.lca *= k; }
     /* cycle phase: 0 isovolumic contraction, 1 ejection, 2 isovolumic relaxation, 3 filling */
     const ao = Qav > 0 ? 1 : 0, mo = Qmv > 0 ? 1 : 0;
     if (ao) S.phase = 1; else if (mo) S.phase = 3; else if (S.phase === 1) S.phase = 2; else if (S.phase === 3 && el > .02) S.phase = 0;
@@ -3448,10 +3559,23 @@ const makeHeart = () => {
       electrical(); mechanics(h); S.t += h;
       recAcc += h; if (recAcc >= REC_DT){ recAcc -= REC_DT; record(); }
     }
+    updateSupply(dt);
   }
   /* --- ECG synthesis --- */
   function qtFor(rr){ return clamp(.4 * Math.sqrt(clamp(rr, .3, 2)), .28, .46); }
-  function stFor(name){ let s = 0; affected().forEach(seg => { s += (ST_SIG[seg] || {})[name] || 0; }); return clamp(s, -.3, .38); }
+  function stFor(name){
+    const a = affected(); if (!a.size) return 0;
+    let s = 0;
+    if (transmural()) a.forEach(seg => { s += (ST_SIG[seg] || {})[name] || 0; });
+    else {
+      /* subendocardial ischaemia depresses ST, a little more in the leads facing the starved wall, but it localises
+         poorly: V4–V6 show it most often whichever artery is narrowed. Much of the left ventricle → ST up in aVR. */
+      let face = 0; a.forEach(seg => { const v = (ST_SIG[seg] || {})[name] || 0; if (v > 0) face += v; });
+      s = name === "aVR" ? iL * (S.occl === "lm" || S.occl === "ladProx" ? .1 : .04)
+        : -iL * (.5 * Math.min(.3, face) + (["V4", "V5", "V6"].includes(name) ? .1 : ["I", "II", "aVF"].includes(name) ? .04 : 0));
+    }
+    return clamp(s, -.3, .38);
+  }
   function ecg(name, t, st){
     const L = LEADS[name]; let v = 0;
     if (st === undefined) st = stFor(name);
@@ -3504,7 +3628,7 @@ const makeHeart = () => {
     if (tt < qt - .01) return -5 - 83 * smooth(qt - .11, qt - .01, tt);
     return -88;
   }
-  return { S, rec, beat, advance, ecg, stFor, apSA, apV, sinusRate, affected, affectedSegs, effects, qtFor,
+  return { S, rec, beat, advance, ecg, stFor, apSA, apV, sinusRate, affected, affectedSegs, effects, qtFor, transmural, supply: () => sd,
     reset(){ S.wk = 0; S.m2 = 0; S.nextAF = S.t + .2; if (S.nextP < S.t) S.nextP = S.t + .1; } };
 };
 const Heart = makeHeart(), RefHeart = makeHeart();
@@ -4294,10 +4418,11 @@ const Cor3D = (() => {
   /* ---------- state from the simulation ---------- */
   function partOf(v){ return v.part === "pl" ? owner("pl", dom) : v.part; }
   function ownerOf(v){ return v.kind === "v" ? "vein" : v.part === "pl" ? owner("pl", dom) : v.part === "pda" ? owner("pda", dom) : owner(v.seg, dom); }
-  let up = new Set(), aff = new Set();
+  let up = new Set(), aff = new Set(), terr = new Set(), tr = false;
   function syncOccl(){
-    const S = Heart.S; aff = Heart.affected(); up = new Set();
-    if (S.occl) for (const s of ["lm", "ladProx", "ladMid", "lcx", "rcaProx", "rcaDist"]) if (s !== S.occl && downstream(s, S.dom).includes(S.occl)) up.add(s);
+    const S = Heart.S; aff = Heart.affected(); up = new Set(); tr = Heart.transmural();
+    terr = S.occl && S.sten > 0 ? new Set(downstream(S.occl, S.dom)) : new Set();
+    if (tr) for (const s of ["lm", "ladProx", "ladMid", "lcx", "rcaProx", "rcaDist"]) if (s !== S.occl && downstream(s, S.dom).includes(S.occl)) up.add(s);
     if (S.dom !== dom) buildVessels(S.dom);
   }
   function flowOf(v){
@@ -4305,14 +4430,17 @@ const Cor3D = (() => {
     if (v.kind === "v") return .3 + .9 * S.el;
     const own = ownerOf(v), right = own === "rca";
     let f = right ? Math.max(0, S.Pa - .22 * S.el * S.Plv) / 95 : Math.max(0, S.Pa - .9 * S.el * S.Plv) / 95;
-    if (aff.has(v.seg)) f *= .03; else if (up.has(v.seg)) f *= .55;
+    if (tr && aff.has(v.seg)) f *= .03; else if (up.has(v.seg)) f *= .55;
+    else if (terr.has(v.seg)) f *= Math.min(1, Heart.supply().ratio);   /* past a narrowing: no more than gets through */
     return f;
   }
   function step(dt, real){
     const S = Heart.S, b = Heart.beat;
-    const segsNow = Heart.affectedSegs(), k = 1 - Math.exp(-real / .45);
-    for (let n = 1; n <= 17; n++) segVal[n] += ((segsNow.has(n) ? 1 : 0) - segVal[n]) * k;
-    rvVal += ((aff.has("rcaProx") ? 1 : 0) - rvVal) * k;
+    aff = Heart.affected(); tr = Heart.transmural();
+    /* an infarct darkens the wall and makes it bulge; a starved inner layer only darkens it and weakens the squeeze */
+    const segsNow = Heart.affectedSegs(), k = 1 - Math.exp(-real / .45), depth = tr ? 1 : .6 * Heart.effects().level;
+    for (let n = 1; n <= 17; n++) segVal[n] += ((segsNow.has(n) ? depth : 0) - segVal[n]) * k;
+    rvVal += ((tr && aff.has("rcaProx") ? 1 : 0) - rvVal) * k;
     const kl = clamp((b.edv - S.Vlv) / Math.max(20, b.edv - b.esv));
     K = .12 * kl; KR = .1 * kl; LNG = 1 - .07 * kl;
     atr = 1 - .07 * clamp((S.Pla - 6) / 6) * (S.rhythm === "afib" ? .2 : 1);
@@ -4398,12 +4526,12 @@ const Cor3D = (() => {
     if (cam.ghost) for (const g of ghosts) drawGhost(ctx, g, col);
     drawClot(ctx, col);
     if (cam.labels) drawLabels(ctx, col);
-    if (Heart.S.occl) drawLumen(ctx, col);
+    if (Heart.S.occl && Heart.S.sten > 0) drawLumen(ctx, col);
   }
   function vesselRGB(v, col){
     if (v.kind === "v") return v.part === "acv" ? col.vein2 : col.vein;
     const own = ownerOf(v), c = rgb(O.color(ART_VAR[own]));
-    return aff.has(v.seg) && Heart.S.occl ? cmix(c, col.grey, .72) : c;
+    return tr && aff.has(v.seg) ? cmix(c, col.grey, .72) : c;
   }
   function pxW(v, i){ return Math.max(1.4, v.w * 1.15 * F * DC / (DC - v.cp[i * 3 + 2])); }
   function path(ctx, v, i0, i1){ ctx.beginPath(); ctx.moveTo(v.sp[i0 * 2], v.sp[i0 * 2 + 1]); for (let k = i0 + 1; k <= i1; k++) ctx.lineTo(v.sp[k * 2], v.sp[k * 2 + 1]); }
@@ -4426,7 +4554,7 @@ const Cor3D = (() => {
     }
     for (let k = i0; k < i1; k++) pickSegs.push({ x0: v.sp[k * 2], y0: v.sp[k * 2 + 1], x1: v.sp[k * 2 + 2], y1: v.sp[k * 2 + 3], w: wpx, part, z: it.z });
     /* blood in the vessel */
-    const stalled = v.kind === "a" && aff.has(v.seg) && Heart.S.occl;
+    const stalled = v.kind === "a" && tr && aff.has(v.seg);
     ctx.fillStyle = v.kind === "v" ? rgbs(cmix(col.vein, [255, 255, 255], .55), 1, .9) : stalled ? rgbs(col.isch, 1.4, .9) : "rgba(255,255,255,.92)";
     const rr = Math.max(.9, wpx * .22);
     for (const s of v.par){
@@ -4442,7 +4570,7 @@ const Cor3D = (() => {
   }
   /* the clot sits at the start of the blocked segment */
   function clotSpot(){
-    const S = Heart.S; if (!S.occl) return null;
+    const S = Heart.S; if (!S.occl || !S.sten) return null;
     const v = vessels.find(x => x.seg === S.occl && !x.name && x.kind === "a"); if (!v) return null;
     const i = Math.min(v.n - 1, 2);
     return { v, i, x: v.sp[i * 2], y: v.sp[i * 2 + 1], face: v.face[i] };
@@ -4452,7 +4580,9 @@ const Cor3D = (() => {
     const r = pxW(c.v, c.i) * .85 + 2, pulse = 1 + .08 * Math.sin(clock * 6);
     ctx.save(); ctx.globalAlpha = c.face ? 1 : .55;
     ctx.beginPath(); ctx.arc(c.x, c.y, r * 2.1 * pulse, 0, 7); ctx.strokeStyle = rgbs(col.sel, 1, .9); ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
-    ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, 7); ctx.fillStyle = "#3a0d10"; ctx.fill(); ctx.strokeStyle = col.surface; ctx.lineWidth = 1.5; ctx.stroke();
+    /* a clot is dark red; a plaque that only narrows the artery is fatty yellow, smaller the milder it is */
+    const blocked = Heart.S.sten >= 100, rr = blocked ? r : r * (.45 + .55 * Heart.S.sten / 100);
+    ctx.beginPath(); ctx.arc(c.x, c.y, rr, 0, 7); ctx.fillStyle = blocked ? "#3a0d10" : rgbs(col.fat, .9); ctx.fill(); ctx.strokeStyle = col.surface; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.restore();
   }
   function drawLabels(ctx, col){
@@ -4491,49 +4621,69 @@ const Cor3D = (() => {
     }
     return null;
   }
-  /* close-up of the blocked artery: plaque, ruptured cap, clot, red cells piling up */
+  /* close-up of the blocked artery: plaque, ruptured cap, clot, red cells piling up. When it is only narrowed:
+     a plaque under an intact cap, and red cells speeding up through the gap (the same flow through less area). */
   const cells = Array.from({ length: 34 }, (_, i) => ({ x: mulb(i * 7 + 3), y: mulb(i * 13 + 5) - .5, r: .7 + .5 * mulb(i * 29 + 1) }));
   function drawLumen(ctx, col){
     const { w, h } = cv, S = Heart.S, c = clotSpot(); if (!c) return;
+    const blocked = S.sten >= 100, sten = S.sten / 100;
     const bw = Math.min(250, w * .44), bh = bw * .58, x0 = 10, y0 = h - bh - 10;
     const wall = rgb(O.color(ART_VAR[ownerOf(c.v)]));
     ctx.save();
     ctx.fillStyle = col.surface; ctx.globalAlpha = .94; ctx.beginPath(); ctx.roundRect(x0, y0, bw, bh, 10); ctx.fill(); ctx.globalAlpha = 1;
     ctx.strokeStyle = O.color("--line-strong"); ctx.lineWidth = 1; ctx.stroke();
     ctx.font = '600 11px "Schibsted Grotesk", system-ui, sans-serif'; ctx.textAlign = "left"; ctx.fillStyle = col.ink;
-    ctx.fillText(`Inside the ${OCCL_LABEL[S.occl]}`, x0 + 10, y0 + 16);
+    ctx.fillText(blocked ? `Inside the ${OCCL_LABEL[S.occl]}` : `The ${OCCL_LABEL[S.occl]}, ${S.sten}% narrowed`, x0 + 10, y0 + 16);
     const lx = x0 + 10, lw = bw - 20, ly = y0 + 30, lh = bh - 52, mid = ly + lh / 2, R = lh / 2;
     ctx.beginPath(); ctx.rect(lx, ly, lw, lh); ctx.clip();
     /* lumen and walls */
-    ctx.fillStyle = rgbs(cmix(col.o2, [255, 255, 255], .7)); ctx.fillRect(lx, mid - R * .62, lw, R * 1.24);
-    ctx.fillStyle = rgbs(wall, .9); ctx.fillRect(lx, ly, lw, R * .38); ctx.fillRect(lx, mid + R * .62, lw, R * .38);
-    const cx = lx + lw * .46;
-    /* plaque under the wall with its torn fibrous cap */
-    ctx.fillStyle = rgbs(col.fat); ctx.beginPath(); ctx.ellipse(cx, mid + R * .62, lw * .2, R * .5, 0, Math.PI, 0); ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(cx, mid + R * .62, lw * .2, R * .5, 0, Math.PI, Math.PI * 1.55); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(cx, mid + R * .62, lw * .2, R * .5, 0, Math.PI * 1.7, Math.PI * 2); ctx.stroke();
-    /* the clot */
-    ctx.fillStyle = "#4a0f14"; ctx.beginPath();
-    ctx.moveTo(cx - lw * .02, mid + R * .25); ctx.bezierCurveTo(cx + lw * .02, mid - R * .9, cx + lw * .14, mid - R * .75, cx + lw * .2, mid - R * .62);
-    ctx.lineTo(cx + lw * .24, mid + R * .62); ctx.lineTo(cx + lw * .02, mid + R * .62); ctx.closePath(); ctx.fill();
-    for (let i = 0; i < 9; i++){ ctx.strokeStyle = "rgba(255,230,200,.35)"; ctx.lineWidth = .8; ctx.beginPath(); const a = mulb(i * 3 + 1), b = mulb(i * 5 + 2); ctx.moveTo(cx + lw * (.02 + .2 * a), mid - R * .5 + R * b); ctx.lineTo(cx + lw * (.05 + .18 * b), mid + R * .5 - R * a * .6); ctx.stroke(); }
-    /* red cells: they arrive with each beat and pile up against the clot; beyond it the blood stands still */
+    const top = mid - R * .62, bot = mid + R * .62, open = bot - top;
+    ctx.fillStyle = rgbs(cmix(col.o2, [255, 255, 255], .7)); ctx.fillRect(lx, top, lw, open);
+    ctx.fillStyle = rgbs(wall, .9); ctx.fillRect(lx, ly, lw, R * .38); ctx.fillRect(lx, bot, lw, R * .38);
+    const cx = lx + lw * .46, pw = lw * .2;
+    /* how far the plaque reaches up into the lumen at x (0 away from it) */
+    const plq = x => { const d = (x - cx) / pw; return Math.abs(d) >= 1 ? 0 : Math.sqrt(1 - d * d); };
+    const ph = blocked ? R * .5 : open * sten;
+    ctx.fillStyle = rgbs(col.fat); ctx.beginPath(); ctx.ellipse(cx, bot, pw, Math.max(1, ph), 0, Math.PI, 0); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 2;
+    if (blocked){
+      /* its torn fibrous cap and the clot on it */
+      ctx.beginPath(); ctx.ellipse(cx, bot, pw, ph, 0, Math.PI, Math.PI * 1.55); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, bot, pw, ph, 0, Math.PI * 1.7, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#4a0f14"; ctx.beginPath();
+      ctx.moveTo(cx - lw * .02, mid + R * .25); ctx.bezierCurveTo(cx + lw * .02, mid - R * .9, cx + lw * .14, mid - R * .75, cx + lw * .2, mid - R * .62);
+      ctx.lineTo(cx + lw * .24, mid + R * .62); ctx.lineTo(cx + lw * .02, mid + R * .62); ctx.closePath(); ctx.fill();
+      for (let i = 0; i < 9; i++){ ctx.strokeStyle = "rgba(255,230,200,.35)"; ctx.lineWidth = .8; ctx.beginPath(); const a = mulb(i * 3 + 1), b = mulb(i * 5 + 2); ctx.moveTo(cx + lw * (.02 + .2 * a), mid - R * .5 + R * b); ctx.lineTo(cx + lw * (.05 + .18 * b), mid + R * .5 - R * a * .6); ctx.stroke(); }
+    } else if (ph > 1){ ctx.beginPath(); ctx.ellipse(cx, bot, pw, ph, 0, Math.PI, 0); ctx.stroke(); }
     const f = Math.max(0, S.Pa - (owner(S.occl, S.dom) === "rca" ? .22 : .9) * S.el * S.Plv) / 95, stop = (cx - lw * .02 - lx) / lw;
-    cells.forEach((q, i) => {
-      if (q.beyond == null) q.beyond = i % 6 === 0;
-      if (q.beyond){ q.x = stop + .12 + ((q.x - stop - .12 + .004 * lastDt) % (.98 - stop - .12) + (.98 - stop - .12)) % (.98 - stop - .12); }
-      else {
-        const cap = stop - .015 - .045 * (i % 4) - .06 * Math.abs(q.y);
-        q.x = Math.min(cap, q.x + f * .3 * lastDt);
-        if (q.x >= cap - 1e-4){ q.hold = (q.hold || 0) + lastDt; if (q.hold > 1.5 + 4 * mulb(i * 31 + Math.floor(clock))){ q.hold = 0; q.x = -.05 - .3 * mulb(i * 11 + Math.floor(clock * 3)); } }
-      }
-      const px = lx + q.x * lw, py = mid + q.y * R * .95;
-      ctx.fillStyle = q.beyond ? rgbs(cmix(col.co2, col.isch, .35)) : rgbs(col.o2);
-      ctx.beginPath(); ctx.ellipse(px, py, 4.2 * q.r, 2.6 * q.r, .3 * q.y, 0, 7); ctx.fill();
-    });
+    if (blocked){
+      /* red cells: they arrive with each beat and pile up against the clot; beyond it the blood stands still */
+      cells.forEach((q, i) => {
+        if (q.beyond == null) q.beyond = i % 6 === 0;
+        if (q.beyond){ q.x = stop + .12 + ((q.x - stop - .12 + .004 * lastDt) % (.98 - stop - .12) + (.98 - stop - .12)) % (.98 - stop - .12); }
+        else {
+          const cap = stop - .015 - .045 * (i % 4) - .06 * Math.abs(q.y);
+          q.x = Math.min(cap, q.x + f * .3 * lastDt);
+          if (q.x >= cap - 1e-4){ q.hold = (q.hold || 0) + lastDt; if (q.hold > 1.5 + 4 * mulb(i * 31 + Math.floor(clock))){ q.hold = 0; q.x = -.05 - .3 * mulb(i * 11 + Math.floor(clock * 3)); } }
+        }
+        const px = lx + q.x * lw, py = mid + q.y * R * .95;
+        ctx.fillStyle = q.beyond ? rgbs(cmix(col.co2, col.isch, .35)) : rgbs(col.o2);
+        ctx.beginPath(); ctx.ellipse(px, py, 4.2 * q.r, 2.6 * q.r, .3 * q.y, 0, 7); ctx.fill();
+      });
+    } else {
+      /* red cells squeeze through the gap: what is left of the lumen sets their height, and they speed up there */
+      const m = Math.min(1, Heart.supply().ratio);
+      cells.forEach((q, i) => {
+        const x = lx + q.x * lw, gap = Math.max(.08, 1 - sten * plq(x));
+        q.x += f * .3 * m * lastDt / gap; if (q.x > 1.05) q.x -= 1.15;
+        const yTop = top + 3, yBot = bot - 3 - open * sten * plq(lx + q.x * lw), py = (yTop + yBot) / 2 + q.y * (yBot - yTop) * .9;
+        ctx.fillStyle = rgbs(col.o2); ctx.beginPath(); ctx.ellipse(lx + q.x * lw, py, 4.2 * q.r, 2.6 * q.r * Math.min(1, gap * 1.4), 0, 0, 7); ctx.fill();
+      });
+    }
     ctx.restore();
     ctx.font = '500 10.5px "Schibsted Grotesk", system-ui, sans-serif'; ctx.fillStyle = col.muted; ctx.textAlign = "left";
-    ctx.fillText("Plaque", lx + lw * .12, y0 + bh - 8); ctx.textAlign = "right"; ctx.fillText(bw < 220 ? "Clot" : "Clot · no flow beyond", lx + lw, y0 + bh - 8);
+    ctx.fillText("Plaque", lx + lw * .12, y0 + bh - 8); ctx.textAlign = "right";
+    ctx.fillText(blocked ? (bw < 220 ? "Clot" : "Clot · no flow beyond") : (bw < 220 ? "Faster in the gap" : "Blood speeds up in the gap"), lx + lw, y0 + bh - 8);
     ctx.textAlign = "left"; ctx.fillText("Flow →", lx, y0 + 30 - 3);
   }
 
@@ -4603,7 +4753,7 @@ let lastCorSel = null;
 O.subscribe(s => { const p = (s.sel || {}).coronary; if (p !== lastCorSel){ lastCorSel = p; if (p) Cor3D.focusPart(p); } });
 function renderCoronary(){
   Cor3D.syncOccl();
-  renderBull();
+  renderBull(); syncSten();
   O.set({ sel: { ...O.state().sel } });
 }
 /* bull's-eye */
@@ -4637,12 +4787,13 @@ const bull = $("#bullseye"), bullSegs = {};
 })();
 function bullInfo(n){ const o = segOwner(n, Heart.S.dom); return `Usually fed by the ${{ lad: "LAD", lcx: "circumflex", rca: "RCA" }[o]}` + (Heart.affectedSegs().has(n) ? " · now ischaemic" : ""); }
 function renderBull(){
-  const segs = Heart.affectedSegs();
+  const segs = Heart.affectedSegs(), fx = Heart.effects();
   for (const [n, { g, p, ov }] of Object.entries(bullSegs)){
-    const o = segOwner(+n, Heart.S.dom), hit = segs.has(+n);
-    p.style.fill = hit ? "var(--ischemia)" : `color-mix(in srgb, ${ART_COLOR[o]} 62%, var(--surface))`;
+    const o = segOwner(+n, Heart.S.dom), hit = segs.has(+n), base = `color-mix(in srgb, ${ART_COLOR[o]} 62%, var(--surface))`;
+    /* an infarct is fully dark; a starved inner layer darkens with how short of blood it is */
+    p.style.fill = !hit ? base : fx.transmural ? "var(--ischemia)" : `color-mix(in srgb, var(--ischemia) ${Math.round(20 + 65 * fx.level)}%, ${base})`;
     ov.style.fill = hit || o === "lad" ? "none" : o === "lcx" ? "url(#bullHatch)" : "url(#bullDots)";
-    g.classList.toggle("hit", hit);
+    g.classList.toggle("hit", hit && (fx.transmural || fx.level > .45));
   }
 }
 /* the inspector for arteries offers to block them */
@@ -4652,8 +4803,13 @@ const corInsp = $("#coronary [data-inspector]");
 O.inspector(corInsp, id => {
   const S = Heart.S, list = BLOCKS[id];
   let html = "";
-  if (list) html += `<div class="btn-row">${list.map(([seg, l]) => `<button type="button" class="btn${S.occl === seg ? " ghost" : ""}" data-block="${seg}">${S.occl === seg ? "Blocked" : esc(l)}</button>`).join("")}${S.occl ? `<button type="button" class="btn ghost" data-block="">Restore blood flow</button>` : ""}</div>`;
-  if (S.occl){
+  const blocked = seg => S.occl === seg && S.sten >= 100;
+  if (list) html += `<div class="btn-row">${list.map(([seg, l]) => `<button type="button" class="btn${blocked(seg) ? " ghost" : ""}" data-block="${seg}">${blocked(seg) ? "Blocked" : esc(l)}</button>`).join("")}${S.occl ? `<button type="button" class="btn ghost" data-block="">Restore blood flow</button>` : ""}</div>`
+    + `<p class="note" style="margin-top:6px">To narrow it only partly and explore angina, use <a href="#stenPanel" data-sten-go>Narrow an artery</a>.</p>`;
+  if (S.occl && S.sten < 100){
+    const st = stenStatus();
+    html += `<div class="alert"><b>${esc(cap1(OCCL_LABEL[S.occl]))} ${S.sten}% narrowed</b>${esc(st.text)}</div>`;
+  } else if (S.occl){
     const segs = [...Heart.affectedSegs()].sort((a, b) => a - b), fx = Heart.effects();
     const extra = [fx.sa < 1 ? "the SA node loses its artery, so the heart slows" : "", fx.pr ? "the AV node loses its artery, so the PR interval lengthens" : "", fx.rv < 1 ? "the right ventricle is ischaemic and fills the left less well" : ""].filter(Boolean);
     html += `<div class="alert"><b>Blocked: ${esc(OCCL_LABEL[S.occl])}</b>${O.text(O.get(`occlusions.${S.occl}`))}
@@ -4662,9 +4818,60 @@ O.inspector(corInsp, id => {
   return html;
 });
 corInsp.addEventListener("click", e => {
+  const go = e.target.closest("[data-sten-go]");
+  if (go){ e.preventDefault(); $("#stenPanel").scrollIntoView({ behavior: O.reducedMotion ? "auto" : "smooth", block: "center" }); $("#stenIn").focus({ preventScroll: true }); return; }
   const b = e.target.closest("[data-block]"); if (!b) return;
-  Heart.S.occl = b.dataset.block || null; renderCoronary(); O.altered();
+  Heart.S.occl = b.dataset.block || null; Heart.S.sten = 100; renderCoronary(); O.altered();
 });
+/* ---------- narrowing an artery: supply, demand and angina ---------- */
+/* where the reader stands: no narrowing, narrowed but enough blood, angina on effort, ischaemia at rest, infarct */
+function stenStatus(){
+  const S = Heart.S, sd = Heart.supply(), fx = Heart.effects(), lab = S.occl ? OCCL_LABEL[S.occl] : "";
+  const atRest = O.state().phase === "rest" || O.state().phase === "sleep";
+  if (!S.occl || !S.sten) return { id: "none", sym: "", title: "No narrowing", text: "Pick an artery and slide to narrow it.", c: "var(--line-strong)" };
+  if (S.sten >= 100) return { id: "mi", sym: "✕", title: "Blocked: a heart attack", text: `Nothing gets past the clot in the ${lab}, so the full thickness of its wall dies: ST elevation, not angina.`, c: "var(--ischemia)" };
+  if (fx.level < .05 && sd.ratio >= 1) return { id: "ok", sym: "✓", title: "Enough blood, for now", text: `The small vessels beyond the plaque have opened up to make up for it. ${atRest ? "Raise the effort to see whether it can keep up." : "Even this effort is covered."}`, c: "var(--accent)" };
+  if (atRest) return { id: "rest", sym: "!", title: "Ischaemia even at rest", text: `So little gets through the ${lab} that the wall is short of blood without any effort: unstable angina, a warning of a heart attack.`, c: "var(--rca)" };
+  return { id: "angina", sym: "!", title: "Angina: demand outruns supply", text: `The wall beyond the ${lab} needs more blood than the narrowing lets through. Its inner layer is starved: chest pain, ST depression, a weaker squeeze. Rest relieves it.`, c: "var(--sel)" };
+}
+let stenSeg = "ladProx";
+(() => {
+  const where = $("#stenWhere");
+  where.innerHTML = Object.entries(OCCL_LABEL).map(([k, l]) => `<option value="${k}">${esc(l.charAt(0).toUpperCase() + l.slice(1))}</option>`).join("");
+  where.value = stenSeg;
+  where.addEventListener("change", () => {
+    stenSeg = where.value;
+    if (Heart.S.occl){ Heart.S.occl = stenSeg; renderCoronary(); O.altered(); }
+    Cor3D.focusPart(SEG_PART[stenSeg]);
+  });
+  $("#stenIn").addEventListener("input", e => {
+    const v = +e.target.value, S = Heart.S;
+    if (v > 0){ if (!S.occl) Cor3D.focusPart(SEG_PART[stenSeg]); S.occl = stenSeg; S.sten = v; } else { S.occl = null; S.sten = 100; }
+    renderCoronary(); O.altered();
+  });
+  const effort = O.choice($("#stenEffort"), { label: "Effort", options: O.PHASES.map(p => [p.id, p.label]), value: O.state().phase, onChange: v => O.set({ hour: O.PHASES.find(p => p.id === v).rep }) });
+  O.subscribe((s, p) => { if (s.phase !== p.phase) effort.set(s.phase); });
+})();
+const SEG_PART = { lm: "lm", ladProx: "lad", ladMid: "lad", d1: "d1", lcx: "lcx", om: "om", rcaProx: "rca", rcaDist: "rca", pda: "pda" };
+function syncSten(){
+  const S = Heart.S, v = S.occl ? S.sten : 0;
+  if (S.occl){ stenSeg = S.occl; $("#stenWhere").value = S.occl; }
+  $("#stenIn").value = v;
+  lastStenId = stenStatus().id;   /* a change the reader made is already being written; the tick only follows ischaemia as it builds or fades */
+  $("#stenOut").textContent = !v ? "none" : v >= 100 ? "blocked" : `${v}% (${Math.round(100 * (1 - (1 - v / 100) ** 2))}% of its area)`;
+  renderStenMeter();
+}
+let lastStenHTML = "", lastStenId = "none";
+function renderStenMeter(){
+  const sd = Heart.supply(), st = stenStatus(), S = Heart.S, lvl = O.state().level, adv = lvl === "college" || lvl === "phd";
+  const scale = 5, pct = v => `${Math.round(clamp(v / scale) * 100)}%`, fmt = v => `${v.toFixed(1)}×`;
+  const narrowed = S.occl && S.sten > 0;
+  let html = `<div class="bar"><span>Oxygen the wall needs</span><span class="t"><i class="need" style="width:${pct(sd.demand)}"></i></span><b>${fmt(sd.demand)}</b></div>`
+    + `<div class="bar"><span>Most blood that can get through</span><span class="t"><i style="--c:${narrowed ? `var(${ART_VAR[owner(S.occl, S.dom)]})` : "var(--accent)"};width:${pct(narrowed ? sd.supply : sd.healthy)}"></i></span><b>${fmt(narrowed ? sd.supply : sd.healthy)}</b></div>`
+    + `<p class="fine">Both relative to the resting need. A healthy artery can carry about ${fmt(sd.healthy)} now${adv && narrowed && S.sten < 100 ? `; fractional flow reserve (FFR) ${sd.ffr.toFixed(2)}, significant below 0.80` : ""}.</p>`
+    + `<div class="status" style="--c:${st.c}"><b>${st.sym ? st.sym + " " : ""}${esc(st.title)}</b>${esc(st.text)}</div>`;
+  if (html !== lastStenHTML){ $("#stenMeter").innerHTML = html; lastStenHTML = html; }
+}
 /* 12-lead */
 const ecgC = makeCanvas($("#ecg12"));
 const GRID12 = [["I", "aVR", "V1", "V4"], ["II", "aVL", "V2", "V5"], ["III", "aVF", "V3", "V6"]];
@@ -4974,6 +5181,10 @@ O.onTick((dt, real) => {
     $("#toneOut").textContent = Heart.S.rhythm === "saArrest" ? "SA node silent" : Heart.S.rhythm === "afib" ? "atria fibrillating" : `SA node ${Math.round(Heart.sinusRate())}/min`;
     renderPlethRO();
     if ((capT += 1) % 4 === 0) ecgCaption();
+    /* a narrowed artery's ischaemia comes and goes with effort: keep its pictures and notes current */
+    if (Heart.S.occl && Heart.S.sten < 100){ renderBull(); if (capT % 2 === 0) ecgCaption(); }
+    renderStenMeter();
+    const sid = stenStatus().id; if (sid !== lastStenId){ lastStenId = sid; O.altered(); }
   }
 });
 O.subscribe((s, p) => { if (s.level !== p.level || s.phase !== p.phase){ renderSteps(); renderRhythm(); renderArt(); renderPulse(); lastPh = -1; } });
@@ -4995,7 +5206,7 @@ function syncHeartUI(){
 }
 function clearChange(id){
   const S = Heart.S;
-  if (id === "occl") S.occl = null;
+  if (id === "occl"){ S.occl = null; S.sten = 100; }
   else if (id === "dom") S.dom = "right";
   else if (id === "rhythm"){ S.rhythm = "sinus"; Heart.reset(); }
   else if (id === "tone") S.tone = 0;
@@ -5007,7 +5218,7 @@ O.alter({
   healthy: () => O.levelText(O.get("alter.healthy")),
   items(){
     const S = Heart.S, out = [];
-    if (S.occl) out.push({ id: "occl", section: "coronary", label: `${cap1(OCCL_LABEL[S.occl])} blocked` });
+    if (S.occl) out.push({ id: "occl", section: "coronary", label: S.sten >= 100 ? `${cap1(OCCL_LABEL[S.occl])} blocked` : `${cap1(OCCL_LABEL[S.occl])} ${S.sten}% narrowed` });
     if (S.dom !== "right") out.push({ id: "dom", section: "coronary", label: DOM_LABEL[S.dom] });
     if (S.rhythm !== "sinus") out.push({ id: "rhythm", section: "conduction", label: rhythmName() });
     if (Math.abs(S.tone) > .001) out.push({ id: "tone", section: "conduction", label: `${S.tone > 0 ? "Sympathetic" : "Vagal"} drive +${Math.round(Math.abs(S.tone) * 100)}%` });
@@ -5026,7 +5237,7 @@ O.alter({
       if (R === "afib") N("rhythm", "afibAnat");
     }
     if (sec === "physiology"){
-      if (S.occl && n) N("occl", "pump", { n, pct: Math.round(fx.emax * 100), emax: fx.emax.toFixed(2) });
+      if (S.occl && n) N("occl", fx.transmural ? "pump" : "pumpIsch", { n, pct: Math.round(fx.emax * 100), emax: fx.emax.toFixed(2) });
       if (fx.rv < 1) N("occl", "rv");
       if (R === "afib") N("rhythm", "afibMech");
       if (R === "lbbb") N("rhythm", "lbbbMech");
@@ -5041,6 +5252,10 @@ O.alter({
       if (load.length) N(load, "loadFlow", { bp: `${Math.round(b.sbp)}/${Math.round(b.dbp)}` });
       if (S.tone > .05) N("tone", "fastFlow", { hr: Math.round(b.hr) });
       if (ART[S.art].comp < 1) N("art", "stiffFlow", { dbp: Math.round(b.dbp) });
+      if (S.occl && S.sten < 100){
+        const st = stenStatus(), sd = Heart.supply(), v = { artery, pct: S.sten, need: sd.demand.toFixed(1), get: sd.supply.toFixed(1), ffr: sd.ffr.toFixed(2) };
+        if (st.id === "ok") N("occl", "stenOk", v); else if (st.id === "angina") N("occl", "angina", v); else if (st.id === "rest") N("occl", "anginaRest", v);
+      }
       if (R === "lbbb" && S.occl) N(["rhythm", "occl"], "lbbbMask");
       else if (R !== "sinus") N("rhythm", "ecgRhythm", { rhythm: rhythmName() });
     }
@@ -5052,13 +5267,13 @@ O.alter({
   },
   toParams(){
     const S = Heart.S, f = v => (Math.round(v * 100) / 100).toString();
-    return { occl: S.occl || "", dom: S.dom !== "right" ? S.dom : "", rhythm: S.rhythm !== "sinus" ? S.rhythm : "",
+    return { occl: S.occl || "", sten: S.occl && S.sten < 100 ? String(S.sten) : "", dom: S.dom !== "right" ? S.dom : "", rhythm: S.rhythm !== "sinus" ? S.rhythm : "",
       tone: Math.abs(S.tone) > .001 ? f(S.tone) : "", art: S.art !== "young" ? S.art : "",
       ...Object.fromEntries(["p", "a", "c"].map(k => [k, Math.abs(S.user[k] - 1) > .005 ? f(S.user[k]) : ""])) };
   },
   fromParams(P){
     const S = Heart.S, num = (k, lo, hi) => { const v = parseFloat(P.get(k)); return Number.isFinite(v) ? clamp(v, lo, hi) : null; };
-    if (OCCL_LABEL[P.get("occl")]) S.occl = P.get("occl");
+    if (OCCL_LABEL[P.get("occl")]){ S.occl = P.get("occl"); const v = num("sten", 5, 100); S.sten = v !== null ? Math.round(v / 5) * 5 : 100; }
     if (["right", "co", "left"].includes(P.get("dom"))) S.dom = P.get("dom");
     if (RHYTHM_IDS.includes(P.get("rhythm"))){ S.rhythm = P.get("rhythm"); Heart.reset(); }
     const t = num("tone", -1, 1); if (t !== null) S.tone = t;

@@ -72,7 +72,7 @@ A small Node script, `fact-check/scan.mjs`, keeps the ledger up to date. Like `t
 - `node fact-check/scan.mjs` prints a table per page: items, counts by status, and how many are new, changed or removed since the ledger.
 - `--update` writes new and changed items into the ledger as `unchecked` and drops removed ones.
 - `--list` prints the unchecked items with their text; add `--all` for every item, or `--full` for untruncated text.
-- `--mark <status>` sets the status of the selected items, with an optional `--note "…"`. It only touches items whose hash is current.
+- `--mark <status>` sets the status of the selected items, with an optional `--note "…"`. It only touches items whose hash is current. Add `--unchecked` to leave rows that already have a status (`ok`, `fixed`, an issue) alone; without it, a broad `--prefix` overwrites them.
 - `--check` exits non-zero if any selected item is unchecked or the ledger is out of date, for use as a gate.
 - Select with `--page <id>` and `--prefix <key prefix>`, each repeatable. For example:
   `node fact-check/scan.mjs --page body --prefix body-content:topics.heart. --mark ok`.
@@ -122,14 +122,14 @@ One canonical value per shared quantity. Every page uses these values or explain
 | SpO₂ / SaO₂ | 97–98% awake, ~96% asleep | ~97% in the run | body, heart, lungs | West's Respiratory Physiology ch. 6 |
 | PaO₂ / PaCO₂ | ~94 / 40 mmHg awake; PaCO₂ +3–7 asleep | ~94 / 40 in the run (a fast jog, below respiratory compensation); pH ~7.37 | body, lungs, brain | West ch. 5, 6, 9 |
 | Mixed venous O₂ saturation | ~70% | ~30–35% in the run | body, heart, lungs | Fick; Guyton & Hall ch. 41 |
-| Tidal volume, breathing rate, dead space | ~500 mL × 14/min (~7 L/min); dead space ~150 mL (VD/VT ~0.3) | Fast jog: 26/min × 1.85 L ≈ 48 L/min (VE/VO₂ ≈ 24), dead space ~0.3 L (VD/VT ~0.16) | body, lungs, engine | West ch. 2, 10; Wasserman, *Principles of Exercise Testing* |
+| Tidal volume, breathing rate, dead space | ~500 mL × 14/min (~7 L/min); dead space ~150 mL (VD/VT ~0.3), so alveolar ventilation ~4.9 L/min | Fast jog: 26/min × 1.85 L ≈ 48 L/min (VE/VO₂ ≈ 24), dead space ~0.3 L (VD/VT ~0.16) | body, lungs, engine | West ch. 2, 10; Wasserman, *Principles of Exercise Testing* |
 | GFR, renal blood flow | ~125 mL/min; RBF ~1.1–1.2 L/min (~20–25% of CO) | GFR −15% asleep, −25% in the run, up to +20–25% after a protein meal | body, kidneys | Boron & Boulpaep ch. 34 |
 | Urine output per day | ~1.2–1.5 L in six voids; bladder ~450 mL | osmolality ~530 by day, ~900–1000 overnight | body, kidneys | Boron & Boulpaep ch. 38 |
 | Fasting and after-meal blood glucose | 4.7–5.1 mmol/L | peaks ~6.9–7.2 mmol/L, 30–60 min after a meal | body, pancreas, liver | ADA Standards of Care 2026 |
 | Liver glycogen | ~50–110 g (0.45–0.95 of ~110 g); ~5 g/h overnight | ~20 g used in the ~1 h run (HGO ~5 mg/kg/min) | body, liver | Rothman et al. 1991; Wasserman 2009 |
 | Insulin and glucagon timing | insulin lags glucose by ~20–30 min | insulin falls and glucagon rises in the run | body, pancreas, liver | Boron & Boulpaep ch. 51 |
 | Sleep architecture | ~5 cycles of ~90 min in 7.5 h | N1 ~4%, N2 ~49%, N3 ~20%, REM ~26%; first REM after ~80 min | body, brain | AASM Manual; Carskadon & Dement |
-| Gastric emptying, transit times | | | body, gut | |
+| Gastric emptying, transit times | Water t½ ~10–20 min; solids lag, then ~2–4 kcal/min; fatty meals 3–4 h in the stomach | Small intestine 3–5 h; colon ~20–40 h; whole gut ~10–70 h | body, gut | Guyton & Hall ch. 64; Lewis & Heaton 1997 |
 | Conduction velocities (Aα, Aβ, Aδ, B, C) | | | body, brain | |
 | Cerebral blood flow | ~750 mL/min (~15% of CO), autoregulated | | body, brain | Guyton & Hall ch. 62 |
 
@@ -154,7 +154,7 @@ The backlog, in order of exposure: the body view is what every reader sees first
 
 | # | Page / part | Items | Checked | Last check | Open issues |
 |---|---|---|---|---|---|
-| 1 | `index.html` body view (phases, systems, journeys, hours, model numbers) | 2602 | 2% (the `PHYSIO` keyframes, `Physio.at()`, sleep cycles, voids, exercise breathing text) | 2026-11-17 | |
+| 1 | `index.html` body view (phases, systems, journeys, hours, model numbers) | 2602 | 58%: all 13 topics, sleep stages, hours, UI strings; the circulatory, respiratory, urinary, digestive and endocrine systems; the cell, breath, drop and bite rides and their arrays; `PHYSIO`, `Physio.at()`, sleep cycles, voids. Still to do: the cascade ride, the nervous system and impulse ride, the glossary, the animation modules | 2026-11-17 | |
 | 2 | Heart | 1111 | 0% | | |
 | 3 | Lungs | 743 | 1% (the run's breathing model and text) | 2026-11-17 | |
 | 4 | Kidneys | 1128 | 0% | | |

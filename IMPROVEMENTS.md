@@ -50,6 +50,7 @@ These are the conventions the heart, lungs and brain pages set. Each new page sh
 8. **Wired into `index.html`**: an entry in `ORGAN_PAGES`, links in both directions that carry `level` and `hour`, and glossary terms for every new word.
 9. **README** updated with a paragraph for the page.
 10. **Export**: every figure has an id, an `aria-label` and a `data-export-name`; canvases are sized by a helper that reads `window.__exportDpr` and sets `node.__fit`; live recordings are added to the CSV with `OrganPage.exportData()`, and `node tests/export-check.mjs <page>` passes.
+11. **Facts checked** (see `FACTUAL_CHECK.md`): the page's numbers agree with the consistency registry there, the PhD / MD text names its key sources, and after `node fact-check/scan.mjs --update`, `node fact-check/scan.mjs --check --page <id>` passes, or the page is listed as unchecked in `FACTUAL_CHECK.md`. Add the page's drawing and UI constants and functions to `ledger.ignore` in `fact-check/ledger.json`.
 
 ---
 

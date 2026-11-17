@@ -879,7 +879,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "phd": "Swallowing normally happens during expiration and is followed by expiration. This coordination with the respiratory cycle is disrupted in COPD, stroke and Parkinson’s disease, which increases the risk of aspiration. The respiratory quotient reflects which substrate is being oxidised: about 1.0 for carbohydrate and 0.7 for fat. High-carbohydrate feeding raises the CO₂ load, which matters clinically in ventilated patients with limited respiratory reserve."
         },
         "exercise": {
-          "ms": "When you run, you breathe faster and deeper, perhaps 30 to 40 breaths a minute. Your muscles are burning fuel quickly and need lots of oxygen. They also make lots of carbon dioxide that has to be breathed out. Puffing hard is your body’s way of keeping up.",
+          "ms": "When you run, you breathe faster and deeper, about 25 to 30 breaths a minute on a fast jog, and even more if you sprint. Your muscles are burning fuel quickly and need lots of oxygen. They also make lots of carbon dioxide that has to be breathed out. Puffing hard is your body’s way of keeping up.",
           "hs": "In hard exercise, the amount of air you move each minute can rise from about 6 litres to over 100. Each breath gets bigger and faster, and extra muscles in your neck, ribs and belly help out. Blood rushes through the lungs faster, but the alveoli still have time to load each red blood cell with oxygen. The urge to breathe is driven mostly by rising carbon dioxide.",
           "college": "Exercise hyperpnoea has a fast neural component, from central command and muscle afferent feedback, and a slower humoral component. During moderate exercise PaCO₂ stays near normal because ventilation matches CO₂ production. Above the ventilatory threshold, bicarbonate buffers lactic acid and releases extra CO₂, so ventilation rises out of proportion. More pulmonary capillaries open and widen, which expands the gas-exchange surface.",
           "phd": "In most people the lungs do not limit VO₂max. Highly trained endurance athletes, however, can develop exercise-induced arterial hypoxaemia (Dempsey & Wagner 1999). Part of the reason is that very high cardiac outputs shorten capillary transit time below the time needed for diffusion to equilibrate. At maximum, the work of the respiratory muscles can take 10–15% of VO₂. A respiratory muscle metaboreflex may also divert blood flow away from locomotor muscles."
@@ -1452,8 +1452,8 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "phd": "Poor timing of breathing and swallowing, with swallows during inspiration or followed by inspiration, is linked to aspiration in COPD, Parkinson’s disease and after stroke (Martin-Harris et al.). Gastric distension raises intra-abdominal pressure and can modestly reduce functional residual capacity, an effect that matters more in obesity and lung disease, and large carbohydrate loads can precipitate hypercapnia in patients with limited ventilatory reserve."
         },
         "exercise": {
-          "ms": "When you run, you breathe much faster and deeper, and you start breathing through your mouth to move more air. You can take in more than ten times as much air as at rest. Muscles between your ribs and in your belly join in to push the air out quickly.",
-          "hs": "Minute ventilation can rise from about 6 to over 70 L/min in a hard run, through both bigger breaths (up to about 2 L) and faster ones. The out-breath becomes active: abdominal and internal intercostal muscles squeeze the chest. Even so, oxygen and carbon dioxide in arterial blood barely change, because breathing rises in step with what the muscles use and produce.",
+          "ms": "When you run, you breathe much faster and deeper, and you start breathing through your mouth to move more air. On a fast jog you take in about seven times as much air as at rest, and even more if you sprint. Muscles between your ribs and in your belly join in to push the air out quickly.",
+          "hs": "Minute ventilation rises from about 7 L/min at rest to about 50 L/min on a fast jog, and can pass 100 L/min in an all-out effort, through both bigger breaths (up to about 2 L) and faster ones. The out-breath becomes active: abdominal and internal intercostal muscles squeeze the chest. Even so, oxygen and carbon dioxide in arterial blood barely change, because breathing rises in step with what the muscles use and produce.",
           "college": "In moderate exercise, ventilation rises in proportion to VCO₂, holding PaCO₂ near 40 mmHg. Above the ventilatory threshold, lactic acid buffered by bicarbonate releases extra CO₂ and ventilation rises faster than VO₂; beyond respiratory compensation, PaCO₂ falls. Accessory muscles join in, and mouth breathing lowers airway resistance at flows above about 35 L/min.",
           "phd": "How ventilation is matched so precisely to metabolism remains debated: candidates include central command, group III/IV muscle afferents and carotid body sensing, but no error signal is large enough on its own (Forster et al., 2012). In healthy people the lungs rarely limit VO₂max, yet many highly trained athletes show exercise-induced arterial hypoxaemia, and respiratory muscle work can steal blood flow from the legs through a metaboreflex (Dempsey)."
         }
@@ -4819,7 +4819,7 @@ const STRINGS = {
    Typical healthy adult; simplified for teaching. */
 const PHYSIO = {
   heartRate:  [[0,55],[3,52],[5,53],[6.5,58],[7,68],[7.5,74],[8.5,70],[10,68],[12.5,74],[13.5,71],[15,67],[16.8,70],[17.15,138],[17.5,152],[17.95,150],[18.3,96],[18.8,80],[19.3,77],[20.3,73],[22,64],[23,58]],
-  breathRate: [[0,12],[3,11.5],[6.5,13],[7,15],[10,14],[16.8,14],[17.15,32],[17.5,38],[17.95,36],[18.3,20],[18.8,15],[22,13],[23,12.5]],
+  breathRate: [[0,12],[3,11.5],[6.5,13],[7,15],[10,14],[16.8,14],[17.15,24],[17.5,26],[17.95,26],[18.3,18],[18.8,15],[22,13],[23,12.5]],
   glucose:    [[0,88],[4,84],[6.5,92],[7.25,90],[8,128],[8.5,120],[9.5,102],[10.5,90],[12.25,87],[13,125],[13.5,118],[14.5,100],[15.5,90],[17,88],[17.5,92],[17.95,91],[18.3,86],[18.65,82],[19,85],[19.75,130],[20.25,123],[21.25,105],[22.25,94],[23,90]],
   coreTemp:   [[0,36.7],[4.5,36.35],[7,36.6],[10,36.85],[14,37.0],[16.8,37.1],[17.5,37.9],[18,38.2],[18.5,37.5],[19.5,37.2],[21,37.05],[23,36.85]],
   cortisol:   [[0,.1],[3,.25],[6,.6],[7,1],[7.5,.95],[9,.7],[12,.5],[16,.35],[17.5,.55],[18.5,.35],[21,.15],[23,.08]],
@@ -4838,13 +4838,17 @@ const PHYSIO = {
      in exercise; glucagon is high when fasting or running, low after meals */
   insulin:    [[0,.1],[5,.09],[6.5,.12],[7.25,.14],[7.6,.45],[8.2,1],[8.75,.8],[9.75,.35],[10.75,.17],[12.25,.15],[12.6,.45],[13.2,.95],[13.75,.75],[14.75,.32],[15.75,.17],[16.8,.15],[17.3,.05],[17.95,.03],[18.4,.08],[19,.12],[19.35,.45],[19.95,1],[20.5,.8],[21.5,.38],[22.5,.18],[23.5,.12]],
   glucagon:   [[0,.48],[3,.52],[6.5,.5],[7.25,.42],[8,.18],[9,.2],[10.5,.33],[12.25,.36],[13,.18],[14,.2],[15.5,.33],[16.8,.35],[17.3,.75],[17.9,.9],[18.3,.6],[18.8,.42],[19.5,.2],[20.5,.18],[22,.3],[23.5,.42]],
-  /* liver glycogen, 0–1: filled by meals, drained overnight and by the run */
-  glycogen:   [[0,.65],[3,.5],[6,.38],[7.25,.35],[8.5,.6],[10,.75],[12,.68],[13.5,.78],[15.5,.85],[16.9,.8],[17.5,.55],[18.25,.27],[19,.25],[20.25,.5],[22,.72],[23.5,.68]],
+  /* liver glycogen, 0–1 of a ~110 g store: filled by meals, drained overnight (~5 g/h)
+     and by the run (~20 g at a hepatic glucose output of ~5 mg/kg/min). Sampled from
+     the liver page's metab() model so the two pages agree */
+  glycogen:   [[0,.81],[3,.67],[6,.54],[7.25,.48],[8.5,.64],[10,.66],[12.25,.54],[13.5,.81],[15.5,.85],[16.9,.77],[17.5,.69],[18.25,.58],[19,.54],[20.25,.87],[21,.95],[22,.95],[23.5,.88]],
   /* heart and lungs. Stroke volume, mL: a little higher lying down at night,
      up ~50% in the run (stronger contraction + more venous return) */
   strokeVol:  [[0,74],[5,73],[6.5,70],[7.5,68],[16.8,69],[17.15,98],[17.5,106],[17.95,105],[18.3,84],[18.8,76],[20,72],[23,73]],
-  /* tidal volume, mL: ~450 asleep, ~500 at rest, ~1.9 L in the run */
-  tidalVol:   [[0,450],[5,450],[6.5,480],[7,500],[16.8,500],[17.15,1650],[17.5,1900],[17.95,1850],[18.3,800],[18.8,560],[22,510],[23,470]],
+  /* tidal volume, mL: ~450 asleep, ~500 at rest, ~1.85 L in the run. The run is a fast
+     jog near the ventilatory threshold: 26 breaths × 1.85 L ≈ 48 L/min for a VO₂ of
+     2 L/min (VE/VO₂ ≈ 24), which holds PaCO₂ near 40 with a dead space of ~0.3 L */
+  tidalVol:   [[0,450],[5,450],[6.5,480],[7,500],[16.8,500],[17.15,1750],[17.5,1850],[17.95,1820],[18.3,800],[18.8,560],[22,510],[23,470]],
   /* whole-body O₂ uptake, mL/min: basal ~220 asleep, +10–15% after meals
      (thermic effect), ~2.1 L/min in a brisk run */
   vo2:        [[0,215],[4.5,205],[6.5,235],[7,255],[8.5,290],[10,265],[13.5,290],[15,265],[16.8,265],[17.15,1900],[17.5,2000],[17.95,1980],[18.3,620],[18.8,330],[20.25,300],[22,250],[23,225]],
@@ -4892,8 +4896,8 @@ const SLEEP_CYCLES = [
   [[7, "n1"], [18, "n2"], [45, "n3"], [10, "n2"], [10, "rem"]],
   [[22, "n2"], [33, "n3"], [15, "n2"], [18, "rem"]],
   [[35, "n2"], [12, "n3"], [15, "n2"], [25, "rem"]],
-  [[3, "n1"], [45, "n2"], [33, "rem"], [4, "wake"]],
-  [[4, "n1"], [52, "n2"], [38, "rem"], [6, "n1"]]
+  [[3, "n1"], [48, "n2"], [30, "rem"], [4, "wake"]],
+  [[4, "n1"], [58, "n2"], [32, "rem"], [6, "n1"]]
 ];
 const STAGE_DEPTH = { wake: 0, n1: .3, n2: .6, n3: 1, rem: 0 };
 const HYPNO_Y = { wake: 1.5, rem: 4.5, n1: 7.5, n2: 10.5, n3: 13.5 }; /* rows of the hypnogram strip */
@@ -4975,9 +4979,10 @@ const Physio = {
     out.vagal = clamp(1.1 - (out.heartRate - 50) / 70) * (1 + .15 * pp);
     out.sympathetic = clamp(.12 + .8 * out.muscle + .15 * out.cortisol + .2 * out.adrenaline + .15 * sl.rem);
     out.vagal = clamp(out.vagal - .15 * sl.rem);
-    /* blood gases, mmHg: CO₂ rises a few mmHg asleep (blunted drive) and dips a little
-       in the hard run (respiratory compensation); CO₂ output = RQ × O₂ uptake */
-    out.paco2 = 40 + 4 * clamp(1 - out.awake) + 1.5 * sl.rem - 3 * clamp((out.muscle - .6) / .4);
+    /* blood gases, mmHg: CO₂ rises a few mmHg asleep (blunted drive). In the run, a fast
+       jog below the respiratory compensation point, ventilation matches CO₂ output and
+       PaCO₂ stays near 40; CO₂ output = RQ × O₂ uptake */
+    out.paco2 = 40 + 4 * clamp(1 - out.awake) + 1.5 * sl.rem;
     out.pao2 = 150 - out.paco2 / .8 - 6;                        /* alveolar gas equation − A–a gradient */
     out.pvo2 = hillPO2(out.svo2);
     out.rq = .8 + .15 * out.muscle;
@@ -8130,7 +8135,7 @@ App.registerTopic({
     b += loupe(...P(530, 455), MX, MY, MR);
 
     let x = `<rect x="160" y="10" width="210" height="200" fill="#b8584e"/>`;
-    const gly = Math.round(clamp((ctx.ph.glycogen - .25) / .6) * 4);
+    const gly = Math.round(clamp((ctx.ph.glycogen - .4) / .55) * 4);
     /* storing when insulin dominates, releasing when glucagon does, idle when balanced */
     const flux = ctx.ph.insulin - ctx.ph.glucagon;
     const cellAt = (a, rr) => {

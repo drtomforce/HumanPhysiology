@@ -1660,7 +1660,7 @@ const PHASES = [
   { id: "sleep", label: "Sleep", rep: 3, color: "#5b62b3", vitals: { hr: 52, sbp: 105, dbp: 63, rr: 11.5, sv: 74, temp: 36.5 } },
   { id: "rest", label: "Rest", rep: 10.5, color: "#2f8f83", vitals: { hr: 68, sbp: 118, dbp: 76, rr: 14, sv: 69, temp: 36.9 } },
   { id: "meal", label: "Meal", rep: 12.75, color: "#d08a26", vitals: { hr: 74, sbp: 117, dbp: 76, rr: 14, sv: 69, temp: 37 } },
-  { id: "exercise", label: "Exercise", rep: 17.5, color: "#d9473a", vitals: { hr: 152, sbp: 165, dbp: 76, rr: 38, sv: 106, temp: 37.9 } }
+  { id: "exercise", label: "Exercise", rep: 17.5, color: "#d9473a", vitals: { hr: 152, sbp: 165, dbp: 76, rr: 26, sv: 106, temp: 37.9 } }
 ];
 const PHASE_BY_ID = Object.fromEntries(PHASES.map(p => [p.id, p]));
 const SCHEDULE = [
@@ -3097,8 +3097,8 @@ const SLEEP_CYCLES = [
   [[7, "n1"], [18, "n2"], [45, "n3"], [10, "n2"], [10, "rem"]],
   [[22, "n2"], [33, "n3"], [15, "n2"], [18, "rem"]],
   [[35, "n2"], [12, "n3"], [15, "n2"], [25, "rem"]],
-  [[3, "n1"], [45, "n2"], [33, "rem"], [4, "wake"]],
-  [[4, "n1"], [52, "n2"], [38, "rem"], [6, "n1"]]
+  [[3, "n1"], [48, "n2"], [30, "rem"], [4, "wake"]],
+  [[4, "n1"], [58, "n2"], [32, "rem"], [6, "n1"]]
 ];
 const HYPNO = (() => { const segs = []; let m = 0; SLEEP_CYCLES.forEach((c, ci) => c.forEach(([d, stage]) => { segs.push({ from: m, to: m + d, stage, cycle: ci + 1 }); m += d; })); return { segs, len: m }; })();
 const sleepMinute = h => { const m = wrapH(h - SLEEP_FROM) * 60; return m < HYPNO.len ? m : -1; };

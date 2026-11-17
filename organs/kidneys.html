@@ -4924,13 +4924,13 @@ function drawGlucose(){
   const L = 44, gw = w - L - 12, T = 14, gh = h - T - 34;
   const X = g => L + g / 600 * gw, Y = v => T + gh - v / ymax * gh;
   for (let v = 0; v <= ymax; v += 100){ line(ctx, L, Y(v) + .5, L + gw, Y(v) + .5, lineC); txt(ctx, String(v), L - 6, Y(v) + 4, muted, "right"); }
-  for (let g = 0; g <= 600; g += 100) txt(ctx, String(g), X(g), h - 16, muted, "center");
-  txt(ctx, "Plasma glucose (mg/dL)", L + gw / 2, h - 2, muted, "center"); txt(ctx, "mg/min", L + 4, T + 10, muted);
+  for (let m = 0; m <= 30; m += 5) txt(ctx, String(m), X(m * 18), h - 16, muted, "center");
+  txt(ctx, "Plasma glucose (mmol/L)", L + gw / 2, h - 2, muted, "center"); txt(ctx, "mg/min", L + 4, T + 10, muted);
   ctx.fillStyle = C("--surface-2"); ctx.fillRect(X(70), T + gh - 6, X(140) - X(70), 6);
   txt(ctx, "normal", X(105), T + gh - 10, muted, "center");
   if (O.changed()){ poly(ctx, ref.map(q => [X(q[0]), Y(q[2])]), C("--line-strong"), 1.5, [5, 4]); poly(ctx, ref.map(q => [X(q[0]), Y(q[3])]), C("--line-strong"), 1.5, [5, 4]); }
   poly(ctx, cur.map(q => [X(q[0]), Y(q[1])]), C("--s2"), 2.2); poly(ctx, cur.map(q => [X(q[0]), Y(q[2])]), C("--s3"), 2.4); poly(ctx, cur.map(q => [X(q[0]), Y(q[3])]), C("--urine"), 2.6);
-  const th = cur.find(q => q[3] > 2); if (th){ line(ctx, X(th[0]), Y(0), X(th[0]), T + 20, muted, 1, [2, 3]); txt(ctx, `spills from ~${th[0]}`, X(th[0]) + (th[0] > 380 ? -4 : 4), T + 14, ink, th[0] > 380 ? "right" : "left", FONT_B); }
+  const th = cur.find(q => q[3] > 2); if (th){ line(ctx, X(th[0]), Y(0), X(th[0]), T + 20, muted, 1, [2, 3]); txt(ctx, `spills from ~${f0(th[0] / 18)} mmol/L`, X(th[0]) + (th[0] > 380 ? -4 : 4), T + 14, ink, th[0] > 380 ? "right" : "left", FONT_B); }
   const g = clamp(p.glu, 0, 600);
   dot(ctx, X(g), Y(R.F), C("--s2"), 4.5); dot(ctx, X(g), Y(R.Rg), C("--s3"), 4.5); dot(ctx, X(g), Y(R.E), C("--urine"), 4.5);
 }
@@ -4961,7 +4961,7 @@ function syncFilt(){
     const v = s.k === "map" ? R.MAP : p[s.k]; $("#" + s.id).value = v;
     $("#" + s.id + "-o").textContent = s.k === "map" ? `${f0(v)} mmHg${p.map == null ? " (the day’s)" : ""}` : s.k === "pbs" ? `${f0(v)} mmHg` : `×${f2(v)}`;
   });
-  $("#fGlu").value = p.glu; $("#fGlu-o").textContent = `${f0(p.glu)} mg/dL (${f1(p.glu / 18)} mmol/L)`;
+  $("#fGlu").value = p.glu; $("#fGlu-o").textContent = `${f1(p.glu / 18)} mmol/L`;
   $("#autoBtn").setAttribute("aria-pressed", String(p.auto)); $("#autoBtn").textContent = p.auto ? "Autoregulation on" : "Autoregulation off";
   $("#aceBtn").setAttribute("aria-pressed", String(p.acei)); $("#sglt2Btn").setAttribute("aria-pressed", String(p.sglt2));
 }
@@ -5308,7 +5308,7 @@ O.alter({
     if (p.pbs !== PBS0) out.push({ id: "pbs", section: "filtration", label: `Bowman’s pressure ${p.pbs} mmHg` });
     if (!p.auto) out.push({ id: "auto", section: "filtration", label: "Autoregulation off" });
     if (p.acei) out.push({ id: "acei", section: "filtration", label: "ACE inhibitor" });
-    if (p.glu !== 95) out.push({ id: "glu", section: "filtration", label: `Glucose ${p.glu} mg/dL` });
+    if (p.glu !== 95) out.push({ id: "glu", section: "filtration", label: `Glucose ${f1(p.glu / 18)} mmol/L` });
     if (p.sglt2) out.push({ id: "sglt2", section: "filtration", label: "SGLT2 inhibitor" });
     if (p.loop) out.push({ id: "loop", section: "concentrate", label: "Loop diuretic" });
     if (!p.urea) out.push({ id: "urea", section: "concentrate", label: "No urea recycling" });

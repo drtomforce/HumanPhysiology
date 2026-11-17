@@ -4838,8 +4838,10 @@ const PHYSIO = {
      in exercise; glucagon is high when fasting or running, low after meals */
   insulin:    [[0,.1],[5,.09],[6.5,.12],[7.25,.14],[7.6,.45],[8.2,1],[8.75,.8],[9.75,.35],[10.75,.17],[12.25,.15],[12.6,.45],[13.2,.95],[13.75,.75],[14.75,.32],[15.75,.17],[16.8,.15],[17.3,.05],[17.95,.03],[18.4,.08],[19,.12],[19.35,.45],[19.95,1],[20.5,.8],[21.5,.38],[22.5,.18],[23.5,.12]],
   glucagon:   [[0,.48],[3,.52],[6.5,.5],[7.25,.42],[8,.18],[9,.2],[10.5,.33],[12.25,.36],[13,.18],[14,.2],[15.5,.33],[16.8,.35],[17.3,.75],[17.9,.9],[18.3,.6],[18.8,.42],[19.5,.2],[20.5,.18],[22,.3],[23.5,.42]],
-  /* liver glycogen, 0–1: filled by meals, drained overnight and by the run */
-  glycogen:   [[0,.65],[3,.5],[6,.38],[7.25,.35],[8.5,.6],[10,.75],[12,.68],[13.5,.78],[15.5,.85],[16.9,.8],[17.5,.55],[18.25,.27],[19,.25],[20.25,.5],[22,.72],[23.5,.68]],
+  /* liver glycogen, 0–1 of a ~110 g store: filled by meals, drained overnight (~5 g/h)
+     and by the run (~20 g at a hepatic glucose output of ~5 mg/kg/min). Sampled from
+     the liver page's metab() model so the two pages agree */
+  glycogen:   [[0,.81],[3,.67],[6,.54],[7.25,.48],[8.5,.64],[10,.66],[12.25,.54],[13.5,.81],[15.5,.85],[16.9,.77],[17.5,.69],[18.25,.58],[19,.54],[20.25,.87],[21,.95],[22,.95],[23.5,.88]],
   /* heart and lungs. Stroke volume, mL: a little higher lying down at night,
      up ~50% in the run (stronger contraction + more venous return) */
   strokeVol:  [[0,74],[5,73],[6.5,70],[7.5,68],[16.8,69],[17.15,98],[17.5,106],[17.95,105],[18.3,84],[18.8,76],[20,72],[23,73]],
@@ -4892,8 +4894,8 @@ const SLEEP_CYCLES = [
   [[7, "n1"], [18, "n2"], [45, "n3"], [10, "n2"], [10, "rem"]],
   [[22, "n2"], [33, "n3"], [15, "n2"], [18, "rem"]],
   [[35, "n2"], [12, "n3"], [15, "n2"], [25, "rem"]],
-  [[3, "n1"], [45, "n2"], [33, "rem"], [4, "wake"]],
-  [[4, "n1"], [52, "n2"], [38, "rem"], [6, "n1"]]
+  [[3, "n1"], [48, "n2"], [30, "rem"], [4, "wake"]],
+  [[4, "n1"], [58, "n2"], [32, "rem"], [6, "n1"]]
 ];
 const STAGE_DEPTH = { wake: 0, n1: .3, n2: .6, n3: 1, rem: 0 };
 const HYPNO_Y = { wake: 1.5, rem: 4.5, n1: 7.5, n2: 10.5, n3: 13.5 }; /* rows of the hypnogram strip */
@@ -8130,7 +8132,7 @@ App.registerTopic({
     b += loupe(...P(530, 455), MX, MY, MR);
 
     let x = `<rect x="160" y="10" width="210" height="200" fill="#b8584e"/>`;
-    const gly = Math.round(clamp((ctx.ph.glycogen - .25) / .6) * 4);
+    const gly = Math.round(clamp((ctx.ph.glycogen - .4) / .55) * 4);
     /* storing when insulin dominates, releasing when glucagon does, idle when balanced */
     const flux = ctx.ph.insulin - ctx.ph.glucagon;
     const cellAt = (a, rr) => {

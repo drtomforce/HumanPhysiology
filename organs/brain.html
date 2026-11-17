@@ -3097,8 +3097,8 @@ const SLEEP_CYCLES = [
   [[7, "n1"], [18, "n2"], [45, "n3"], [10, "n2"], [10, "rem"]],
   [[22, "n2"], [33, "n3"], [15, "n2"], [18, "rem"]],
   [[35, "n2"], [12, "n3"], [15, "n2"], [25, "rem"]],
-  [[3, "n1"], [45, "n2"], [33, "rem"], [4, "wake"]],
-  [[4, "n1"], [52, "n2"], [38, "rem"], [6, "n1"]]
+  [[3, "n1"], [48, "n2"], [30, "rem"], [4, "wake"]],
+  [[4, "n1"], [58, "n2"], [32, "rem"], [6, "n1"]]
 ];
 const HYPNO = (() => { const segs = []; let m = 0; SLEEP_CYCLES.forEach((c, ci) => c.forEach(([d, stage]) => { segs.push({ from: m, to: m + d, stage, cycle: ci + 1 }); m += d; })); return { segs, len: m }; })();
 const sleepMinute = h => { const m = wrapH(h - SLEEP_FROM) * 60; return m < HYPNO.len ? m : -1; };

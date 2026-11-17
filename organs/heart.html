@@ -3999,6 +3999,11 @@ function h2w(p){
   const x = p[0] * Math.cos(TILT_A) - p[1] * Math.sin(TILT_A), y = p[0] * Math.sin(TILT_A) + p[1] * Math.cos(TILT_A), z = p[2];
   return [x, y * Math.cos(TILT_B) - z * Math.sin(TILT_B), y * Math.sin(TILT_B) + z * Math.cos(TILT_B)];
 }
+/* the inverse of h2w (a rotation, so its transpose) */
+function w2h(p){
+  const y = p[1] * Math.cos(TILT_B) + p[2] * Math.sin(TILT_B), z = -p[1] * Math.sin(TILT_B) + p[2] * Math.cos(TILT_B);
+  return [p[0] * Math.cos(TILT_A) + y * Math.sin(TILT_A), -p[0] * Math.sin(TILT_A) + y * Math.cos(TILT_A), z];
+}
 const v3 = { add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
   mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
   cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
@@ -4017,7 +4022,7 @@ function spline(pts, per){
   return out;
 }
 /* fixed landmarks (heart coordinates) */
-const RA_C = [-.8, .3, .02], LA_C = [.12, .34, -.64], AO_ROOT = [-.12, .1, .16], PT_ROOT = [.32, .1, .58];
+const RA_C = [-.8, .3, .02], LA_C = [.04, .4, -.52], AO_ROOT = [-.12, .1, .16], PT_ROOT = [.32, .1, .58];
 const OST = { rca: [-.24, .16, .42], lm: [.08, .17, .3] };
 /* the coronary tree as curves over the wall. Points are [u, θ] on the surface or { p } fixed in heart coordinates. */
 function vesselDefs(dom){
@@ -4095,39 +4100,61 @@ const Cor3D = (() => {
     const w = smooth(-.04, .18, u), v = segIsch(seg), k = seg === "rv" ? KR : K;
     return 1 - k * w * (1 - 1.45 * v);
   }
-  /* atria and auricles: squashed spheres */
-  function sphere(part, c, rad, nla = 10, nlo = 18){
-    const faces = [], dirs = [];
-    for (let i = 0; i <= nla; i++) for (let j = 0; j < nlo; j++){ const ph = Math.PI * i / nla, la = 2 * Math.PI * j / nlo; dirs.push([Math.sin(ph) * Math.cos(la) * rad[0], Math.cos(ph) * rad[1], Math.sin(ph) * Math.sin(la) * rad[2]]); }
+  /* atria: superellipsoids (boxier than spheres, e = 2 is a sphere) in heart coordinates */
+  function sphere(part, c, rad, nla = 10, nlo = 18, e = 2){
+    const faces = [], dirs = [], f = w => Math.sign(w) * Math.pow(Math.abs(w), 2 / e);
+    for (let i = 0; i <= nla; i++) for (let j = 0; j < nlo; j++){ const ph = Math.PI * i / nla, la = 2 * Math.PI * j / nlo; dirs.push([f(Math.sin(ph)) * f(Math.cos(la)) * rad[0], f(Math.cos(ph)) * rad[1], f(Math.sin(ph)) * f(Math.sin(la)) * rad[2]]); }
     for (let i = 0; i < nla; i++) for (let j = 0; j < nlo; j++) faces.push([i * nlo + j, i * nlo + (j + 1) % nlo, (i + 1) * nlo + (j + 1) % nlo, (i + 1) * nlo + j]);
     return mesh("sphere", part, dirs.length, faces, { c, dirs });
   }
-  sphere("ra", RA_C, [.5, .46, .5]);
-  sphere("la", LA_C, [.58, .4, .46]);
-  sphere("la", [.8, .14, .26], [.17, .15, .3], 8, 14).auricle = true;
-  sphere("ra", [-.46, .3, .56], [.26, .17, .2], 8, 14).auricle = true;
-  /* great vessels: tubes in world coordinates */
-  function tube(part, start, offs, r, col, per = 5, nr = 14){
-    const pts = spline(offs.map(o => v3.add(start, o)), per), rings = [], faces = [];
+  sphere("ra", RA_C, [.5, .56, .52], 12, 20, 2.5);
+  sphere("la", LA_C, [.7, .4, .46], 12, 22, 2.8);
+  sphere("la", [-.36, .4, -.3], [.42, .38, .36], 8, 14, 2.4);   /* the interatrial groove, so the two atria read as one block */
+  /* vessels and auricles: tubes in world coordinates. rf(t) shapes the radius along the tube (t from 0 to 1);
+     tone "atrium" draws a tube as atrial muscle; caps: false leaves the ends open (a tapered tip closes itself) */
+  function tube(part, start, offs, r, col, per = 5, nr = 14, o = {}){
+    const pts = spline(offs.map(q => v3.add(start, q)), per), rings = [], faces = [], rf = o.rf || (() => 1);
     let ref = [0, 0, 1];
     pts.forEach((p, i) => {
-      const t = v3.norm(v3.sub(pts[Math.min(pts.length - 1, i + 1)], pts[Math.max(0, i - 1)]));
+      const t = v3.norm(v3.sub(pts[Math.min(pts.length - 1, i + 1)], pts[Math.max(0, i - 1)])), s = rf(i / (pts.length - 1));
       if (Math.abs(v3.dot(t, ref)) > .95) ref = Math.abs(t[0]) < .9 ? [1, 0, 0] : [0, 1, 0];
       const a = v3.norm(v3.sub(ref, v3.mul(t, v3.dot(t, ref)))), b = v3.cross(t, a); ref = a;   /* parallel transport: no twist */
-      for (let k = 0; k < nr; k++){ const ang = 2 * Math.PI * k / nr; rings.push({ c: p, e: v3.add(v3.mul(a, Math.cos(ang)), v3.mul(b, Math.sin(ang))) }); }
+      for (let k = 0; k < nr; k++){ const ang = 2 * Math.PI * k / nr; rings.push({ c: p, s, e: v3.add(v3.mul(a, Math.cos(ang)), v3.mul(b, Math.sin(ang))) }); }
     });
     for (let i = 0; i < pts.length - 1; i++) for (let k = 0; k < nr; k++) faces.push([i * nr + k, i * nr + (k + 1) % nr, (i + 1) * nr + (k + 1) % nr, (i + 1) * nr + k]);
-    const last = pts.length - 1; faces.push([...Array(nr).keys()].reverse().map(k => k)); faces.push([...Array(nr).keys()].map(k => last * nr + k));
-    return mesh("tube", part, rings.length, faces, { rings, r, col, pts });
+    const last = pts.length - 1, caps = o.caps !== false;
+    if (caps){ faces.push([...Array(nr).keys()].reverse().map(k => k)); faces.push([...Array(nr).keys()].map(k => last * nr + k)); }
+    return mesh("tube", part, rings.length, faces, { rings, r, col, pts, caps, tone: o.tone });
   }
+  /* a tube whose path is given in heart coordinates */
+  const htube = (part, pts, r, col, per, nr, o) => tube(part, [0, 0, 0], pts.map(h2w), r, col, per, nr, o);
+  const taper = (a, b) => t => lerp(a, b, smooth(0, 1, t)), flare = (k, w = .2) => t => 1 + (k - 1) * (1 - smooth(0, w, t));
+  /* auricles: short curved, tapering pouches */
+  htube("ra", [[-.6, .52, .3], [-.5, .5, .5], [-.36, .42, .64], [-.22, .34, .7]], .17, "o2", 4, 12, { rf: t => .35 + .65 * (1 - t * t), tone: "atrium" });
+  htube("la", [[.56, .5, -.24], [.78, .46, 0], [.8, .4, .24], [.7, .34, .4]], .15, "o2", 4, 12, { rf: t => .35 + .65 * (1 - t * t), tone: "atrium" });
+  /* pulmonary veins: two from each lung, running out sideways from the back of the left atrium
+     (in front of the descending aorta on the left, behind the right atrium on the right) */
+  for (const [y, dy] of [[.52, .04], [.24, -.04]]){
+    tube("pulmonaryVeins", h2w([-.24, y, -.66]), [[0, 0, 0], [-.36, dy, -.02], [-.68, 2 * dy, -.02]], .1, "o2", 3, 12, { rf: flare(1.35) });
+    tube("pulmonaryVeins", h2w([.46, y, -.62]), [[0, 0, 0], [.36, dy, .06], [.68, 2 * dy, .12]], .1, "o2", 3, 12, { rf: flare(1.35) });
+  }
+  /* great vessels */
   const aoStart = v3.add(h2w(AO_ROOT), [0, -.05, 0]), ptStart = v3.add(h2w(PT_ROOT), [0, -.05, 0]), raW = h2w(RA_C);
-  const ao = tube("aorta", aoStart, [[0, 0, 0], [-.04, .5, 0], [-.07, 1.02, -.04], [.14, 1.42, -.32], [.5, 1.44, -.7], [.7, 1.04, -.86], [.74, .2, -.92]], .29, "o2", 4);
-  const ptEnd = [.26, .98, -.5];
-  tube("pulmonaryTrunk", ptStart, [[0, 0, 0], [.07, .42, -.04], [.18, .8, -.24], ptEnd], .27, "co2", 4);
-  tube("pulmonaryTrunk", v3.add(ptStart, ptEnd), [[0, 0, 0], [.32, .06, -.22], [.66, .02, -.36]], .17, "co2", 3, 12);
-  tube("pulmonaryTrunk", v3.add(ptStart, ptEnd), [[0, 0, 0], [-.36, -.02, -.3], [-.95, -.06, -.34]], .17, "co2", 3, 12);
-  tube("svc", v3.add(raW, [.02, .3, -.06]), [[0, 0, 0], [-.04, .6, -.04], [-.06, 1.3, -.06]], .21, "co2", 3, 12);
-  tube("ivc", v3.add(raW, [0, -.28, -.16]), [[0, 0, 0], [.02, -.45, -.12], [.04, -.95, -.2]], .23, "co2", 3, 12);
+  /* the aorta: a root bulging with the sinuses of Valsalva, the ascending aorta, the arch passing over the right
+     pulmonary artery, and the descending aorta running down behind the left atrium */
+  const ao = tube("aorta", aoStart, [[0, 0, 0], [-.03, .35, .02], [-.08, .8, 0], [-.04, 1.28, -.12], [.12, 1.66, -.42], [.38, 1.74, -.78], [.56, 1.5, -1.1], [.64, 1, -1.26], [.66, .3, -1.34], [.64, -.45, -1.36], [.6, -1.05, -1.36]], .29, "o2", 5, 16,
+    { rf: t => 1 + .17 * gauss(t, .035, .025) - .04 * smooth(.5, 1, t) });
+  /* the three arch branches: brachiocephalic trunk, left common carotid, left subclavian */
+  [[.36, [-.1, .55, .06], .12], [.43, [.02, .55, 0], .085], [.5, [.1, .52, -.04], .095]].forEach(([t, d, r]) => {
+    const c = ao.pts[Math.round(t * (ao.pts.length - 1))];
+    tube("aorta", v3.add(c, [0, .1, 0]), [[0, 0, 0], v3.mul(d, .5), d], r, "o2", 3, 10, { rf: flare(1.3, .3) });
+  });
+  const ptEnd = [.26, .9, -.5];
+  tube("pulmonaryTrunk", ptStart, [[0, 0, 0], [.07, .4, -.04], [.18, .74, -.24], ptEnd], .27, "co2", 4, 14, { rf: t => 1 + .1 * gauss(t, .04, .04) });
+  tube("pulmonaryTrunk", v3.add(ptStart, ptEnd), [[0, 0, 0], [.32, .02, -.22], [.66, -.06, -.36]], .17, "co2", 3, 12);
+  tube("pulmonaryTrunk", v3.add(ptStart, ptEnd), [[0, 0, 0], [-.36, -.08, -.3], [-.95, -.16, -.36]], .17, "co2", 3, 12);
+  tube("svc", v3.add(raW, [.02, .18, -.06]), [[0, 0, 0], [-.03, .7, -.04], [-.06, 1.42, -.06]], .21, "co2", 3, 12, { rf: flare(1.3) });
+  tube("ivc", v3.add(raW, [0, -.16, -.14]), [[0, 0, 0], [.02, -.57, -.12], [.04, -1.07, -.2]], .23, "co2", 3, 12, { rf: flare(1.3) });
   /* outward-facing sign of each face, from the resting shape */
   function newell(P, f){ let nx = 0, ny = 0, nz = 0; for (let i = 0; i < f.length; i++){ const a = f[i] * 3, b = f[(i + 1) % f.length] * 3; nx += (P[a + 1] - P[b + 1]) * (P[a + 2] + P[b + 2]); ny += (P[a + 2] - P[b + 2]) * (P[a] + P[b]); nz += (P[a] - P[b]) * (P[a + 1] + P[b + 1]); } return [nx, ny, nz]; }
   function centroid(P, f){ let x = 0, y = 0, z = 0; for (const i of f){ x += P[i * 3]; y += P[i * 3 + 1]; z += P[i * 3 + 2]; } return [x / f.length, y / f.length, z / f.length]; }
@@ -4146,7 +4173,7 @@ const Cor3D = (() => {
   function buildTubes(){
     for (const m of meshes) if (m.kind === "tube"){
       const r = m.r * (m.part === "aorta" ? aoPulse : 1);
-      m.rings.forEach((q, k) => { m.hp[k * 3] = q.c[0] + q.e[0] * r; m.hp[k * 3 + 1] = q.c[1] + q.e[1] * r; m.hp[k * 3 + 2] = q.c[2] + q.e[2] * r; });
+      m.rings.forEach((q, k) => { const rr = r * q.s; m.hp[k * 3] = q.c[0] + q.e[0] * rr; m.hp[k * 3 + 1] = q.c[1] + q.e[1] * rr; m.hp[k * 3 + 2] = q.c[2] + q.e[2] * rr; });
     }
   }
   /* world centre and size, from the resting pose */
@@ -4164,9 +4191,14 @@ const Cor3D = (() => {
       let ref;
       if (m.kind === "vent"){ const u = vU[f[0]]; ref = [.2 * Math.pow(Math.max(0, u), 1.5) * .87, c[1], .2 * Math.pow(Math.max(0, u), 1.5) * .5]; }
       else if (m.kind === "sphere") ref = m.c;
-      else ref = i === m.faces.length - 2 ? m.pts[1] : i === m.faces.length - 1 ? m.pts[m.pts.length - 2] : m.rings[f[0]].c;
+      else ref = m.caps && i === m.faces.length - 2 ? m.pts[1] : m.caps && i === m.faces.length - 1 ? m.pts[m.pts.length - 2] : m.rings[f[0]].c;
       m.sign[i] = v3.dot(n, v3.sub(c, ref)) >= 0 ? 1 : -1;
     });
+    /* contact shadow: atria and great vessels darken just above the atrioventricular groove */
+    if (m.kind !== "vent"){
+      m.ao = new Float32Array(m.faces.length);
+      m.faces.forEach((f, i) => { const c = centroid(m.hp, f), yh = m.kind === "tube" ? w2h(c)[1] : c[1]; m.ao[i] = .74 + .26 * smooth(-.05, .32, yh); });
+    }
   }
   /* ---------- vessels ---------- */
   function buildVessels(d){
@@ -4246,7 +4278,7 @@ const Cor3D = (() => {
     if (Math.hypot(...n) < 1e-6) return;
     const t = faceDir(v3.norm(n)); t.pitch = clamp(t.pitch, -55, 55); turnTo(t);
   }
-  const VIEWS = [["front", "Front", () => ({ yaw: -14, pitch: 6 })], ["left", "Left side", () => faceDir([1, -.1, -.15])], ["under", "Underside", () => { const t = faceDir(v3.norm([-.1, -.2, -1])); return { yaw: t.yaw, pitch: -48 }; }], ["right", "Right side", () => faceDir([-1, .05, .25])]];
+  const VIEWS = [["front", "Front", () => ({ yaw: -14, pitch: 6 })], ["left", "Left side", () => faceDir([1, -.1, -.15])], ["under", "Underside", () => { const t = faceDir(v3.norm([-.1, -.2, -1])); return { yaw: t.yaw, pitch: -48 }; }], ["right", "Right side", () => faceDir([-1, .05, .25])], ["back", "Back", () => faceDir([.15, .1, -1])]];
 
   /* ---------- state from the simulation ---------- */
   function partOf(v){ return v.part === "pl" ? owner("pl", dom) : v.part; }
@@ -4317,10 +4349,11 @@ const Cor3D = (() => {
           base = col.myo;
           if (v > .01) base = cmix(base, col.isch, v * (.78 + .06 * at.noise));
           if (at.fat > .05) base = cmix(base, col.fat, at.fat * .42);
-        } else if (m.kind === "sphere") base = m.auricle ? cmix(atrium, col.myo, .3) : atrium;
+        } else if (m.kind === "sphere" || m.tone) base = m.tone ? cmix(atrium, col.myo, .3) : atrium;
         else base = cmix(m.col === "o2" ? col.o2 : col.co2, col.peri, .38);
+        if (m.caps && i >= m.faces.length - 2 && !m.tone){ items.push({ z: cz, t: 0, m, f, col: rgbs(base, .42) }); continue; }   /* a cut end shows the dark lumen */
         const lam = Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]), spec = Math.pow(Math.max(0, nz * .3 + lam * .7), 24) * .25;
-        let shade = .5 + .62 * lam;
+        let shade = (.5 + .62 * lam) * (.8 + .2 * nz) * (m.ao ? m.ao[i] : 1);   /* rim darkening, and shadow where it meets the ventricles */
         if (m.part === selPart || hover === m.part) shade *= 1.12;
         const c = cmix(base, [255, 255, 255], spec);
         items.push({ z: cz, t: 0, m, f, col: rgbs(c, shade) });
@@ -4404,19 +4437,39 @@ const Cor3D = (() => {
   }
   function drawLabels(ctx, col){
     ctx.font = '600 11.5px "Schibsted Grotesk", system-ui, sans-serif'; ctx.textAlign = "center"; ctx.lineJoin = "round";
-    const put = (s, x, y) => { ctx.lineWidth = 3.5; ctx.strokeStyle = col.surface; ctx.strokeText(s, x, y); ctx.fillStyle = col.ink; ctx.fillText(s, x, y); };
+    const boxes = [], hits = (x, y, w) => boxes.some(b => Math.abs(b.x - x) < (b.w + w) / 2 + 4 && Math.abs(b.y - y) < 15);
+    const put = (s, x, y) => { boxes.push({ x, y, w: ctx.measureText(s).width }); ctx.lineWidth = 3.5; ctx.strokeStyle = col.surface; ctx.strokeText(s, x, y); ctx.fillStyle = col.ink; ctx.fillText(s, x, y); };
     for (const v of vessels){
       if (!v.label) continue;
       const i = Math.round((v.la || .5) * (v.n - 1)); if (!v.face[i]) continue;
+      const top = topFace(v.sp[i * 2], v.sp[i * 2 + 1], true); if (top && top.z > v.cp[i * 3 + 2] + .25) continue;   /* hidden behind a great vessel */
       const n = rotN(v.S[i].n, true), q = Math.hypot(n[0], n[1]) || 1, wpx = pxW(v, i);
       put(v.label === "PDA" ? "PDA" : v.label, v.sp[i * 2] + n[0] / q * (wpx + 14), v.sp[i * 2 + 1] - n[1] / q * (wpx + 14) + 4);
     }
-    for (const m of meshes) if (m.kind === "tube" && (m.part === "aorta" || m.part === "pulmonaryTrunk") && m.r > .2){
-      const nr = m.rings.length / m.pts.length, k = Math.round((m.pts.length - 1) * (m.part === "aorta" ? .42 : .7)) * nr;
-      let x = 0, y = 0, z = 0; for (let j = 0; j < nr; j++){ x += m.sp[(k + j) * 2]; y += m.sp[(k + j) * 2 + 1]; z += m.cp[(k + j) * 3 + 2]; }
-      if (z / nr < -.3) continue;
-      put(m.part === "aorta" ? "Aorta" : "Pulmonary trunk", x / nr, y / nr + 4);
+    /* great-vessel labels go on the first spot along the vessel where it is the frontmost surface and the label fits */
+    const GREAT = [["aorta", "Aorta", [.2, .26, .16, .34, .42, .6, .7, .8]], ["pulmonaryTrunk", "Pulmonary trunk", [.7, .5, .85, .3]]];
+    for (const [part, name, ts] of GREAT){
+      const m = meshes.find(x => x.kind === "tube" && x.part === part && x.r > .2), nr = m.rings.length / m.pts.length, w = ctx.measureText(name).width;
+      for (const t of ts){
+        const k = Math.round((m.pts.length - 1) * t) * nr;
+        let x = 0, y = 0; for (let j = 0; j < nr; j++){ x += m.sp[(k + j) * 2]; y += m.sp[(k + j) * 2 + 1]; }
+        let z = 0; for (let j = 0; j < nr; j++) z += m.cp[(k + j) * 3 + 2];
+        x /= nr; y /= nr; z /= nr;
+        const on = dx => { const top = topFace(x + dx, y, true); return top && top.m === m && Math.abs(top.z - z) < m.r * 1.6; }, d = Math.min(w / 2, 14);
+        if (!on(0) || !on(-d) || !on(d) || hits(x, y + 4, w)) continue;
+        put(name, x, y + 4); break;
+      }
     }
+  }
+  /* the mesh drawn on top at a screen point */
+  function topFace(x, y, item){
+    for (let i = faceItems.length - 1; i >= 0; i--){
+      const it = faceItems[i]; if (it.t) continue;
+      const S = it.m.sp, f = it.f; let inside = false;
+      for (let a = 0, b = f.length - 1; a < f.length; b = a++){ const xa = S[f[a] * 2], ya = S[f[a] * 2 + 1], xb = S[f[b] * 2], yb = S[f[b] * 2 + 1]; if ((ya > y) !== (yb > y) && x < (xb - xa) * (y - ya) / (yb - ya) + xa) inside = !inside; }
+      if (inside) return item ? it : it.m;
+    }
+    return null;
   }
   /* close-up of the blocked artery: plaque, ruptured cap, clot, red cells piling up */
   const cells = Array.from({ length: 34 }, (_, i) => ({ x: mulb(i * 7 + 3), y: mulb(i * 13 + 5) - .5, r: .7 + .5 * mulb(i * 29 + 1) }));
@@ -4473,13 +4526,8 @@ const Cor3D = (() => {
       if (d < lim && d - s.z * 2 < bd){ bd = d - s.z * 2; best = s.part; }
     }
     if (best) return best;
-    for (let i = faceItems.length - 1; i >= 0; i--){
-      const it = faceItems[i]; if (it.t) continue;
-      const S = it.m.sp, f = it.f; let inside = false;
-      for (let a = 0, b = f.length - 1; a < f.length; b = a++){ const xa = S[f[a] * 2], ya = S[f[a] * 2 + 1], xb = S[f[b] * 2], yb = S[f[b] * 2 + 1]; if ((ya > y) !== (yb > y) && x < (xb - xa) * (y - ya) / (yb - ya) + xa) inside = !inside; }
-      if (inside) return it.m.part;
-    }
-    return null;
+    const m = topFace(x, y);
+    return m ? m.part : null;
   }
   const local = e => { const r = node.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   node.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, yaw: cam.ty, pitch: cam.tp, moved: false, touch: e.pointerType !== "mouse" }; });
@@ -4528,7 +4576,7 @@ let domChoice = null;
   const list = $("#corParts");
   list.innerHTML = [["lm", "Left main"], ["lad", "LAD"], ["d1", "Diagonal"], ["lcx", "Circumflex"], ["om", "Marginal"], ["rca", "RCA"], ["pda", "PDA"], ["gcv", "Great cardiac vein"], ["cs", "Coronary sinus"], ["acv", "Anterior cardiac veins"]]
     .map(([id, l]) => `<button type="button" class="chip" data-part="${id}">${esc(l)}</button>`).join("")
-    + ["myocardium", "ra", "la", "aorta", "pulmonaryTrunk", "svc", "ivc"].map(id => `<button type="button" class="sr-only" data-part="${id}"></button>`).join("");
+    + ["myocardium", "ra", "la", "aorta", "pulmonaryTrunk", "pulmonaryVeins", "svc", "ivc"].map(id => `<button type="button" class="sr-only" data-part="${id}"></button>`).join("");
   O.bindParts(list);
 })();
 let lastCorSel = null;

@@ -3840,8 +3840,12 @@ function medianCut(hist, n){
     if (bi < 0) break;
     const b = boxes[bi].sort((p, q) => p[axis] - q[axis]);
     let tot = 0; for (const c of b) tot += c[3];
-    let acc = 0, cut = 1;
-    for (let i = 0; i < b.length - 1; i++){ acc += b[i][3]; if (acc >= tot / 2){ cut = i + 1; break; } }
+    /* cut after the colour that crosses half the weight, but always leave both halves something:
+       a dominant colour sorted last (the background, say) is split off on its own, instead of the
+       first colour being peeled off one split at a time, which spent the palette on dark edge
+       pixels and left small regions such as the blue heart chambers averaged into purple */
+    let acc = 0, cut = b.length - 1;
+    for (let i = 0; i < b.length; i++){ acc += b[i][3]; if (acc >= tot / 2){ cut = Math.min(b.length - 1, Math.max(1, i + 1)); break; } }
     boxes.splice(bi, 1, b.slice(0, cut), b.slice(cut));
   }
   return boxes.filter(b => b.length).map(b => {

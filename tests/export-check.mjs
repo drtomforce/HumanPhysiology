@@ -106,6 +106,29 @@ for (const path of pages){
   if (anim.gif !== "474946383961" || !anim.gifOk) fail(page, `GIF: ${JSON.stringify(anim)}`); else console.log(`  ✓ ${anim.id}: GIF ${anim.gifKB} KB, decodes`);
   if (anim.zip !== "504b0304") fail(page, `PNG frames: ${JSON.stringify(anim)}`); else console.log(`  ✓ ${anim.id}: PNG frames ZIP`);
 
+  /* GIF colours (issue #10): the 256-colour palette must keep small regions' colours, here the
+     blue right heart of the body page's heart close-up, instead of averaging them into purple */
+  if (path === "index.html"){
+    await page.evaluate(() => HumanPhysiology.store.set({ topic: "heart" }));
+    await page.waitForTimeout(1500);
+    const pal = await page.evaluate(async () => {
+      const blue = async blob => {
+        const bmp = await createImageBitmap(blob), c = new OffscreenCanvas(bmp.width, bmp.height), x = c.getContext("2d");
+        x.drawImage(bmp, 0, 0); const d = x.getImageData(0, 0, bmp.width, bmp.height).data;
+        let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 2] > d[i] + 40 && d[i + 2] > d[i + 1] + 20) n++;
+        return n / (d.length / 4);
+      };
+      const id = "closeup-heart";
+      if (!Exporter.figures().some(f => f.id === id)) return null;
+      const png = await Exporter.png(id, { scale: 2, caption: true });
+      const gif = await Exporter.record(id, "gif", { length: { seconds: .3 }, fps: 10, scale: 2, caption: true });
+      return { png: await blue(png), gif: await blue(gif) };
+    });
+    if (!pal) fail(page, "GIF colours: no heart close-up on the body page");
+    else if (!(pal.png > .01 && pal.gif > pal.png * .6)) fail(page, `GIF colours: blue share ${(pal.gif * 100).toFixed(1)}% in the GIF vs ${(pal.png * 100).toFixed(1)}% in the PNG`);
+    else console.log(`  ✓ GIF keeps the heart's blues (${(pal.gif * 100).toFixed(1)}% vs ${(pal.png * 100).toFixed(1)}% in the PNG)`);
+  }
+
   /* settings round trip, with a scenario on the organ pages */
   if (await page.$("[data-alt-scen-toggle]")){
     await page.click("[data-alt-scen-toggle]");

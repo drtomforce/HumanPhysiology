@@ -21,17 +21,49 @@
      node fact-check/scan.mjs --list              print unchecked items with their text
      node fact-check/scan.mjs --mark <status>     set the status of the selected items (ok, fixed, n/a, "issue #12")
          [--note "…"]                             … with a note
-   Select with --page <id> (repeatable) and --prefix <key prefix> (repeatable); --all with --list
-   lists every item, not just the unchecked ones. --mark only touches items whose hash is current;
-   add --unchecked to leave rows that already have a status (ok, fixed, an issue) alone.
+         --by <who>                               … who made the check (a person's handle, or an agent run such
+                                                  as claude-nightly-2026-11-18); required for ok, fixed and issues
+         [--lookup <id>:<locator>                 … citing a source from fact-check/sources.json that was opened
+            --url <link> --quote "<excerpt>"]       and read at <locator> during this check, with a working link to
+                                                  it and a short verbatim excerpt (repeatable: the n-th --url and
+                                                  --quote go with the n-th --lookup). Each link is fetched first,
+                                                  and a dead one is refused (--no-link-check to skip, offline).
+         [--memory <id>[:<locator>]]              … citing a source recalled from memory, not opened (repeatable)
+                                                  ok, fixed and "issue #n" need at least one of the two; the row
+                                                  gets "via": "lookup" only if every source was looked up
+         [--recheck]                              … as the result of a random re-check (needs --key): keeps the
+                                                  original "checked" date, sets "rechecked" and logs the outcome
+                                                  to fact-check/rechecks.jsonl
+     node fact-check/scan.mjs --sample <n>        pick n approved items (ok, fixed, n/a) at random for a re-check
+         [--seed <s>] [--min-age <days>]          seed defaults to today's date; skips items (re)checked in the
+                                                  last 60 days
+     node fact-check/scan.mjs --verify-sample <n> pick n look-up citations at random for independent verification
+         --by <verifier>                          (never one the verifier made themselves)
+     node fact-check/scan.mjs --verify <result>   record a verification: confirmed, link-broken, wrong-locator or
+         --page --key --cite <id> --by <verifier> not-supported, logged to fact-check/verifications.jsonl
+     node fact-check/scan.mjs --check-links       fetch every look-up link in the selection and report dead ones
+         [--max-age <days>]                       (only links not checked in the last 30 days; results in
+                                                  fact-check/links.json)
+     node fact-check/scan.mjs --recheck-stats     re-check and verification results by page, batch, method, checker
+     node fact-check/scan.mjs --sources           each source with how many rows looked it up or recalled it,
+                                                  overdue guidelines, unknown ids, approved rows that cite nothing
+   Select with --page <id> (repeatable), --prefix <key prefix> (repeatable), --key <exact key>
+   (repeatable), --batch <YYYY-MM-DD> (rows whose "checked" date is that day), --cites <source id> and
+   --via <lookup|memory|unknown> (how the row was checked; "unknown" = approved before this was recorded);
+   --all with --list lists every item, not just the unchecked ones. --mark only touches items whose
+   hash is current; add --unchecked to leave rows that already have a status (ok, fixed, an issue) alone.
    No dependencies. */
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, appendFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LEDGER = join(root, "fact-check", "ledger.json");
+const SOURCES = join(root, "fact-check", "sources.json");
+const RECHECKS = join(root, "fact-check", "rechecks.jsonl");
+const VERIFICATIONS = join(root, "fact-check", "verifications.jsonl");
+const LINKS = join(root, "fact-check", "links.json");
 const STATUSES = /^(unchecked|ok|fixed|n\/a|issue #\d+)$/;
 
 /* ---------- arguments ---------- */
@@ -39,11 +71,82 @@ const argv = process.argv.slice(2);
 const flag = f => argv.includes(f);
 const many = f => argv.flatMap((a, i) => a === f && argv[i + 1] != null ? [argv[i + 1]] : []);
 const one = f => many(f)[0];
-const pagesWanted = many("--page"), prefixes = many("--prefix");
-const markStatus = one("--mark"), note = one("--note");
+const pagesWanted = many("--page"), prefixes = many("--prefix"), keys = many("--key");
+const batch = one("--batch"), cites = one("--cites");
+const markStatus = one("--mark"), note = one("--note"), lookArgs = many("--lookup"), memArgs = many("--memory"), viaWanted = one("--via");
+const urlArgs = many("--url"), quoteArgs = many("--quote"), by = one("--by") || process.env.FACT_CHECK_BY;
+const verifyN = one("--verify-sample") != null ? Number(one("--verify-sample")) : null, verifyResult = one("--verify"), citeArg = one("--cite");
+const squashArg = s => s.replace(/\s+/g, " ").trim();
+const VERIFY_RESULTS = /^(confirmed|link-broken|wrong-locator|not-supported)$/;
+const sampleN = one("--sample") != null ? Number(one("--sample")) : null;
+const seed = one("--seed") || new Date().toISOString().slice(0, 10);
+const minAge = Number(one("--min-age") ?? 60);
 if (markStatus && !STATUSES.test(markStatus)) die(`--mark: status must be unchecked, ok, fixed, n/a or "issue #<n>"`);
 
+/* the source registry: every --lookup / --memory must name an id in it */
+const sources = existsSync(SOURCES) ? JSON.parse(readFileSync(SOURCES, "utf8")) : {};
+/* a look-up citation is { id, at, url, quote, by, verified?, verifiedBy? }; a memory citation is "<id>[:<locator>]" */
+const srcId = s => typeof s === "string" ? s.split(":")[0] : s.id;
+const srcText = s => typeof s === "string" ? s : `${s.id}:${s.at}`;
+if (many("--source").length) die("--source is gone: use --lookup <id>:<locator> for a source you opened, --memory <id> for one you recalled");
+for (const s of [...lookArgs, ...memArgs]) if (!sources[srcId(s)]) die(`${s}: "${srcId(s)}" is not in fact-check/sources.json; add it there first`);
+for (const s of lookArgs){
+  if (!/^[^:]+:\s*\S/.test(s)) die(`--lookup ${s}: give the locator you read it at, e.g. --lookup ${srcId(s)}:"ch. 9, table 9-1"`);
+  const acc = sources[srcId(s)].access;
+  if (acc === "none" || acc === "print")
+    die(`--lookup ${s}: sources.json says "${srcId(s)}" has access "${acc}", so there is no link a verifier can follow; use --memory, or find an online edition`);
+}
+if (lookArgs.length && (urlArgs.length !== lookArgs.length || quoteArgs.length !== lookArgs.length))
+  die(`each --lookup needs its own --url <link> and --quote "<excerpt>", in the same order (got ${lookArgs.length} --lookup, ${urlArgs.length} --url, ${quoteArgs.length} --quote)`);
+if ((urlArgs.length || quoteArgs.length) && !lookArgs.length) die("--url and --quote go with --lookup");
+const BAD_HOSTS = /(^|\.)(localhost|claude\.ai|chatgpt\.com|chat\.openai\.com|gemini\.google\.com|perplexity\.ai|wikipedia\.org)$/;
+for (const u of urlArgs){
+  let url; try { url = new URL(u); } catch { die(`--url ${u}: not a URL`); }
+  if (!/^https?:$/.test(url.protocol)) die(`--url ${u}: must be http(s)`);
+  if (BAD_HOSTS.test(url.hostname) || /^(127\.|10\.|192\.168\.)/.test(url.hostname)) die(`--url ${u}: ${url.hostname} is not a source a verifier can use (see FACTUAL_CHECK.md#links)`);
+  if (/(^|\.)(google|bing|duckduckgo)\.[a-z.]+$/.test(url.hostname) && /\/search|[?&]q=/.test(url.pathname + url.search)) die(`--url ${u}: a search result is not a link to the source`);
+}
+for (const q of quoteArgs) if (squashArg(q).length < 8 || squashArg(q).length > 300) die(`--quote: give 8-300 characters copied verbatim from the passage (got ${squashArg(q).length})`);
+if (markStatus && /^(ok|fixed|issue)/.test(markStatus) && !by) die(`--mark ${markStatus} needs --by <who> (or FACT_CHECK_BY): a person's handle or an agent run, e.g. claude-nightly-${new Date().toISOString().slice(0, 10)}`);
+if (verifyResult && !VERIFY_RESULTS.test(verifyResult)) die("--verify: confirmed, link-broken, wrong-locator or not-supported");
+if (verifyResult && (!by || !citeArg || keys.length !== 1 || pagesWanted.length !== 1)) die("--verify needs --page <page> --key <key> --cite <source id> --by <verifier>");
+if (verifyN != null && (!(verifyN > 0) || !by)) die("--verify-sample needs a positive number and --by <verifier>, so it can leave out the verifier's own look-ups");
+const cited = lookArgs.length + memArgs.length;
+if (cited && !markStatus) die("--lookup and --memory go with --mark");
+if (cited && /^(unchecked|n\/a)$/.test(markStatus)) die(`--mark ${markStatus} takes no sources`);
+if (markStatus && /^(ok|fixed|issue)/.test(markStatus) && !cited)
+  die(`--mark ${markStatus} needs --lookup <id>:<locator> (a source you opened) or --memory <id> (one you recalled); internal:<registry row or key> for a consistency check`);
+if (viaWanted && !/^(lookup|memory|unknown)$/.test(viaWanted)) die("--via: lookup, memory or unknown");
+if (flag("--recheck") && (!markStatus || !keys.length || prefixes.length))
+  die("--recheck goes with --mark and --key <exact key> (one or more), not --prefix: re-check items one at a time");
+if (sampleN != null && !(sampleN > 0)) die("--sample: give a positive number");
+
 function die(msg){ console.error(msg); process.exit(2); }
+
+/* ---------- links: a look-up citation must carry a link that works for a verifier ---------- */
+const links = existsSync(LINKS) ? JSON.parse(readFileSync(LINKS, "utf8")) : {};
+async function probe(url){
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
+  try {
+    const res = await fetch(url, { redirect: "follow", signal: ctl.signal, headers: { "user-agent": "Mozilla/5.0 (compatible; fact-check link checker)", accept: "text/html,application/pdf,*/*" } });
+    res.body?.cancel?.();
+    /* 401 / 403 / 429: the server answered but wants a login or blocks robots; a person can still follow it */
+    const state = res.ok ? "ok" : [401, 402, 403, 429].includes(res.status) ? "login" : "broken";
+    return { state, code: res.status, final: res.url !== url ? res.url : undefined };
+  } catch (e){ return { state: "broken", code: 0, error: String(e.cause?.code || e.name || e.message) }; }
+  finally { clearTimeout(timer); }
+}
+async function probeAll(urls){
+  const out = {};
+  for (let i = 0; i < urls.length; i += 6) await Promise.all(urls.slice(i, i + 6).map(async u => { out[u] = links[u] = { ...(await probe(u)), checked: new Date().toISOString().slice(0, 10) }; }));
+  writeFileSync(LINKS, JSON.stringify(Object.fromEntries(Object.entries(links).sort()), null, 1) + "\n");
+  return out;
+}
+if (urlArgs.length && markStatus && !flag("--no-link-check")){
+  const res = await probeAll([...new Set(urlArgs)]);
+  const dead = Object.entries(res).filter(([, r]) => r.state === "broken");
+  if (dead.length) die("These links don't work, so nothing was marked:\n  " + dead.map(([u, r]) => `${u}  (${r.code || r.error})`).join("\n  "));
+}
 
 /* ---------- reading the pages ---------- */
 function pageFiles(){
@@ -144,7 +247,29 @@ const ledger = existsSync(LEDGER) ? JSON.parse(readFileSync(LEDGER, "utf8")) : {
 ledger.ignore ||= {}; ledger.pages ||= {};
 
 const selected = page => !pagesWanted.length || pagesWanted.includes(page);
-const prefixed = key => !prefixes.length || prefixes.some(p => key.startsWith(p));
+const keyed = key => (!prefixes.length && !keys.length) || keys.includes(key) || prefixes.some(p => key.startsWith(p));
+/* the row filters (--batch, --cites) apply on top of the key selection */
+const viaOf = row => row?.via || "unknown";
+const rowOk = row => (!batch || row?.checked === batch) && (!cites || [...(row?.src || []), ...(row?.mem || [])].some(s => srcId(s) === cites))
+  && (!viaWanted || viaOf(row) === viaWanted);
+/* merge citations: a source looked up wins over the same source recalled; "via" is lookup only if nothing was recalled */
+function cite(row, keepOld){
+  const look = new Map(), mem = new Map();
+  if (keepOld){ for (const s of row.src || []) look.set(srcId(s), s); for (const s of row.mem || []) mem.set(srcId(s), s); }
+  lookArgs.forEach((s, i) => {
+    look.set(srcId(s), { id: srcId(s), at: s.slice(s.indexOf(":") + 1).trim(), url: urlArgs[i], quote: squashArg(quoteArgs[i]), by });
+    mem.delete(srcId(s));
+  });
+  for (const s of memArgs) if (!look.has(srcId(s))) mem.set(srcId(s), s);
+  delete row.src; delete row.mem; delete row.via;
+  if (look.size) row.src = [...look.values()];
+  if (mem.size) row.mem = [...mem.values()];
+  if (look.size || mem.size) row.via = mem.size ? "memory" : "lookup";
+}
+const prefixed = (key, row) => keyed(key) && rowOk(row);
+const days = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5;
+const recheckLog = [], pool = [], verifyLog = [], vpool = [];
+let verified = 0;
 
 const today = new Date().toISOString().slice(0, 10);
 const report = [];
@@ -170,7 +295,8 @@ for (const { id: page, path, engine } of pageFiles()){
     for (const key of fresh) rows[key] = { hash: hash(squash(items.get(key))), status: "unchecked" };
     for (const key of changed){
       const was = rows[key].status;
-      rows[key] = { hash: hash(squash(items.get(key))), status: "unchecked", ...(rows[key].note ? { note: rows[key].note } : {}), ...(was !== "unchecked" ? { was } : {}) };
+      rows[key] = { hash: hash(squash(items.get(key))), status: "unchecked", ...(rows[key].note ? { note: rows[key].note } : {}),
+        ...(rows[key].src ? { src: rows[key].src } : {}), ...(rows[key].mem ? { mem: rows[key].mem } : {}), ...(was !== "unchecked" ? { was } : {}) };
     }
     for (const key of removed) delete rows[key];
     ledger.pages[page] = Object.fromEntries(Object.entries(rows).sort(([a], [b]) => a.localeCompare(b, "en")));
@@ -178,23 +304,65 @@ for (const { id: page, path, engine } of pageFiles()){
 
   if (markStatus){
     for (const [key, row] of Object.entries(ledger.pages[page] || {})){
-      if (!prefixed(key) || !items.has(key) || row.hash !== hash(squash(items.get(key)))) continue;
+      if (!prefixed(key, row) || !items.has(key) || row.hash !== hash(squash(items.get(key)))) continue;
       if (flag("--unchecked") && row.status !== "unchecked") continue;
-      row.status = markStatus; row.checked = today; delete row.was;
+      const before = row.status, batchDate = row.checked;
+      if (flag("--recheck")){
+        if (!/^(ok|fixed|n\/a)$/.test(before)) die(`--recheck: ${page} ${key} is "${before}", not an approved row`);
+        recheckLog.push({ date: today, seed: one("--seed") || today, page, key, was: before, batch: batchDate || null, wasVia: viaOf(row), wasBy: row.by || null, by: by || null, now: markStatus,
+          via: !cited ? null : memArgs.length ? "memory" : "lookup", ...(lookArgs.length ? { lookup: lookArgs } : {}), ...(memArgs.length ? { memory: memArgs } : {}), ...(note ? { note } : {}) });
+        row.rechecked = today;
+        if (markStatus !== before){ row.status = markStatus; row.checked = today; if (by) row.by = by; }
+      } else {
+        if (markStatus === "unchecked" && before !== "unchecked") row.was = before; else delete row.was;
+        row.status = markStatus; row.checked = today; delete row.rechecked;
+        if (by && markStatus !== "unchecked") row.by = by; else delete row.by;
+      }
+      if (cited) cite(row, flag("--recheck") && markStatus === before);   /* a confirming re-check adds to the old citations */
+      else if (!flag("--recheck")) delete row.via;                        /* unchecked, n/a: the old src / mem stay as a lead */
       if (note != null){ if (note) row.note = note; else delete row.note; }
       marked++;
     }
   }
 
+  /* ---------- independent verification of look-up citations ---------- */
+  for (const [key, row] of Object.entries(ledger.pages[page] || {})){
+    if (!items.has(key) || row.hash !== hash(squash(items.get(key))) || !/^(ok|fixed|issue)/.test(row.status)) continue;
+    for (const c of row.src || []){
+      if (typeof c === "string") continue;   /* a look-up recorded before links were required: nothing to follow */
+      if (verifyN != null && prefixed(key, row) && c.by !== by && row.by !== by && !(days(c.verified || "1970-01-01", today) < minAge))
+        vpool.push({ page, key, row, c, text: items.get(key) });
+      if (verifyResult && keyed(key) && c.id === citeArg){
+        if (c.by === by || row.by === by) die(`--verify: ${by} made this check, so can't verify it; verification has to be independent`);
+        verifyLog.push({ date: today, page, key, cite: c.id, at: c.at, url: c.url, checkedBy: c.by || row.by || null, by, result: verifyResult, ...(note ? { note } : {}) });
+        if (verifyResult === "confirmed"){ c.verified = today; c.verifiedBy = by; }
+        else {
+          /* the look-up can't be reproduced: keep it only as a recollection */
+          row.src = row.src.filter(x => x !== c);
+          row.mem = [...new Set([...(row.mem || []), `${c.id}:${c.at}`])];
+          if (!row.src.length) delete row.src;
+          row.via = "memory";
+          row.note = `${verifyResult} on verification by ${by}, ${today}${note ? ": " + note : ""}` + (row.note ? ` | ${row.note}` : "");
+          if (verifyResult === "not-supported"){ row.was = row.status; row.status = "unchecked"; row.checked = today; }
+        }
+        verified++;
+      }
+    }
+  }
+
   const live = ledger.pages[page] || {};
-  const counts = { items: items.size, unchecked: 0, ok: 0, fixed: 0, "n/a": 0, issue: 0 };
+  const counts = { items: items.size, unchecked: 0, ok: 0, fixed: 0, "n/a": 0, issue: 0, lookup: 0, memory: 0, "via?": 0 };
   for (const key of items.keys()){
     const row = live[key];
     const st = !row || row.hash !== hash(squash(items.get(key))) ? "unchecked" : row.status.startsWith("issue") ? "issue" : row.status;
     counts[st]++;
-    if (st === "unchecked" && prefixed(key)) unchecked++;
-    if (flag("--list") && prefixed(key) && (flag("--all") || st === "unchecked"))
-      console.log(`${page} ${key} [${row && row.hash === hash(squash(items.get(key))) ? row.status : "unchecked"}]\n    ${squash(items.get(key)).slice(0, flag("--full") ? Infinity : 400)}`);
+    if (st === "unchecked" && prefixed(key, row)) unchecked++;
+    if (/^(ok|fixed|issue)$/.test(st)) counts[{ lookup: "lookup", memory: "memory" }[viaOf(row)] || "via?"]++;
+    if (flag("--list") && prefixed(key, row) && (flag("--all") || st === "unchecked"))
+      console.log(`${page} ${key} [${row && row.hash === hash(squash(items.get(key))) ? row.status + (st === "n/a" ? "" : ", via " + viaOf(row)) : "unchecked"}]\n    ${squash(items.get(key)).slice(0, flag("--full") ? Infinity : 400)}`);
+    /* approved, current, and not (re)checked in the last --min-age days: eligible for a random re-check */
+    if (sampleN != null && /^(ok|fixed|n\/a)$/.test(st) && prefixed(key, row) && !(days(row.rechecked || row.checked || "1970-01-01", today) < minAge))
+      pool.push({ page, key, row, text: items.get(key) });
   }
   report.push({ page, ...counts, new: fresh.length, changed: changed.length, removed: removed.length });
 }
@@ -206,15 +374,118 @@ function format(l){
     Object.entries(rows).map(([k, r]) => `   ${JSON.stringify(k)}: ${JSON.stringify(r)}`).join(",\n") + "\n  }").join(",\n");
   return `{\n "version": ${l.version},\n "ignore": {\n${ig}\n },\n "pages": {\n${pg}\n }\n}\n`;
 }
-if (flag("--update") || markStatus) writeFileSync(LEDGER, format(ledger));
+if (verifyResult && !verified) die(`--verify: no current look-up citation "${citeArg}" on that key (or the row isn't approved)`);
+if (flag("--update") || markStatus || verified) writeFileSync(LEDGER, format(ledger));
+if (verifyLog.length) appendFileSync(VERIFICATIONS, verifyLog.map(r => JSON.stringify(r)).join("\n") + "\n");
+if (recheckLog.length) appendFileSync(RECHECKS, recheckLog.map(r => JSON.stringify(r)).join("\n") + "\n");
+
+/* ---------- random re-check: a uniform sample, so the failure rate estimates the error rate of approvals ---------- */
+function rng(s){
+  let a = parseInt(createHash("sha1").update(String(s)).digest("hex").slice(0, 8), 16);
+  return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+if (sampleN != null){
+  const r = rng(seed), pick = [...pool];
+  for (let i = pick.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
+  const chosen = pick.slice(0, sampleN).sort((a, b) => a.page.localeCompare(b.page) || a.key.localeCompare(b.key, "en"));
+  console.log(`Random re-check: ${chosen.length} of ${pool.length} eligible approved items (seed "${seed}", not (re)checked in the last ${minAge} days)\n`);
+  for (const { page, key, row, text } of chosen){
+    console.log(`${page} ${key} [${row.status}, via ${viaOf(row)}, checked ${row.checked || "?"}${row.rechecked ? ", rechecked " + row.rechecked : ""}]`);
+    for (const c of row.src || []) console.log(`    looked up: ${srcText(c)}${c.url ? "  " + c.url : ""}${c.by ? "  (by " + c.by + ")" : ""}`);
+    if (row.mem?.length) console.log(`    from memory: ${row.mem.join("; ")}`);
+    if (row.note) console.log(`    note: ${row.note}`);
+    console.log(`    ${squash(text).slice(0, flag("--full") ? Infinity : 1200)}\n`);
+  }
+  if (chosen.length) console.log(`Record each result with:\n  node fact-check/scan.mjs --page <page> --key <key> --recheck --mark <ok|fixed|n/a|"issue #n"|unchecked> --by <you> --lookup <id>:<locator> --url <link> --quote "…" | --memory <id> [--note "…"] --seed ${seed}`);
+  process.exit(0);
+}
+
+/* ---------- independent verification: a uniform sample of look-up citations ---------- */
+if (verifyN != null){
+  const r = rng(seed), pick = [...vpool];
+  for (let i = pick.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
+  const chosen = pick.slice(0, verifyN);
+  console.log(`Verification sample: ${chosen.length} of ${vpool.length} look-up citations not made by ${by} (seed "${seed}", not verified in the last ${minAge} days)\n`);
+  for (const { page, key, row, c, text } of chosen){
+    const l = links[c.url];
+    console.log(`${page} ${key} [${row.status}, checked by ${c.by || row.by || "?"} on ${row.checked}]`);
+    console.log(`    claim:   ${squash(text).slice(0, flag("--full") ? Infinity : 1200)}`);
+    console.log(`    source:  ${sources[c.id]?.cite || c.id}`);
+    console.log(`    at:      ${c.at}`);
+    console.log(`    link:    ${c.url}${l ? `  (link check ${l.checked}: ${l.state}${l.code ? " " + l.code : ""})` : ""}`);
+    console.log(`    excerpt: "${c.quote}"`);
+    console.log(`    record:  node fact-check/scan.mjs --page ${page} --key '${key}' --cite ${c.id} --by ${by} --verify <confirmed|link-broken|wrong-locator|not-supported> [--note "…"]\n`);
+  }
+  process.exit(0);
+}
+
+/* ---------- link check: is every look-up link still alive? ---------- */
+if (flag("--check-links")){
+  const maxAge = Number(one("--max-age") ?? 30), uses = {};
+  for (const [page, rows] of Object.entries(ledger.pages)) if (selected(page)) for (const [key, row] of Object.entries(rows))
+    for (const c of row.src || []) if (typeof c === "object" && keyed(key) && rowOk(row)) (uses[c.url] ||= []).push(`${page} ${key} (${c.id})`);
+  const due = Object.keys(uses).filter(u => !(links[u] && days(links[u].checked, today) < maxAge));
+  const res = await probeAll(due);
+  const bad = Object.entries(uses).filter(([u]) => (res[u] || links[u])?.state === "broken");
+  console.log(`Links: ${Object.keys(uses).length} in the selection, ${due.length} checked now, ${bad.length} broken.`);
+  for (const [u, at] of bad) console.log(`\n${u}  (${links[u].code || links[u].error})\n  ` + at.join("\n  "));
+  const login = Object.keys(uses).filter(u => links[u]?.state === "login").length;
+  if (login) console.log(`\n${login} link(s) answer with a login or robot block (401/403/429): fine for a verifier with access, but confirm by hand once.`);
+  process.exit(bad.length ? 1 : 0);
+}
+
+/* ---------- re-check results ---------- */
+if (flag("--recheck-stats")){
+  const log = existsSync(RECHECKS) ? readFileSync(RECHECKS, "utf8").split("\n").filter(Boolean).map(l => JSON.parse(l)) : [];
+  const group = by => { const g = {}; for (const e of log){ const k = by(e); (g[k] ||= { rechecked: 0, failed: 0 }).rechecked++; if (e.now !== e.was) g[k].failed++; } return g; };
+  for (const [title, by] of [["page", e => e.page], ["approval batch (page, checked date)", e => `${e.page} ${e.batch || "?"}`],
+    ["how the approval was checked", e => e.wasVia || "unknown"]]){
+    console.log(`By ${title}:`);
+    for (const [k, v] of Object.entries(group(by)).sort()) console.log(`  ${k.padEnd(28)} ${String(v.rechecked).padStart(4)} rechecked  ${String(v.failed).padStart(3)} failed  ${(100 * v.failed / v.rechecked).toFixed(0).padStart(3)}%`);
+    console.log("");
+  }
+  if (!log.length) console.log("No re-checks logged yet.");
+  const vlog = existsSync(VERIFICATIONS) ? readFileSync(VERIFICATIONS, "utf8").split("\n").filter(Boolean).map(l => JSON.parse(l)) : [];
+  console.log("\nIndependent verifications of look-up citations:");
+  if (!vlog.length) console.log("  none logged yet.");
+  for (const [title, f] of [["checker", e => e.checkedBy || "?"], ["page", e => e.page], ["result", e => e.result]]){
+    const g = {};
+    for (const e of vlog){ const k = f(e); (g[k] ||= { n: 0, failed: 0 }).n++; if (e.result !== "confirmed") g[k].failed++; }
+    if (vlog.length) console.log(`  by ${title}:\n` + Object.entries(g).sort().map(([k, v]) => `    ${k.padEnd(28)} ${String(v.n).padStart(4)} verified  ${String(v.failed).padStart(3)} failed  ${(100 * v.failed / v.n).toFixed(0).padStart(3)}%`).join("\n"));
+  }
+  process.exit(0);
+}
+
+/* ---------- the source registry ---------- */
+if (flag("--sources")){
+  const uses = {}, unknown = [], nosrc = [], nolink = [];
+  const use = (s, how, page, key) => sources[srcId(s)] ? ((uses[srcId(s)] ||= { lookup: 0, memory: 0 })[how]++) : unknown.push(`${page} ${key}: ${s}`);
+  for (const [page, rows] of Object.entries(ledger.pages)) for (const [key, row] of Object.entries(rows)){
+    for (const s of row.src || []){ use(s, "lookup", page, key); if (typeof s === "string") nolink.push(`${page} ${key}: ${s}`); }
+    for (const s of row.mem || []) use(s, "memory", page, key);
+    if (/^(ok|fixed|issue)/.test(row.status) && !row.src?.length && !row.mem?.length) nosrc.push(`${page} ${key} [${row.status}]${row.note ? " — " + row.note : ""}`);
+  }
+  console.log(`${"id".padEnd(16)} looked up  recalled  access    kind`);
+  for (const [id, s] of Object.entries(sources))
+    console.log(`${id.padEnd(16)} ${String(uses[id]?.lookup || 0).padStart(9)}  ${String(uses[id]?.memory || 0).padStart(8)}  ${(s.access || "?").padEnd(8)}  ${s.kind.padEnd(9)} ${s.review && s.review <= today ? "REVIEW DUE " + s.review + "  " : ""}${s.cite}`);
+  const noAccess = Object.keys(sources).filter(id => !sources[id].access);
+  if (noAccess.length) console.log(`\nSources with no "access" recorded (${noAccess.length}): ${noAccess.join(", ")}`);
+  if (unknown.length) console.log(`\nUnknown source ids (${unknown.length}):\n  ` + unknown.join("\n  "));
+  if (nolink.length) console.log(`\nLook-ups with no link (${nolink.length}): re-cite them with --url and --quote, or move them to --memory:\n  ` + nolink.join("\n  "));
+  const byStatus = nosrc.reduce((n, l) => (n[l.match(/\[(\w+)/)[1]] = (n[l.match(/\[(\w+)/)[1]] || 0) + 1, n), {});
+  if (nosrc.length) console.log(`\nApproved or filed rows that cite no source and have no "via" (${nosrc.length}: ${Object.entries(byStatus).map(([k, v]) => `${v} ${k}`).join(", ")})` +
+    (flag("--full") ? ":\n  " + nosrc.join("\n  ") : "; add --full to list them"));
+  process.exit(0);
+}
 
 if (!flag("--list")){
-  const cols = ["page", "items", "unchecked", "ok", "fixed", "n/a", "issue", "new", "changed", "removed"];
+  const cols = ["page", "items", "unchecked", "ok", "fixed", "n/a", "issue", "lookup", "memory", "via?", "new", "changed", "removed"];
   const w = cols.map(c => Math.max(c.length, ...report.map(r => String(r[c]).length)));
   const line = r => cols.map((c, i) => String(r[c]).padStart(w[i])).join("  ");
   console.log(line(Object.fromEntries(cols.map(c => [c, c]))));
   report.forEach(r => console.log(line(r)));
-  if (markStatus) console.log(`\nmarked ${marked} item(s) "${markStatus}"`);
+  if (verified) console.log(`\nrecorded ${verified} verification(s) "${verifyResult}" (logged to fact-check/verifications.jsonl)`);
+  if (markStatus) console.log(`\nmarked ${marked} item(s) "${markStatus}"${flag("--recheck") ? " as a re-check (logged to fact-check/rechecks.jsonl)" : ""}`);
   if (dirty && !flag("--update")) console.log("\nThe ledger is out of date: run with --update.");
 }
 if (flag("--check") && (unchecked || (dirty && !flag("--update")))) process.exit(1);

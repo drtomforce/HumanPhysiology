@@ -1,0 +1,18 @@
+{
+ "internal": {"kind": "internal", "access": "open", "cite": "Internal consistency: the consistency registry in FACTUAL_CHECK.md, or another ledger key named in the locator (e.g. internal:registry/cardiac-output, internal:liver/fn:metab)."},
+ "guyton14": {"kind": "textbook", "cite": "Hall JE, Hall ME. Guyton and Hall Textbook of Medical Physiology. 14th ed. Philadelphia: Elsevier; 2021."},
+ "boron3": {"kind": "textbook", "cite": "Boron WF, Boulpaep EL, eds. Medical Physiology. 3rd ed. Philadelphia: Elsevier; 2017."},
+ "ganong26": {"kind": "textbook", "cite": "Barrett KE, Barman SM, Brooks HL, Yuan JX-J. Ganong's Review of Medical Physiology. 26th ed. New York: McGraw-Hill; 2019."},
+ "west11": {"kind": "textbook", "cite": "West JB, Luks AM. West's Respiratory Physiology: The Essentials. 11th ed. Philadelphia: Wolters Kluwer; 2020."},
+ "kandel6": {"kind": "textbook", "cite": "Kandel ER, Koester JD, Mack SH, Siegelbaum SA, eds. Principles of Neural Science. 6th ed. New York: McGraw-Hill; 2021."},
+ "rowell1993": {"kind": "textbook", "cite": "Rowell LB. Human Cardiovascular Control. New York: Oxford University Press; 1993."},
+ "wasserman-pet5": {"kind": "textbook", "cite": "Wasserman K, Hansen JE, Sue DY, Stringer WW, Sietsema KE, Sun X-G, Whipp BJ. Principles of Exercise Testing and Interpretation. 5th ed. Philadelphia: Lippincott Williams & Wilkins; 2012."},
+ "acsm11": {"kind": "guideline", "cite": "American College of Sports Medicine. ACSM's Guidelines for Exercise Testing and Prescription. 11th ed. Philadelphia: Wolters Kluwer; 2021.", "review": "2027-11-01"},
+ "esh2023": {"kind": "guideline", "cite": "Mancia G, Kreutz R, Brunström M, et al. 2023 ESH Guidelines for the management of arterial hypertension. J Hypertens. 2023;41(12):1874-2071.", "review": "2027-11-01"},
+ "ada2026": {"kind": "guideline", "cite": "American Diabetes Association Professional Practice Committee. Standards of Care in Diabetes—2026. Diabetes Care. 2026;49(Suppl 1).", "review": "2027-01-01", "note": "Replaced every January: re-cite the new year's edition."},
+ "aasm3": {"kind": "guideline", "cite": "Troester MM, Quan SF, Berry RB, et al. The AASM Manual for the Scoring of Sleep and Associated Events: Rules, Terminology and Technical Specifications. Version 3. Darien, IL: American Academy of Sleep Medicine; 2023.", "review": "2027-11-01"},
+ "carskadon2017": {"kind": "textbook", "cite": "Carskadon MA, Dement WC. Normal human sleep: an overview. In: Kryger M, Roth T, Dement WC, eds. Principles and Practice of Sleep Medicine. 6th ed. Philadelphia: Elsevier; 2017."},
+ "rothman1991": {"kind": "primary", "cite": "Rothman DL, Magnusson I, Katz LD, Shulman RG, Shulman GI. Quantitation of hepatic glycogenolysis and gluconeogenesis in fasting humans with 13C NMR. Science. 1991;254(5031):573-576."},
+ "wasserman2009": {"kind": "review", "cite": "Wasserman DH. Four grams of glucose. Am J Physiol Endocrinol Metab. 2009;296(1):E11-E21."},
+ "lewis1997": {"kind": "primary", "cite": "Lewis SJ, Heaton KW. Stool form scale as a useful guide to intestinal transit time. Scand J Gastroenterol. 1997;32(9):920-924."}
+}

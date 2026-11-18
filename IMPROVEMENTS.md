@@ -9,12 +9,12 @@ The README describes what already exists. This file only lists what doesn't exis
 |---|---|---|
 | Organs on the body (close-up + phase text) | 13: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat | New organs: see [New organs for the body](#new-organs-for-the-body) |
 | Organ deep-dive pages (`organs/<id>.html`) | 7: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas | 6 existing organs + any new ones |
-| Body systems animated on the body | 6: circulatory, nervous, endocrine, respiratory, digestive, urinary | 4: immune & lymphatic, muscles & skeleton, skin, reproductive |
-| Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | One per new system, plus cross-system journeys |
+| Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic (no journey yet) | 3: muscles & skeleton, skin, reproductive |
+| Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | Follow an infection (immune), one per new system, plus cross-system journeys |
 
 ## Next up
 
-Both items here are done. The liver and pancreas pages are built; the next step is the immune & lymphatic system on the body (see [Suggested order](#suggested-order)).
+Both items here are done. The liver and pancreas pages are built, and the immune & lymphatic system now animates on the body. The next step is its "follow an infection" journey, then the spleen & lymph nodes as a new organ (see [2.1](#21-immune--lymphatic) and [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -144,7 +144,13 @@ Built as planned below; see the README for what it covers. What changed from the
 
 Organ pages already have lens cards for these four systems, but the body view can't show them yet. Each needs what the existing six have: a layer (`.sys-<id>`) with its own animator, text for each phase at four levels, numbered fact pins, a card in the side panel, a "Part of" chip mapping in `ORGAN_SYSTEMS`, and a journey to ride along. Once a system is animated, its lens cards on the organ pages should link back to it.
 
-### 2.1 Immune & lymphatic
+### 2.1 Immune & lymphatic (layer ✅ Done, journey and organ still open)
+The layer is built: see the README for what it covers, and `node tests/systems-check.mjs immune` for its check. What changed from the plan, and what is still open:
+- **Journey: follow an infection** is not built. It is the next task: a `lapseRide` journey like BITE RIDE and DROP RIDE (a STRINGS `followInfection` button in the immune card, a tap on a node or a moving lymphocyte to start it, text in `CONTENT.infection`), with the "vaccinated" toggle.
+- **Spleen & lymph nodes as an organ** (3.1): the spleen, thymus, tonsils, marrow and Peyer's patches are drawn in the layer, but there is no organ topic, close-up or hotspot for them yet. The "Part of" chips now list the immune system for the gut, liver, skin, bones and throat.
+- **Chylomicrons** ride their own lymph routes here; the fat bite journey still draws its own path up `THORACIC_D`. The two could share the lymph dots, so a bite's chylomicron is one of the milky dots.
+- **Channels are simplified**: thoracic duct flow (`lymphFlow`, ~1.2 mL/min at rest, ~3× in the run), `chyle` (gut activity lagged by 1.5 h), `nodeTraffic` (0–1, high in deep sleep with low cortisol), `spleen` (−25% in the run), and keyframed `neutrophils`, `lymphocytes` (×10⁹/L) and `il6`. They are not yet read by the vitals panel, and there is no CRP, fever or infection state.
+- **No tap targets**: tapping the immune layer does nothing yet (it will start the journey).
 - **Draw**: lymph vessels and nodes (neck, armpits, groin, mesenteric), thoracic duct → left subclavian vein, spleen, thymus, tonsils, bone marrow and Peyer's patches.
 - **Animate**: lymph creeping centrally, faster with muscle activity in the run and with breathing. White-cell traffic through nodes. The overnight peak of immune activity in sleep and the effect of cortisol through the day. Chylomicrons already ride the lacteals in the fat bite journey, so share that path.
 - **Physiology channels**: lymph flow, neutrophil and lymphocyte counts (with their daily rhythm), and inflammatory markers.
@@ -264,7 +270,7 @@ These span several organs and are best built as their own pages (for example `ex
 3. ~~Export utility~~ (done).
 4. ~~Mobile view of the body~~ (done).
 5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
-6. **Immune & lymphatic system on the body**, with the spleen and lymph nodes as a new organ.
+6. **Immune & lymphatic system on the body**: ~~the animated layer~~ (done); next the "follow an infection" journey, then the spleen and lymph nodes as a new organ.
 7. Muscles and bones pages, then the muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).
 9. Eyes, ears and throat pages.

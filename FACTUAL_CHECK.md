@@ -159,6 +159,27 @@ Every correction has to say where the right value came from, so that a later rea
 
 What does **not** count as a source: Wikipedia, AI output (including the nightly build's own text), a lecture slide, or "standard knowledge". Use them to find a real source, then cite that.
 
+### Open sources to look up first
+
+The standard textbooks (Guyton, Boron, Ganong, West, Kandel) are behind subscriptions, so an AI checker can only cite them from memory. These open sources can actually be opened and quoted, so try them first for a `--lookup`, then confirm or extend with the standard textbook from memory. An optional `home` in `sources.json` gives the place to start.
+
+| Topic | Open source (id) |
+|---|---|
+| Any system, at ms / hs / college level | `openstax-ap2e` (OpenStax *Anatomy and Physiology 2e*) |
+| Heart and circulation, pressures, ECG, the cardiac cycle | `klabunde-web` (Cardiovascular Physiology Concepts) |
+| Brain, nerves, conduction velocities, sleep circuits | `byrne-nsonline` (Neuroscience Online); `purves2` (Purves *Neuroscience* 2nd ed.) |
+| Hormones: thyroid, cortisol, insulin and glucagon, growth hormone | `endotext` (Endotext) |
+| Immune system | `janeway5` (Janeway *Immunobiology* 5th ed.; for basics, prefer `janeway10` where they differ) |
+| Cerebral, hepatic, gut circulation; capillaries, interstitium and lymph | `cipolla2009`, `lautt2009`, `kvietys2010`, `scallan2010` (Colloquium Series on Integrated Systems Physiology) |
+| CKD stages, eGFR, albuminuria | `kdigo2024` |
+| COPD, spirometry and its reference values | `gold2027`, `graham2019`, `quanjer2012` |
+| Blood pressure categories and targets | `esc2024-htn` (and `esh2023`; say which one the app follows where they differ) |
+| Blood glucose and diabetes thresholds | `ada2026` |
+
+- The NCBI Bookshelf books (`purves2`, `janeway5`, `endotext` and the Colloquium Series) are free but some are "searchable, not browsable": find the passage with the Bookshelf search, and give the section's own `NBK…` page as the `--url`.
+- NCBI and several publishers show scripts a robot check. The link check accepts that (see [Links](#links)), but a WebFetch may get the check page instead of the text. Then try the publisher's page or the PMC copy. If none opens, cite the source with `--memory`.
+- StatPearls is open too, but its quality varies by chapter. Use it to find a primary source or guideline, not as the source.
+
 ### Looked up or from memory
 
 A check made from memory is worth something, but much less than one made with the book open, and the ledger has to say which it was. Every citation is recorded one way or the other:
@@ -298,5 +319,5 @@ New pages and systems from the nightly build get a row as they land, and are che
 3. ✅ Add the "Facts checked" gate to the checklist in `IMPROVEMENTS.md`.
 4. ✅ Fill in the consistency registry from the body view's `PHYSIO` keyframes, then start the backlog at row 1.
 5. ✅ Add the source registry, `fact-check/sources.json`, seeded with the sources the consistency registry names.
-6. Record `access` for each source in `sources.json` (`open`, `subscription`, `print` or `none`).
+6. Record `access` for each source in `sources.json` (`open`, `subscription`, `print` or `none`). Done for the open sources added on 2026-11-18 (see [Open sources to look up first](#open-sources-to-look-up-first)) and for `ada2026`, `wasserman2009` and `campbell2018`; still to do for the rest.
 7. The 1,335 rows approved on 2026-11-17 have no sources and no `via` (`node fact-check/scan.mjs --sources --full` lists them). Start with the 38 `fixed` ones: re-cite them, with `--lookup` only where the source is actually opened. Their notes name some sources (Shulman 1990 vs Cline 1999, Rubin & Lanyon); add those to `sources.json` first. The `ok` rows stay `unknown` and are reached by the random re-checks.

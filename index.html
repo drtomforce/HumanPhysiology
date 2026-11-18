@@ -17,7 +17,7 @@
 
  1. DATA (JSON blocks in <script type="application/json">)
     #body-content  topics → phases → levels → text, and systems (circulatory,
-                   nervous, endocrine, respiratory, digestive, urinary) → phases → levels
+                   nervous, endocrine, respiratory, digestive, urinary, immune) → phases → levels
                    → text plus fact pins
                    {title, x, y, levels…}. The schema is the contract.
     #body-glossary term → definition + match forms. Terms are auto-linked.
@@ -78,7 +78,12 @@
                    and stomach waves, chyme, bile, pancreatic juice, absorbed
                    nutrients and the colon's load (DIGESTION), and filtrate down the
                    nephrons, urine down the ureters, the bladder filling and
-                   emptying, and renin in the run (URINARY).
+                   emptying, and renin in the run (URINARY), and lymph creeping
+                   up LYMPH_ROUTES through the nodes, milky after meals and pumped
+                   by muscle and breathing in the run, lymphocytes homing into the
+                   nodes (most at night), neutrophils leaving the marrow, IL-6
+                   from working thighs and the spleen contracting (IMMUNE). The
+                   immune system has no journey yet.
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
@@ -475,6 +480,18 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .ur-bladder{ stroke:#1597a8; stroke-width:1.6; }
 .ur-sphincter{ fill:none; stroke:#1597a8; stroke-width:2.4; }
 .ur-dot{ stroke:#ffffff80; stroke-width:.5; }
+.im-vessel{ fill:none; stroke:#7fb85a; stroke-width:1.2; stroke-dasharray:2.5 2.5; stroke-linecap:round; opacity:.75; }
+.im-vessel.gut{ stroke:#c9b56a; }
+.im-duct{ fill:none; stroke:#5f9e4b; stroke-width:2.2; stroke-linecap:round; opacity:.8; }
+.im-node{ fill:#8fc46c; stroke:#3f7a30; stroke-width:.9; }
+.im-halo{ fill:#a9d37f; opacity:.3; }
+.im-cisterna{ fill:#e8d9a0; stroke:#5f9e4b; stroke-width:.9; }
+.im-spleen{ fill:#8a3d63; stroke:#5e2441; stroke-width:1.1; }
+.im-thymus{ fill:#dfa497; stroke:#5f9e4b; stroke-width:1; }
+.im-tonsil{ fill:#d98a8f; stroke:#5f9e4b; stroke-width:.8; }
+.im-peyer{ fill:#9fcf78; stroke:#3f7a30; stroke-width:.6; }
+.im-marrow{ fill:#d9664f; opacity:.45; }
+.im-dot{ stroke:#ffffff80; stroke-width:.4; }
 #s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo{ opacity:.28; }
 #s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
 #s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
@@ -1732,6 +1749,118 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "hs": "When you decide to go, a centre in the brainstem squeezes the bladder and opens both sphincters. A healthy pee takes about 20–30 seconds, in a person as in a dog or an elephant.",
           "college": "The pontine micturition centre coordinates detrusor contraction with relaxation of the internal (smooth) and external (striated, pudendal nerve) sphincters. Babies void by spinal reflex; voluntary control develops with the frontal cortex.",
           "phd": "Mammals over 3 kg empty their bladders in about 21 seconds, because longer urethras raise flow by gravity (Yang et al., 2014). Spinal cord injury above the sacral cord causes detrusor–sphincter dyssynergia."
+        }
+      ]
+    },
+    "immune": {
+      "name": "Immune & lymphatic system",
+      "blurb": "Lymph vessels, nodes, spleen, thymus and marrow: draining tissue fluid and keeping watch for germs",
+      "phases": {
+        "sleep": {
+          "ms": "While you sleep, your immune system gets busy. Many white blood cells leave the blood and gather in your lymph nodes, where they check for germs and learn to remember them. That is one reason why sleep helps you fight off colds and makes vaccines work better.",
+          "hs": "At night the stress hormone cortisol is at its lowest, and white blood cells called T cells move out of the blood into the lymph nodes. There they meet cells that carry pieces of germs and learn to recognise them. Lymph flows more slowly while you lie still, because there are no moving muscles to squeeze it along. People who sleep less than six hours catch colds more easily.",
+          "college": "Blood lymphocyte counts peak around midnight and fall in the morning as cortisol rises. Deep slow-wave sleep, with low cortisol and high growth hormone and prolactin, favours antigen-presenting cells making IL-12 and TNF and pushes T helper cells towards a Th1 response. Sleep itself moves naive T cells out of the blood, probably into lymph nodes. Sleeping the night after a hepatitis A vaccination nearly doubled antibody levels four weeks later compared with staying awake (Lange et al., 2003).",
+          "phd": "Sleep is thought to favour the consolidation of immunological memory, by analogy with neural memory: prolonged synapses between antigen-presenting cells and T cells during slow-wave sleep may help form memory T cells (Besedovsky, Lange and Born, 2012). In a viral challenge study, people who habitually slept under six hours were about four times more likely to develop a cold (Prather et al., 2015). Leukocyte trafficking is also clock-driven: in mice, adrenergic signals set the rhythmic recruitment of leukocytes to tissues (Scheiermann et al., 2012)."
+        },
+        "rest": {
+          "ms": "All day, a clear fluid called lymph leaks out of your blood into your tissues. Thin lymph vessels collect it and carry it back to the blood near your neck. On the way, it passes through hundreds of lymph nodes, little filters full of white blood cells that catch germs.",
+          "hs": "About 20 litres of fluid seep out of the capillaries each day, and most is taken back, but a few litres stay in the tissues. Lymph vessels collect this fluid, called lymph, and squeeze it along with their own muscle and one-way valves. It is filtered through about 600 lymph nodes and returns to the blood in veins at the base of the neck. Your bone marrow makes billions of new white blood cells every day.",
+          "college": "Lymph flow returns filtered fluid and plasma proteins to the circulation: about 8 L a day enter the lymph, and about half of it is taken back into the blood inside the nodes, leaving about 4 L to reach the veins. Lymphangions, the segments between valves, contract a few times a minute. The thoracic duct, carrying about 1–1.5 mL/min at rest, drains the legs, gut and left upper body into the left venous angle, and the right lymphatic duct drains the rest. Lymphocytes recirculate continuously: they enter nodes from the blood through high endothelial venules and leave in the lymph.",
+          "phd": "Only about 2% of the body’s lymphocytes are in the blood at any moment. Naive T cells home to nodes through L-selectin and CCR7 (responding to CCL19 and CCL21 on high endothelial venules), survey dendritic cells for several hours, and leave by following a sphingosine-1-phosphate gradient into the lymph. Fingolimod, used in multiple sclerosis, traps lymphocytes in the nodes by blocking S1P₁ receptors. The marrow releases about 10¹¹ neutrophils a day, and their blood count rises from a morning low as cortisol frees them from the marrow and vessel walls."
+        },
+        "meal": {
+          "ms": "After a meal, the lymph vessels of your gut fill with fat from your food, which makes the lymph look milky. Your gut is also the biggest home of immune cells in your body. Special patches in its wall check what you eat, so the immune system can ignore food and fight germs.",
+          "hs": "Fat from your meal is packed into particles called chylomicrons, which are too big to enter the blood capillaries of the gut. They go into the lymph vessels of the villi instead, turning the lymph milky (chyle). It flows up the thoracic duct and joins the blood in the neck. Patches of immune tissue in the small intestine, called Peyer’s patches, sample what passes by and teach the immune system to tolerate food and the friendly gut bacteria.",
+          "college": "Intestinal lymph flow rises several-fold after a fatty meal, peaking a few hours later as chylomicrons leave the lacteals for the mesenteric nodes, the cisterna chyli and the thoracic duct. Because they enter the blood at the left venous angle, absorbed fats and fat-soluble vitamins bypass the liver on their first pass. M cells over Peyer’s patches carry antigens to dendritic cells, and regulatory T cells keep the response to food in check (oral tolerance). The gut makes several grams of IgA antibody every day, more than all other antibody classes put together.",
+          "phd": "Rich, fatty meals cause a brief, mild rise in blood neutrophils and inflammatory markers (postprandial inflammation), in part from bacterial endotoxin carried in the chylomicrons. Oral tolerance depends on CD103⁺ dendritic cells taking antigen from the lamina propria to the mesenteric nodes, where retinoic acid and TGF-β drive gut-homing regulatory T cells. Lymph-borne lipid also reaches the mesenteric nodes first, which may explain the fat that surrounds them."
+        },
+        "exercise": {
+          "ms": "When you run, your leg muscles squeeze your lymph vessels, so lymph moves much faster. Adrenaline also shakes lots of white blood cells loose from the walls of your blood vessels, so for a while more of them patrol your body. Your spleen even squeezes out a little extra blood.",
+          "hs": "Exercise pumps lymph: contracting muscles squeeze the lymph vessels between their valves, and deep breathing sucks lymph up the thoracic duct. Lymph flow from working legs can rise more than ten times. Adrenaline releases white blood cells that were resting on the walls of blood vessels, so their numbers in the blood rise. Working muscles also release a messenger called IL-6, which helps fuel the run and calms inflammation later.",
+          "college": "During exercise, adrenaline acting on β2 receptors mobilises natural killer cells and CD8⁺ T cells into the blood, and lymphocyte counts can rise by half or more. For an hour or two afterwards, they fall below resting levels, as they move into tissues such as the lungs and gut. Neutrophils rise during exercise and keep rising for hours after, driven by cortisol. Contracting muscle releases IL-6 as a myokine; it increases several-fold in an hour’s run and up to about a hundred-fold in a marathon. In humans the spleen contracts, releasing stored red cells.",
+          "phd": "The post-exercise fall in lymphocytes was once called an “open window” of immune suppression, but it more likely reflects redistribution of effector cells to peripheral tissues for surveillance; regular moderate exercise is linked to fewer infections (Campbell and Turner, 2018). Muscle-derived IL-6 is anti-inflammatory in this setting: it induces IL-10 and IL-1 receptor antagonist and inhibits TNF, unlike IL-6 in sepsis. Splenic contraction, under α-adrenergic control, can raise haematocrit by a few per cent in hard exercise and breath-hold diving."
+        }
+      },
+      "pins": [
+        {
+          "id": "nodes",
+          "title": "Lymph nodes",
+          "x": 638,
+          "y": 238,
+          "ms": "Bean-sized filters along the lymph vessels, packed with white blood cells. They swell when you have an infection: the “swollen glands” in your neck.",
+          "hs": "You have about 600 lymph nodes, clustered in the neck, armpits, groin and belly. Germs carried in the lymph are trapped there, and white blood cells learn to attack them.",
+          "college": "A node has an outer cortex with B-cell follicles, a T-cell paracortex and a medulla where plasma cells make antibodies. Dendritic cells arrive in the afferent lymph carrying antigen, and lymphocytes enter from the blood.",
+          "phd": "Fibroblastic reticular cells build a conduit network that steers chemokines and small antigens to the T-cell zone, and germinal centres in the follicles drive antibody affinity maturation over one to two weeks."
+        },
+        {
+          "id": "tonsils",
+          "title": "Tonsils",
+          "x": 560,
+          "y": 222,
+          "ms": "Lumps of immune tissue at the back of your throat. They check the germs you breathe in and swallow.",
+          "hs": "The tonsils and adenoids form a ring of immune tissue around the throat. Their deep pits trap germs, so the immune system can learn about them early.",
+          "college": "Waldeyer’s ring (palatine, pharyngeal and lingual tonsils) is mucosa-associated lymphoid tissue without afferent lymph vessels: antigen enters directly through crypt epithelium.",
+          "phd": "The tonsils are most active in childhood. Removing them does not measurably weaken overall immunity, which suggests other mucosal tissue can take over their role."
+        },
+        {
+          "id": "thymus",
+          "title": "Thymus",
+          "x": 574,
+          "y": 322,
+          "ms": "A small organ behind your breastbone where T cells go to school. It is biggest in children and shrinks after puberty.",
+          "hs": "Young T cells from the bone marrow mature in the thymus. They are tested there: cells that would attack the body’s own tissues are removed.",
+          "college": "In positive selection, thymocytes that recognise self-MHC survive; in negative selection, those that bind self-antigens too strongly die. Over 95% of thymocytes never leave. The thymus is gradually replaced by fat with age.",
+          "phd": "The AIRE gene lets thymic epithelial cells display proteins from other organs, such as insulin. AIRE mutations cause APECED, an autoimmune disease of many glands."
+        },
+        {
+          "id": "thoracicDuct",
+          "title": "Thoracic duct",
+          "x": 584,
+          "y": 430,
+          "ms": "The body’s biggest lymph vessel. It runs up beside your spine and pours lymph back into a big vein near your neck.",
+          "hs": "The thoracic duct starts in a sac in the belly (the cisterna chyli) and carries lymph from the legs, gut and the left side of the body back to the blood.",
+          "college": "About 1–1.5 mL/min at rest, rising after fatty meals and in exercise. Low pressure in the chest during inspiration draws lymph upwards, and valves stop it from flowing back.",
+          "phd": "Thoracic duct injury in chest surgery causes chylothorax, milky fluid around the lung. Treatment includes a fat-free diet with medium-chain triglycerides, which are absorbed directly into the portal blood."
+        },
+        {
+          "id": "spleen",
+          "title": "Spleen",
+          "x": 726,
+          "y": 470,
+          "ms": "A fist-sized organ high on your left side. It filters your blood, removing old red blood cells and catching germs.",
+          "hs": "The red pulp of the spleen recycles worn-out red blood cells (after about 120 days), and the white pulp is full of white blood cells that respond to germs in the blood.",
+          "college": "Splenic macrophages remove old and damaged red cells and recycle their iron. Marginal-zone B cells respond quickly to bacteria with sugar capsules, so people without a spleen need vaccines against pneumococcus and similar bacteria.",
+          "phd": "Red cells must squeeze through slits about 1–2 µm wide in the walls of the splenic sinuses, which tests how deformable they are. The spleen also stores about a third of the body’s platelets."
+        },
+        {
+          "id": "marrow",
+          "title": "Bone marrow",
+          "x": 516,
+          "y": 574,
+          "ms": "The soft inside of your bones is a factory for blood cells, making billions of new white blood cells every day.",
+          "hs": "In adults, red marrow is found mainly in the hip bones, breastbone, spine and ribs. Stem cells there make red cells, platelets and all the kinds of white blood cells.",
+          "college": "The marrow releases about 10¹¹ neutrophils a day and holds a reserve several times larger, released quickly in infection or by cortisol. B cells mature in the marrow; T-cell precursors leave for the thymus.",
+          "phd": "G-CSF drives neutrophil production and release; recombinant G-CSF is used to mobilise stem cells into the blood for collection. CXCR4–CXCL12 signalling keeps cells in the marrow, and blocking it with plerixafor frees them."
+        },
+        {
+          "id": "peyer",
+          "title": "Peyer’s patches",
+          "x": 628,
+          "y": 624,
+          "ms": "Patches of immune tissue in the wall of your small intestine. They check the food and bacteria passing through.",
+          "hs": "Most of your immune cells live in and around your gut. Peyer’s patches in the last part of the small intestine sample what passes and help make antibodies that guard the gut lining.",
+          "college": "M cells in the epithelium over each patch carry antigens and microbes to dendritic cells beneath. B cells there switch to making IgA, which is secreted into the gut to bind microbes without causing inflammation.",
+          "phd": "Secretory IgA is moved across the epithelium by the polymeric immunoglobulin receptor. It shapes the gut microbiota, and IgA deficiency, the most common primary immunodeficiency, is often symptom-free."
+        },
+        {
+          "id": "valves",
+          "title": "Lymph vessels and valves",
+          "x": 528,
+          "y": 700,
+          "ms": "Lymph vessels have no heart to pump them. Your moving muscles squeeze them, and little valves keep the lymph flowing one way, towards your heart.",
+          "hs": "The walls of lymph vessels contract on their own, a few times a minute, and each segment between two valves pumps like a tiny heart. Walking and running squeeze them much harder.",
+          "college": "Lymphangions contract intrinsically at about 1–10 times a minute, faster when stretched. Extrinsic pumps (skeletal muscle, breathing and arterial pulsation) add to the flow, which is why long periods of standing still make ankles swell.",
+          "phd": "When lymph drainage fails, protein-rich fluid builds up (lymphoedema), for example after nodes are removed for cancer surgery or in filariasis. VEGF-C and its receptor VEGFR-3 drive lymph vessel growth, and Milroy disease comes from VEGFR-3 mutations."
         }
       ]
     }
@@ -3430,7 +3559,32 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "ureters": { "def": "The two muscular tubes that carry urine from the kidneys to the bladder.", "match": ["ureters", "ureter", "ureteric"] },
   "detrusor": { "def": "The muscle of the bladder wall. It relaxes as the bladder fills and squeezes to empty it.", "match": ["detrusor"] },
   "micturition": { "def": "Emptying the bladder: peeing.", "match": ["micturition", "voiding", "void"] },
-  "UT-A1": { "def": "A urea channel deep in the collecting duct, opened by ADH, that lets urea help the kidney save water.", "match": ["UT-A1", "UT-A3", "UT-A2", "urea recycling"] }
+  "UT-A1": { "def": "A urea channel deep in the collecting duct, opened by ADH, that lets urea help the kidney save water.", "match": ["UT-A1", "UT-A3", "UT-A2", "urea recycling"] },
+  "lymph nodes": { "def": "Bean-sized filters along the lymph vessels, about 600 of them, where white blood cells meet germs carried in the lymph.", "match": ["lymph nodes", "lymph node"] },
+  "lymphocytes": { "def": "White blood cells of the adaptive immune system: T cells, B cells and natural killer cells. They travel between the blood and the lymph nodes.", "match": ["lymphocytes", "lymphocyte"] },
+  "neutrophils": { "def": "The most common white blood cells. They rush to infections and swallow bacteria, and live for only a day or so in the blood.", "match": ["neutrophils", "neutrophil", "neutrophilia"] },
+  "white blood cells": { "def": "The cells of the immune system that travel in the blood and lymph (leukocytes).", "match": ["white blood cells", "white blood cell", "leukocytes", "leukocyte"] },
+  "T cells": { "def": "Lymphocytes that mature in the thymus. Helper T cells direct the immune response; killer (CD8⁺) T cells destroy infected cells.", "match": ["T cells", "T cell", "T helper cells", "T-cell", "thymocytes"] },
+  "B cells": { "def": "Lymphocytes that make antibodies once they are activated, after becoming plasma cells.", "match": ["B cells", "B cell", "B-cell"] },
+  "plasma cells": { "def": "Activated B cells that pour out antibodies.", "match": ["plasma cells", "plasma cell"] },
+  "antibodies": { "def": "Y-shaped proteins made by B cells that stick to a particular germ or toxin and mark it for destruction.", "match": ["antibodies", "antibody", "immunoglobulin"] },
+  "IgA": { "def": "The antibody class made in the gut and other linings and secreted onto their surface.", "match": ["IgA"] },
+  "dendritic cells": { "def": "Immune cells that pick up pieces of germs in the tissues and carry them to the lymph nodes to show to T cells.", "match": ["dendritic cells", "dendritic cell", "antigen-presenting cells"] },
+  "macrophages": { "def": "Large immune cells that swallow germs, dead cells and debris, such as worn-out red blood cells in the spleen.", "match": ["macrophages", "macrophage", "Kupffer cells"] },
+  "natural killer cells": { "def": "Lymphocytes that kill virus-infected and cancer cells without needing to have met them before.", "match": ["natural killer cells", "NK cells"] },
+  "regulatory T cells": { "def": "T cells that calm immune responses, for example to food and to the body’s own tissues.", "match": ["regulatory T cells", "Tregs"] },
+  "antigen": { "def": "Any molecule the immune system can recognise, such as a piece of a virus.", "match": ["antigen", "antigens"] },
+  "spleen": { "def": "An organ high on the left side of the belly that filters the blood, recycles old red cells and fights blood-borne germs.", "match": ["spleen", "splenic", "red pulp", "white pulp"] },
+  "thymus": { "def": "A gland behind the breastbone where young T cells mature. It shrinks after puberty.", "match": ["thymus", "thymic"] },
+  "tonsils": { "def": "Lumps of immune tissue around the back of the throat that sample germs breathed in or swallowed.", "match": ["tonsils", "tonsil", "adenoids", "Waldeyer’s ring"] },
+  "Peyer’s patches": { "def": "Clusters of immune tissue in the wall of the small intestine, mostly in the ileum, that sample the gut’s contents.", "match": ["Peyer’s patches", "Peyer’s patch", "M cells"] },
+  "cisterna chyli": { "def": "A small sac at the bottom of the thoracic duct where lymph from the legs and gut collects.", "match": ["cisterna chyli"] },
+  "chyle": { "def": "Milky lymph from the gut after a fatty meal, full of chylomicrons.", "match": ["chyle", "chylothorax"] },
+  "lymphangions": { "def": "The segments of a lymph vessel between two valves. Each one contracts on its own and pumps lymph onwards.", "match": ["lymphangions", "lymphangion"] },
+  "high endothelial venules": { "def": "Special small veins in lymph nodes through which lymphocytes leave the blood.", "match": ["high endothelial venules"] },
+  "cytokines": { "def": "Small proteins that immune and other cells use to signal to each other, such as IL-6 and TNF.", "match": ["cytokines", "cytokine", "IL-12", "TNF", "IL-10"] },
+  "IL-6": { "def": "Interleukin-6, a cytokine. In infection it drives fever and inflammation; released by working muscle, it helps supply fuel and calms inflammation.", "match": ["IL-6", "interleukin-6", "myokine"] },
+  "lymphoedema": { "def": "Swelling from protein-rich fluid that builds up when lymph can’t drain.", "match": ["lymphoedema", "lymphedema"] }
 }
 </script>
 
@@ -4684,7 +4838,10 @@ const SYSTEMS = [
              ["#e3a13c", "Pancreatic juice"], ["#b3a52e", "Nutrients to the liver"], ["#8a5a3a", "Waste in the colon"]] },
   { id: "urinary", short: "Urine", color: "#1597a8",
     legend: [["#7fd3dc", "Filtrate from the glomeruli"], ["#e8cf5a", "Urine: pale by day, dark at night"], ["#1597a8", "Ureter squeezes"],
-             ["#c2569a", "Renin from the kidney"]] }
+             ["#c2569a", "Renin from the kidney"]] },
+  { id: "immune", short: "Immune", color: "#5f9e4b",
+    legend: [["#a9d37f", "Lymph flowing back to the blood"], ["#f2dc9a", "Milky lymph (chyle) after a meal"], ["#6f7fd8", "Lymphocytes homing to nodes"],
+             ["#c9a0dc", "Neutrophils leaving the marrow"], ["#e56b3d", "IL-6 from working muscle"]] }
 ];
 const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
 /* which systems each organ topic belongs to (shown as "Part of" chips) */
@@ -4702,10 +4859,10 @@ const ORGAN_PAGES = {
 };
 const ORGAN_SYSTEMS = {
   brain: ["nervous", "endocrine", "respiratory"], heart: ["circulatory", "nervous"], lungs: ["respiratory", "circulatory"],
-  gut: ["digestive", "nervous", "endocrine", "circulatory"], liver: ["digestive", "circulatory", "endocrine"],
+  gut: ["digestive", "nervous", "endocrine", "circulatory", "immune"], liver: ["digestive", "circulatory", "endocrine", "immune"],
   pancreas: ["endocrine", "digestive"], kidneys: ["urinary", "endocrine", "circulatory"], muscles: ["nervous", "circulatory", "respiratory"],
-  skin: ["circulatory", "nervous"], bones: ["circulatory", "endocrine"],
-  eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "digestive", "nervous", "endocrine"]
+  skin: ["circulatory", "nervous", "immune"], bones: ["circulatory", "endocrine", "immune"],
+  eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "digestive", "nervous", "endocrine", "immune"]
 };
 
 /* The day plan. Anything not listed is "rest". */
@@ -4721,7 +4878,7 @@ function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.fr
 
 const STRINGS = {
   introTitle: "A day in the life of your body",
-  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air, food and urine. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
+  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air, food, urine and immune cells. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
   schedule: "Today’s plan: tap to jump",
   explore: "Look closer",
   hint: "Tip: dotted words have short definitions. Hover or tap them. Values are typical for a healthy adult.",
@@ -4859,6 +5016,17 @@ const PHYSIO = {
   /* growth hormone, 0–1: the big pulse comes with the first slow-wave sleep,
      smaller pulses later in the night and after exercise */
   growthHormone: [[0,.95],[.75,.7],[1.5,.3],[2.5,.15],[3.25,.35],[4,.12],[6.5,.05],[16.8,.05],[17.6,.25],[18.2,.45],[19,.15],[20,.05],[22.9,.06],[23.5,.6]],
+  /* white cells in the blood, ×10⁹/L. Neutrophils are lowest in the early
+     morning and rise through the day; in the run adrenaline frees the cells
+     resting on vessel walls, and cortisol keeps the count rising for hours
+     after. Lymphocytes peak around midnight and fall to a late-morning low as
+     cortisol sends them to the marrow; adrenaline lifts them in the run, and
+     they dip below the resting level for an hour or two after it. */
+  neutrophils: [[0,3.4],[4,3.2],[7,3.3],[10,3.8],[14,4.1],[16.8,4.1],[17.5,5],[18.3,5.6],[19.5,5.5],[21,4.6],[23,3.8]],
+  lymphocytes: [[0,2.6],[2,2.65],[5,2.5],[7,2.2],[9.5,1.8],[12,1.9],[16.8,2],[17.15,2.8],[17.5,3.1],[17.95,3],[18.3,1.9],[19,1.5],[20.5,1.8],[22,2.25],[23,2.5]],
+  /* IL-6, relative 0–1: a small rise in the night, several-fold from working
+     muscle in the run (a myokine), back down within a few hours */
+  il6:        [[0,.24],[3,.28],[6,.22],[9,.12],[16.8,.12],[17.5,.42],[18.3,.62],[19,.45],[20.5,.24],[23,.22]],
   /* thyroid hormone: steady through the day */
   thyroid:    [[0,.35],[12,.35]],
   /* stomach contents, 0–1: filled at each meal and emptied over 3–4 h (dinner
@@ -5005,6 +5173,16 @@ const Physio = {
     out.urineOsm = 150 + 950 * out.adh;
     out.renin = clamp(.12 + .7 * out.muscle + .15 * out.sympathetic);
     out.voiding = Math.max(...VOIDS.map(v => clamp(1 - Math.abs(((wrapH(h - v) + 12) % 24) - 12) / .05)));
+    /* immune and lymphatic. chyle = fat-laden gut lymph, peaking ~1.5 h after
+       the gut is busiest. Thoracic duct lymph flow, mL/min: ~1.2 at rest, a
+       little lower lying still, up after fatty meals and ~3× in the run
+       (muscle pump, deep breathing). nodeTraffic, 0–1 = lymphocytes homing
+       from the blood into the nodes: highest in deep sleep with low cortisol.
+       The spleen contracts in hard exercise (sympathetic), shrinking ~25%. */
+    out.chyle = clamp((sampleKF(PHYSIO.gut, h - 1.5) - .2) / .8);
+    out.lymphFlow = 1.2 * (.8 + .2 * out.awake) * (1 + .6 * out.chyle) * (1 + 2.2 * out.muscle);
+    out.nodeTraffic = clamp(.45 + .3 * (1 - out.awake) + .2 * out.sws - .25 * out.cortisol - .15 * out.muscle);
+    out.spleen = 1 - .25 * clamp((out.muscle - .1) / .9);
     return out;
   }
 };
@@ -5027,7 +5205,7 @@ const URLP = new URLSearchParams(location.search);
 const urlHour = parseFloat(URLP.get("hour"));
 const savedLevel = LEVEL_INDEX[URLP.get("level")] !== undefined ? URLP.get("level") : storage.get("humanphysiology.level");
 function loadSystems(){
-  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false, urinary: false };
+  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false, urinary: false, immune: false };
   let live = "circulatory";
   try {
     const s = JSON.parse(storage.get("humanphysiology.shown") || "null");
@@ -5603,6 +5781,44 @@ const URETER_L = "M557 530 C561 550 574 572 591 594", URETER_R = "M643 530 C639 
 const BLADDER_AT = [600, 606];
 const BLADDER_D = "M0 0 C-8 0 -15 -7 -15 -15 C-15 -23 -8 -27 0 -27 C8 -27 15 -23 15 -15 C15 -7 8 0 0 0Z";
 const URETHRA_D = "M600 606 L600 626", SPHINCTER_D = "M595 612 Q600 616 605 612";
+/* Immune & lymphatic system (design coordinates, mapped like NERV). Each lymph
+   route runs from the tissues to a venous angle at the base of the neck,
+   through the nodes listed in "nodes": the legs (through the groin nodes) and
+   the gut (through the mesenteric nodes) join at the cisterna chyli and climb
+   the thoracic duct (THORACIC_D) to the left venous angle (VENOUS_ANGLE, on
+   the viewer's right); the left arm and the left side of the head drain there
+   too. The right arm and the right side of the head drain through the right
+   lymphatic duct into the right venous angle (VENOUS_ANGLE_R). "pump" says
+   what pushes the lymph: muscle (legs, arms), the gut after a meal, or none. */
+const VENOUS_ANGLE_R = [576, 284];
+const TD_UP = " C594 584 600 572 602 560 L602 300 C604 290 612 284 624 284";
+const LEG_LYMPH = "M540 836 C542 776 546 716 550 660 C552 632 558 616 568 606";
+const ARM_LYMPH = "M424 572 C426 470 434 362 466 314 C482 302 500 304 514 306";
+const HEAD_LYMPH = "M566 158 C562 192 570 224 580 246";
+const mirrorD = d => d.replace(/(-?[\d.]+)[ ,]+(-?[\d.]+)/g, (_, x, y) => `${f1(1200 - x)} ${y}`);
+const INGUINAL = [[568, 606], [632, 606]], AXILLARY = [[514, 306], [686, 306]], CERVICAL = [[580, 246], [620, 246]];
+const MESENTERIC = [[592, 576], [610, 572]], CISTERNA_PT = [602, 560];
+const LYMPH_ROUTES = [
+  { id: "legL", pump: "muscle", d: LEG_LYMPH + TD_UP, nodes: [INGUINAL[0], CISTERNA_PT] },
+  { id: "legR", pump: "muscle", d: mirrorD(LEG_LYMPH) + " C606 584 600 572 602 560 L602 300 C604 290 612 284 624 284", nodes: [INGUINAL[1], CISTERNA_PT] },
+  { id: "gutA", pump: "gut", d: "M578 592 C584 586 588 580 592 576 C596 570 600 564 602 560 L602 300 C604 290 612 284 624 284", nodes: [MESENTERIC[0], CISTERNA_PT] },
+  { id: "gutB", pump: "gut", d: "M622 588 C618 580 614 576 610 572 C607 568 604 564 602 560 L602 300 C604 290 612 284 624 284", nodes: [MESENTERIC[1], CISTERNA_PT] },
+  { id: "armL", pump: "muscle", d: ARM_LYMPH + " C540 300 560 292 576 284", nodes: [AXILLARY[0]] },
+  { id: "armR", pump: "muscle", d: mirrorD(ARM_LYMPH) + " C660 300 640 292 624 284", nodes: [AXILLARY[1]] },
+  { id: "headL", pump: "none", d: HEAD_LYMPH + " C579 262 577 274 576 284", nodes: [CERVICAL[0]] },
+  { id: "headR", pump: "none", d: mirrorD(HEAD_LYMPH) + " C621 262 623 274 624 284", nodes: [CERVICAL[1]] }
+];
+/* lymphoid organs: the spleen (high on the left, behind the stomach), the
+   thymus (over the heart, behind the breastbone), the palatine tonsils, red
+   marrow (breastbone, hip bones, the tops of the thigh bones) and Peyer's
+   patches along the end of the ileum. IL6_AT = the thighs, where working
+   muscle releases IL-6 in the run. */
+const SPLEEN_AT = [703, 478], THYMUS_AT = [600, 320], TONSILS = [[589, 224], [611, 224]];
+const SPLEEN_D = "M-4 -16 C5 -16 11 -6 10 4 C9 13 2 18 -4 15 C-1 8 -1 1 -5 -3 C-9 -7 -10 -16 -4 -16Z";
+const THYMUS_D = "M0 -10 C-4 -12 -10 -8 -10 0 C-10 8 -6 13 -1 12 L0 6 L1 12 C6 13 10 8 10 0 C10 -8 4 -12 0 -10Z";
+const MARROW = [[600, 346, 3, 13], [532, 578, 9, 6], [668, 578, 9, 6], [549, 642, 4.5, 10], [651, 642, 4.5, 10]];
+const PEYER = [[612, 612], [596, 612], [581, 609]];
+const IL6_AT = [[548, 690], [652, 690]];
 Object.assign(MOLECULES, {
   urea: ["#9b7fd4", "Urea"], urine: ["#e8cf5a", "Urine"], renin: ["#c2569a", "Renin"], angI: ["#d886b5", "Angiotensin I"],
   angII: ["#a8326e", "Angiotensin II"], aldo: ["#d98b2b", "Aldosterone"], sodium: ["#8fa3b8", "Sodium (Na⁺)"]
@@ -5969,6 +6185,18 @@ const Scene = (() => {
         <g id="s-urine"></g>
         <g id="s-dropRide"></g>
       </g>
+      <g id="s-immune" class="sys sys-immune">
+        ${MARROW.map(([x, y, rx, ry]) => { const [X, Y] = bodyPt(x, y); return `<ellipse cx="${X}" cy="${f1(Y)}" rx="${rx}" ry="${ry}" class="im-marrow"/>`; }).join("")}
+        ${LYMPH_ROUTES.map(r => `<path d="${mapD(r.d)}" class="im-vessel${r.pump === "gut" ? " gut" : ""}"/>`).join("")}
+        <path d="${mapD(THORACIC_D)}" class="im-duct"/><path d="M576 284 L582 290" class="im-duct"/>
+        <g transform="translate(${THYMUS_AT.join(" ")})"><path d="${THYMUS_D}" class="im-thymus"/></g>
+        ${TONSILS.map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="3.4" ry="2.4" class="im-tonsil"/>`).join("")}
+        ${PEYER.map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="3.6" ry="2" class="im-peyer"/>`).join("")}
+        <g transform="translate(${SPLEEN_AT.join(" ")})"><path id="s-spleen" d="${SPLEEN_D}" class="im-spleen"/></g>
+        ${[...INGUINAL, ...AXILLARY, ...CERVICAL, ...MESENTERIC].map(([x, y], i) => { const [X, Y] = bodyPt(x, y); return `<circle cx="${X}" cy="${f1(Y)}" r="7" class="im-halo" data-n="${i}"/><ellipse cx="${X}" cy="${f1(Y)}" rx="3.6" ry="2.7" class="im-node"/>`; }).join("")}
+        <ellipse cx="${CISTERNA_PT[0]}" cy="${CISTERNA_PT[1]}" rx="2.6" ry="5" class="im-cisterna"/>
+        <g id="s-immuneDots"></g>
+      </g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
       <g id="s-eyesShut" class="face"><path d="M571 189 Q578 194 585 189"/><path d="M615 189 Q622 194 629 189"/></g>
@@ -5981,7 +6209,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "immuneDots"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -7201,6 +7429,125 @@ const Urinary = (() => {
     return null;
   }
   return { init, tick, setRates, nearest };
+})();
+
+/* =========================================================================
+   IMMUNE — lymph and white cells at work. Lymph dots creep from the tissues
+   to the veins at the base of the neck along LYMPH_ROUTES, in steps (each
+   segment between valves contracts on its own), pausing in every node they
+   pass. Working muscle squeezes the limb vessels in the run, and each
+   in-breath draws lymph up the thoracic duct. After a meal the gut's lymph
+   turns milky (chyle). Lymphocytes home from the blood into the nodes, most
+   at night when cortisol is low, and some leave again in the lymph.
+   Neutrophils leave the red marrow (more as the day goes on and after the
+   run), working thighs release IL-6 in the run, and the spleen contracts.
+   Runs only while the immune system is live.
+   ========================================================================= */
+const Immune = (() => {
+  const NP = 150, LYMPH = "#a9d37f", LYMPHO = "#6f7fd8", NEUT = "#c9a0dc", IL6 = "#e56b3d";
+  const pool = [], acc = {};
+  let routes = [], nodes = [], halos = [], marrow = [], il6At = [], t = 0, still = "";
+  function init(){
+    const svg = Scene.svg, g = Scene.refs.immuneDots;
+    routes = LYMPH_ROUTES.map(r => {
+      const S = sampler(svg, mapD(r.d), 200);
+      /* where along the route each node sits */
+      const nu = r.nodes.map(n => {
+        const [nx, ny] = bodyPt(...n); let best = 0, bd = Infinity;
+        for (let i = 0; i <= 200; i++){ const [x, y] = S.at(i / 200), d = Math.hypot(x - nx, y - ny); if (d < bd){ bd = d; best = i / 200; } }
+        return best;
+      });
+      /* legs and gut: past the cisterna chyli they ride the thoracic duct */
+      return { ...r, S, nu, duct: r.nodes.includes(CISTERNA_PT) };
+    });
+    nodes = [...INGUINAL, ...AXILLARY, ...CERVICAL, ...MESENTERIC].map(n => bodyPt(...n));
+    halos = [...Scene.svg.querySelectorAll(".im-halo")];
+    marrow = MARROW.map(([x, y]) => bodyPt(x, y));
+    il6At = IL6_AT.map(([x, y]) => bodyPt(x, y));
+    for (let i = 0; i < NP; i++) pool.push({ c: el("circle", { r: 1.5, class: "im-dot", opacity: 0 }, g), on: false });
+  }
+  function spawn(kind, col, r, extra){
+    const d = pool.find(q => !q.on); if (!d) return null;
+    Object.assign(d, { on: true, kind, u: 0, age: 0, wait: 0, next: 0 }, extra);
+    d.c.setAttribute("fill", col); d.c.setAttribute("r", r);
+    return d;
+  }
+  const put = (c, [x, y]) => { c.setAttribute("cx", f1(x)); c.setAttribute("cy", f1(y)); };
+  /* how hard each route is pumped: muscle in the run, the gut after a meal */
+  const weight = (r, p) => r.pump === "muscle" ? (r.id.startsWith("leg") ? 1 + 4 * p.muscle : 1 + 1.5 * p.muscle)
+    : r.pump === "gut" ? .3 + 2.5 * p.chyle : .6;
+  function rates(p){
+    halos.forEach(h => h.setAttribute("opacity", f1((.12 + .5 * p.nodeTraffic) * 100) / 100));
+    Scene.refs.spleen.setAttribute("transform", `scale(${f1(p.spleen * 100) / 100})`);
+  }
+  function emit(key, rate, dt, f){ acc[key] = (acc[key] || 0) + dt * rate; while (acc[key] >= 1){ acc[key]--; f(); } }
+  function tick(dt, p){
+    t += dt; still = "";
+    const flowK = Math.pow(p.lymphFlow / 1.2, .6), insp = Math.max(0, Rhythm.insp);
+    /* lymph along every route */
+    routes.forEach((r, i) => emit("r" + i, .5 * weight(r, p), dt, () => {
+      const chyle = r.pump === "gut" ? p.chyle : 0;
+      spawn("lymph", mix(LYMPH, MOLECULES.chylo[0], chyle), 1.7 + .5 * chyle, { r, ph: Math.random() });
+    }));
+    /* lymphocytes homing from the blood into a node */
+    emit("home", 3 * p.nodeTraffic, dt, () => {
+      const n = nodes[Math.floor(Math.random() * nodes.length)], a = Math.random() * 6.283;
+      spawn("home", LYMPHO, 1.5, { from: [n[0] + 12 * Math.cos(a), n[1] + 12 * Math.sin(a)], to: n });
+    });
+    /* neutrophils leaving the red marrow */
+    emit("neut", 2.2 * clamp((p.neutrophils - 2.8) / 2.6), dt, () => {
+      const m = marrow[Math.floor(Math.random() * marrow.length)], a = Math.random() * 6.283;
+      spawn("drift", NEUT, 1.4, { from: m, to: [m[0] + 11 * Math.cos(a), m[1] + 11 * Math.sin(a)], T: 1.8 });
+    });
+    /* IL-6 from working thighs */
+    emit("il6", 6 * clamp((p.il6 - .2) / .4) * clamp(p.muscle * 2), dt, () => {
+      const m = il6At[Math.random() < .5 ? 0 : 1], a = -Math.PI / 2 + (Math.random() - .5) * 2.4;
+      spawn("drift", IL6, 1.3, { from: [m[0] + (Math.random() - .5) * 10, m[1] + (Math.random() - .5) * 30], to: [m[0] + 16 * Math.cos(a), m[1] + 16 * Math.sin(a)], T: 1.6 });
+    });
+    for (const d of pool){
+      if (!d.on) continue;
+      d.age += dt;
+      let pt, op = .9, done = false;
+      if (d.kind === "lymph"){
+        const r = d.r;
+        if (d.wait > 0) d.wait -= dt;
+        else {
+          /* steps from the lymphangions; in the trunk, a pull with each in-breath */
+          const trunk = r.duct && d.u > r.nu[r.nu.length - 1];
+          const pulse = .25 + .75 * Math.max(0, Math.sin(6.283 * (t * .9 + d.ph)));
+          const pump = r.pump === "muscle" ? 1 + 1.6 * p.muscle : 1;
+          const v = 16 * flowK * pulse * pump * (trunk ? 1 + 1.4 * insp : 1);
+          const u0 = d.u; d.u += dt * v / r.S.L;
+          /* pause in each node passed; some lymphocytes leave with the lymph */
+          for (const nu of r.nu) if (u0 < nu && d.u >= nu){
+            d.u = nu; d.wait = .5 + .4 * Math.random();
+            if (Math.random() < .3){ d.c.setAttribute("fill", LYMPHO); d.c.setAttribute("r", 1.5); }
+          }
+          done = d.u >= 1;
+        }
+        pt = r.S.at(d.u); op = d.wait > 0 ? .55 : .9;
+      } else if (d.kind === "home"){
+        d.u += dt / 1.4; done = d.u >= 1;
+        const e = ease.io(d.u);
+        pt = [lerp(d.from[0], d.to[0], e), lerp(d.from[1], d.to[1], e)]; op = .95 * (1 - Math.max(0, d.u - .8) * 5);
+      } else {
+        d.u += dt / d.T; done = d.u >= 1;
+        const e = ease.out(d.u);
+        pt = [lerp(d.from[0], d.to[0], e), lerp(d.from[1], d.to[1], e)]; op = .9 * (1 - d.u);
+      }
+      if (done){ d.on = false; d.c.setAttribute("opacity", 0); continue; }
+      put(d.c, pt); d.c.setAttribute("opacity", f1(op * clamp(d.age * 5)));
+    }
+    rates(p);
+  }
+  /* a still picture (reduced motion, or not live): node traffic and spleen size */
+  function setRates(p){
+    const k = `${p.nodeTraffic.toFixed(2)}|${p.spleen.toFixed(2)}`;
+    if (k === still) return;
+    still = k;
+    rates(p);
+  }
+  return { init, tick, setRates };
 })();
 
 /* =========================================================================
@@ -10627,7 +10974,9 @@ const EXPORT_VITALS = [
   ["insulin", "Insulin", "relative 0-1", 2], ["glucagon", "Glucagon", "relative 0-1", 2], ["cortisol", "Cortisol", "relative 0-1", 2],
   ["melatonin", "Melatonin", "relative 0-1", 2], ["adrenaline", "Adrenaline", "relative 0-1", 2],
   ["vagal", "Vagal tone", "relative 0-1", 2], ["sympathetic", "Sympathetic tone", "relative 0-1", 2],
-  ["gfr", "GFR", "mL/min", 0], ["urineFlow", "Urine flow", "mL/min", 2], ["urineOsm", "Urine osmolality", "mOsm/kg", 0]
+  ["gfr", "GFR", "mL/min", 0], ["urineFlow", "Urine flow", "mL/min", 2], ["urineOsm", "Urine osmolality", "mOsm/kg", 0],
+  ["lymphFlow", "Thoracic duct lymph flow", "mL/min", 2], ["neutrophils", "Blood neutrophils", "10^9/L", 2],
+  ["lymphocytes", "Blood lymphocytes", "10^9/L", 2], ["il6", "IL-6", "relative 0-1", 2]
 ];
 function bodyData(){
   const probe = Physio.at(12), cols = EXPORT_VITALS.filter(([k]) => Number.isFinite(probe[k]));
@@ -10696,6 +11045,7 @@ function init(){
   BiteRide.init();
   Urinary.init();
   DropRide.init();
+  Immune.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
@@ -10807,6 +11157,7 @@ function init(){
     if (!reducedMotion && live === "respiratory") Airways.tick(bdt, ph); else Airways.setRates(ph);
     if (!reducedMotion && live === "digestive") Digestion.tick(bdt, ph); else Digestion.setRates(ph);
     if (!reducedMotion && live === "urinary") Urinary.tick(bdt, ph); else Urinary.setRates(ph);
+    if (!reducedMotion && live === "immune") Immune.tick(bdt, ph); else Immune.setRates(ph);
     Journey.tick(bdt);
     Impulse.tick(brdt);
     ImpulseCard.tick();

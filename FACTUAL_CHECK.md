@@ -131,6 +131,8 @@ One canonical value per shared quantity. Every page uses these values or explain
 | Sleep architecture | ~5 cycles of ~90 min in 7.5 h | N1 ~4%, N2 ~49%, N3 ~20%, REM ~26%; first REM after ~80 min | body, brain | AASM Manual; Carskadon & Dement |
 | Gastric emptying, transit times | Water t½ ~10–20 min; solids lag, then ~2–4 kcal/min; fatty meals 3–4 h in the stomach | Small intestine 3–5 h; colon ~20–40 h; whole gut ~10–70 h | body, gut | Guyton & Hall ch. 64; Lewis & Heaton 1997 |
 | Conduction velocities (Aα, Aβ, Aδ, B, C) | | | body, brain | |
+| Lymph flow (thoracic duct) | ~1–1.5 mL/min; ~8 L/day of afferent lymph, ~4 L/day reach the veins | ~3× in the run (model); intestinal lymph up several-fold after a fatty meal | body | Guyton & Hall ch. 16; Levick & Michel 2010 (unchecked) |
+| Blood neutrophils, lymphocytes | neutrophils ~3.2 (early morning) → ~4.1 ×10⁹/L (afternoon); lymphocytes ~2.6 (midnight) → ~1.8 ×10⁹/L (late morning) | run: neutrophils ~5–5.6, lymphocytes ~3.1 then ~1.5 an hour after | body | Haus & Smolensky (circadian haematology); Campbell & Turner 2018 (unchecked) |
 | Cerebral blood flow | ~750 mL/min (~15% of CO), autoregulated | | body, brain | Guyton & Hall ch. 62 |
 
 Fill in each row the first time the backlog reaches that quantity. Add rows as new pages bring new shared quantities (muscle blood flow, skin temperature, bone turnover and so on).
@@ -155,6 +157,7 @@ The backlog, in order of exposure: the body view is what every reader sees first
 | # | Page / part | Items | Checked | Last check | Open issues |
 |---|---|---|---|---|---|
 | 1 | `index.html` body view (phases, systems, journeys, hours, model numbers) | 2602 | 58%: all 13 topics, sleep stages, hours, UI strings; the circulatory, respiratory, urinary, digestive and endocrine systems; the cell, breath, drop and bite rides and their arrays; `PHYSIO`, `Physio.at()`, sleep cycles, voids. Still to do: the cascade ride, the nervous system and impulse ride, the glossary, the animation modules | 2026-11-17 | |
+| 1b | Immune & lymphatic system on the body (new on 2026-11-18: `systems.immune`, its glossary terms, `PHYSIO.neutrophils` / `lymphocytes` / `il6`, the lymph channels in `Physio.at()`, `mod:Immune`) | 177 | 0%: not yet checked. Written from Guyton & Hall (lymph), Janeway's *Immunobiology* and the reviews named in its PhD text | | |
 | 2 | Heart | 1111 | 0% | | |
 | 3 | Lungs | 743 | 1% (the run's breathing model and text) | 2026-11-17 | |
 | 4 | Kidneys | 1128 | 0% | | |

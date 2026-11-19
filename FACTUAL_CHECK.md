@@ -85,6 +85,7 @@ A committed file, `fact-check/ledger.json`, holds one row per checkable item, gr
 A small Node script, `fact-check/scan.mjs`, keeps the ledger up to date. Like `tests/*.mjs`, it needs no build and no dependencies.
 - `node fact-check/scan.mjs` prints a table per page: items, counts by status, and how many are new, changed or removed since the ledger.
 - `--update` writes new and changed items into the ledger as `unchecked` and drops removed ones.
+- `--status` writes `fact-check/status.js`, the per-section counts (no keys or text) that the reader-facing overview `fact-check.html` draws. `--update`, `--mark` and `--verify` rewrite it too, and `--check` fails while it is out of date. Sections are found by pattern (`<block>:<first path segment>`, with each page's glossary, code and organ header as one section each), so a new page or system shows up without editing the overview; give a new section a readable name in `SECTION_LABELS` in `scan.mjs`.
 - `--list` prints the unchecked items with their text; add `--all` for every item, or `--full` for untruncated text.
 - `--mark <status>` sets the status of the selected items, with an optional `--note "…"`. `--mark ok`, `fixed` and `"issue #<n>"` need `--by <who>` (or the `FACT_CHECK_BY` environment variable) and at least one source:
   - `--lookup <id>:<locator> --url <link> --quote "<excerpt>"` for a source opened and read. Each `--lookup` needs its own `--url` and `--quote`, given in the same order. The script fetches every link first and refuses the whole mark if one is dead (see [Links](#links)).

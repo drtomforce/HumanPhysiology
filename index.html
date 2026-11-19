@@ -536,6 +536,12 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px){ :root{ --panel-w:380px; } .levels-label{ display:none; } }
+/* "Fact check" (header link to fact-check.html): looks like the Report a problem button next to it, and is the
+   first to drop its label when the header gets tight */
+#factCheckBtn{ text-decoration:none; white-space:nowrap; }
+.levels .hpr-open{ white-space:nowrap; }
+@media (max-width: 430px){ .levels .xp-btn > span{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); } .levels .xp-btn{ padding:6px 9px; } }
+@media (max-width: 1180px){ #factCheckBtn .hpr-open-t{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); } #factCheckBtn{ padding:6px; } }
 @media (max-width: 860px){
   body{ height:auto; display:block; }
   .main{ display:block; }
@@ -548,7 +554,8 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   .top{ padding:12px 16px; flex-wrap:wrap; }
   .brand-sub{ display:none; }
   .seg .long{ display:none; } .seg .short{ display:inline; }
-  .seg button{ padding:6px 11px; }
+  .seg button{ padding:6px 8px; }
+  .levels{ gap:6px; flex-wrap:wrap; row-gap:8px; }
   .systems{ right:10px; bottom:10px; }
   .moment{ left:18px; top:14px; }
   .journey{ left:12px; top:12px; width:min(290px, calc(100% - 24px)); padding:10px 12px; }
@@ -755,6 +762,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   <div class="levels">
     <span class="levels-label" id="levelsLabel">Reading level</span>
     <div class="seg" role="radiogroup" aria-labelledby="levelsLabel" id="levelSeg"></div>
+    <a class="hpr-open compact" id="factCheckBtn" href="fact-check.html" title="How the facts here are checked, how far the check has got, and what readers have reported"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.2 12.2 3v3.6c0 3-2.2 5.3-5.2 6.2C4 11.9 1.8 9.6 1.8 6.6V3Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="m4.7 7 1.6 1.6 3-3.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="hpr-open-t">Fact check</span></a>
     <button class="compact" data-report></button>
   </div>
 </header>
@@ -11700,6 +11708,10 @@ function init(){
       query: viewParams(s).toString()
     };
   });
+  /* "Fact check" (header): its Back link returns to this view */
+  const fcb = $("#factCheckBtn");
+  if (fcb) for (const ev of ["pointerdown", "focus", "click"])
+    fcb.addEventListener(ev, () => { fcb.href = "fact-check.html?back=" + encodeURIComponent("?" + viewParams(store.get())); });
 }
 /* the view as URL parameters (read back by the store on start and by startRideFromURL):
    ?level=&hour=&topic=&shown=&live=&ride=<kind>:<id> */

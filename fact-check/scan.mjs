@@ -19,7 +19,9 @@
 
      node fact-check/scan.mjs                     summary: new / changed / removed since the ledger, and counts
      node fact-check/scan.mjs --update            write new and changed items into the ledger as "unchecked"
-     node fact-check/scan.mjs --check             exit 1 if any item is unchecked or the ledger is out of date
+     node fact-check/scan.mjs --check             exit 1 if any item is unchecked, or the ledger or status.js is out of date
+     node fact-check/scan.mjs --status            rewrite fact-check/status.js, the per-section summary that fact-check.html
+                                                  draws (--update, --mark and --verify rewrite it too)
      node fact-check/scan.mjs --list              print unchecked items with their text
      node fact-check/scan.mjs --mark <status>     set the status of the selected items (ok, fixed, n/a, "issue #12")
          [--note "…"]                             … with a note
@@ -393,6 +395,74 @@ if (flag("--update") || markStatus || verified) writeFileSync(LEDGER, format(led
 if (verifyLog.length) appendFileSync(VERIFICATIONS, verifyLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 if (recheckLog.length) appendFileSync(RECHECKS, recheckLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 
+/* ---------- fact-check/status.js: the per-section summary that fact-check.html draws ----------
+   Counts only (no keys or text), from the ledger as it now stands, so it is small and loads from file://.
+   Sections are found by pattern, so new pages and systems show up without touching this:
+   "<block>:<first path segment>", with every glossary, all code and the organ header collapsed into one each. */
+const SECTION_LABELS = {
+  "body-content:topics": "Topics", "body-content:systems": "Body systems", "body-content:journey": "Cell ride",
+  "body-content:breath": "Breath ride", "body-content:bite": "Bite ride", "body-content:urine": "Drop ride",
+  "body-content:impulse": "Impulse ride", "body-content:cascade": "Hormone ride", "body-content:infection": "Infection ride",
+  "body-content:sleepStages": "Sleep stages", "body-content:subject": "The subject", "body-hours": "Hour by hour",
+  "organ-meta": "Header & stats", glossary: "Glossary", code: "Model & code",
+  "organ-content:sections": "Sections", "organ-content:parts": "Parts", "organ-content:phases": "Through the day",
+  "organ-content:lens": "Body-systems lens", "organ-content:alter": "Changes & scenarios", "organ-content:conditions": "Conditions",
+  "organ-content:control": "Control of breathing", "organ-content:occlusions": "Occlusions", "organ-content:pulse": "Pulse",
+  "organ-content:rhythms": "Rhythms", "organ-content:stages": "Sleep stages", "organ-content:strokes": "Strokes",
+  "organ-content:dx": "Diagnosis", "organ-content:hp": "H. pylori", "organ-content:msgs": "Messages",
+  "organ-content:nacOpts": "Paracetamol antidote", "organ-content:ab": "Acid–base", "organ-content:adh": "ADH",
+};
+const sectionOf = key => {
+  const i = key.indexOf(":"), block = key.slice(0, i), first = key.slice(i + 1).split(".")[0];
+  if (/^(const|mod|fn)$/.test(block)) return "code";
+  if (block.endsWith("-glossary")) return "glossary";
+  if (block === "organ-meta" || block === "body-hours") return block;
+  return `${block}:${first}`;
+};
+const sectionLabel = id => SECTION_LABELS[id] || (s => s[0].toUpperCase() + s.slice(1))(id.split(":").pop().replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase());
+const SECTION_ORDER = ["organ-meta", "code", "glossary"];   /* these go last, in this order; the rest keep first-seen order */
+function statusJs(){
+  const pageName = {};
+  for (const { id, path, engine } of pageFiles()){
+    if (engine){ pageName[id] = "Shared organ engine"; continue; }
+    if (id === "body"){ pageName[id] = "Body view (main page)"; continue; }
+    const m = readFileSync(path, "utf8").match(/<script type="application\/json" id="organ-meta">([\s\S]*?)<\/script>/);
+    try { pageName[id] = JSON.parse(m[1]).name; } catch { pageName[id] = id; }
+  }
+  let updated = "", verifiedCites = 0, lookupCites = 0;
+  const pages = Object.entries(ledger.pages).map(([id, rows]) => {
+    const secs = new Map();
+    for (const [key, row] of Object.entries(rows)){
+      const sid = sectionOf(key);
+      const s = secs.get(sid) || secs.set(sid, { id: sid, label: sectionLabel(sid), n: 0,
+        src: { lookup: 0, memory: 0, unknown: 0, na: 0, changed: 0, unchecked: 0 },
+        out: { ok: 0, fixed: 0, issue: 0, na: 0, unchecked: 0 }, levels: {}, issues: [] }).get(sid);
+      const st = row.status, approved = /^(ok|fixed|issue)/.test(st);
+      s.n++;
+      s.src[st === "n/a" ? "na" : st === "unchecked" ? (row.was ? "changed" : "unchecked") : { lookup: "lookup", memory: "memory" }[row.via] || "unknown"]++;
+      s.out[st === "n/a" ? "na" : st.startsWith("issue") ? "issue" : st]++;
+      if (st.startsWith("issue")){ const n = Number(st.slice(7)); if (!s.issues.includes(n)) s.issues.push(n); }
+      const lv = key.match(/\.(ms|hs|college|phd)$/);
+      if (lv){ const l = (s.levels[lv[1]] ||= [0, 0]); l[1]++; if (approved || st === "n/a") l[0]++; }
+      if (row.checked && row.checked > updated) updated = row.checked;
+      if (row.rechecked && row.rechecked > updated) updated = row.rechecked;
+      for (const c of row.src || []) if (typeof c === "object"){ lookupCites++; if (c.verified) verifiedCites++; }
+    }
+    const sections = [...secs.values()].sort((a, b) => SECTION_ORDER.indexOf(a.id) - SECTION_ORDER.indexOf(b.id));
+    return { id, name: pageName[id] || id, sections };
+  });
+  const done = p => { let n = 0, d = 0; for (const s of p.sections){ n += s.n; d += s.n - s.src.unchecked - s.src.changed; } return n ? d / n : 0; };
+  /* the body view first, the shared engine last, organ pages by how far their check has got */
+  pages.sort((a, b) => (a.id === "body" ? -1 : b.id === "body" ? 1 : 0) || (a.id === "engine") - (b.id === "engine") || done(b) - done(a) || a.name.localeCompare(b.name));
+  const data = { updated, lookupCites, verifiedCites, rechecks: existsSync(RECHECKS) ? readFileSync(RECHECKS, "utf8").split("\n").filter(Boolean).length : 0, pages };
+  return "/* Generated by node fact-check/scan.mjs from fact-check/ledger.json; drawn by fact-check.html. Don't edit by hand. */\n" +
+    "window.FACT_STATUS = " + JSON.stringify(data) + ";\n";
+}
+const STATUS = join(root, "fact-check", "status.js");
+const statusStale = () => !existsSync(STATUS) || readFileSync(STATUS, "utf8") !== statusJs();
+if ((flag("--update") || markStatus || verified || flag("--status")) && statusStale()) writeFileSync(STATUS, statusJs());
+if (flag("--status")){ console.log(`wrote ${STATUS.slice(root.length + 1)}`); process.exit(0); }
+
 /* ---------- random re-check: a uniform sample, so the failure rate estimates the error rate of approvals ---------- */
 function rng(s){
   let a = parseInt(createHash("sha1").update(String(s)).digest("hex").slice(0, 8), 16);
@@ -502,4 +572,5 @@ if (!flag("--list")){
   if (markStatus) console.log(`\nmarked ${marked} item(s) "${markStatus}"${flag("--recheck") ? " as a re-check (logged to fact-check/rechecks.jsonl)" : ""}`);
   if (dirty && !flag("--update")) console.log("\nThe ledger is out of date: run with --update.");
 }
+if (flag("--check") && !flag("--update") && statusStale()){ console.log("\nfact-check/status.js is out of date: run with --status."); process.exit(1); }
 if (flag("--check") && (unchecked || (dirty && !flag("--update")))) process.exit(1);

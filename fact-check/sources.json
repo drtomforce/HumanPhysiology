@@ -56,5 +56,6 @@
  "williams2016": {"kind": "primary", "access": "subscription", "cite": "Williams EK, Chang RB, Strochlic DE, et al. Sensory neurons that detect stretch and nutrients in the digestive system. Cell. 2016;166(1):209-221. doi:10.1016/j.cell.2016.05.011"},
  "bai2019": {"kind": "primary", "access": "subscription", "cite": "Bai L, Mesgarzadeh S, Ramesh KS, et al. Genetic identification of vagal sensory neurons that control feeding. Cell. 2019;179(5):1129-1143.e23. doi:10.1016/j.cell.2019.10.031"},
  "ngo2013": {"kind": "primary", "access": "subscription", "cite": "Ngo HV, Martinetz T, Born J, Mölle M. Auditory closed-loop stimulation of the sleep slow oscillation enhances memory. Neuron. 2013;78(3):545-553. doi:10.1016/j.neuron.2013.03.006"},
- "chesler2016": {"kind": "primary", "access": "subscription", "cite": "Chesler AT, Szczot M, Bharucha-Goebel D, et al. The role of PIEZO2 in human mechanosensation. N Engl J Med. 2016;375(14):1355-1364. doi:10.1056/NEJMoa1602812"}
+ "chesler2016": {"kind": "primary", "access": "subscription", "cite": "Chesler AT, Szczot M, Bharucha-Goebel D, et al. The role of PIEZO2 in human mechanosensation. N Engl J Med. 2016;375(14):1355-1364. doi:10.1056/NEJMoa1602812"},
+ "kiss2015": {"kind": "primary", "access": "open", "cite": "Kiss JE, Brambilla D, Glynn SA, et al. Oral iron supplementation after blood donation: a randomized clinical trial. JAMA. 2015;313(6):575-583. doi:10.1001/jama.2015.119", "home": "https://pubmed.ncbi.nlm.nih.gov/25668261/"}
 }

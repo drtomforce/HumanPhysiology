@@ -2264,7 +2264,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "name": "Sympathetic nerve to the adrenal",
         "ms": "Something exciting is happening: the run is starting! The brain sends a fast nerve signal down the spinal cord to the adrenal gland, which sits on top of the kidney.",
         "hs": "The sympathetic nervous system reaches the adrenal gland through the splanchnic nerves. Unlike other sympathetic nerves, this one runs straight to the gland with no relay on the way, so the signal arrives in a few hundredths of a second.",
-        "college": "Preganglionic sympathetic fibres from the lateral horn (about T5–T11) run in the greater splanchnic nerve directly to the adrenal medulla. The medulla is in effect a sympathetic ganglion whose postganglionic cells have no axons and release their transmitter into the blood.",
+        "college": "Preganglionic sympathetic fibres from the lateral horn (about T5–T11) run in the splanchnic nerves, mainly the greater splanchnic, directly to the adrenal medulla. The medulla is in effect a sympathetic ganglion whose postganglionic cells have no axons and release their transmitter into the blood.",
         "phd": "Adrenaline output scales roughly with splanchnic firing rate. Besides acetylcholine, the terminals release PACAP, which sustains catecholamine secretion and synthesis during prolonged stress (Stroth and Eiden)."
       },
       "chromaffin": {
@@ -2404,7 +2404,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "name": "Adrenal cortex makes cortisol",
         "ms": "The outer part of the adrenal gland gets the ACTH message and starts making cortisol. This takes a while, because cortisol is made fresh, not stored.",
         "hs": "Cortisol is a steroid, made from cholesterol. The adrenal cortex can’t store it, so it makes it when ACTH says so. Cortisol starts rising within 10–15 minutes and peaks 30–45 minutes after waking.",
-        "college": "ACTH acts through cAMP and PKA to activate StAR, which moves cholesterol into the mitochondria: the rate-limiting step. A chain of cytochrome P450 enzymes then turns cholesterol into cortisol in about five steps, and cortisol diffuses out as it is made. Over days, ACTH also makes the cortex grow.",
+        "college": "ACTH acts through cAMP and PKA to activate StAR, which moves cholesterol into the mitochondria: the rate-limiting step. A chain of enzymes, mostly cytochrome P450s, then turns cholesterol into cortisol in about five steps, and cortisol diffuses out as it is made. Over days, ACTH also makes the cortex grow.",
         "phd": "Fast StAR-mediated cholesterol transport explains how output can rise within minutes. In congenital adrenal hyperplasia, most often 21-hydroxylase deficiency, the pathway is blocked. Low cortisol removes feedback, so ACTH and adrenal androgens surge."
       },
       "cortisolRide": {
@@ -2501,7 +2501,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       "follicle": {
         "name": "Thyroid follicles release thyroxine",
         "ms": "In the thyroid, tiny hollow balls of cells store thyroid hormone. TSH tells them to release some into the blood.",
-        "hs": "The thyroid is unusual: it stores weeks’ worth of hormone outside its cells, in a gel called colloid. TSH makes the cells swallow colloid and cut thyroxine (T4) out of a big storage protein. Iodine from food is built into the hormone.",
+        "hs": "The thyroid is unusual: it stores two to three months’ worth of hormone outside its cells, in a gel called colloid. TSH makes the cells swallow colloid and cut thyroxine (T4) out of a big storage protein. Iodine from food is built into the hormone.",
         "college": "Thyroglobulin in the colloid carries iodinated tyrosines. TSH (through Gs and cAMP) drives endocytosis of colloid, its breakdown in lysosomes and release of T4 with a little T3. It also drives iodide uptake (NIS) and iodination by thyroid peroxidase. The gland makes about 100 µg of T4 a day.",
         "phd": "The sodium–iodide symporter concentrates iodide about 30-fold, which radioactive iodine treatment exploits. The Wolff–Chaikoff effect, a short shutdown of iodination when iodide is in excess, protects against overproduction."
       },
@@ -2559,7 +2559,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "ms": "After a few days, the new red blood cells push out their nucleus and squeeze out of the bone marrow into the blood.",
         "hs": "Developing red cells fill up with haemoglobin and then throw out their nucleus. These young cells, called reticulocytes, squeeze through the walls of the marrow’s blood vessels into the blood. More reticulocytes in a blood test shows the marrow is responding.",
         "college": "Orthochromatic erythroblasts lose their nucleus and leave the marrow as reticulocytes, which still contain some RNA. Under EPO drive, extra reticulocytes appear in the blood after about 3–4 days, and the count peaks around days 7–10. About 2 million red cells are made every second.",
-        "phd": "Under strong EPO drive, larger ‘stress reticulocytes’ are released earlier and stay reticulocytes longer in the blood. After a blood donation, haemoglobin rises by roughly 10 g/L a week in someone with enough iron, so full recovery takes several weeks."
+        "phd": "Under strong EPO drive, larger ‘stress reticulocytes’ are released earlier and stay reticulocytes longer in the blood. A blood donation lowers haemoglobin by about 14 g/L. With iron supplements, 80% of the loss is made back in about a month; without them it takes about 2½ to 5 months (Kiss et al., 2015)."
       },
       "reticToKidney": {
         "name": "More oxygen reaches the kidney",
@@ -5683,7 +5683,7 @@ const HORMONES = [
   { id: "cortisol", label: "Cortisol", gland: ["adrL", "adrR"], ch: "cortisol", color: "#e0a43a", rate: 1.4, target: null },
   { id: "adrenaline", label: "Adrenaline", gland: ["adrL", "adrR"], ch: "adrenaline", color: "#e0533d", rate: 2.6, target: "legs" },
   { id: "insulin", label: "Insulin", gland: ["islets"], ch: "insulin", color: "#3f9a5a", rate: 3, target: "legs", firstPass: .5 },
-  { id: "glucagon", label: "Glucagon", gland: ["islets"], ch: "glucagon", color: "#8a5cc4", rate: 2, target: null, firstPass: .8 },
+  { id: "glucagon", label: "Glucagon", gland: ["islets"], ch: "glucagon", color: "#8a5cc4", rate: 2, target: null, firstPass: .4 },
   { id: "glp1", label: "GLP-1", gland: ["lcells"], ch: "gut", color: "#2f9fc4", rate: 2.2, target: "gut", gate: ph => clamp((ph.gut - .35) / .5) }
 ];
 SYSTEM_BY_ID.endocrine.legend = HORMONES.map(h => [h.color, h.label]);

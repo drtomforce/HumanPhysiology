@@ -23,6 +23,36 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/15-1-divisions-of-the-autonomic-nervous-system",
   "checked": "2026-11-19"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-4-the-thyroid-gland#:~:text=Hormones%20are%20produced%20in%20the%20colloid": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-4-the-thyroid-gland",
+  "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-6-the-adrenal-glands#:~:text=Epinephrine%20is%20produced%20in%20greater%20quantities": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-6-the-adrenal-glands",
+  "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/18-3-erythrocytes#:~:text=During%20the%20first%20day%20or%20two": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/18-3-erythrocytes",
+  "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/18-3-erythrocytes#:~:text=Erythrocytes%20live%20up%20to%20120%20days": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/18-3-erythrocytes",
+  "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/18-3-erythrocytes#:~:text=Production%20of%20erythrocytes%20in%20the%20marrow": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/18-3-erythrocytes",
+  "checked": "2026-11-19"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/21-2-barrier-defenses-and-the-innate-immune-response#:~:text=Cells%20infected%20with%20viruses%20secrete%20interferons": {
   "state": "ok",
   "code": 200,
@@ -105,6 +135,12 @@
   "state": "ok",
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
+  "checked": "2026-11-19"
+ },
+ "https://pubmed.ncbi.nlm.nih.gov/25668261/#:~:text=shortened%20time%20to%2080%25%20hemoglobin%20recovery": {
+  "state": "ok",
+  "code": 203,
+  "final": "https://pubmed.ncbi.nlm.nih.gov/25668261/",
   "checked": "2026-11-19"
  },
  "https://www.frontiersin.org/articles/10.3389/fimmu.2018.00648/full": {

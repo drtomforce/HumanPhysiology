@@ -268,9 +268,9 @@ One canonical value per shared quantity. Every page uses these values or explain
 | Sleep architecture | ~5 cycles of ~90 min in 7.5 h | N1 ~4%, N2 ~49%, N3 ~20%, REM ~26%; first REM after ~80 min | body, brain | `aasm3`; `carskadon2017` |
 | Gastric emptying, transit times | Water t½ ~10–20 min; solids lag, then ~2–4 kcal/min; fatty meals 3–4 h in the stomach | Small intestine 3–5 h; colon ~20–40 h; whole gut ~10–70 h | body, gut | `guyton14` ch. 64; `lewis1997` |
 | Conduction velocities (Aα, Aβ, Aδ, B, C) | | | body, brain | |
-| Lymph flow (thoracic duct) | ~1–1.5 mL/min; ~8 L/day of afferent lymph, ~4 L/day reach the veins | ~3× in the run (model); intestinal lymph up several-fold after a fatty meal | body | `guyton14` ch. 16; `levick2010` (unchecked) |
-| Blood neutrophils, lymphocytes | neutrophils ~3.2 (early morning) → ~4.1 ×10⁹/L (afternoon); lymphocytes ~2.6 (midnight) → ~1.8 ×10⁹/L (late morning) | run: neutrophils ~5–5.6, lymphocytes ~3.1 then ~1.5 an hour after | body | `haus1999`; `campbell2018` (unchecked) |
-| Immune response timing | neutrophils at a wound within hours; dendritic cells in the draining node in ~1–2 days; primary IgM ~day 5–7, IgG peak ~2 weeks; contraction of the clone by 90–95% | secondary response within 1–3 days, 10–100× more antibody, mostly IgG; flu incubation 1–4 days (~2), shedding 5–7 days in adults | body (infection ride) | `janeway10` (unchecked) |
+| Lymph flow (thoracic duct) | ~1–1.5 mL/min; ~8 L/day of afferent lymph, ~4 L/day reach the veins | ~3× in the run (model); intestinal lymph up several-fold after a fatty meal | body | `guyton14` ch. 16; `levick2010` (the hs text's "20 L filtered, a few litres left" is the classic view: #17) |
+| Blood neutrophils, lymphocytes | neutrophils ~3.2 (early morning) → ~4.1 ×10⁹/L (afternoon); lymphocytes ~2.6 (midnight) → ~1.8 ×10⁹/L (late morning) | run: neutrophils ~5–5.6, lymphocytes ~3.1 then ~1.5 an hour after | body | `haus1999`; `campbell2018` |
+| Immune response timing | neutrophils at a wound within hours; dendritic cells in the draining node in ~1–2 days; primary IgM ~day 5–7, IgG peak ~2 weeks; contraction of the clone by 90–95% | secondary response within 1–3 days, 10–100× more antibody, mostly IgG; flu incubation 1–4 days (~2), shedding 5–7 days in adults | body (infection ride) | `janeway10`; `amanna2007`; `krammer2018`, `carrat2008` (flu) |
 | Cerebral blood flow | ~750 mL/min (~15% of CO), autoregulated | | body, brain | `guyton14` ch. 62 |
 
 The Source column uses ids from [`fact-check/sources.json`](#sources). Fill in each row the first time the backlog reaches that quantity. Add rows as new pages bring new shared quantities (muscle blood flow, skin temperature, bone turnover and so on).
@@ -295,8 +295,8 @@ The backlog, in order of exposure: the body view is what every reader sees first
 | # | Page / part | Items | Checked | Last check | Open issues |
 |---|---|---|---|---|---|
 | 1 | `index.html` body view (phases, systems, journeys, hours, model numbers) | 2602 | 58%: all 13 topics, sleep stages, hours, UI strings; the circulatory, respiratory, urinary, digestive and endocrine systems; the cell, breath, drop and bite rides and their arrays; `PHYSIO`, `Physio.at()`, sleep cycles, voids. Still to do: the cascade ride, the nervous system and impulse ride, the glossary, the animation modules | 2026-11-17 | |
-| 1b | Immune & lymphatic system on the body (new on 2026-11-18: `systems.immune`, its glossary terms, `PHYSIO.neutrophils` / `lymphocytes` / `il6`, the lymph channels in `Physio.at()`, `mod:Immune`) | 177 | 0%: not yet checked. Written from `guyton14` (lymph), `janeway10` and the papers its text names (`besedovsky2012`, `lange2003`, `prather2015`, `scheiermann2012`, `campbell2018`) | | |
-| 1c | Follow an infection on the body (new on 2026-11-19: `infection` in `#body-content` (4 journeys, 23 stops), 21 glossary terms, `INFECTIONS` and its legs (`NEUTRO_RIDE`, `DC_ARM`, `DC_NOSE`, `AB_ARM`, `AB_NOSE`), `mod:InfectionRide`, and the edited `fn:lapseRide`, `mod:Immune` and `mod:Scene`) | 245 | 0%: not yet checked. Written from `janeway10` and the papers its PhD text names (Pillay et al., 2010; Mempel, Henrickson and von Andrian, 2004; Amanna, Carlson and Slifka, 2007; Bastard et al., 2020; Sridhar et al., 2013), which are not yet in `sources.json` | | |
+| 1b ✅ | Immune & lymphatic system on the body (new on 2026-11-18: `systems.immune`, its glossary terms, `PHYSIO.neutrophils` / `lymphocytes` / `il6`, the lymph channels in `Physio.at()`, `mod:Immune`) | 177 | 100%: all four phases, the eight pins, 25 glossary terms, the white-cell and IL-6 keyframes, the lymph model. Fixed: splenic slit width, the neutrophil and lymphocyte glossary entries. Filed: the lymph volumes at hs vs college, tonsillectomy and immunity. One look-up each in `openstax-ap2e` and `campbell2018`; the rest from memory | 2026-11-19 | #17, #18 |
+| 1c ✅ | Follow an infection on the body (new on 2026-11-19: `infection` in `#body-content` (4 journeys, 23 stops), 21 glossary terms, `INFECTIONS` and its legs (`NEUTRO_RIDE`, `DC_ARM`, `DC_NOSE`, `AB_ARM`, `AB_NOSE`), `mod:InfectionRide`, and the edited `fn:lapseRide`, `mod:Immune` and `mod:Scene`) | 245 | 100%: all journeys and stops at four levels, the glossary, the ride's timings against its text. Fixed: complement "punching holes" in Gram-positive splinter bacteria (alarm.hs and the glossary), the interferon glossary entry (IFN-γ), where nasal IgA comes from (abFlu.hs). 21 rows looked up in `openstax-ap2e`; the papers the PhD text names are now in `sources.json` (from memory). The edited `mod:Scene`, `mod:Cascade` and `mod:DropRide` go with the animation modules in row 1 | 2026-11-19 | |
 | 2 | Heart | 1111 | 0% | | |
 | 3 | Lungs | 743 | 1% (the run's breathing model and text) | 2026-11-17 | |
 | 4 | Kidneys | 1128 | 0% | | |
@@ -307,10 +307,10 @@ The backlog, in order of exposure: the body view is what every reader sees first
 | 9 | Glossaries (included in the counts above) | | 0% | | |
 | 10a | Shared organ engine (`engine`: phase vitals, schedule, beat and breath loop) | 9 | 56% | 2026-11-17 | |
 | 10 | `README.md` (not in the ledger; check by hand) | | 0% | | |
-| 11 | Random re-checks (`--recheck-stats`) | | 0 re-checked | | |
-| 12 | Independent verifications of look-ups (`--recheck-stats`) | | 0 verified | | |
+| 11 | Random re-checks (`--recheck-stats`) | | 0 re-checked (on 2026-11-19 no approved row was yet 60 days old) | 2026-11-19 | |
+| 12 | Independent verifications of look-ups (`--recheck-stats`) | | 0 verified (on 2026-11-19 there were no look-ups from earlier runs to verify) | 2026-11-19 | |
 
-Item counts come from `node fact-check/scan.mjs` on 2026-11-17. A glossary's items are the `body-glossary:` and `organ-glossary:` keys on each page.
+Item counts come from `node fact-check/scan.mjs` on 2026-11-17 (rows 1b and 1c on the day they landed). On 2026-11-19 the body page as a whole was 64% checked (1,925 of 3,024). A glossary's items are the `body-glossary:` and `organ-glossary:` keys on each page.
 
 New pages and systems from the nightly build get a row as they land, and are checked before the backlog continues. Tick a row ✅ when all its ledger rows are `ok`, `fixed` or filed.
 

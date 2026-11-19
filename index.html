@@ -1841,7 +1841,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "ms": "A fist-sized organ high on your left side. It filters your blood, removing old red blood cells and catching germs.",
           "hs": "The red pulp of the spleen recycles worn-out red blood cells (after about 120 days), and the white pulp is full of white blood cells that respond to germs in the blood.",
           "college": "Splenic macrophages remove old and damaged red cells and recycle their iron. Marginal-zone B cells respond quickly to bacteria with sugar capsules, so people without a spleen need vaccines against pneumococcus and similar bacteria.",
-          "phd": "Red cells must squeeze through slits about 1–2 µm wide in the walls of the splenic sinuses, which tests how deformable they are. The spleen also stores about a third of the body’s platelets."
+          "phd": "Red cells must squeeze through slits only about 0.25–1.2 µm wide in the walls of the splenic sinuses, which tests how deformable they are. The spleen also stores about a third of the body’s platelets."
         },
         {
           "id": "marrow",
@@ -3421,7 +3421,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       "alarm": {
         "name": "Mast cells raise the alarm",
         "ms": "Guard cells in the skin notice the germs and send out alarm chemicals. Small blood vessels widen and leak, so the spot goes red, warm, swollen and sore.",
-        "hs": "Mast cells release histamine and macrophages release cytokines. Nearby blood vessels widen and become leaky, so fluid and proteins pour into the tissue. That is inflammation: redness, heat, swelling and pain. Complement proteins from the blood start to punch holes in the bacteria.",
+        "hs": "Mast cells release histamine and macrophages release cytokines. Nearby blood vessels widen and become leaky, so fluid and proteins pour into the tissue. That is inflammation: redness, heat, swelling and pain. Complement proteins from the blood start to coat the bacteria, marking them to be eaten (and can punch holes in some kinds).",
         "college": "Tissue macrophages and mast cells recognise bacterial molecules (lipoteichoic acid, lipopolysaccharide, flagellin) through Toll-like receptors. Histamine acts within minutes; TNF, IL-1 and chemokines such as IL-8 (CXCL8) follow. The complement fragments C3a and C5a add to the leak and call in neutrophils, and C3b coats the bacteria.",
         "phd": "Celsus named four signs of inflammation (rubor, calor, tumor, dolor); a fifth, loss of function, was added later and is often credited to Virchow. The early leak comes mainly from postcapillary venules, where histamine and bradykinin open gaps between endothelial cells, and complement can be set off on bacterial surfaces by the alternative and lectin pathways without any antibody."
       },
@@ -3554,7 +3554,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       "abFlu": {
         "name": "Antibodies to the nose",
         "ms": "Antibodies from the lymph node ride the lymph into the blood, and the heart pumps them up to the lining of your nose.",
-        "hs": "Antibodies pour into the blood and reach the lining of the nose and airways. There a special kind, IgA, is pumped out onto the surface, into the mucus, where it meets the virus first.",
+        "hs": "Antibodies pour into the blood and reach the lining of the nose and airways. There a special kind, IgA, made by plasma cells just under the lining, is pumped out onto the surface, into the mucus, where it meets the virus first.",
         "college": "Serum IgG reaches the airway mainly by leaking across the lining, more in the lungs than in the nose, while secretory IgA is made by plasma cells just under the lining and carried across the epithelium into the mucus by the polymeric immunoglobulin receptor.",
         "phd": "Neutralising antibodies mostly target the head of haemagglutinin and stop it binding sialic acid. That region mutates fastest (antigenic drift), which is why flu vaccines are updated every year. Antibodies to the more conserved stalk are rarer but act on more strains."
       },
@@ -3763,8 +3763,8 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "micturition": { "def": "Emptying the bladder: peeing.", "match": ["micturition", "voiding", "void"] },
   "UT-A1": { "def": "A urea channel deep in the collecting duct, opened by ADH, that lets urea help the kidney save water.", "match": ["UT-A1", "UT-A3", "UT-A2", "urea recycling"] },
   "lymph nodes": { "def": "Bean-sized filters along the lymph vessels, about 600 of them, where white blood cells meet germs carried in the lymph.", "match": ["lymph nodes", "lymph node"] },
-  "lymphocytes": { "def": "White blood cells of the adaptive immune system: T cells, B cells and natural killer cells. They travel between the blood and the lymph nodes.", "match": ["lymphocytes", "lymphocyte"] },
-  "neutrophils": { "def": "The most common white blood cells. They rush to infections and swallow bacteria, and live for only a day or so in the blood.", "match": ["neutrophils", "neutrophil", "neutrophilia"] },
+  "lymphocytes": { "def": "White blood cells: the T cells and B cells of the adaptive immune system, and the natural killer cells of the innate one. T and B cells travel between the blood and the lymph nodes.", "match": ["lymphocytes", "lymphocyte"] },
+  "neutrophils": { "def": "The most common white blood cells. They rush to infections and swallow bacteria, and spend only hours in the blood before leaving for the tissues.", "match": ["neutrophils", "neutrophil", "neutrophilia"] },
   "white blood cells": { "def": "The cells of the immune system that travel in the blood and lymph (leukocytes).", "match": ["white blood cells", "white blood cell", "leukocytes", "leukocyte"] },
   "T cells": { "def": "Lymphocytes that mature in the thymus. Helper T cells direct the immune response; killer (CD8⁺) T cells destroy infected cells.", "match": ["T cells", "T cell", "T helper cells", "T-cell", "thymocytes"] },
   "B cells": { "def": "Lymphocytes that make antibodies once they are activated, after becoming plasma cells.", "match": ["B cells", "B cell", "B-cell"] },
@@ -3790,7 +3790,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "mast cells": { "def": "Immune cells in the skin, the airways and the gut lining that release histamine and other alarm chemicals within minutes of an injury, an infection or an allergen.", "match": ["mast cells", "mast cell"] },
   "histamine": { "def": "An alarm chemical released by mast cells. It widens small blood vessels and makes them leaky, causing redness, swelling and itch.", "match": ["histamine"] },
   "inflammation": { "def": "The body’s first response to injury or infection: blood vessels widen and leak, and white cells move in, giving redness, heat, swelling and pain.", "match": ["inflammation", "inflammatory", "inflamed"] },
-  "complement": { "def": "A set of blood proteins that, once set off, punch holes in bacteria, coat them so phagocytes can eat them, and call in white cells.", "match": ["complement", "C3b", "C5a"] },
+  "complement": { "def": "A set of blood proteins that, once set off, coat germs so phagocytes can eat them, call in white cells, and punch holes in some bacteria.", "match": ["complement", "C3b", "C5a"] },
   "phagocytosis": { "def": "A cell swallowing a germ or a dead cell whole. Neutrophils and macrophages are the main phagocytes.", "match": ["phagocytosis", "phagocytes", "phagocyte"] },
   "chemokines": { "def": "Small signalling proteins that steer white cells to where they are needed, such as IL-8 to an infection.", "match": ["chemokines", "chemokine", "IL-8", "CXCL8"] },
   "pus": { "def": "A thick fluid made mostly of dead neutrophils, bacteria and tissue debris.", "match": ["pus"] },
@@ -3802,7 +3802,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "IgG": { "def": "The main antibody class in the blood, made later in a response and after vaccines. It lasts about three weeks and crosses the placenta.", "match": ["IgG"] },
   "opsonisation": { "def": "Coating a germ with antibodies or complement so that phagocytes can grab and eat it more easily.", "match": ["opsonisation", "opsonises", "opsonised", "opsonization"] },
   "memory cells": { "def": "Long-lived B and T cells left after an infection or a vaccine, which recognise the same germ and respond much faster the next time.", "match": ["memory cells", "memory B cells", "memory T cells", "memory cell"] },
-  "interferons": { "def": "Signalling proteins that virus-infected cells release to warn their neighbours, which then switch on antiviral defences.", "match": ["interferons", "interferon", "IFN-γ"] },
+  "interferons": { "def": "Signalling proteins against viruses. Infected cells release type I and III interferons, which make their neighbours switch on antiviral defences; IFN-γ, made by T cells and natural killer cells, rouses macrophages.", "match": ["interferons", "interferon", "IFN-γ"] },
   "haemagglutinin": { "def": "The spike protein of the flu virus that binds sialic acid on airway cells. Vaccines aim antibodies at it.", "match": ["haemagglutinin", "hemagglutinin", "haemagglutination"] },
   "neuraminidase": { "def": "A flu virus enzyme that cuts sialic acid, freeing new viruses from the cell that made them. Oseltamivir blocks it.", "match": ["neuraminidase"] },
   "vaccine": { "def": "A harmless version or piece of a germ (or instructions to make one) that trains the immune system, leaving antibodies and memory cells without causing the disease.", "match": ["vaccine", "vaccines", "vaccination", "flu jab"] },

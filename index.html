@@ -5948,7 +5948,7 @@ const BITES = [
     { stop: "micelle", m: "micelle", t: 2400, path: [cD(SI_A)] },
     { stop: "chylomicron", m: "chylo", t: 1800, step: true },
     { stop: "lacteal", m: "chylo", t: 900, lymph: true, path: [cP(VILLUS, CISTERNA)] },
-    { stop: "thoracicDuct", m: "chylo", t: 2700, lymph: true, path: [cD(THORACIC_D)] },
+    { stop: "thoracicDuct", m: "chylo", t: 600, lymph: true, path: [cD(THORACIC_D)] },
     { stop: "chyloRide", m: "chylo", t: 22, b: 1, path: [cV(2, VENOUS_ANGLE), ...LUNGS, cA(RT.legL)] },
     { stop: "lpl", m: "fat", t: 900, step: true }
   ] },
@@ -7552,7 +7552,7 @@ const Airways = (() => {
    digestive system is live.
    ========================================================================= */
 const Digestion = (() => {
-  const NP = 80, NC = 12, PERIOD = 7, CHYME = "#c98a52", BILE = "#7da33a", JUICE = "#e3a13c", MMC = "#e9c9a6";
+  const NP = 80, NC = 12, PERIOD = 20, CHYME = "#c98a52", BILE = "#7da33a", JUICE = "#e3a13c", MMC = "#e9c9a6";
   const pool = [], churn = [], waves = [];
   let st, gut = [], gutL = 0, colon, bile, panc, portal, portalEnd = 1, ph = null, t = 0, still = "";
   let accBile = 0, accJuice = 0, accNut = 0, accStool = 0, accMmc = 0, wavePh = 0;
@@ -7594,9 +7594,10 @@ const Digestion = (() => {
   function tick(dt, p){
     ph = p; t += dt; still = "";
     const mot = p.motility, fill = clamp(p.stomach * 1.4), mmc = p.mmc;
-    /* stomach waves: two rings, half a period apart, from the body to the pylorus */
-    const per = PERIOD * (mmc > .3 ? .6 : 1) / Math.max(.4, mot);
-    const prev = wavePh; wavePh = (wavePh + dt / per) % 1;
+    /* stomach waves: two rings, half a period apart, from the body to the pylorus.
+       The pacemaker slow wave fixes the rate at ~3/min (PERIOD s); motility and
+       the MMC change how strongly each wave contracts, not how often it comes */
+    const prev = wavePh; wavePh = (wavePh + dt / PERIOD) % 1;
     const A = clamp(fill * mot + mmc);
     waves.forEach((c, i) => {
       const f = (wavePh + i / 2) % 1, u = .25 + .75 * f;
@@ -7604,7 +7605,7 @@ const Digestion = (() => {
       c.setAttribute("opacity", f1(A * .8 * Math.sin(Math.PI * f)));
       /* a wave reaching the pylorus squirts a little chyme into the duodenum */
       const pf = (prev + i / 2) % 1;
-      if (f < pf && p.stomach > .04) for (let k = 0, n = 1 + Math.round(2 * p.stomach); k < n; k++) spawn("chyme", CHYME, { s: -k * 4 });
+      if (f < pf && p.stomach > .04) for (let k = 0, n = 3 + Math.round(6 * p.stomach); k < n; k++) spawn("chyme", CHYME, { s: -k * 4 });
     });
     drawChurn(p, t);
     /* CCK: bile and pancreatic juice flow while chyme is in the duodenum (juice starts with the first bite) */
@@ -7676,7 +7677,7 @@ const Digestion = (() => {
    URINARY — the kidneys and bladder at work. Filtrate leaves each glomerulus
    at a rate set by the GFR and runs down the nephron, shrinking as most of it
    is taken back, and turning from clear filtrate into urine. Peristaltic waves
-   (a few a minute, sped up here) push boluses of urine down the ureters, more
+   (2–6 a minute, more when flow is high) push boluses of urine down the ureters, more
    often and bigger when urine flow is high. Urine is pale when ADH is low and
    dark when it is high (at night, in the run). The bladder swells as it fills
    and, at each void, the detrusor squeezes, the sphincter opens and urine runs
@@ -7718,7 +7719,7 @@ const Urinary = (() => {
     accF += dt * 3 * p.gfr / 125;
     while (accF >= 1){ accF--; spawn("neph", FILTRATE, 1.5, { side: Math.random() < .5 ? 1 : -1, col }); }
     /* ureter peristalsis: each wave carries a bolus down both ureters */
-    const per = 6 / (.4 + p.urineFlow), prev = wavePh;
+    const per = 60 / (2 + 4 * clamp(p.urineFlow / 2)), prev = wavePh; /* 2–6 waves a minute, more as flow rises */
     wavePh = (wavePh + dt / per) % 1;
     if (wavePh < prev) ureters.forEach((S, i) => spawn("bolus", col, f1(1.5 + .9 * clamp(p.urineFlow / 1.5)), { i }));
     /* voiding: a stream down the urethra */
@@ -7738,7 +7739,7 @@ const Urinary = (() => {
           if (d.u > .7 && !d.urine){ d.urine = true; d.c.setAttribute("fill", d.col); }
           break;
         }
-        case "bolus": d.u += dt / 2.4; pt = ureters[d.i].at(d.u); done = d.u >= 1; break;
+        case "bolus": d.u += dt / 6; pt = ureters[d.i].at(d.u); done = d.u >= 1; break;
         case "stream": d.u += dt / .7; pt = urethra.at(d.u); done = d.u >= 1; break;
         case "renin": {
           d.u += dt / 2; done = d.u >= 1;

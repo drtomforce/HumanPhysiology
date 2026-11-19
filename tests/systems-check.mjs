@@ -160,7 +160,10 @@ async function infections(page, fail){
   if (!b || b === a || b.endsWith("Vax") !== a.endsWith("Vax")) fail(`"Another germ" turned ${a} into ${b}`);
   /* a tap on an armpit node (the third node drawn) starts the splinter; the neck nodes sit
      under the throat's label in the whole-body view, where a tap opens the throat */
-  await page.click("#infectionCard [data-j=stop]"); await page.waitForTimeout(1500);
+  await page.click("#infectionCard [data-j=stop]"); await page.waitForTimeout(600);
+  /* wait for the camera to settle back on the whole body */
+  await page.waitForFunction(() => { const r = document.querySelectorAll("#scene .im-node")[2].getBoundingClientRect(), k = `${r.x.toFixed(1)},${r.y.toFixed(1)}`;
+    const same = window.__nodeAt === k; window.__nodeAt = k; return same; }, null, { polling: 300, timeout: 5000 }).catch(() => {});
   const box = await page.evaluate(() => { const n = document.querySelectorAll("#scene .im-node")[2], r = n.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
     return { x, y, hit: document.elementFromPoint(x, y) === n }; });
   if (!box.hit) fail("the armpit node is covered, so it can't be tapped");

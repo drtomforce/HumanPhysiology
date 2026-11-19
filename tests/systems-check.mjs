@@ -8,8 +8,12 @@
      - its numbered fact pins are drawn, one per pin in the content, and open a tip;
      - the hours of the day (sleep, breakfast, rest, the run, dinner) play for a few
        seconds each without page errors, and the physiology channels it reads are numbers;
+     - the follow button in its card (if it has one) starts a journey with its card on the body;
      - ?live=<id> (the link the organ pages' lens cards use) opens it live;
      - switching it off hides its layer.
+   For the immune system it also plays every infection journey (?ride=infection:<id>) stop by
+   stop to the end, checks each stop's text at all four reading levels, the Vaccinated toggle
+   and "Another germ", and that tapping an armpit node starts the splinter journey.
    It serves the repository on a local port itself. Needs the playwright package. */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -89,6 +93,17 @@ for (const id of ids.filter(x => x.includes(only))){
     if (bad.length) fail(`at ${h} h these channels are not numbers: ${bad.join(", ")}`);
   }
 
+  /* the card's follow button starts the system's journey */
+  if (await page.$(".sys-card .follow-btn")){
+    await page.click(".sys-card .follow-btn");
+    await page.waitForTimeout(700);
+    const j = await page.evaluate(() => ({ cards: document.querySelectorAll(".journey.on").length, h2: (document.querySelector("#panel h2") || {}).textContent || "" }));
+    if (j.cards !== 1) fail(`the follow button shows ${j.cards} journey cards, not 1`);
+    if (!/^Journey of|^Follow/i.test(j.h2) && j.h2.length < 5) fail("the follow button did not open the journey in the panel");
+  }
+
+  if (id === "immune") await infections(page, fail);
+
   /* the organ pages' lens link */
   await page.goto(base + `?live=${id}&hour=17.5`);
   await page.waitForTimeout(900);
@@ -107,5 +122,55 @@ for (const id of ids.filter(x => x.includes(only))){
 }
 await browser.close();
 server.close();
+
+/* every infection journey, stop by stop, plus the Vaccinated toggle and a tap on a node */
+async function infections(page, fail){
+  const C = await page.evaluate(() => CONTENT.infection);
+  for (const [k, st] of Object.entries(C.stops))
+    for (const lv of ["name", "ms", "hs", "college", "phd"]) if (!st[lv] || st[lv].length < (lv === "name" ? 3 : 40)) fail(`infection stop ${k} has no ${lv} text`);
+  for (const j of Object.keys(C.journeys)){
+    await page.goto(base + `?hour=10&ride=infection:${j}`);
+    await page.waitForTimeout(900);
+    await page.evaluate(() => { window.store = HumanPhysiology.store; });
+    const st = await page.evaluate(() => ({ id: store.get().infection, live: store.get().live, n: document.querySelectorAll(".journey-steps li").length,
+      card: document.querySelector("#infectionCard").classList.contains("on") }));
+    if (st.id !== j || st.live !== "immune" || !st.card){ fail(`?ride=infection:${j} did not start it (${JSON.stringify(st)})`); continue; }
+    const seen = new Set();
+    for (let i = 0; i < st.n; i++){
+      const r = await page.evaluate(() => ({ seg: store.get().infectionSeg, where: document.querySelector("#infectionCard .j-where").textContent,
+        on: (document.querySelector(".journey-steps li.on") || {}).textContent, text: (document.querySelector("#panel .reading .text") || {}).textContent || "" }));
+      if (r.where !== r.on) fail(`${j}, stop ${i + 1}: the card says "${r.where}" but the panel marks "${r.on}"`);
+      if (r.text.length < 40) fail(`${j}, stop ${i + 1}: no text in the panel`);
+      seen.add(r.seg);
+      await page.click("#infectionCard [data-j=next]");
+      await page.waitForTimeout(120);
+    }
+    const end = await page.evaluate(() => ({ toast: document.querySelector("#infectionCard .j-toast").textContent, meta: document.querySelector("#infectionCard .j-meta").textContent }));
+    if (seen.size !== st.n) fail(`${j}: visited ${seen.size} of ${st.n} stops`);
+    if (end.toast !== C.journeys[j].effect) fail(`${j}: arrival says "${end.toast}", not "${C.journeys[j].effect}"`);
+    if (!/days/.test(end.meta)) fail(`${j}: the end says "${end.meta}", without the days it took`);
+  }
+  /* the Vaccinated toggle and "Another germ" keep the other setting */
+  await page.click("#infectionCard [data-j=vax]"); await page.waitForTimeout(300);
+  const a = await page.evaluate(() => store.get().infection);
+  await page.click("#infectionCard [data-j=another]"); await page.waitForTimeout(300);
+  const b = await page.evaluate(() => store.get().infection);
+  const last = Object.keys(C.journeys).pop();
+  if (a !== (last.endsWith("Vax") ? last.slice(0, -3) : last + "Vax")) fail(`Vaccinated turned ${last} into ${a}`);
+  if (!b || b === a || b.endsWith("Vax") !== a.endsWith("Vax")) fail(`"Another germ" turned ${a} into ${b}`);
+  /* a tap on an armpit node (the third node drawn) starts the splinter; the neck nodes sit
+     under the throat's label in the whole-body view, where a tap opens the throat */
+  await page.click("#infectionCard [data-j=stop]"); await page.waitForTimeout(600);
+  /* wait for the camera to settle back on the whole body */
+  await page.waitForFunction(() => { const r = document.querySelectorAll("#scene .im-node")[2].getBoundingClientRect(), k = `${r.x.toFixed(1)},${r.y.toFixed(1)}`;
+    const same = window.__nodeAt === k; window.__nodeAt = k; return same; }, null, { polling: 300, timeout: 5000 }).catch(() => {});
+  const box = await page.evaluate(() => { const n = document.querySelectorAll("#scene .im-node")[2], r = n.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
+    return { x, y, hit: document.elementFromPoint(x, y) === n }; });
+  if (!box.hit) fail("the armpit node is covered, so it can't be tapped");
+  await page.mouse.click(box.x, box.y); await page.waitForTimeout(500);
+  const tapped = await page.evaluate(() => store.get().infection);
+  if (tapped !== "splinter") fail(`tapping an armpit node started ${tapped}, not the splinter`);
+  console.log(`  ✓ ${Object.keys(C.journeys).length} infection journeys, Vaccinated, Another germ, tap a node`);
+}
 console.log(failed ? `\n${failed} problem(s)` : "\nAll body systems work.");
 process.exit(failed ? 1 : 0);

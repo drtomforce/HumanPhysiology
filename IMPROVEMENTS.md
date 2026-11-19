@@ -9,12 +9,12 @@ The README describes what already exists. This file only lists what doesn't exis
 |---|---|---|
 | Organs on the body (close-up + phase text) | 13: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat | New organs: see [New organs for the body](#new-organs-for-the-body) |
 | Organ deep-dive pages (`organs/<id>.html`) | 7: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas | 6 existing organs + any new ones |
-| Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic (no journey yet) | 3: muscles & skeleton, skin, reproductive |
-| Journeys ("follow a …") | 6: red cell, nerve impulse, hormone cascade, breath, bite, drop | Follow an infection (immune), one per new system, plus cross-system journeys |
+| Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic | 3: muscles & skeleton, skin, reproductive |
+| Journeys ("follow a …") | 7: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection | One per new system, plus cross-system journeys |
 
 ## Next up
 
-Both items here are done. The liver and pancreas pages are built, and the immune & lymphatic system now animates on the body. The next step is its "follow an infection" journey, then the spleen & lymph nodes as a new organ (see [2.1](#21-immune--lymphatic) and [Suggested order](#suggested-order)).
+Both items here are done. The liver and pancreas pages are built, and the immune & lymphatic system animates on the body with its "follow an infection" journey. The next step is the spleen & lymph nodes as a new organ (see [3.1](#31-spleen--lymph-nodes) and [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -144,13 +144,18 @@ Built as planned below; see the README for what it covers. What changed from the
 
 Organ pages already have lens cards for these four systems, but the body view can't show them yet. Each needs what the existing six have: a layer (`.sys-<id>`) with its own animator, text for each phase at four levels, numbered fact pins, a card in the side panel, a "Part of" chip mapping in `ORGAN_SYSTEMS`, and a journey to ride along. Once a system is animated, its lens cards on the organ pages should link back to it.
 
-### 2.1 Immune & lymphatic (layer ✅ Done, journey and organ still open)
-The layer is built: see the README for what it covers, and `node tests/systems-check.mjs immune` for its check. What changed from the plan, and what is still open:
-- **Journey: follow an infection** is not built. It is the next task: a `lapseRide` journey like BITE RIDE and DROP RIDE (a STRINGS `followInfection` button in the immune card, a tap on a node or a moving lymphocyte to start it, text in `CONTENT.infection`), with the "vaccinated" toggle.
+### 2.1 Immune & lymphatic (layer and journey ✅ Done, organ still open)
+The layer and the "follow an infection" journey are built: see the README for what they cover, and `node tests/systems-check.mjs immune` for their check. What changed from the plan, and what is still open:
+- **Follow an infection ✅ Done**: two germs, a splinter carrying bacteria into the hand (draining to the armpit nodes) and a flu virus in the nose (draining to the neck nodes), each as a first meeting (about two weeks) and a vaccinated twin (`splinterVax`, `fluVax`, about six days). It is an `INFECTIONS` array run by `lapseRide` (INFECTION RIDE, with `clockScreen`), text in `CONTENT.infection`, a Vaccinated toggle and "Another germ" on the card, and `?ride=infection:<id>`. Still open:
+  - **The journey doesn't change the body**: there is no infection state in the physiology, so the fever, the rising neutrophil count, CRP, the swollen node and the tiredness are told in the text but not shown in the vitals or the layer. An `infection` channel driven by the ride's real time could feed `coreTemp`, `neutrophils`, `lymphocytes`, `il6` and node size.
+  - **One thread**: the ride follows one line (innate → dendritic cell → T cell → B cell → plasma cell → antibodies → memory). In reality B-cell and T-cell activation overlap, and killer T cells reach the nose while antibodies are still being made; the text says so, but the ride shows them one after the other.
+  - **More germs**: a cold virus (no vaccine, all innate and T cells), tetanus in a dirty wound (a toxin, neutralised by vaccine antibodies), a gut infection through the Peyer's patches with IgA, and a urinary infection (shared with the urinary system).
+  - **Vaccinated is per ride**: the toggle switches between the twin journeys rather than being a body-wide setting that other rides or a future infection state could read.
+  - **Neck nodes** sit under the throat's label in the whole-body view, so a tap there opens the throat. The armpit nodes, the other nodes, the spleen, the thymus and the moving cells start a ride.
 - **Spleen & lymph nodes as an organ** (3.1): the spleen, thymus, tonsils, marrow and Peyer's patches are drawn in the layer, but there is no organ topic, close-up or hotspot for them yet. The "Part of" chips now list the immune system for the gut, liver, skin, bones and throat.
 - **Chylomicrons** ride their own lymph routes here; the fat bite journey still draws its own path up `THORACIC_D`. The two could share the lymph dots, so a bite's chylomicron is one of the milky dots.
 - **Channels are simplified**: thoracic duct flow (`lymphFlow`, ~1.2 mL/min at rest, ~3× in the run), `chyle` (gut activity lagged by 1.5 h), `nodeTraffic` (0–1, high in deep sleep with low cortisol), `spleen` (−25% in the run), and keyframed `neutrophils`, `lymphocytes` (×10⁹/L) and `il6`. They are not yet read by the vitals panel, and there is no CRP, fever or infection state.
-- **No tap targets**: tapping the immune layer does nothing yet (it will start the journey).
+- **Tap targets ✅ Done**: tapping a node, the tonsils, the spleen, the thymus or a moving cell starts the infection journey (the armpit nodes start the splinter, the neck nodes and tonsils the flu).
 - **Draw**: lymph vessels and nodes (neck, armpits, groin, mesenteric), thoracic duct → left subclavian vein, spleen, thymus, tonsils, bone marrow and Peyer's patches.
 - **Animate**: lymph creeping centrally, faster with muscle activity in the run and with breathing. White-cell traffic through nodes. The overnight peak of immune activity in sleep and the effect of cortisol through the day. Chylomicrons already ride the lacteals in the fat bite journey, so share that path.
 - **Physiology channels**: lymph flow, neutrophil and lymphocyte counts (with their daily rhythm), and inflammatory markers.
@@ -243,7 +248,7 @@ These span several organs and are best built as their own pages (for example `ex
 - **Pharmacology**: one drug taken by mouth and followed through absorption, first-pass metabolism, distribution, effect and clearance by the liver or kidney, with a plasma-concentration curve and dosing intervals.
 
 ### 4.3 New journeys on the body
-- Follow an infection (immune, see 2.1).
+- ~~Follow an infection (immune, see 2.1)~~ (done).
 - Follow a step (muscles & skeleton, see 2.2).
 - Follow the heat, and sunlight → vitamin D (skin, see 2.3).
 - Follow a cycle (reproductive, see 2.4).
@@ -270,7 +275,7 @@ These span several organs and are best built as their own pages (for example `ex
 3. ~~Export utility~~ (done).
 4. ~~Mobile view of the body~~ (done).
 5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
-6. **Immune & lymphatic system on the body**: ~~the animated layer~~ (done); next the "follow an infection" journey, then the spleen and lymph nodes as a new organ.
+6. **Immune & lymphatic system on the body**: ~~the animated layer~~ (done); ~~the "follow an infection" journey~~ (done); next the spleen and lymph nodes as a new organ.
 7. Muscles and bones pages, then the muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).
 9. Eyes, ears and throat pages.

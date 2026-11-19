@@ -270,6 +270,7 @@ One canonical value per shared quantity. Every page uses these values or explain
 | Conduction velocities (Aα, Aβ, Aδ, B, C) | | | body, brain | |
 | Lymph flow (thoracic duct) | ~1–1.5 mL/min; ~8 L/day of afferent lymph, ~4 L/day reach the veins | ~3× in the run (model); intestinal lymph up several-fold after a fatty meal | body | `guyton14` ch. 16; `levick2010` (unchecked) |
 | Blood neutrophils, lymphocytes | neutrophils ~3.2 (early morning) → ~4.1 ×10⁹/L (afternoon); lymphocytes ~2.6 (midnight) → ~1.8 ×10⁹/L (late morning) | run: neutrophils ~5–5.6, lymphocytes ~3.1 then ~1.5 an hour after | body | `haus1999`; `campbell2018` (unchecked) |
+| Immune response timing | neutrophils at a wound within hours; dendritic cells in the draining node in ~1–2 days; primary IgM ~day 5–7, IgG peak ~2 weeks; contraction of the clone by 90–95% | secondary response within 1–3 days, 10–100× more antibody, mostly IgG; flu incubation 1–4 days (~2), shedding 5–7 days in adults | body (infection ride) | `janeway10` (unchecked) |
 | Cerebral blood flow | ~750 mL/min (~15% of CO), autoregulated | | body, brain | `guyton14` ch. 62 |
 
 The Source column uses ids from [`fact-check/sources.json`](#sources). Fill in each row the first time the backlog reaches that quantity. Add rows as new pages bring new shared quantities (muscle blood flow, skin temperature, bone turnover and so on).
@@ -295,6 +296,7 @@ The backlog, in order of exposure: the body view is what every reader sees first
 |---|---|---|---|---|---|
 | 1 | `index.html` body view (phases, systems, journeys, hours, model numbers) | 2602 | 58%: all 13 topics, sleep stages, hours, UI strings; the circulatory, respiratory, urinary, digestive and endocrine systems; the cell, breath, drop and bite rides and their arrays; `PHYSIO`, `Physio.at()`, sleep cycles, voids. Still to do: the cascade ride, the nervous system and impulse ride, the glossary, the animation modules | 2026-11-17 | |
 | 1b | Immune & lymphatic system on the body (new on 2026-11-18: `systems.immune`, its glossary terms, `PHYSIO.neutrophils` / `lymphocytes` / `il6`, the lymph channels in `Physio.at()`, `mod:Immune`) | 177 | 0%: not yet checked. Written from `guyton14` (lymph), `janeway10` and the papers its text names (`besedovsky2012`, `lange2003`, `prather2015`, `scheiermann2012`, `campbell2018`) | | |
+| 1c | Follow an infection on the body (new on 2026-11-19: `infection` in `#body-content` (4 journeys, 23 stops), 21 glossary terms, `INFECTIONS` and its legs (`NEUTRO_RIDE`, `DC_ARM`, `DC_NOSE`, `AB_ARM`, `AB_NOSE`), `mod:InfectionRide`, and the edited `fn:lapseRide`, `mod:Immune` and `mod:Scene`) | 245 | 0%: not yet checked. Written from `janeway10` and the papers its PhD text names (Pillay et al., 2010; Mempel, Henrickson and von Andrian, 2004; Amanna, Carlson and Slifka, 2007; Bastard et al., 2020; Sridhar et al., 2013), which are not yet in `sources.json` | | |
 | 2 | Heart | 1111 | 0% | | |
 | 3 | Lungs | 743 | 1% (the run's breathing model and text) | 2026-11-17 | |
 | 4 | Kidneys | 1128 | 0% | | |

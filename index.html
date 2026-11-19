@@ -49,10 +49,17 @@
                    (tubule) and urine legs timed like BITES; the bladder leg's time is
                    a function of the hour (toNextVoid), so it waits for the day's next
                    trip to the toilet (VOIDS); text in CONTENT.urine.
+                   INFECTIONS lists the infection journeys (infection ride): a germ
+                   at the skin or nose, the innate alarm, a dendritic cell in the
+                   lymph, T and B cells in a node, antibodies in the blood and
+                   memory, timed like URINES over about two weeks; each has a
+                   vaccinated twin (vax, id + "Vax") with a faster second response;
+                   text in CONTENT.infection.
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
                    follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg, breath,
-                   breathSeg, bite, biteSeg, drop, dropSeg, ridePaused}. shown = which body systems
+                   breathSeg, bite, biteSeg, drop, dropSeg, infection, infectionSeg,
+                   ridePaused}. shown = which body systems
                    are drawn; live = the one that is animated (setSystem / setLive keep
                    the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
@@ -61,7 +68,8 @@
                    a hormone cascade (startCascade / stopCascade), breath / breathSeg
                    for a breath journey (startBreath / stopBreath), bite / biteSeg
                    for a bite journey (startBite / stopBite) and drop / dropSeg for a
-                   urinary journey (startDrop / stopDrop); one ride at a time
+                   urinary journey (startDrop / stopDrop), infection / infectionSeg
+                   for an infection journey (startInfection / stopInfection); one ride at a time
                    (stopRides), and riding(s) says whether one is on.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
@@ -82,8 +90,7 @@
                    up LYMPH_ROUTES through the nodes, milky after meals and pumped
                    by muscle and breathing in the run, lymphocytes homing into the
                    nodes (most at night), neutrophils leaving the marrow, IL-6
-                   from working thighs and the spleen contracting (IMMUNE). The
-                   immune system has no journey yet.
+                   from working thighs and the spleen contracting (IMMUNE).
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
@@ -105,6 +112,9 @@
                    DROP RIDE follows one molecule through the kidney in time-lapse
                    (lapseRide again, with BITE RIDE's clockScreen); DROP CARD shows
                    the stop, real time, the time-lapse and when the next pee is.
+                   INFECTION RIDE follows one infection in time-lapse over days
+                   (lapseRide, clockScreen); INFECTION CARD shows the stop, the cell
+                   or molecule, the day, and a Vaccinated toggle.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -118,7 +128,7 @@
 
  7. UI              Panel (intro with the live-system and sleep-stage cards, organ
                    view with "Part of" chips, red-cell, nerve-impulse, hormone-cascade,
-                   breath, bite and drop journey views), timeline with
+                   breath, bite, drop and infection journey views), timeline with
                    the hypnogram strip, level switch, system switches, glossary tooltips.
 
  7b. REPORT        The REPORTER blocks (synced from organs/_template.html by
@@ -492,9 +502,9 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .im-peyer{ fill:#9fcf78; stroke:#3f7a30; stroke-width:.6; }
 .im-marrow{ fill:#d9664f; opacity:.45; }
 .im-dot{ stroke:#ffffff80; stroke-width:.4; }
-#s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo{ opacity:.28; }
-#s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-#s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+#s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo, #s-infectionRide .imp-halo{ opacity:.28; }
+#s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot, #s-infectionRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail, #s-infectionRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 #s-pins .mk{ cursor:pointer; outline:none; }
 #s-pins .mk circle{ fill:var(--pc, var(--ink)); stroke:var(--bg); stroke-width:2.4; }
 #s-pins .mk text{ fill:#fff; font:600 12px var(--sans); text-anchor:middle; pointer-events:none; }
@@ -764,6 +774,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="journey" id="breathCard" aria-live="polite"></div>
       <div class="journey" id="biteCard" aria-live="polite"></div>
       <div class="journey" id="dropCard" aria-live="polite"></div>
+      <div class="journey" id="infectionCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <button class="zoom-reset" id="zoomReset" type="button">Whole body</button>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
@@ -3371,6 +3382,197 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "phd": "Gain-of-function ENaC mutations (Liddle syndrome) cause early, low-renin hypertension, showing how much blood pressure depends on this last 2–3% of filtered sodium."
       }
     }
+  },
+  "infection": {
+    "journeys": {
+      "splinter": {
+        "name": "A splinter → bacteria → memory",
+        "group": "First meeting",
+        "blurb": "Bacteria ride in on a splinter in the hand. Mast cells raise the alarm and neutrophils rush in, while a dendritic cell carries the news up the arm to a lymph node in the armpit. There T and B cells take about a week to make the antibodies that finish the job, and the body remembers the germ.",
+        "effect": "Cleared, and remembered"
+      },
+      "flu": {
+        "name": "A flu virus → memory",
+        "group": "First meeting",
+        "blurb": "A flu virus lands in the nose and gets into the cells of its lining. Interferon slows it down, a dendritic cell carries it to a lymph node in the neck, and killer T cells and antibodies clear it in about a week, leaving memory cells behind.",
+        "effect": "Flu cleared, and remembered"
+      },
+      "splinterVax": {
+        "name": "A splinter, second time",
+        "group": "Vaccinated, or met before",
+        "blurb": "The same bacteria, but the body has met them before. Antibodies are already waiting in the blood, and memory cells answer within days instead of a week, so the bacteria are gone before an infection can take hold.",
+        "effect": "Cleared in days"
+      },
+      "fluVax": {
+        "name": "A flu virus, after a flu jab",
+        "group": "Vaccinated, or met before",
+        "blurb": "The same flu virus after a flu vaccine. Antibodies made after the jab catch much of the virus before it gets into cells, and memory B and T cells answer in a day or two instead of a week, so the illness is milder or never starts.",
+        "effect": "Stopped early"
+      }
+    },
+    "stops": {
+      "splinter": {
+        "name": "A splinter breaks the skin",
+        "ms": "A splinter pokes through your skin and carries a few bacteria in with it. Skin is a strong wall, so germs mostly get in where it is broken.",
+        "hs": "The outer layer of the skin, dead cells packed with keratin, keeps out most germs. A splinter breaks through it and leaves bacteria in the warm, wet tissue underneath, where they can start to divide.",
+        "college": "Breaching the epidermis puts bacteria into the dermis. In rich culture some bacteria double every 20–30 minutes; in tissue they grow more slowly, but a small dose can still become millions within a day if nothing stops it.",
+        "phd": "Skin defends itself beyond the barrier: keratinocytes make antimicrobial peptides (β-defensins, cathelicidin LL-37), and the acidic, lipid-rich surface limits colonisation. Staphylococcus aureus and Streptococcus pyogenes are the usual causes of infected wounds and cellulitis."
+      },
+      "alarm": {
+        "name": "Mast cells raise the alarm",
+        "ms": "Guard cells in the skin notice the germs and send out alarm chemicals. Small blood vessels widen and leak, so the spot goes red, warm, swollen and sore.",
+        "hs": "Mast cells release histamine and macrophages release cytokines. Nearby blood vessels widen and become leaky, so fluid and proteins pour into the tissue. That is inflammation: redness, heat, swelling and pain. Complement proteins from the blood start to punch holes in the bacteria.",
+        "college": "Tissue macrophages and mast cells recognise bacterial molecules (lipoteichoic acid, lipopolysaccharide, flagellin) through Toll-like receptors. Histamine acts within minutes; TNF, IL-1 and chemokines such as IL-8 (CXCL8) follow. The complement fragments C3a and C5a add to the leak and call in neutrophils, and C3b coats the bacteria.",
+        "phd": "Celsus named four signs of inflammation (rubor, calor, tumor, dolor); a fifth, loss of function, was added later and is often credited to Virchow. The early leak comes mainly from postcapillary venules, where histamine and bradykinin open gaps between endothelial cells, and complement can be set off on bacterial surfaces by the alternative and lectin pathways without any antibody."
+      },
+      "neutroRide": {
+        "name": "Neutrophils ride to the rescue",
+        "ms": "Your bone marrow keeps a store of white blood cells called neutrophils. The alarm calls them out, and they ride the blood to your hand.",
+        "hs": "The bone marrow releases neutrophils from its reserve, and the blood carries them through the heart and lungs and out to the arm in under a minute. The marrow holds many times more neutrophils than the blood does.",
+        "college": "Cytokines (G-CSF, IL-1, TNF) release mature neutrophils from the marrow reserve, so the blood count can rise within hours of an infection. A neutrophil circulates for only hours (a half-life of about 7–10 hours in the classic labelling studies) before it leaves for the tissues or is cleared.",
+        "phd": "The marrow makes about 1–2 × 10¹¹ neutrophils a day. CXCR4 holds them in the marrow and CXCR2 lets them out, and G-CSF tips the balance. Deuterium labelling once suggested a lifespan in the blood of days rather than hours (Pillay et al., 2010), but that estimate is disputed."
+      },
+      "neutrophils": {
+        "name": "Neutrophils swarm in",
+        "ms": "Neutrophils squeeze out between the cells of the blood vessel wall, follow the trail of the germs and swallow them. Dead neutrophils and germs make pus.",
+        "hs": "Neutrophils roll along the vessel wall, stick, and squeeze out into the tissue, following the alarm chemicals. They swallow bacteria (phagocytosis) and kill them with enzymes and bleach-like chemicals. Within hours they far outnumber the other immune cells there. Pus is mostly dead neutrophils.",
+        "college": "Recruitment is a cascade: selectins slow the cells into rolling, chemokines activate their integrins (LFA-1, Mac-1), which bind ICAM-1 for firm arrest, and the cells crawl through the vessel wall (diapedesis). In the tissue they follow gradients of IL-8, C5a and bacterial peptides, engulf bacteria coated with complement, and kill them with the respiratory burst (NADPH oxidase) and granule enzymes.",
+        "phd": "Neutrophils also cast nets of DNA studded with antimicrobial proteins (NETs). Faulty recruitment shows how vital this step is: in leukocyte adhesion deficiency (missing β2 integrins) wounds fill with bacteria but form no pus, and in chronic granulomatous disease (no NADPH oxidase) neutrophils arrive but cannot kill."
+      },
+      "dendritic": {
+        "name": "A dendritic cell takes a sample",
+        "ms": "A dendritic cell, a spiky messenger cell, swallows pieces of the germs. Then it sets off to tell the rest of the immune system.",
+        "hs": "Dendritic cells sit in the skin like sentries. One swallows bits of bacteria, chops them up and shows the pieces (antigens) on its surface. Then it heads into a lymph vessel.",
+        "college": "Danger signals make the dendritic cell mature: it loads bacterial peptides onto MHC class II, raises the costimulatory molecules CD80 and CD86, and switches on the chemokine receptor CCR7, which steers it into the lymphatics and on to the node’s T-cell zone.",
+        "phd": "Skin has several dendritic-cell subsets: Langerhans cells in the epidermis, and cDC1 and cDC2 in the dermis. cDC2 mostly prime CD4⁺ helper T cells, while cDC1 cross-present antigen to CD8⁺ T cells. Ralph Steinman’s discovery of dendritic cells won a share of the 2011 Nobel Prize."
+      },
+      "dcLymph": {
+        "name": "Up the lymph to the armpit",
+        "ms": "The dendritic cell travels up a lymph vessel in your arm to a lymph node in your armpit. The trip takes about a day.",
+        "hs": "Lymph from the hand flows up the arm to the nodes in the armpit (axillary nodes), carrying the dendritic cell with it. This is why an infected finger can give you a sore lump in the armpit.",
+        "college": "Dendritic cells reach the draining node within about 1–2 days, entering through the subcapsular sinus and crawling into the paracortex. Bacteria and soluble antigen get there faster, within minutes to hours, carried by the lymph itself to the node’s macrophages and B-cell follicles.",
+        "phd": "A red streak running up the limb (lymphangitis) means the infection is spreading along the lymph vessels, often with Streptococcus pyogenes, and needs antibiotics urgently. Lymph nodes act as filters, and their sinus macrophages trap many of the bacteria that reach them."
+      },
+      "tCell": {
+        "name": "A T cell finds its match",
+        "ms": "In the lymph node, the dendritic cell shows the germ pieces to T cells. Only a few have the right shape to fit. When one fits, it wakes up and makes thousands of copies of itself.",
+        "hs": "Each T cell carries a receptor of one random shape, so only about one in a million naive T cells recognises a given antigen. The dendritic cell meets hundreds of T cells an hour until the right one binds. That helper T cell is switched on and divides again and again for several days.",
+        "college": "Activation needs two signals: the T-cell receptor binding peptide on MHC (signal 1) and CD28 binding CD80 or CD86 (signal 2), plus cytokines that steer which kind of helper cell it becomes (signal 3). Activated cells make IL-2 and divide every 6–8 hours or so, growing a clone of thousands of cells over about a week.",
+        "phd": "Two-photon imaging shows naive T cells scanning dendritic cells in brief contacts, then forming stable contacts lasting hours once they find their antigen (Mempel, Henrickson and von Andrian, 2004). Some helper cells become T follicular helper cells (Bcl-6, CXCR5) and move to the edge of the B-cell follicles."
+      },
+      "bCell": {
+        "name": "B cells get help",
+        "ms": "A B cell that sticks to the germ meets a helper T cell that knows the same germ. The T cell gives it the go-ahead, and the B cell starts to multiply.",
+        "hs": "B cells catch whole bits of the germ with the antibodies on their surface. A B cell that has caught some shows pieces to a matching helper T cell at the edge of its follicle, and the T cell’s go-ahead makes it divide. Some of its daughters start making antibodies at once.",
+        "college": "At the T–B border, matching helper T cells provide CD40L and cytokines (IL-21, IL-4). Some activated B cells become short-lived plasmablasts making IgM within days; others enter a germinal centre, where they mutate their antibody genes and switch class to IgG or IgA.",
+        "phd": "In germinal centres, somatic hypermutation by the enzyme AID and selection by T follicular helper cells raise antibody affinity over weeks (affinity maturation). Polysaccharides can activate B cells without T-cell help, but then give mainly IgM and little memory, which is why polysaccharide vaccines for young children are joined to a protein (conjugate vaccines)."
+      },
+      "plasma": {
+        "name": "Plasma cells make antibodies",
+        "ms": "Some B cells turn into antibody factories called plasma cells. Each one makes thousands of antibodies every second, all shaped to stick to this germ.",
+        "hs": "Plasma cells are B cells packed with machinery for making protein. Each makes thousands of antibody molecules a second. The first antibodies, IgM, appear about 5–7 days after the infection starts; better-fitting IgG antibodies follow in the second week.",
+        "college": "A plasma cell secretes roughly 2,000 antibody molecules a second. In a first (primary) response, IgM appears in the blood after about a week and class-switched IgG peaks at about two weeks. Antibodies neutralise toxins, stop bacteria sticking, set off complement and coat bacteria for phagocytes (opsonisation).",
+        "phd": "Antibody-secreting cells peak in the blood about a week after antigen exposure, then die or migrate; some settle in the bone marrow as long-lived plasma cells (guided by CXCR4, and kept alive by niches rich in APRIL and IL-6), which can keep making antibody for decades."
+      },
+      "abRide": {
+        "name": "Antibodies ride the blood",
+        "ms": "The antibodies leave the lymph node in the lymph, join the blood near your neck, and are pumped back to your hand.",
+        "hs": "Lymph from the node drains into a vein at the base of the neck. The antibodies mix into the plasma and the heart pumps them round the body, so they reach the infected hand within a minute.",
+        "college": "Efferent lymph carries antibodies (and activated lymphocytes) to the venous angle. In inflamed tissue the leaky venules let plasma proteins, antibodies included, out where they are needed. IgG lasts about three weeks in the blood.",
+        "phd": "IgG’s long half-life comes from the neonatal Fc receptor (FcRn), which rescues it from breakdown inside endothelial cells and returns it to the blood; the same receptor carries IgG across the placenta. Drugs that block FcRn lower IgG levels in autoimmune diseases such as myasthenia gravis."
+      },
+      "clearSplinter": {
+        "name": "Bacteria cleared",
+        "ms": "Antibodies stick all over the bacteria, so they are easy to find and eat. The last germs are cleared, the swelling goes down and the skin heals.",
+        "hs": "Bacteria coated in antibodies and complement are swallowed much faster by neutrophils and macrophages. Once the germs are gone the inflammation calms down, macrophages clean up the dead cells, and the wound heals.",
+        "college": "Opsonised bacteria bind Fc receptors and complement receptors (CR3) on phagocytes, which greatly speeds uptake. As the bacteria disappear, resolution is active: neutrophils die by apoptosis, macrophages eat them and switch to making IL-10 and TGF-β, and lipid mediators (lipoxins, resolvins) stop more cells coming in.",
+        "phd": "Most small wounds are cleared by innate immunity alone within a day or two; the adaptive response matters when bacteria survive that first wave. When resolution fails, inflammation becomes chronic, and an abscess forms when neutrophils and fibrin wall off an infection the body cannot clear, which is why abscesses usually need draining."
+      },
+      "memory": {
+        "name": "Memory cells remember",
+        "ms": "Most of the new T and B cells die once the germ is gone, but some stay on as memory cells. Next time the same germ comes along, they recognise it at once.",
+        "hs": "After the infection, about nine in ten of the new immune cells die off. The survivors are memory B and T cells, which can live for years, and plasma cells in the bone marrow, which keep making a little antibody. Together they make the next meeting with the germ much faster. This is how vaccines work.",
+        "college": "After the peak, the expanded clone contracts by 90–95%. Memory cells are more numerous than the naive cells they came from, respond with less costimulation, and memory B cells already carry switched, high-affinity antibodies. Long-lived plasma cells keep antibody levels up for years without any new exposure.",
+        "phd": "Antibodies after some infections and vaccines last for decades (in one study they were essentially lifelong after measles and had a half-life of about 11 years after tetanus vaccination; Amanna, Carlson and Slifka, 2007), while others fade within months. Tissue-resident memory T cells stay in the skin or airway where the infection was, as a first line of defence."
+      },
+      "abReady": {
+        "name": "Antibodies already waiting",
+        "ms": "This time your body has met these bacteria before. Antibodies left over from last time are already in your blood. They leak into the sore spot and grab the bacteria straight away.",
+        "hs": "After a first meeting (or a vaccine), plasma cells in the bone marrow keep making antibodies. When the vessels around the splinter leak, these antibodies come out with the fluid and coat the bacteria within the first hour or two, so neutrophils can eat them much faster.",
+        "college": "Pre-existing IgG crosses the leaky inflamed venules with the plasma, opsonises the bacteria and sets off complement through the classical pathway from the start. Phagocytosis becomes far more efficient, so the dose can be cleared before it grows.",
+        "phd": "How well this works depends on the germ: antibodies protect strongly against toxins (tetanus, diphtheria) and encapsulated bacteria (pneumococcus, Hib), but natural immunity to Staphylococcus aureus is weak and short-lived, and despite many trials there is still no vaccine against it."
+      },
+      "memoryRecall": {
+        "name": "Memory cells answer fast",
+        "ms": "Memory cells in the lymph node spot the germ much faster than the first time. Within a day or two, lots of new antibodies are on their way.",
+        "hs": "There are far more memory B and T cells than the few naive cells that started the first response, and they wake up faster. Memory B cells turn into plasma cells within days and make IgG straight away, in much bigger amounts than the first time.",
+        "college": "A secondary response starts within 1–3 days, reaches antibody levels 10–100 times higher than the primary one, is mostly IgG (or IgA) from the start, and binds more tightly, because the memory B cells have already been through affinity maturation.",
+        "phd": "Memory B cells mostly turn straight into plasma cells rather than re-entering germinal centres. A recall response can be blunted when plenty of existing antibody covers the antigen (epitope masking), one reason why booster doses are spaced out."
+      },
+      "clearFast": {
+        "name": "Cleared in days",
+        "ms": "The germs are gone in a few days, often before you even feel ill. That is what a vaccine or an earlier infection gives you.",
+        "hs": "With antibodies and memory cells ready, the infection is stopped in days instead of a week or two, and it is often so small that you never notice it. The memory cells get a boost, too.",
+        "college": "The secondary response clears the infection before it grows big enough to cause symptoms, or shortens and softens the illness. Each meeting boosts the memory pool, which is the idea behind booster doses.",
+        "phd": "Protection is a spectrum: sterilising immunity (no infection at all) needs neutralising antibody where the germ gets in, whereas memory T cells and recall responses more often prevent severe disease than infection itself, as with influenza and SARS-CoV-2."
+      },
+      "inhale": {
+        "name": "A flu virus lands in the nose",
+        "ms": "Someone sneezes, and you breathe in a tiny droplet with flu viruses in it. They land on the lining of your nose.",
+        "hs": "Flu spreads in droplets and tiny aerosols from coughs, sneezes and breath, and on hands that touch the nose. The virus lands on the moist lining of the nose and throat. Mucus and beating cilia sweep many particles away, but some get through.",
+        "college": "Influenza A and B are enveloped RNA viruses. Their haemagglutinin binds sialic acid on airway epithelial cells, and their neuraminidase cuts a way through the sialic acid–rich mucus. The incubation period is 1–4 days, about 2 on average.",
+        "phd": "Human influenza viruses prefer α2,6-linked sialic acids, common in the upper airway, whereas bird flu viruses prefer α2,3-linked ones, found deeper in the human lung. This helps explain why bird flu spreads poorly between people but can cause severe pneumonia."
+      },
+      "infect": {
+        "name": "The virus copies itself",
+        "ms": "The virus gets inside a cell in your nose and turns it into a virus factory. After a few hours the cell lets out thousands of new viruses.",
+        "hs": "Inside a cell, the virus uses the cell’s own machinery to copy its genes and build new viruses. After about 6–8 hours each infected cell releases thousands of new viruses, which infect the cells around it.",
+        "college": "The virus enters by endocytosis; the acid endosome makes haemagglutinin fuse the membranes and release the 8 RNA segments, which are copied in the nucleus. New virions bud from the cell surface after about 6 hours and neuraminidase cuts them free. The amount of virus in the nose peaks 1–2 days after infection.",
+        "phd": "Neuraminidase inhibitors (oseltamivir, zanamivir) trap new virions on the cell surface and work best within 48 hours of symptoms, while baloxavir blocks the viral endonuclease (cap-snatching). Swapping of RNA segments between strains (reassortment) can create pandemic viruses."
+      },
+      "interferon": {
+        "name": "Interferon: an early defence",
+        "ms": "Infected cells send out a warning called interferon. It tells the cells next door to defend themselves and calls in killer cells. You start to feel ill: a sore throat, a fever, aches.",
+        "hs": "Interferons make nearby cells switch on antiviral genes, so the virus spreads more slowly. Natural killer cells destroy infected cells. Cytokines reach the brain and turn up the body’s thermostat, giving fever, tiredness and aches: signs that the immune system is at work.",
+        "college": "Infected cells sense viral RNA through RIG-I (and neighbouring cells through TLR3 and TLR7) and release type I and type III interferons, which switch on hundreds of interferon-stimulated genes (MxA, IFITM3, OAS). IL-1, IL-6 and TNF act on the hypothalamus through prostaglandin E2 to raise the temperature set-point.",
+        "phd": "Rare inherited defects in interferon signalling (IRF7, IRF9) cause life-threatening influenza in otherwise healthy children, and autoantibodies against type I interferons account for a share of severe COVID-19 in adults (Bastard et al., 2020)."
+      },
+      "dcFlu": {
+        "name": "To a lymph node in the neck",
+        "ms": "A dendritic cell picks up pieces of the virus and travels in the lymph to a lymph node in your neck. That is why the glands in your neck can swell when you have flu.",
+        "hs": "Lymph from the nose and throat drains to the lymph nodes of the neck (cervical nodes). Dendritic cells carry pieces of the virus there, ready to show them to T cells.",
+        "college": "Airway dendritic cells take up virus or dead infected cells, mature, switch on CCR7 and migrate within a day or two to the draining cervical nodes (or, from the lungs, the mediastinal nodes). They present viral peptides on MHC class I as well as class II, so they can activate killer as well as helper T cells.",
+        "phd": "Cross-presentation by cDC1 cells lets dendritic cells activate CD8⁺ T cells even when they are not infected themselves, and migratory dendritic cells also hand antigen over to node-resident ones. Swollen, tender nodes reflect lymphocytes being held back and dividing there."
+      },
+      "tCellFlu": {
+        "name": "Killer and helper T cells",
+        "ms": "In the lymph node, T cells that match the virus wake up and multiply. Killer T cells head off to the nose to destroy infected cells. Helper T cells help B cells make antibodies.",
+        "hs": "Two kinds of T cell are switched on. Helper T cells (CD4⁺) organise the response and help B cells. Killer T cells (CD8⁺) multiply into an army, leave the node and travel to the nose and airways, where they kill infected cells before those can release more virus.",
+        "college": "Virus-specific CD8⁺ T cells expand for about a week and reach the airways from around day 5–7, where they kill infected cells with perforin and granzymes and release IFN-γ. Many recognise internal viral proteins such as the nucleoprotein, which change little from one strain to the next.",
+        "phd": "Because T-cell targets in the internal proteins are conserved, pre-existing CD8⁺ T cells were linked to milder illness in the 2009 H1N1 pandemic (Sridhar et al., 2013), and T-cell-inducing “universal” flu vaccines aim to exploit this."
+      },
+      "abFlu": {
+        "name": "Antibodies to the nose",
+        "ms": "Antibodies from the lymph node ride the lymph into the blood, and the heart pumps them up to the lining of your nose.",
+        "hs": "Antibodies pour into the blood and reach the lining of the nose and airways. There a special kind, IgA, is pumped out onto the surface, into the mucus, where it meets the virus first.",
+        "college": "Serum IgG reaches the airway mainly by leaking across the lining, more in the lungs than in the nose, while secretory IgA is made by plasma cells just under the lining and carried across the epithelium into the mucus by the polymeric immunoglobulin receptor.",
+        "phd": "Neutralising antibodies mostly target the head of haemagglutinin and stop it binding sialic acid. That region mutates fastest (antigenic drift), which is why flu vaccines are updated every year. Antibodies to the more conserved stalk are rarer but act on more strains."
+      },
+      "clearFlu": {
+        "name": "Flu cleared",
+        "ms": "Antibodies stop the viruses, and killer T cells finish off the infected cells. After about a week you start to feel better.",
+        "hs": "Antibodies neutralise the virus so it can’t infect more cells, and killer T cells remove the cells already infected. The fever usually goes in 3–4 days and most people feel better within a week, though a cough and tiredness can last two weeks or more.",
+        "college": "Adults usually stop shedding virus within 5–7 days (children and people with weak immunity shed for longer). The damaged airway lining is rebuilt from basal cells over a few weeks, which is why a dry cough often lingers.",
+        "phd": "Most influenza deaths come from viral pneumonia, secondary bacterial pneumonia (pneumococcus, Staphylococcus aureus) or worsening heart and lung disease, mostly in older people. The immune response itself can harm the lung when it is too strong, as in the cytokine storm of H5N1 infection."
+      },
+      "vaxNeutralise": {
+        "name": "Vaccine antibodies are waiting",
+        "ms": "This time you had a flu jab. Antibodies from the vaccine are waiting, and they catch many of the viruses before they get into your cells.",
+        "hs": "A flu vaccine shows your immune system the virus’s haemagglutinin without making you ill, so you already have antibodies and memory cells. Antibodies in the lining of the nose and airways block many viruses before they can infect a cell.",
+        "college": "Injected inactivated vaccines mainly raise serum IgG against haemagglutinin, which protects the lungs well and the nose less. A haemagglutination-inhibition titre of 1:40 or more is linked to about half the risk of infection.",
+        "phd": "Seasonal vaccine effectiveness against medically attended influenza is typically 40–60% when the strains match, lower in older people and after antigenic drift. The nasal live attenuated vaccine also raises mucosal IgA and T cells. The strains are chosen twice a year, for each hemisphere, on WHO recommendations."
+      }
+    }
   }
 }
 </script>
@@ -3584,7 +3786,28 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "high endothelial venules": { "def": "Special small veins in lymph nodes through which lymphocytes leave the blood.", "match": ["high endothelial venules"] },
   "cytokines": { "def": "Small proteins that immune and other cells use to signal to each other, such as IL-6 and TNF.", "match": ["cytokines", "cytokine", "IL-12", "TNF", "IL-10"] },
   "IL-6": { "def": "Interleukin-6, a cytokine. In infection it drives fever and inflammation; released by working muscle, it helps supply fuel and calms inflammation.", "match": ["IL-6", "interleukin-6", "myokine"] },
-  "lymphoedema": { "def": "Swelling from protein-rich fluid that builds up when lymph can’t drain.", "match": ["lymphoedema", "lymphedema"] }
+  "lymphoedema": { "def": "Swelling from protein-rich fluid that builds up when lymph can’t drain.", "match": ["lymphoedema", "lymphedema"] },
+  "mast cells": { "def": "Immune cells in the skin, the airways and the gut lining that release histamine and other alarm chemicals within minutes of an injury, an infection or an allergen.", "match": ["mast cells", "mast cell"] },
+  "histamine": { "def": "An alarm chemical released by mast cells. It widens small blood vessels and makes them leaky, causing redness, swelling and itch.", "match": ["histamine"] },
+  "inflammation": { "def": "The body’s first response to injury or infection: blood vessels widen and leak, and white cells move in, giving redness, heat, swelling and pain.", "match": ["inflammation", "inflammatory", "inflamed"] },
+  "complement": { "def": "A set of blood proteins that, once set off, punch holes in bacteria, coat them so phagocytes can eat them, and call in white cells.", "match": ["complement", "C3b", "C5a"] },
+  "phagocytosis": { "def": "A cell swallowing a germ or a dead cell whole. Neutrophils and macrophages are the main phagocytes.", "match": ["phagocytosis", "phagocytes", "phagocyte"] },
+  "chemokines": { "def": "Small signalling proteins that steer white cells to where they are needed, such as IL-8 to an infection.", "match": ["chemokines", "chemokine", "IL-8", "CXCL8"] },
+  "pus": { "def": "A thick fluid made mostly of dead neutrophils, bacteria and tissue debris.", "match": ["pus"] },
+  "MHC": { "def": "Major histocompatibility complex: molecules that hold up pieces of protein on a cell’s surface for T cells to inspect. Class I is on almost every cell, class II on cells such as dendritic cells.", "match": ["MHC", "MHC class I", "MHC class II"] },
+  "clonal expansion": { "def": "A lymphocyte that recognises its antigen dividing again and again into thousands of identical cells.", "match": ["clonal expansion"] },
+  "germinal centre": { "def": "A region inside a lymph node follicle where B cells multiply, mutate their antibody genes and are selected for the best fit.", "match": ["germinal centre", "germinal centres", "germinal center"] },
+  "affinity maturation": { "def": "The gradual improvement in how tightly antibodies bind their target during an immune response, through mutation and selection in germinal centres.", "match": ["affinity maturation"] },
+  "IgM": { "def": "The first antibody class made in a new immune response: large, five-unit antibodies that are good at setting off complement.", "match": ["IgM"] },
+  "IgG": { "def": "The main antibody class in the blood, made later in a response and after vaccines. It lasts about three weeks and crosses the placenta.", "match": ["IgG"] },
+  "opsonisation": { "def": "Coating a germ with antibodies or complement so that phagocytes can grab and eat it more easily.", "match": ["opsonisation", "opsonises", "opsonised", "opsonization"] },
+  "memory cells": { "def": "Long-lived B and T cells left after an infection or a vaccine, which recognise the same germ and respond much faster the next time.", "match": ["memory cells", "memory B cells", "memory T cells", "memory cell"] },
+  "interferons": { "def": "Signalling proteins that virus-infected cells release to warn their neighbours, which then switch on antiviral defences.", "match": ["interferons", "interferon", "IFN-γ"] },
+  "haemagglutinin": { "def": "The spike protein of the flu virus that binds sialic acid on airway cells. Vaccines aim antibodies at it.", "match": ["haemagglutinin", "hemagglutinin", "haemagglutination"] },
+  "neuraminidase": { "def": "A flu virus enzyme that cuts sialic acid, freeing new viruses from the cell that made them. Oseltamivir blocks it.", "match": ["neuraminidase"] },
+  "vaccine": { "def": "A harmless version or piece of a germ (or instructions to make one) that trains the immune system, leaving antibodies and memory cells without causing the disease.", "match": ["vaccine", "vaccines", "vaccination", "flu jab"] },
+  "killer T cells": { "def": "CD8⁺ T cells, which recognise infected cells by the viral pieces on their MHC class I and kill them.", "match": ["killer T cells", "killer T cell", "CD8⁺ T cells", "cytotoxic T cells"] },
+  "fever": { "def": "A raised body temperature set by the brain in response to infection, when cytokines turn up the hypothalamus’s set-point.", "match": ["fever", "fevers"] }
 }
 </script>
 
@@ -4969,7 +5192,17 @@ const STRINGS = {
   anotherUrine: "Another journey",
   urineDone: t => `Done after ${t} of real time`,
   urineKind: { gut: "absorbed from the gut", step: "cells at work", blood: "riding the blood", tubule: "flowing down the nephron", urine: "in the urine" },
-  untilVoid: t => `waits for the next pee at ${t}`
+  untilVoid: t => `waits for the next pee at ${t}`,
+  followInfection: "Follow an infection",
+  followingInfection: "Infection ride · time-lapse",
+  infectionTitle: "Journey of an infection",
+  infectionLede: "Follow one infection from the first germ to immune memory: the fast, general alarm of the innate immune system, then the slow, precise answer of T cells, B cells and antibodies. Time is sped up, from minutes at the wound to days in a lymph node, and the day clock really moves. Pick a vaccinated journey to see how much faster a second meeting is.",
+  infectionHint: "Tip: with the immune system live, tap a lymph node, the tonsils or a moving white cell to start a ride.",
+  infectionJourneys: "Pick an infection",
+  anotherInfection: "Another germ",
+  vaccinated: "Vaccinated",
+  infectionDone: t => `Done after ${t} of real time`,
+  infectionKind: { step: "cells at work", blood: "riding the blood", lymph: "in the lymph" }
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -5239,11 +5472,13 @@ const store = createStore({
   biteSeg: null,    /* which leg of that journey the nutrient is on */
   drop: null,       /* id of the urinary journey (drop ride) being followed, or null */
   dropSeg: null,    /* which leg of that journey the molecule is on */
+  infection: null,  /* id of the infection journey being followed, or null */
+  infectionSeg: null, /* which leg of that journey the infection is on */
   ridePaused: false, /* the ride (and the whole body with it) is frozen so you can read */
   ...loadSystems()
 });
-/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath, a bite or a drop)? */
-const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null || s.drop != null;
+/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath, a bite, a drop or an infection)? */
+const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null || s.drop != null || s.infection != null;
 /* System switches. Switching a system on makes it live; switching off the
    live one hands "live" to another shown system (or to none). */
 function setSystem(id, on){
@@ -5888,6 +6123,100 @@ function defaultUrine(h){
   return p === "exercise" ? "renin" : p === "sleep" ? "urea" : p === "meal" ? "glucose" : "water";
 }
 
+/* Infection journeys (INFECTION RIDE), timed like URINES: stop (text in
+   CONTENT.infection.stops), m (the cell or molecule carrying the story, in
+   MOLECULES), t real seconds, step = cells at work in one place, b = a blood
+   ride scaled by cardiac output, k = the kind of leg (lymph), jump = start the
+   path afresh (the neutrophils come from the breastbone's marrow, not the
+   wound). A first meeting takes about two weeks: neutrophils within hours,
+   dendritic cells in the node after about a day, T-cell expansion over days,
+   IgM after about a week and IgG in the second week, then memory. The
+   vaccinated twin (vax) starts with antibodies already waiting and answers
+   from memory cells in a day or two. The splinter is in the viewer's left
+   hand, which drains to the armpit nodes and the right lymphatic duct; the
+   nose drains to the neck nodes. */
+const HOUR = 3600, DAY = 86400;
+const RT_ARM = 1; /* CIRC route: the viewer's left arm */
+const HAND_PT = bodyPt(424, 572), STERNUM = MARROW[0].slice(0, 2), NOSE_PT = [598, 201];
+const ARM_NODE = AXILLARY[0], NECK_NODE = CERVICAL[0];
+const ARM_NODE_OUT = "M514 306 C540 300 560 292 576 284";   /* armpit node → right venous angle */
+const NOSE_LYMPH = "M598 204 C592 214 584 228 580 246";     /* nasal lining → neck node */
+const NECK_NODE_OUT = "M580 246 C579 262 577 274 576 284";  /* neck node → right venous angle */
+const TO_HAND = [...LUNGS, cA(RT_ARM), cP(HAND_PT)];
+const TO_NOSE = [...LUNGS, cA(RT.brain, 0, [610, 205]), cP(NOSE_PT)];
+Object.assign(MOLECULES, {
+  bacteria: ["#7f9a2e", "Bacteria"], histamine: ["#e0688c", "Histamine and cytokines"], neutrophil: ["#c9a0dc", "Neutrophils"],
+  dendritic: ["#d99a3a", "Dendritic cell"], tcell: ["#6f7fd8", "T cells"], bcell: ["#3fa3c9", "B cells"],
+  plasma: ["#2f7fb3", "Plasma cells"], antibody: ["#2a9d8f", "Antibodies"], memory: ["#9b6fd8", "Memory cells"],
+  virus: ["#c8503f", "Flu virus"], interferon: ["#e3a335", "Interferon"]
+});
+const NEUTRO_RIDE = { stop: "neutroRide", m: "neutrophil", t: 20, b: 1, jump: true, path: [cP(STERNUM), ...TO_HAND] };
+const DC_ARM = { stop: "dcLymph", m: "dendritic", t: 18 * HOUR, k: "lymph", path: [cD(ARM_LYMPH)] };
+const DC_NOSE = { stop: "dcFlu", m: "dendritic", t: 18 * HOUR, k: "lymph", path: [cD(NOSE_LYMPH)] };
+const AB_ARM = { stop: "abRide", m: "antibody", t: 30, b: 1, path: [cD(ARM_NODE_OUT), cV(RT_ARM, VENOUS_ANGLE_R), ...TO_HAND] };
+const AB_NOSE = { stop: "abFlu", m: "antibody", t: 30, b: 1, path: [cD(NECK_NODE_OUT), cV(RT.brain, VENOUS_ANGLE_R), ...TO_NOSE] };
+const INFECTIONS = [
+  { id: "splinter", base: "splinter", vax: false, effect: "memory", legs: [
+    { stop: "splinter", m: "bacteria", t: 10, step: true, at: HAND_PT },
+    { stop: "alarm", m: "histamine", t: 30 * 60, step: true },
+    NEUTRO_RIDE,
+    { stop: "neutrophils", m: "neutrophil", t: 6 * HOUR, step: true },
+    { stop: "dendritic", m: "dendritic", t: 4 * HOUR, step: true },
+    DC_ARM,
+    { stop: "tCell", m: "tcell", t: 2.5 * DAY, step: true },
+    { stop: "bCell", m: "bcell", t: 1.5 * DAY, step: true },
+    { stop: "plasma", m: "plasma", t: 3 * DAY, step: true },
+    AB_ARM,
+    { stop: "clearSplinter", m: "antibody", t: 2 * DAY, step: true },
+    { stop: "memory", m: "memory", t: 4 * DAY, step: true, at: ARM_NODE }
+  ] },
+  { id: "flu", base: "flu", vax: false, effect: "memory", legs: [
+    { stop: "inhale", m: "virus", t: 5, step: true, at: NOSE_PT },
+    { stop: "infect", m: "virus", t: 8 * HOUR, step: true },
+    { stop: "interferon", m: "interferon", t: DAY, step: true },
+    DC_NOSE,
+    { stop: "tCellFlu", m: "tcell", t: 2.5 * DAY, step: true },
+    { stop: "bCell", m: "bcell", t: DAY, step: true },
+    { stop: "plasma", m: "plasma", t: 2 * DAY, step: true },
+    AB_NOSE,
+    { stop: "clearFlu", m: "antibody", t: 2 * DAY, step: true },
+    { stop: "memory", m: "memory", t: 4 * DAY, step: true, at: NECK_NODE }
+  ] },
+  { id: "splinterVax", base: "splinter", vax: true, effect: "memory", legs: [
+    { stop: "splinter", m: "bacteria", t: 10, step: true, at: HAND_PT },
+    { stop: "alarm", m: "histamine", t: 30 * 60, step: true },
+    { stop: "abReady", m: "antibody", t: 2 * HOUR, step: true },
+    NEUTRO_RIDE,
+    { stop: "neutrophils", m: "neutrophil", t: 6 * HOUR, step: true },
+    { stop: "dendritic", m: "dendritic", t: 4 * HOUR, step: true },
+    DC_ARM,
+    { stop: "memoryRecall", m: "memory", t: 1.5 * DAY, step: true },
+    AB_ARM,
+    { stop: "clearFast", m: "antibody", t: DAY, step: true },
+    { stop: "memory", m: "memory", t: 2 * DAY, step: true, at: ARM_NODE }
+  ] },
+  { id: "fluVax", base: "flu", vax: true, effect: "memory", legs: [
+    { stop: "inhale", m: "virus", t: 5, step: true, at: NOSE_PT },
+    { stop: "vaxNeutralise", m: "antibody", t: HOUR, step: true },
+    { stop: "infect", m: "virus", t: 8 * HOUR, step: true },
+    DC_NOSE,
+    { stop: "memoryRecall", m: "memory", t: 1.5 * DAY, step: true },
+    AB_NOSE,
+    { stop: "clearFast", m: "antibody", t: DAY, step: true },
+    { stop: "memory", m: "memory", t: 2 * DAY, step: true, at: NECK_NODE }
+  ] }
+];
+const INFECTION_BY_ID = Object.fromEntries(INFECTIONS.map(x => [x.id, x]));
+/* the same germ, first meeting or vaccinated */
+const infectionId = (base, vax) => base + (vax ? "Vax" : "");
+/* organ panels offer the infection journey that passes through */
+const INFECTION_FOR_TOPIC = { throat: "flu", lungs: "flu", skin: "splinter", bones: "splinter" };
+/* tapping a lymph node, the tonsils, the spleen, the thymus or a moving cell on the body */
+function tapInfection(id, h){
+  return id === "arm" ? "splinter" : id === "neck" ? "flu" : id ? defaultInfection(h) : null;
+}
+function defaultInfection(h){ return phaseAt(h) === "exercise" ? "splinter" : "flu"; }
+
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
   let out = `<path d="M${f1(x)} ${f1(y)}L${f1(x2)} ${f1(y2)}" stroke-width="${f1(w)}"/>`;
@@ -6196,6 +6525,7 @@ const Scene = (() => {
         ${[...INGUINAL, ...AXILLARY, ...CERVICAL, ...MESENTERIC].map(([x, y], i) => { const [X, Y] = bodyPt(x, y); return `<circle cx="${X}" cy="${f1(Y)}" r="7" class="im-halo" data-n="${i}"/><ellipse cx="${X}" cy="${f1(Y)}" rx="3.6" ry="2.7" class="im-node"/>`; }).join("")}
         <ellipse cx="${CISTERNA_PT[0]}" cy="${CISTERNA_PT[1]}" rx="2.6" ry="5" class="im-cisterna"/>
         <g id="s-immuneDots"></g>
+        <g id="s-infectionRide"></g>
       </g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
@@ -6209,7 +6539,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "immuneDots"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "immuneDots", "infectionRide"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -6885,13 +7215,14 @@ function piece(p){
 }
 
 /* =========================================================================
-   TIME-LAPSE RIDES — CASCADE, BITE RIDE and DROP RIDE share this engine. One signal (a
+   TIME-LAPSE RIDES — CASCADE, BITE RIDE, DROP RIDE and INFECTION RIDE share this engine. One signal (a
    hormone, a bite of food) is followed leg by leg, and each leg plays for a
    few seconds on screen, so the speed-up changes from leg to leg. The options
    say where to draw (ref), which ride is which (byId), a leg's colour (col),
    what kind of leg it is (kindOf), how long a leg plays (screen, optional),
    how to replay (restart) and what happens on arrival (effect). A leg's t
-   may be a function of the hour the leg starts (the drop ride's bladder wait).
+   may be a function of the hour the leg starts (the drop ride's bladder wait),
+   and jump starts a leg's path afresh instead of from where the last leg ended.
    timeScale() drives the day clock and (capped) the body, so the hour and the
    vitals move on.
    ========================================================================= */
@@ -6918,7 +7249,7 @@ function lapseRide(o){
         o2.at = l.at || at; o2.real = t; o2.kind = "step";
       } else {
         const P = [].concat(...l.path.map(piece));
-        if (at) P.unshift(at);
+        if (at && !l.jump) P.unshift(at);
         o2.S = poly(P);
         o2.real = l.b ? t * 5 / co : t;
         o2.kind = l.path.some(p => p.r != null) ? "blood" : o.kindOf(l);
@@ -7054,7 +7385,7 @@ const Cascade = lapseRide({
   }
 });
 
-/* Screen time for the long time-lapse rides (BITE RIDE, DROP RIDE): long legs
+/* Screen time for the long time-lapse rides (BITE RIDE, DROP RIDE, INFECTION RIDE): long legs
    play slowly enough (up to 9 s) that the day clock, capped at CLOCK_MAX, keeps up. */
 function clockScreen(l, S){
   const SPEED = 150, MIN_LEG = 1.4, STEP_S = 2.4, MAX_S = 9;
@@ -7096,6 +7427,21 @@ const DropRide = lapseRide({
       case "saved": dots(p.x, p.y, MOLECULES.glucose[0], 14, true); break;
       case "salt": ring(p.x, p.y, MOLECULES.aldo[0], 22, .3); dots(p.x, p.y, MOLECULES.sodium[0], 12, true); break;
     }
+  }
+});
+
+/* INFECTION RIDE — one infection in time-lapse: minutes at the wound, hours
+   for the neutrophils, a day for the dendritic cell's trip in the lymph and
+   days in the lymph node, so the day clock runs at its cap and the card
+   counts the days. It ends with memory cells in the node. */
+const InfectionRide = lapseRide({
+  ref: "infectionRide", byId: INFECTION_BY_ID,
+  col: l => MOLECULES[l.m][0],
+  kindOf: l => l.k || "lymph",
+  screen: clockScreen,
+  restart: id => startInfection(id, true),
+  effect(e, p, col, { ring, dots }){
+    if (e === "memory"){ ring(p.x, p.y, MOLECULES.memory[0], 22, .3); ring(p.x, p.y, MOLECULES.memory[0], 38, .7); dots(p.x, p.y, MOLECULES.antibody[0], 12, false); }
   }
 });
 
@@ -7547,7 +7893,20 @@ const Immune = (() => {
     still = k;
     rates(p);
   }
-  return { init, tick, setRates };
+  /* what a tap at (x, y) hits: the armpit nodes ("arm"), the neck nodes or the
+     tonsils ("neck"), another node, the spleen or the thymus ("node"), else a
+     moving lymph dot or white cell ("cell") */
+  function nearest(x, y, maxD){
+    let best = null, bd = maxD * 1.3;
+    const near = (pts, id) => pts.forEach(([px, py]) => { const d = Math.hypot(px - x, py - y); if (d < bd){ bd = d; best = id; } });
+    near(nodes.slice(2, 4), "arm");
+    near([...nodes.slice(4, 6), ...TONSILS], "neck");
+    near([...nodes.slice(0, 2), ...nodes.slice(6), SPLEEN_AT, THYMUS_AT], "node");
+    if (best) return best;
+    for (const d of pool) if (d.on && Math.hypot(+d.c.getAttribute("cx") - x, +d.c.getAttribute("cy") - y) < maxD) return "cell";
+    return null;
+  }
+  return { init, tick, setRates, nearest };
 })();
 
 /* =========================================================================
@@ -9810,6 +10169,7 @@ const Panel = (() => {
         ${id === "respiratory" ? `<button type="button" class="chip primary follow-btn" data-breath="">${esc(STRINGS.followBreath)}</button>` : ""}
         ${id === "digestive" ? `<button type="button" class="chip primary follow-btn" data-bite="">${esc(STRINGS.followBite)}</button>` : ""}
         ${id === "urinary" ? `<button type="button" class="chip primary follow-btn" data-drop="">${esc(STRINGS.followUrine)}</button>` : ""}
+        ${id === "immune" ? `<button type="button" class="chip primary follow-btn" data-infection="">${esc(STRINGS.followInfection)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -9845,6 +10205,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
     root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
     root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
+    root.querySelectorAll("[data-infection]").forEach(b => b.addEventListener("click", () => startInfection(b.dataset.infection || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -9888,7 +10249,8 @@ const Panel = (() => {
       ${CASCADE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.cascadeTitle)}</p><div class="depth"><button type="button" class="chip" data-cascade="${CASCADE_FOR_TOPIC[id]}">${esc(STRINGS.followCascade)}: ${esc(CONTENT.cascade.journeys[CASCADE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${BREATH_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.breathTitle)}</p><div class="depth"><button type="button" class="chip" data-breath="${BREATH_FOR_TOPIC[id]}">${esc(STRINGS.followBreath)}: ${esc(CONTENT.breath.journeys[BREATH_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${BITE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.biteTitle)}</p><div class="depth"><button type="button" class="chip" data-bite="${BITE_FOR_TOPIC[id]}">${esc(STRINGS.followBite)}: ${esc(CONTENT.bite.journeys[BITE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
-      ${URINE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.urineTitle)}</p><div class="depth"><button type="button" class="chip" data-drop="${URINE_FOR_TOPIC[id]}">${esc(STRINGS.followUrine)}: ${esc(CONTENT.urine.journeys[URINE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
+      ${URINE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.urineTitle)}</p><div class="depth"><button type="button" class="chip" data-drop="${URINE_FOR_TOPIC[id]}">${esc(STRINGS.followUrine)}: ${esc(CONTENT.urine.journeys[URINE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
+      ${INFECTION_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.infectionTitle)}</p><div class="depth"><button type="button" class="chip" data-infection="${INFECTION_FOR_TOPIC[id]}">${esc(STRINGS.followInfection)}: ${esc(CONTENT.infection.journeys[INFECTION_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -9906,6 +10268,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-breath]").forEach(b => b.addEventListener("click", () => startBreath(b.dataset.breath || null)));
     root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
     root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
+    root.querySelectorAll("[data-infection]").forEach(b => b.addEventListener("click", () => startInfection(b.dataset.infection || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -10153,10 +10516,53 @@ const Panel = (() => {
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
+  /* while following an infection: the journey's legs as numbered stops, the current one explained */
+  function renderInfection(s){
+    const C = CONTENT.infection, b = INFECTION_BY_ID[s.infection], jc = C.journeys[b.id], seg = s.infectionSeg || 0, li = LEVEL_INDEX[s.level];
+    const text = levelText(C.stops[b.legs[seg].stop], s.level);
+    const steps = b.legs.map((l, i) => `<li style="--c:${MOLECULES[l.m][0]}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(C.stops[l.stop].name)}</li>`).join("");
+    const groups = {};
+    INFECTIONS.forEach(x => (groups[C.journeys[x.id].group] ||= []).push(x.id));
+    const list = Object.entries(groups).map(([g, ids]) => `<p class="imp-group">${esc(g)}</p><div class="depth">${ids.map(id =>
+      `<button type="button" class="chip${id === b.id ? " primary" : ""}" data-it="${id}"${id === b.id ? ` aria-pressed="true"` : ""}>${esc(C.journeys[id].name)}</button>`).join("")}</div>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.infectionTitle)}</h2>
+      <p class="lede">${esc(STRINGS.infectionLede)}</p>
+      <section class="sys-card" style="--sc:${MOLECULES[b.legs[0].m][0]}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <p class="follow-label imp-paths">${esc(STRINGS.infectionJourneys)}</p>
+      ${list}
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopImpulse)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.infectionHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopInfection);
+    root.querySelector("[data-stop]").addEventListener("click", stopInfection);
+    root.querySelectorAll("[data-it]").forEach(b => b.addEventListener("click", () => startInfection(b.dataset.it)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic, peeing = s.drop != null && !s.topic;
-    const key = peeing ? `drop:${s.drop}|${s.level}|${s.dropSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic, peeing = s.drop != null && !s.topic, fighting = s.infection != null && !s.topic;
+    const key = fighting ? `infection:${s.infection}|${s.level}|${s.infectionSeg}`
+              : peeing ? `drop:${s.drop}|${s.level}|${s.dropSeg}`
               : eating ? `bite:${s.bite}|${s.level}|${s.biteSeg}`
               : breathing ? `breath:${s.breath}|${s.level}|${s.breathSeg}`
               : lapse ? `cascade:${s.cascade}|${s.level}|${s.cascadeSeg}`
@@ -10167,7 +10573,7 @@ const Panel = (() => {
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    peeing ? renderDrop(s) : eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    fighting ? renderInfection(s) : peeing ? renderDrop(s) : eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -10841,9 +11247,100 @@ function stopDrop(){
   DropRide.stop();
   store.set({ drop: null, dropSeg: null, ridePaused: false });
 }
+
+/* =========================================================================
+   INFECTION CARD — over the body while an infection is followed: where it
+   is, the cell or molecule at work, real time and the day, the time-lapse,
+   and a Vaccinated toggle that restarts the same germ as a second meeting
+   ========================================================================= */
+const InfectionCard = (() => {
+  const box = $("#infectionCard");
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingInfection)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>${esc(STRINGS.realTime)}</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="another">${esc(STRINGS.anotherInfection)}</button>
+        <button type="button" class="chip" data-j="vax" aria-pressed="false">${esc(STRINGS.vaccinated)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]"),
+            vax: box.querySelector("[data-j=vax]") };
+    scrub = rideScrub(box, InfectionRide, STRINGS.scrubRide, lapseClock(InfectionRide));
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      const cur = INFECTION_BY_ID[store.get().infection];
+      if (b.dataset.j === "stop") stopInfection();
+      else if (b.dataset.j === "another"){
+        const bases = [...new Set(INFECTIONS.map(x => x.base))], i = bases.indexOf(cur.base);
+        startInfection(infectionId(bases[(i + 1) % bases.length], cur.vax));
+      }
+      else if (b.dataset.j === "vax") startInfection(infectionId(cur.base, !cur.vax));
+      else { InfectionRide.next(); tick(); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function tick(){
+    const s = store.get(); if (s.infection == null) return;
+    const q = InfectionRide.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.infectionSeg !== li) store.set({ infectionSeg: li }); }
+    const L = q.leg, col = MOLECULES[L.m][0];
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("vax", INFECTION_BY_ID[q.id].vax, v => { els.vax.setAttribute("aria-pressed", v); els.vax.classList.toggle("primary", v); });
+    set("where", CONTENT.infection.stops[L.stop].name, v => els.where.textContent = v);
+    set("time", fmtDur(q.real), v => els.time.textContent = v);
+    set("bar", Math.round(q.real / q.total * 200), v => els.bar.style.width = v / 2 + "%");
+    const f = q.factor, speed = f < 1 ? STRINGS.slowed(1 / f) : STRINGS.sped(f);
+    const meta = q.done ? STRINGS.infectionDone(fmtDur(q.total))
+      : `${MOLECULES[L.m][1]} · ${STRINGS.infectionKind[L.kind]} · ${speed} · ${STRINGS.day(Math.floor(q.real / 86400) + 1)}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.infection.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+    scrub.sync();
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.infection != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following an infection (a given one, or one that suits the hour),
+   from the hour now; replay = start again from the same hour. */
+function startInfection(id, replay = false){
+  stopRides("infection");
+  if (store.get().live !== "immune") setLive("immune");
+  const s = store.get();
+  id = INFECTION_BY_ID[id] ? id : defaultInfection(s.hour);
+  const hour = replay ? InfectionRide.startHour() : s.hour;
+  store.set({ hour, playing: false });
+  InfectionRide.start(id, hour); InfectionCard.reset();
+  store.set({ infection: id, infectionSeg: 0, topic: null, ridePaused: false });
+  InfectionCard.tick();
+  showScene();
+}
+function stopInfection(){
+  if (store.get().infection == null) return;
+  InfectionRide.stop();
+  store.set({ infection: null, infectionSeg: null, ridePaused: false });
+}
 /* end every ride except one (a new ride starting, or Back / Escape ending them all) */
 function stopRides(except){
-  const stops = { follow: stopFollow, impulse: stopImpulse, cascade: stopCascade, breath: stopBreath, bite: stopBite, drop: stopDrop };
+  const stops = { follow: stopFollow, impulse: stopImpulse, cascade: stopCascade, breath: stopBreath, bite: stopBite, drop: stopDrop, infection: stopInfection };
   for (const k in stops) if (k !== except) stops[k]();
 }
 
@@ -10856,6 +11353,7 @@ const CASCADE_W = 240; /* … and a hormone cascade */
 const BREATH_W = 220;  /* … and a breath */
 const BITE_W = 250;    /* … and a bite */
 const DROP_W = 200;    /* … and a drop */
+const INFECTION_W = 240; /* … and an infection */
 const BODY_MAX = 4;     /* in time-lapse, the heart, breath and blood run at most this much faster… */
 const CLOCK_MAX = 3 * 3600; /* …and the day clock at most 3 h per second, so the sky doesn't strobe */
 function cameraFor(s){
@@ -10865,6 +11363,7 @@ function cameraFor(s){
   if (s.breath != null && !s.topic) return Camera.focusView(Scene.toView(BreathRide.pos()), BREATH_W);
   if (s.bite != null && !s.topic) return Camera.focusView(Scene.toView(BiteRide.pos()), BITE_W);
   if (s.drop != null && !s.topic) return Camera.focusView(Scene.toView(DropRide.pos()), DROP_W);
+  if (s.infection != null && !s.topic) return Camera.focusView(Scene.toView(InfectionRide.pos()), INFECTION_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -10879,7 +11378,7 @@ store.subscribe((s, prev) => {
   }
   Pins.render(s);
   const free = !s.topic && !riding(s);
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop){ if (riding(s)) Camera.resetZoom(); Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop || s.infection !== prev.infection){ if (riding(s)) Camera.resetZoom(); Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
@@ -10887,12 +11386,14 @@ store.subscribe((s, prev) => {
   if (s.breath != null && (s.topic || s.live !== "respiratory")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "respiratory") stopBreath(); });
   if (s.bite != null && (s.topic || s.live !== "digestive")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "digestive") stopBite(); });
   if (s.drop != null && (s.topic || s.live !== "urinary")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "urinary") stopDrop(); });
+  if (s.infection != null && (s.topic || s.live !== "immune")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "immune") stopInfection(); });
   Journey.sync(s);
   ImpulseCard.sync(s);
   CascadeCard.sync(s);
   BreathCard.sync(s);
   BiteCard.sync(s);
   DropCard.sync(s);
+  InfectionCard.sync(s);
   if (s.topic !== prev.topic){
     if (s.topic) Camera.resetZoom();
     Sheet.sync(s);
@@ -10917,7 +11418,7 @@ function applySystems(s){
    EXPORT — the adapter for the shared Export menu (EXPORT ENGINE, synced from
    organs/_template.html): figures, caption, link, settings, data and the clock
    ========================================================================= */
-const RIDE_KINDS = ["follow", "impulse", "cascade", "breath", "bite", "drop"];
+const RIDE_KINDS = ["follow", "impulse", "cascade", "breath", "bite", "drop", "infection"];
 function rideEngines(){
   return {
     follow: { eng: { progress: Particles.lapProgress, seek: Particles.lapSeek }, start: id => startFollow(id), label: "One lap of the red cell" },
@@ -10925,7 +11426,8 @@ function rideEngines(){
     cascade: { eng: Cascade, start: id => startCascade(id), label: "The whole hormone cascade" },
     breath: { eng: BreathRide, start: id => startBreath(id), label: "The whole breath" },
     bite: { eng: BiteRide, start: id => startBite(id), label: "The whole bite" },
-    drop: { eng: DropRide, start: id => startDrop(id), label: "The whole journey of the drop" }
+    drop: { eng: DropRide, start: id => startDrop(id), label: "The whole journey of the drop" },
+    infection: { eng: InfectionRide, start: id => startInfection(id), label: "The whole infection" }
   };
 }
 const rideKind = s => RIDE_KINDS.find(k => s[k] != null) || null;
@@ -11046,6 +11548,7 @@ function init(){
   Urinary.init();
   DropRide.init();
   Immune.init();
+  InfectionRide.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
@@ -11054,6 +11557,7 @@ function init(){
   BreathCard.build();
   BiteCard.build();
   DropCard.build();
+  InfectionCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
@@ -11084,6 +11588,11 @@ function init(){
     if (s.live === "urinary"){
       const id = tapUrine(Urinary.nearest(pt.x, pt.y, tol));
       if (id){ startDrop(id); return; }
+    }
+    /* immune live: tap a lymph node, the tonsils, the spleen, the thymus or a moving cell to follow an infection */
+    if (s.live === "immune"){
+      const id = tapInfection(Immune.nearest(pt.x, pt.y, tol), s.hour);
+      if (id){ startInfection(id); return; }
     }
     if (!s.shown.circulatory) return;
     const i = Particles.nearestCell(pt.x, pt.y, tol);
@@ -11119,7 +11628,7 @@ function init(){
     /* bullet time: while an impulse is followed the body (and the clock) run slowed down.
        Time-lapse: while a hormone cascade is followed the clock runs at the real
        time of the signal (capped), and the body faster (capped harder) */
-    const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : st.drop != null ? DropRide : null;
+    const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : st.drop != null ? DropRide : st.infection != null ? InfectionRide : null;
     const k = st.impulse != null ? Impulse.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
     /* a paused ride freezes everything: the rider, the body and the clock */
     const paused = st.ridePaused && riding(st) && !st.topic;
@@ -11169,6 +11678,8 @@ function init(){
     BiteCard.tick();
     DropRide.tick(brdt);
     DropCard.tick();
+    InfectionRide.tick(brdt);
+    InfectionCard.tick();
   }
   requestAnimationFrame(frame);
   /* the Export menu holds the loop and steps the body frame by frame */
@@ -11191,7 +11702,7 @@ function init(){
 }
 /* the view as URL parameters (read back by the store on start and by startRideFromURL):
    ?level=&hour=&topic=&shown=&live=&ride=<kind>:<id> */
-const RIDES = { follow: null, impulse: IMPULSE_BY_ID, cascade: CASCADE_BY_ID, breath: BREATH_BY_ID, bite: BITE_BY_ID, drop: URINE_BY_ID };
+const RIDES = { follow: null, impulse: IMPULSE_BY_ID, cascade: CASCADE_BY_ID, breath: BREATH_BY_ID, bite: BITE_BY_ID, drop: URINE_BY_ID, infection: INFECTION_BY_ID };
 function rideOf(s){
   for (const kind of Object.keys(RIDES)) if (s[kind] != null)
     return { kind, id: kind === "follow" ? null : s[kind], seg: s[kind + "Seg"] ?? null };
@@ -11211,7 +11722,7 @@ function startRideFromURL(){
   const v = URLP.get("ride"); if (!v) return;
   const [kind, id] = v.split(":");
   if (!(kind in RIDES) || (RIDES[kind] && !RIDES[kind][id])) return;
-  const start = { follow: () => startFollow(), impulse: () => startImpulse(id), cascade: () => startCascade(id), breath: () => startBreath(id), bite: () => startBite(id), drop: () => startDrop(id) };
+  const start = { follow: () => startFollow(), impulse: () => startImpulse(id), cascade: () => startCascade(id), breath: () => startBreath(id), bite: () => startBite(id), drop: () => startDrop(id), infection: () => startInfection(id) };
   requestAnimationFrame(() => start[kind]());
 }
 init();

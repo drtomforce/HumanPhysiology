@@ -1,4 +1,22 @@
 {
+ "https://cvphysiology.com/arrhythmias/a005#:~:text=at%20a%20rate%20of%20100-110%20action%20potentials": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a005",
+  "checked": "2026-11-19"
+ },
+ "https://cvphysiology.com/blood-flow/bf001#:~:text=With%20tachycardia%2C%20there%20is%20relatively%20less%20time": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/blood-flow/bf001",
+  "checked": "2026-11-19"
+ },
+ "https://cvphysiology.com/blood-flow/bf001#:~:text=most%20of%20the%20coronary%20flow%20occurs%20during%20diastole": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/blood-flow/bf001",
+  "checked": "2026-11-19"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/12-4-the-action-potential#:~:text=along%20the%20length%20of%20a%20myelinated%20axon": {
   "state": "ok",
   "code": 200,

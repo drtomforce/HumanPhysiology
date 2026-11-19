@@ -137,6 +137,24 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
   "checked": "2026-11-19"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-5-the-small-and-large-intestines#:~:text=hairlike%20vascularized%20projections%20called%20villi": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-5-the-small-and-large-intestines",
+  "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-5-the-small-and-large-intestines#:~:text=microvilli%20(singular%20%3D%20microvillus)%20are%20much%20smaller": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-5-the-small-and-large-intestines",
+  "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=the%20osteoblast%20becomes%20trapped%20within%20it": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
+  "checked": "2026-11-19"
+ },
  "https://pubmed.ncbi.nlm.nih.gov/25668261/#:~:text=shortened%20time%20to%2080%25%20hemoglobin%20recovery": {
   "state": "ok",
   "code": 203,

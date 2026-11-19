@@ -7,12 +7,14 @@
        in-app reporter: "<block id>:<json path>", e.g. body-content:topics.heart.phases.exercise.college
      - every top-level `const UPPERCASE = [ … ]` or `{ … }` in the page's own scripts (the shared
        ORGAN ENGINE / EXPORT ENGINE / REPORTER blocks are skipped), keyed "const:<NAME>", split into
-       "const:<NAME>.<id>" for arrays of { id: … } entries and "const:<NAME>.<prop>" for objects
+       "const:<NAME>.<id>" for arrays of { id: … } entries and "const:<NAME>.<prop>" for objects;
+       a numeric one (const HB = 150, N_HILL = 2.7;) is one item per statement, keyed by its first name
      - every top-level PascalCase module (const Physio = { … }, const Scene = (() => { … })()), keyed
        "mod:<Name>", as one item
-     - every top-level function in the page's own scripts, keyed "fn:<name>": the organ models and
-       the numbers inside drawing code. A change to the code sends it back to "unchecked"; look at
-       its git diff to see whether a physiological number or rule changed.
+     - every top-level function in the page's own scripts, declared or as an arrow function in a
+       lowercase const, keyed "fn:<name>": the organ models and the numbers inside drawing code.
+       A change to the code sends it back to "unchecked"; look at its git diff to see whether a
+       physiological number or rule changed.
        Names listed under ledger.ignore[<page>] (drawing, layout, UI, helpers) are left out.
 
      node fact-check/scan.mjs                     summary: new / changed / removed since the ledger, and counts
@@ -226,6 +228,11 @@ function codeItems(html, ignore, out, engine){
     else if (m[2] === "{" && parts.length > 1 && props.every(Boolean)) parts.forEach((p, i) => out.set(uniq(out, `${base}.${props[i]}`), p));
     else out.set(base, lit);
   }
+  /* numeric UPPERCASE constants (const HB = 150, N_HILL = 2.7;): one item per statement, keyed by its first name */
+  for (const m of js.matchAll(/^const ([A-Z][A-Z0-9_]*) *= *[-+.\d][^\n]*/gm)){
+    if (ignore.has(m[1])) continue;
+    out.set(uniq(out, `const:${m[1]}`), m[0]);
+  }
   /* PascalCase modules (const Physio = { … }, const Scene = (() => { … })()): one item each, "mod:<Name>",
      running to the next top-level declaration */
   for (const m of js.matchAll(/^const ([A-Z][a-z]\w*) *=/gm)){
@@ -238,6 +245,13 @@ function codeItems(html, ignore, out, engine){
     if (ignore.has(m[1])) continue;
     const p = m.index + m[0].length - 1, b = js.indexOf("{", literalEnd(js, p));
     out.set(uniq(out, `fn:${m[1]}`), js.slice(m.index, literalEnd(js, b)));
+  }
+  /* top-level arrow functions (const makeLung = () => { … }, const sat = (p, p50) => …): also "fn:<name>",
+     running to the next top-level declaration */
+  for (const m of js.matchAll(/^const ([a-z_$][\w$]*) *= *(?:async *)?(?:\([^)\n]*\)|[A-Za-z_$][\w$]*) *=>/gm)){
+    if (ignore.has(m[1])) continue;
+    const rest = js.slice(m.index + m[0].length), next = rest.search(/^(?:const|let|var|function|async function|class) /m);
+    out.set(uniq(out, `fn:${m[1]}`), js.slice(m.index, m.index + m[0].length + (next < 0 ? rest.length : next)).trimEnd());
   }
 }
 function uniq(map, key){ if (!map.has(key)) return key; let i = 2; while (map.has(`${key}#${i}`)) i++; return `${key}#${i}`; }

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fact check — HumanPhysiology</title>
+<meta name="description" content="How the facts in HumanPhysiology are checked, how far the check has got, and what readers have reported.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&family=Schibsted+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+ FACT CHECK OVERVIEW (opened from the "Fact check" button in the header of index.html)
+   1. How facts are checked: a reader's summary of FACTUAL_CHECK.md.
+   2. Status now: drawn from fact-check/status.js, which `node fact-check/scan.mjs` writes from
+      fact-check/ledger.json (--update, --mark, --verify, or --status on its own). One square per
+      ledger row, grouped by page and section; nothing on this page needs editing when pages or
+      systems are added.
+   3. Reader reports: GitHub issues labelled `report` (from the in-app reporter) and `fact-check`
+      (findings of the check), fetched live from the GitHub API, with a link when that fails.
+ This page is not scanned by fact-check/scan.mjs (it only reads index.html and organs/*.html).
+-->
+<style>
+:root{
+  --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
+  --line:#DCD2C9; --line-strong:#A99B91; --accent:#2f8f83;
+  /* "How it was checked": one blue, darker = stronger evidence (validated as an ordinal ramp) */
+  --c-lookup:#184f95; --c-memory:#3987e5; --c-unknown:#86b6ef;
+  /* "What was found": validated categorical slots */
+  --c-ok:#1baf7a; --c-fixed:#6250d6; --c-issue:#e34948;
+  --c-na:#C9BFB6; --c-open:#A99B91; --c-changed:#c98500;
+  --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans:"Schibsted Grotesk", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+    --line:#342B26; --line-strong:#5A4B42;
+    --c-lookup:#9ec5f4; --c-memory:#3987e5; --c-unknown:#1c5cab;
+    --c-ok:#199e70; --c-fixed:#9085e9; --c-issue:#e66767;
+    --c-na:#4A403A; --c-open:#6E5F55; --c-changed:#e0a020;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+  --line:#342B26; --line-strong:#5A4B42;
+  --c-lookup:#9ec5f4; --c-memory:#3987e5; --c-unknown:#1c5cab;
+  --c-ok:#199e70; --c-fixed:#9085e9; --c-issue:#e66767;
+  --c-na:#4A403A; --c-open:#6E5F55; --c-changed:#e0a020;
+  color-scheme: dark;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+a{ color:inherit; text-decoration-color:var(--line-strong); text-underline-offset:2px; }
+a:hover{ text-decoration-color:currentColor; }
+button{ font:inherit; color:inherit; }
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:4px; }
+code{ font-size:.9em; background:var(--surface-2); padding:1px 5px; border-radius:4px; }
+
+/* ---------- header ---------- */
+.top{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 24px; border-bottom:1px solid var(--line); }
+.brand{ display:flex; align-items:center; gap:12px; min-width:0; text-decoration:none; }
+.brand svg{ flex:none; }
+.brand-title{ font-family:var(--serif); font-size:21px; font-weight:500; letter-spacing:-0.01em; margin:0; line-height:1.1; }
+.brand-sub{ margin:2px 0 0; color:var(--muted); font-size:13px; }
+.pill{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); color:var(--muted); border-radius:999px; padding:5px 12px 5px 9px; font-size:13px; font-weight:500; text-decoration:none; white-space:nowrap; background:transparent; cursor:pointer; }
+.pill:hover{ color:var(--ink); border-color:var(--line-strong); }
+
+/* ---------- layout ---------- */
+main{ max-width:1080px; margin:0 auto; padding:28px 24px 64px; }
+h1{ font-family:var(--serif); font-weight:500; font-size:34px; line-height:1.15; letter-spacing:-0.015em; margin:0 0 10px; }
+h2{ font-family:var(--serif); font-weight:500; font-size:24px; line-height:1.2; margin:0 0 6px; }
+h3{ font-size:15px; font-weight:600; margin:0 0 4px; }
+.lede{ font-size:17px; color:var(--muted); max-width:62ch; margin:0; }
+section{ margin-top:44px; }
+.sec-head{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 16px; margin-bottom:16px; }
+.sec-head p{ margin:0; color:var(--muted); font-size:13.5px; }
+.prose{ max-width:68ch; }
+.prose p{ margin:0 0 12px; }
+.cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-top:16px; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+.card p{ margin:0; color:var(--muted); font-size:14px; }
+.sev{ margin:6px 0 0; padding:0; list-style:none; font-size:14px; color:var(--muted); }
+.sev li{ margin:3px 0; }
+.sev b{ color:var(--ink); font-weight:600; }
+
+/* ---------- stat tiles ---------- */
+.tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+.tile{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.tile-k{ display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted); }
+.tile-v{ font-size:26px; font-weight:500; line-height:1.15; margin-top:4px; font-variant-numeric:tabular-nums; }
+.tile-s{ font-size:12.5px; color:var(--muted); }
+.sw{ width:10px; height:10px; border-radius:2px; flex:none; display:inline-block; }
+.sw.outline{ background:transparent !important; box-shadow:inset 0 0 0 1.5px var(--c-open); }
+.sw.changed{ background:transparent !important; box-shadow:inset 0 0 0 1.5px var(--c-changed); }
+
+/* ---------- controls & legend ---------- */
+.controls{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px 20px; margin:22px 0 14px; }
+.seg{ display:inline-flex; background:var(--surface-2); border-radius:999px; padding:3px; }
+.seg button{ border:0; background:transparent; padding:6px 14px; border-radius:999px; cursor:pointer; font-size:13px; font-weight:500; color:var(--muted); white-space:nowrap; }
+.seg button[aria-checked="true"]{ background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--line); }
+.legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin:0; padding:0; list-style:none; font-size:13px; color:var(--muted); }
+.legend li{ display:inline-flex; align-items:center; gap:6px; }
+.legend b{ color:var(--ink); font-weight:500; font-variant-numeric:tabular-nums; }
+
+/* ---------- per-page bars ---------- */
+.bars{ display:grid; grid-template-columns:minmax(110px, 190px) 1fr auto; gap:8px 12px; align-items:center; margin-bottom:8px; }
+.bar-name{ font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-decoration:none; }
+.bar-name:hover{ text-decoration:underline; }
+.bar{ display:flex; gap:2px; height:14px; min-width:0; }
+.bar i{ display:block; height:100%; min-width:0; }
+.bar i:first-child{ border-radius:4px 0 0 4px; }
+.bar i:last-child{ border-radius:0 4px 4px 0; }
+.bar i:only-child{ border-radius:4px; }
+.bar i.outline{ box-shadow:inset 0 0 0 1.5px var(--c-open); }
+.bar i.changed{ box-shadow:inset 0 0 0 1.5px var(--c-changed); }
+.bar-n{ font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+
+/* ---------- waffle ---------- */
+.pages{ display:flex; flex-direction:column; gap:14px; margin-top:22px; }
+.pg{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 16px; scroll-margin-top:16px; }
+.pg-head{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; margin-bottom:10px; }
+.pg-head h3{ font-family:var(--serif); font-size:18px; font-weight:500; margin:0; }
+.pg-head span{ font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.secs{ display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-start; }
+.sec{ margin:0; cursor:default; border-radius:6px; outline-offset:4px; }
+.sec figcaption{ font-size:12px; line-height:1.3; color:var(--muted); margin-bottom:4px; min-height:2.6em; display:flex; align-items:flex-end; overflow-wrap:anywhere; }
+.sec figcaption span{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.sec figcaption b{ color:var(--ink); font-weight:500; }
+.sec canvas{ display:block; }
+.sec:hover figcaption b, .sec:focus-visible figcaption b{ text-decoration:underline; }
+
+.tip{ position:fixed; z-index:10; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--line-strong); border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18); padding:10px 12px; font-size:12.5px; line-height:1.4; width:max-content; max-width:min(300px, calc(100vw - 24px)); opacity:0; transition:opacity .12s; }
+.tip.on{ opacity:1; }
+.tip h4{ margin:0 0 6px; font-size:13px; font-weight:600; }
+.tip table{ border-collapse:collapse; width:100%; }
+.tip td{ padding:1px 0; color:var(--muted); }
+.tip td:last-child{ text-align:right; padding-left:14px; color:var(--ink); font-variant-numeric:tabular-nums; }
+.tip tr.hot td{ color:var(--ink); font-weight:600; }
+.tip .lv{ margin-top:6px; padding-top:6px; border-top:1px solid var(--line); color:var(--muted); }
+
+details.table{ margin-top:16px; }
+details.table summary{ cursor:pointer; color:var(--muted); font-size:13.5px; }
+.tbl-wrap{ overflow-x:auto; margin-top:10px; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+.tbl-wrap table{ border-collapse:collapse; font-size:12.5px; width:100%; font-variant-numeric:tabular-nums; }
+.tbl-wrap th, .tbl-wrap td{ padding:5px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+.tbl-wrap th:first-child, .tbl-wrap td:first-child, .tbl-wrap th:nth-child(2), .tbl-wrap td:nth-child(2){ text-align:left; }
+.tbl-wrap thead th{ color:var(--muted); font-weight:500; }
+
+/* ---------- reports ---------- */
+.how{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; }
+.issues{ list-style:none; margin:16px 0 0; padding:0; border:1px solid var(--line); border-radius:14px; background:var(--surface); overflow:hidden; }
+.issues li{ display:grid; grid-template-columns:auto 1fr auto; gap:4px 10px; align-items:baseline; padding:10px 14px; border-top:1px solid var(--line); }
+.issues li:first-child{ border-top:0; }
+.issues .num{ color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; }
+.issues .t{ min-width:0; overflow-wrap:anywhere; }
+.issues .meta{ grid-column:2 / -1; font-size:12.5px; color:var(--muted); }
+.state{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); white-space:nowrap; }
+.state::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--c-issue); }
+.state.closed::before{ background:var(--c-ok); }
+.issues .empty{ display:block; color:var(--muted); }
+.links{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+
+footer{ margin-top:56px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+
+@media (max-width: 640px){
+  .top{ padding:12px 16px; }
+  .brand-sub{ display:none; }
+  main{ padding:20px 16px 48px; }
+  h1{ font-size:28px; }
+  .bars{ grid-template-columns:minmax(80px, 110px) 1fr auto; }
+  .bar-n .of{ display:none; }
+  .pg{ padding:12px 12px 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" id="home" href="index.html">
+    <svg width="34" height="34" viewBox="-50 -50 100 100" aria-hidden="true"><path fill="var(--accent)" d="M0 34 C-30 14 -44 -4 -40 -20 C-36 -36 -14 -40 0 -24 C14 -40 36 -36 40 -20 C44 -4 30 14 0 34Z"/></svg>
+    <div>
+      <p class="brand-title">HumanPhysiology</p>
+      <p class="brand-sub">A day in the life of the human body</p>
+    </div>
+  </a>
+  <a class="pill" id="back" href="index.html">
+    <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Back to the body
+  </a>
+</header>
+
+<main>
+  <h1>Fact check</h1>
+  <p class="lede">Every sentence, number and model setting in this app is a row in a ledger that records whether it has been checked, against what, and how. Here is how that works, how far it has got, and what readers have reported.</p>
+
+  <!-- 1 -->
+  <section id="how" aria-labelledby="howTitle">
+    <h2 id="howTitle">How facts are checked</h2>
+    <div class="prose">
+      <p>The values here are typical for a healthy adult and simplified for teaching. Simplifying is fine; being wrong is not. Each text exists at four reading levels, and a lower level may leave out detail but may never say something the level above contradicts. The text also has to agree with the numbers that drive the animations, and with the other pages.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>One row per claim</h3>
+        <p>A script reads every page and lists each string at each reading level, each glossary entry, and each model constant or function as a row in the ledger. When the text or code changes, its row goes back to <em>unchecked</em>, so new content from the nightly build is never silently approved.</p>
+      </div>
+      <div class="card">
+        <h3>The standard</h3>
+        <ul class="sev">
+          <li><b>Error</b>: wrong or outdated.</li>
+          <li><b>Misleading</b>: true word by word, but leaves a false picture.</li>
+          <li><b>Imprecise</b>: needs a range, unit or qualifier.</li>
+          <li><b>Style</b>: wording only; doesn't hold a page up.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Looked up or from memory</h3>
+        <p>Each approval names its sources and says honestly how they were used. <em>Looked up</em> means the source was opened and read, with a link and a short verbatim quote. <em>From memory</em> means it was recalled, which is weaker evidence. Rows approved before this was recorded show as <em>source not recorded</em>.</p>
+      </div>
+      <div class="card">
+        <h3>Checking the check</h3>
+        <p>Small random samples of approved rows are re-checked, to estimate how often approvals are wrong, and look-up citations are verified by someone other than the original checker. Mistakes are fixed in the app or filed as a <code>fact-check</code> issue.</p>
+      </div>
+    </div>
+    <p class="prose" style="margin-top:14px;color:var(--muted);font-size:14px">The full method, the sources and the consistency registry: <a href="https://github.com/drtomforce/HumanPhysiology/blob/main/FACTUAL_CHECK.md">FACTUAL_CHECK.md</a>.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="status" aria-labelledby="statusTitle">
+    <div class="sec-head">
+      <h2 id="statusTitle">Status now</h2>
+      <p id="updated"></p>
+    </div>
+    <div class="tiles" id="tiles"></div>
+
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Colour the squares by" id="modeSeg">
+        <button type="button" role="radio" aria-checked="true" data-mode="src">How it was checked</button>
+        <button type="button" role="radio" aria-checked="false" data-mode="out">What was found</button>
+      </div>
+      <ul class="legend" id="legend" aria-label="Legend"></ul>
+    </div>
+
+    <div id="bars" aria-label="Share of rows per page"></div>
+    <div class="pages" id="pages"></div>
+    <details class="table">
+      <summary>Show as a table</summary>
+      <div class="tbl-wrap" id="table"></div>
+    </details>
+    <p id="nodata" hidden style="color:var(--muted)">The status file <code>fact-check/status.js</code> could not be loaded. Run <code>node fact-check/scan.mjs --status</code> to write it.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="reports" aria-labelledby="repTitle">
+    <div class="sec-head">
+      <h2 id="repTitle">Reader reports</h2>
+    </div>
+    <div class="how">
+      <div class="card">
+        <h3>Spotted something wrong?</h3>
+        <p>On any page, select the words that are wrong and press <em>Report this</em>, or use the <em>Report a problem</em> button in the header. A short form asks what kind of problem it is and what it should say.</p>
+      </div>
+      <div class="card">
+        <h3>What happens next</h3>
+        <p>Your report becomes a public GitHub issue with the exact text, where it comes from and a link that reopens the page as you saw it. It is checked against the sources like any other row, then fixed or answered, and the issue is closed.</p>
+      </div>
+    </div>
+    <h3 style="margin-top:22px">Reports and findings</h3>
+    <ul class="issues" id="issues" aria-live="polite"><li><span class="empty">Loading from GitHub…</span></li></ul>
+    <div class="links">
+      <a class="pill" href="https://github.com/drtomforce/HumanPhysiology/issues?q=label%3Areport">All reader reports</a>
+      <a class="pill" href="https://github.com/drtomforce/HumanPhysiology/issues?q=label%3Afact-check">All fact-check findings</a>
+      <a class="pill" href="https://github.com/drtomforce/HumanPhysiology/issues/new?template=report.yml">Report without selecting text</a>
+    </div>
+  </section>
+
+  <footer>Values are typical for a healthy adult and simplified for teaching; this is not medical advice.</footer>
+</main>
+
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script src="fact-check/status.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const REPO = "drtomforce/HumanPhysiology";
+const fmt = n => n.toLocaleString("en");
+const pct = (a, b) => b ? Math.floor(100 * a / b) : 0;   /* round down: never "100%" while a row is left */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+/* back to the main page as the reader left it: the header button passes its query string as ?back= */
+(() => {
+  const b = new URLSearchParams(location.search).get("back");
+  if (b && /^\?[\w=&%.:,+\-]*$/.test(b)){ $("#back").href = "index.html" + b; $("#home").href = "index.html" + b; }
+})();
+
+/* the categories, in drawing order: strongest evidence first, unchecked last */
+const MODES = {
+  src: [
+    { k: "lookup",    label: "Looked up",            css: "--c-lookup",  note: "source opened and read, with a link and a quote" },
+    { k: "memory",    label: "From memory",          css: "--c-memory",  note: "checked against a source recalled, not opened" },
+    { k: "unknown",   label: "Source not recorded",  css: "--c-unknown", note: "approved before the method was recorded" },
+    { k: "na",        label: "No claim",             css: "--c-na",      note: "a label or an id: nothing to check" },
+    { k: "changed",   label: "Changed since checked", css: "--c-changed", style: "changed", note: "edited after it was approved" },
+    { k: "unchecked", label: "Not yet checked",      css: "--c-open",    style: "outline" },
+  ],
+  out: [
+    { k: "ok",        label: "Correct",              css: "--c-ok" },
+    { k: "fixed",     label: "Fixed",                css: "--c-fixed",   note: "was wrong and has been corrected" },
+    { k: "issue",     label: "Issue filed",          css: "--c-issue",   note: "a finding waiting for a decision" },
+    { k: "na",        label: "No claim",             css: "--c-na" },
+    { k: "unchecked", label: "Not yet checked",      css: "--c-open",    style: "outline" },
+  ],
+};
+let mode = "src";
+const S = window.FACT_STATUS;
+if (!S){ $("#nodata").hidden = false; loadIssues(); return; }
+
+/* per-section counts in the current mode ("changed" folds into "unchecked" in the outcome view) */
+const counts = (s, m = mode) => m === "src" ? s.src : s.out;
+const sum = (list, m = mode) => {
+  const t = {}; for (const c of MODES[m]) t[c.k] = 0;
+  for (const s of list) for (const [k, v] of Object.entries(counts(s, m))) t[k] = (t[k] || 0) + v;
+  return t;
+};
+const all = S.pages.flatMap(p => p.sections);
+const color = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const sw = c => `<i class="sw ${c.style || ""}" style="background:var(${c.css})"></i>`;
+
+/* ---------- tiles ---------- */
+function tiles(){
+  const t = sum(all, "src"), o = sum(all, "out"), n = all.reduce((a, s) => a + s.n, 0);
+  const done = n - t.unchecked - t.changed;
+  const issues = [...new Set(all.flatMap(s => s.issues))];
+  const tile = (k, v, sub, c) => `<div class="tile"><div class="tile-k">${c ? sw(c) : ""}${k}</div><div class="tile-v">${v}</div><div class="tile-s">${sub}</div></div>`;
+  const C = Object.fromEntries(MODES.src.map(c => [c.k, c]));
+  $("#tiles").innerHTML =
+    tile("Checked", pct(done, n) + "%", `${fmt(done)} of ${fmt(n)} rows`) +
+    tile("Looked up", fmt(t.lookup), `${S.verifiedCites} of ${S.lookupCites} citations verified`, C.lookup) +
+    tile("From memory", fmt(t.memory), `${pct(t.memory, done)}% of checked rows`, C.memory) +
+    tile("Source not recorded", fmt(t.unknown), "approved before 18 Nov 2026", C.unknown) +
+    tile("Fixed", fmt(o.fixed), `${issues.length} open finding${issues.length === 1 ? "" : "s"}`, MODES.out[1]) +
+    tile("Not yet checked", fmt(t.unchecked + t.changed), t.changed ? `${fmt(t.changed)} changed since checked` : `${S.pages.filter(p => p.sections.every(s => s.src.unchecked + s.src.changed === s.n)).length} pages not started`, C.unchecked);
+  const d = S.updated ? new Date(S.updated + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "";
+  $("#updated").textContent = d ? `Last check recorded ${d} · ${S.rechecks} random re-check${S.rechecks === 1 ? "" : "s"} so far` : "";
+}
+
+/* ---------- legend & bars ---------- */
+function legend(){
+  const t = sum(all);
+  $("#legend").innerHTML = MODES[mode].filter(c => t[c.k] || c.k !== "changed")
+    .map(c => `<li title="${esc(c.note || "")}">${sw(c)}${c.label} <b>${fmt(t[c.k])}</b></li>`).join("");
+}
+function bars(){
+  $("#bars").innerHTML = `<div class="bars">` + S.pages.map(p => {
+    const t = sum(p.sections), n = p.sections.reduce((a, s) => a + s.n, 0);
+    const done = n - (mode === "src" ? t.unchecked + t.changed : t.unchecked);
+    const segs = MODES[mode].filter(c => t[c.k]).map(c =>
+      `<i class="${c.style || ""}" style="flex:${t[c.k]};${c.style ? "" : `background:var(${c.css})`}" title="${c.label}: ${fmt(t[c.k])}"></i>`).join("");
+    return `<a class="bar-name" href="#pg-${p.id}">${esc(p.name)}</a><div class="bar" role="img" aria-label="${esc(p.name)}: ${MODES[mode].filter(c => t[c.k]).map(c => `${c.label} ${t[c.k]}`).join(", ")}">${segs}</div>` +
+      `<span class="bar-n">${pct(done, n)}%<span class="of"> of ${fmt(n)}</span></span>`;
+  }).join("") + `</div>`;
+}
+
+/* ---------- the waffle: one square per row, sorted by category within each section ---------- */
+const CELL = 5, GAP = 2, PITCH = CELL + GAP;
+const colsFor = (n, max) => Math.max(1, Math.min(max, n < 12 ? n : Math.ceil(Math.sqrt(n * 2.4))));
+function pages(){
+  $("#pages").innerHTML = S.pages.map(p => {
+    const n = p.sections.reduce((a, s) => a + s.n, 0), t = sum(p.sections, "src");
+    return `<div class="pg" id="pg-${p.id}"><div class="pg-head"><h3>${esc(p.name)}</h3><span>${fmt(n - t.unchecked - t.changed)} of ${fmt(n)} rows checked</span></div><div class="secs">` +
+      p.sections.map((s, i) => `<figure class="sec" tabindex="0" data-p="${esc(p.id)}" data-i="${i}" aria-label="${esc(s.label)}: ${s.n} rows"><figcaption><span><b>${esc(s.label)}</b> ${fmt(s.n)}</span></figcaption><canvas></canvas></figure>`).join("") +
+      `</div></div>`;
+  }).join("");
+  draw();
+}
+function draw(){
+  const dpr = window.devicePixelRatio || 1, cats = MODES[mode];
+  const pal = Object.fromEntries(cats.map(c => [c.k, color(c.css)]));
+  const wrapW = ($("#pages .secs") || {}).clientWidth || 600;
+  const maxCols = Math.max(8, Math.floor(wrapW / PITCH));
+  document.querySelectorAll("#pages .sec").forEach(fig => {
+    const s = S.pages.find(p => p.id === fig.dataset.p).sections[+fig.dataset.i];
+    const cv = fig.querySelector("canvas"), cols = colsFor(s.n, maxCols), rows = Math.ceil(s.n / cols);
+    const w = cols * PITCH - GAP, h = rows * PITCH - GAP;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + "px"; cv.style.height = h + "px";
+    fig.style.width = Math.max(w, 104) + "px";
+    const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    const c = counts(s); let i = 0;
+    fig.__cats = [];
+    for (const cat of cats){
+      for (let j = 0; j < (c[cat.k] || 0); j++, i++){
+        const x = (i % cols) * PITCH, y = Math.floor(i / cols) * PITCH;
+        if (cat.style){ g.strokeStyle = pal[cat.k]; g.lineWidth = 1.2; g.strokeRect(x + .6, y + .6, CELL - 1.2, CELL - 1.2); }
+        else { g.fillStyle = pal[cat.k]; g.beginPath(); g.roundRect ? g.roundRect(x, y, CELL, CELL, 1) : g.rect(x, y, CELL, CELL); g.fill(); }
+        fig.__cats.push(cat.k);
+      }
+    }
+    fig.__cols = cols;
+  });
+}
+
+/* ---------- tooltip ---------- */
+const tip = $("#tip");
+function showTip(fig, hotKey, x, y){
+  const p = S.pages.find(q => q.id === fig.dataset.p), s = p.sections[+fig.dataset.i], c = counts(s);
+  const rows = MODES[mode].filter(cat => c[cat.k]).map(cat =>
+    `<tr class="${cat.k === hotKey ? "hot" : ""}"><td>${sw(cat)} ${cat.label}</td><td>${fmt(c[cat.k])}</td></tr>`).join("");
+  const LV = { ms: "Middle school", hs: "High school", college: "College", phd: "PhD / MD" };
+  const lv = Object.keys(LV).filter(l => s.levels[l]).map(l => `${LV[l]} ${pct(...s.levels[l])}%`).join(" · ");
+  const iss = s.issues.length ? `<div class="lv">Open: ${s.issues.map(n => "#" + n).join(", ")}</div>` : "";
+  tip.innerHTML = `<h4>${esc(p.name)} · ${esc(s.label)}</h4><table>${rows}</table>${lv ? `<div class="lv">Checked by reading level: ${lv}</div>` : ""}${iss}`;
+  tip.classList.add("on");
+  const r = tip.getBoundingClientRect();
+  let left = x + 14, top = y + 14;
+  if (left + r.width > innerWidth - 12) left = Math.max(12, x - r.width - 14);
+  if (top + r.height > innerHeight - 12) top = Math.max(12, y - r.height - 14);
+  tip.style.left = left + "px"; tip.style.top = top + "px";
+}
+const hide = () => tip.classList.remove("on");
+const pages$ = $("#pages");
+pages$.addEventListener("pointermove", e => {
+  const fig = e.target.closest(".sec"); if (!fig){ hide(); return; }
+  let hot = null;
+  if (e.target.tagName === "CANVAS"){
+    const r = e.target.getBoundingClientRect(), col = Math.floor((e.clientX - r.left) / PITCH), row = Math.floor((e.clientY - r.top) / PITCH);
+    hot = fig.__cats[row * fig.__cols + col] || null;
+  }
+  showTip(fig, hot, e.clientX, e.clientY);
+});
+pages$.addEventListener("pointerleave", hide);
+pages$.addEventListener("focusin", e => { const fig = e.target.closest(".sec"); if (fig){ const r = fig.getBoundingClientRect(); showTip(fig, null, r.left, r.bottom - 10); } });
+pages$.addEventListener("focusout", hide);
+addEventListener("scroll", hide, { passive: true });
+
+/* ---------- table view ---------- */
+function table(){
+  const cats = MODES[mode];
+  $("#table").innerHTML = `<table><thead><tr><th>Page</th><th>Section</th><th>Rows</th>${cats.map(c => `<th>${c.label}</th>`).join("")}</tr></thead><tbody>` +
+    S.pages.flatMap(p => p.sections.map(s => `<tr><td>${esc(p.name)}</td><td>${esc(s.label)}</td><td>${fmt(s.n)}</td>${cats.map(c => `<td>${fmt(counts(s)[c.k] || 0)}</td>`).join("")}</tr>`)).join("") +
+    `</tbody></table>`;
+}
+
+/* ---------- mode switch ---------- */
+$("#modeSeg").addEventListener("click", e => {
+  const b = e.target.closest("button[data-mode]"); if (!b || b.dataset.mode === mode) return;
+  mode = b.dataset.mode;
+  document.querySelectorAll("#modeSeg button").forEach(x => x.setAttribute("aria-checked", String(x === b)));
+  legend(); bars(); draw(); table();
+});
+$("#modeSeg").addEventListener("keydown", e => {
+  if (!/^Arrow(Left|Right)$/.test(e.key)) return;
+  const other = document.querySelector(`#modeSeg button[aria-checked="false"]`); other.click(); other.focus();
+});
+
+let rw = 0;
+addEventListener("resize", () => { cancelAnimationFrame(rw); rw = requestAnimationFrame(draw); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", draw);
+
+tiles(); legend(); bars(); pages(); table();
+loadIssues();
+
+/* ---------- reader reports and fact-check findings, live from GitHub ---------- */
+function loadIssues(){
+  const list = $("#issues");
+  const get = label => fetch(`https://api.github.com/repos/${REPO}/issues?labels=${encodeURIComponent(label)}&state=all&per_page=50&sort=updated`,
+    { headers: { Accept: "application/vnd.github+json" } }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  Promise.all([get("report"), get("fact-check")]).then(([a, b]) => {
+    const seen = new Map();
+    for (const i of [...a, ...b]) if (!i.pull_request) seen.set(i.number, i);
+    const items = [...seen.values()].sort((x, y) => (x.state === "open" ? 0 : 1) - (y.state === "open" ? 0 : 1) || y.number - x.number);
+    if (!items.length){ list.innerHTML = `<li><span class="empty">No reports yet.</span></li>`; return; }
+    const day = s => new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    list.innerHTML = items.slice(0, 30).map(i => {
+      const kind = i.labels.some(l => l.name === "report") ? "Reader report" : "Fact-check finding";
+      return `<li><span class="num">#${i.number}</span><a class="t" href="${esc(i.html_url)}">${esc(i.title)}</a><span class="state ${i.state}">${i.state === "open" ? "Open" : "Closed"}</span>` +
+        `<span class="meta">${kind} · opened ${day(i.created_at)}${i.closed_at ? ` · closed ${day(i.closed_at)}` : ""}</span></li>`;
+    }).join("") + (items.length > 30 ? `<li><span class="empty">and ${items.length - 30} more on GitHub.</span></li>` : "");
+  }).catch(() => {
+    list.innerHTML = `<li><span class="empty">Couldn't load the list from GitHub right now. Use the links below to see it there.</span></li>`;
+  });
+}
+})();
+</script>
+</body>
+</html>

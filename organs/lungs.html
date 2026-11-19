@@ -627,7 +627,7 @@ canvas.trace{ display:block; width:100%; }
   "name": "The lungs",
   "mainTopic": "lungs",
   "kicker": "Organ deep dive",
-  "blurb": "Two spongy bags of 300 million tiny air sacs with a surface the size of a tennis court, where every drop of your blood meets fresh air a few hundredths of a millimetre away. Watch them breathe, test them like a doctor, follow oxygen into a red cell and see how your brainstem decides how hard to breathe.",
+  "blurb": "Two spongy bags of 300 million tiny air sacs with a surface about the size of a badminton court, where every drop of your blood meets fresh air less than a thousandth of a millimetre away. Watch them breathe, test them like a doctor, follow oxygen into a red cell and see how your brainstem decides how hard to breathe.",
   "stats": [
     { "id": "rr", "label": "Breathing rate", "unit": "/min" },
     { "id": "vt", "label": "Tidal volume", "unit": "mL" },
@@ -645,13 +645,13 @@ canvas.trace{ display:block; width:100%; }
     "sleep": {
       "ms": "You’re asleep. You breathe slowly and a little less deeply, so a bit more carbon dioxide builds up in your blood. That’s normal.",
       "hs": "In sleep, breathing slows to about 12 breaths a minute and the brainstem becomes less sensitive to CO₂, so arterial CO₂ rises a few mmHg. The throat muscles relax, which is why some people snore.",
-      "college": "Non-REM sleep removes the ‘wakefulness drive’ to breathe and blunts the CO₂ response by roughly a third: ventilation falls ~15% and PaCO₂ rises 3–5 mmHg. In REM, breathing becomes irregular and the intercostal and upper-airway muscles are inhibited.",
+      "college": "Non-REM sleep removes the ‘wakefulness drive’ to breathe and blunts the CO₂ response by roughly a third: ventilation falls ~15–20% (metabolism also slows) and PaCO₂ rises 3–5 mmHg. In REM, breathing becomes irregular and the intercostal and upper-airway muscles are inhibited.",
       "phd": "Loss of upper-airway dilator tone (genioglossus) in sleep underlies obstructive sleep apnoea; a high loop gain of the chemoreflex predisposes to central apnoea and periodic breathing, especially at altitude and in heart failure."
     },
     "rest": {
       "ms": "Sitting still, you breathe about 14 times a minute, half a litre each time. That’s 7 litres of air a minute, without even thinking about it.",
       "hs": "At rest: about 14 breaths a minute of ~500 mL each, so minute ventilation is ~7 L/min. Only ~350 mL of each breath reaches the alveoli; the rest stays in the airways (dead space).",
-      "college": "Resting minute ventilation ~7 L/min (alveolar ventilation ~4.2 L/min) clears ~200 mL/min of CO₂ and takes up ~250 mL/min of O₂, holding PaCO₂ near 40 and PaO₂ near 95 mmHg. Quiet expiration is passive.",
+      "college": "Resting minute ventilation ~7 L/min (alveolar ventilation ~4.9 L/min) clears ~200 mL/min of CO₂ and takes up ~250 mL/min of O₂, holding PaCO₂ near 40 and PaO₂ near 95 mmHg. Quiet expiration is passive.",
       "phd": "Alveolar ventilation is tightly regulated around PaCO₂ (± 2–3 mmHg) by a chemoreflex loop whose gain and delays determine stability; the work of quiet breathing costs only ~2% of resting O₂ uptake."
     },
     "meal": {
@@ -709,11 +709,11 @@ canvas.trace{ display:block; width:100%; }
         "ms": "Oxygen pressure falls at each step from the air to your muscles, like water flowing downhill.",
         "hs": "The O₂ cascade: dry air ~160 mmHg, humidified in the airways ~150, alveoli ~100, arterial blood ~95, mixed venous blood ~40, and only a few mmHg in a working muscle’s mitochondria.",
         "college": "Higher up, barometric pressure falls, so every step of the cascade falls. Hyperventilation (driven by the carotid bodies) lowers alveolar CO₂ and so raises alveolar O₂ via the alveolar gas equation PAO₂ = FiO₂(PB − 47) − PaCO₂/0.8.",
-        "phd": "On the summit of Everest (PB ~253 mmHg) climbers survive with PaO₂ ~30 mmHg only because extreme hyperventilation drives PaCO₂ to ~13 mmHg and the resulting alkalosis left-shifts the O₂ curve (West et al. 1983; Grocott et al. 2009)."
+        "phd": "Near the summit of Everest (PB ~253 mmHg) climbers survive with PaO₂ ~25–30 mmHg only because extreme hyperventilation drives PaCO₂ to ~7–13 mmHg (alveolar ~7.5 on the summit; arterial ~13 at 8,400 m) and the resulting alkalosis, only partly offset by renal bicarbonate loss, left-shifts the O₂ curve (West et al. 1983; Grocott et al. 2009)."
       },
       "odcNote": {
         "ms": "Haemoglobin grabs oxygen in the lungs and lets go of it in busy muscles that are warm and full of carbon dioxide.",
-        "hs": "The S-shaped curve means haemoglobin stays almost full even if O₂ falls a bit, but unloads a lot in the steep part. Heat, acid, CO₂ and 2,3-BPG shift it right, helping muscles get more O₂ (the Bohr effect).",
+        "hs": "The S-shaped curve means haemoglobin stays almost full even if O₂ falls a bit, but unloads a lot in the steep part. Heat, acid, CO₂ and 2,3-BPG shift it right, helping muscles get more O₂ (the effect of acid and CO₂ is called the Bohr effect).",
         "college": "Cooperative binding gives a sigmoid curve with P50 ≈ 27 mmHg. Right shifts (↑H⁺, ↑PCO₂, ↑temperature, ↑2,3-BPG) lower affinity and favour unloading; fetal haemoglobin binds 2,3-BPG poorly, so its curve is left-shifted.",
         "phd": "The Hill coefficient (~2.7) reflects the T→R allosteric transition (Monod–Wyman–Changeux). 2,3-BPG rises within hours at altitude and in anaemia; the Haldane effect is the reciprocal: deoxygenated haemoglobin carries more CO₂."
       },
@@ -730,7 +730,7 @@ canvas.trace{ display:block; width:100%; }
         "ms": "You don’t have to remember to breathe. A part of your brain called the brainstem does it for you, all day and all night. It mostly listens for carbon dioxide: when there’s too much, you breathe harder.",
         "hs": "A rhythm generator in the medulla sends bursts down the phrenic nerves to the diaphragm. Chemoreceptors tell it how you’re doing: central ones in the brainstem sense CO₂ (via acidity), and the carotid bodies in the neck sense low O₂. Hold your breath, hyperventilate or go up a mountain and watch the loop respond.",
         "college": "The preBötzinger complex generates the rhythm; dorsal and ventral respiratory groups shape it; pontine centres smooth the switch between in and out. Central chemoreceptors provide ~70% of the CO₂ drive; the carotid bodies add a fast CO₂ response and the hypoxic drive, which increases steeply below ~60 mmHg and multiplies the CO₂ response.",
-        "phd": "The model: ventilation = central command (∝ CO₂ output) + G·(PaCO₂ − 40)·(1 + hypoxia) + hypoxic drive, with CO₂ and O₂ body stores giving slow and fast time constants. Loop gain = controller gain × plant gain; high loop gain (altitude, heart failure) causes periodic breathing."
+        "phd": "The model: ventilation = central command (∝ CO₂ output) + G·(PaCO₂ − set point)·(1 + hypoxia) + hypoxic drive, with the set point ~40 awake and higher asleep, and only a weak brake below it, with CO₂ and O₂ body stores giving slow and fast time constants. Loop gain = controller gain × plant gain; high loop gain (altitude, heart failure) causes periodic breathing."
       }
     },
     "systems": {
@@ -748,7 +748,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "Healthy lungs: stretchy, with wide-open airways.",
       "hs": "Normal lungs: compliance about 0.2 L per cmH₂O and low airway resistance. FEV₁ is about 80% of FVC.",
       "college": "Normal: TLC ~6 L, FRC ~2.4 L, RV ~1.2 L; FEV₁/FVC ~0.8; PaO₂ ~95 mmHg with an A–a gradient under 15 mmHg.",
-      "phd": "Reference values vary with age, height, sex and ancestry; GLI-2022 race-neutral equations are now recommended for spirometry." },
+      "phd": "Reference values vary with age, height, sex and ancestry; the race-neutral GLI Global equations (2023) are now recommended for spirometry." },
     "asthma": { "name": "Asthma attack",
       "ms": "In an asthma attack the airway muscles squeeze and the airways fill with sticky mucus, so it’s hard to blow air out. You may wheeze.",
       "hs": "Airway smooth muscle constricts, the lining swells and mucus builds up, so airway resistance rises, especially when breathing out. FEV₁ falls and air gets trapped in the lungs. Inhalers relax the muscle and calm the inflammation.",
@@ -860,7 +860,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "These carry bright red, oxygen-rich blood from the lungs back to the heart.",
       "hs": "Four pulmonary veins carry oxygenated blood to the left atrium. They run between lung segments rather than with the airways.",
       "college": "Pulmonary venous blood has a PO₂ close to alveolar; the small fall to arterial PO₂ comes from bronchial and Thebesian venous admixture and V/Q mismatch.",
-      "phd": "Raised pulmonary venous pressure (left heart failure, mitral stenosis) causes interstitial then alveolar oedema; Kerley B lines on X-ray are distended interlobular lymphatics." },
+      "phd": "Raised pulmonary venous pressure (left heart failure, mitral stenosis) causes interstitial then alveolar oedema; Kerley B lines on X-ray are thickened, oedematous interlobular septa." },
     "heart": { "name": "The heart", "kind": "Neighbour", "systems": ["circulatory"], "related": ["lul", "pulmonaryArteries"], "link": { "href": "heart.html", "label": "Open the heart page" },
       "ms": "The heart sits between the lungs and pumps blood through them with every beat.",
       "hs": "The heart sits in the middle of the chest, tilted to the left, which is why the left lung is smaller. Its right side pumps blood through the lungs; its left side receives it back.",
@@ -883,7 +883,7 @@ canvas.trace{ display:block; width:100%; }
       "college": "Pores of Kohn and canals of Lambert provide collateral ventilation, which helps prevent collapse distal to a blocked airway.",
       "phd": "Interdependence: neighbouring alveoli share walls, so a collapsing alveolus is held open by the tension of its neighbours, which stabilises the lung beyond what surfactant alone achieves." },
     "alveolus": { "name": "Alveolus", "kind": "Air sac", "systems": ["respiratory", "circulatory"], "related": ["typeI", "typeII", "capillary"],
-      "ms": "An alveolus is a tiny air bubble, a third of a millimetre wide. You have about 300 million of them, wrapped in blood vessels.",
+      "ms": "An alveolus is a tiny air bubble, about a fifth of a millimetre wide. You have about 300 million of them, wrapped in blood vessels.",
       "hs": "Each alveolus is about 0.2–0.3 mm across and is wrapped in capillaries. Together they give ~70 m² of surface, and the barrier between air and blood is only ~0.5 µm thick.",
       "college": "The blood–gas barrier is type I cell, fused basement membrane and capillary endothelium. Surface tension of the liquid lining would collapse small alveoli (Laplace: P = 2T/r) without surfactant.",
       "phd": "The barrier’s thin side (fused basement membranes) is optimised for gas exchange, the thick side (with interstitium) for fluid handling; stress failure of the thin side causes haemorrhage in racehorses and high-altitude oedema." },
@@ -919,9 +919,9 @@ canvas.trace{ display:block; width:100%; }
       "phd": "Poiseuille’s law applies only to laminar flow, but the steep radius dependence holds generally; muscle shortening is amplified by a thickened wall in asthma (geometric amplification)." },
     "cilia": { "name": "Ciliated epithelium", "kind": "Airway lining", "systems": ["immune", "respiratory"], "related": ["goblet", "mucus", "trachea"],
       "ms": "The airways are lined with tiny hairs that wave about 15 times a second, sweeping mucus and dirt up to your throat.",
-      "hs": "Each cell has ~200 cilia that beat in waves, carrying the mucus layer up at a few mm a minute: the mucociliary escalator. You swallow it without noticing. Smoking paralyses the cilia.",
+      "hs": "Each cell has ~200 cilia that beat in waves, carrying the mucus layer up at a few mm a minute: the mucociliary escalator. You swallow it without noticing. Smoking slows and damages the cilia.",
       "college": "Cilia beat in the thin periciliary liquid and tip the mucus layer above; airway surface liquid depth is set by CFTR (Cl⁻ secretion) and ENaC (Na⁺ absorption).",
-      "phd": "In cystic fibrosis, loss of CFTR dehydrates the airway surface so mucus collapses onto the cilia; CFTR modulators (elexacaftor–tezacaftor–ivacaftor) restore it. Primary ciliary dyskinesia causes bronchiectasis and situs inversus." },
+      "phd": "In cystic fibrosis, loss of CFTR dehydrates the airway surface so mucus collapses onto the cilia; CFTR modulators (elexacaftor–tezacaftor–ivacaftor) restore it. Primary ciliary dyskinesia causes bronchiectasis and, in about half of patients, situs inversus (Kartagener syndrome)." },
     "goblet": { "name": "Goblet cells", "kind": "Airway lining", "systems": ["immune", "respiratory"], "related": ["mucus", "cilia"],
       "ms": "Cells shaped like wine glasses that make mucus.",
       "hs": "Goblet cells and deeper glands make mucus, which traps dust and germs. In asthma and in smokers they multiply and make too much.",
@@ -947,7 +947,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "The part of the brainstem that sets the beat of your breathing, like a drummer.",
       "hs": "Neurons in the medulla fire in rhythmic bursts that make each breath. They adjust the rate and depth from what the chemoreceptors and lung stretch sensors tell them.",
       "college": "The preBötzinger complex generates inspiratory rhythm; the parafacial group drives active expiration; dorsal and ventral respiratory groups integrate inputs and project to phrenic and intercostal motor neurons.",
-      "phd": "PreBötzinger neurons expressing neurokinin-1 receptors and Dbx1 are necessary for breathing (Gray et al. 2001); their sensitivity to μ-opioids explains fatal opioid respiratory depression." },
+      "phd": "PreBötzinger neurons expressing neurokinin-1 receptors and Dbx1 are necessary for breathing (Gray et al. 2001, 2010); their sensitivity to μ-opioids explains fatal opioid respiratory depression." },
     "centralChemo": { "name": "Central chemoreceptors", "kind": "Sensor", "systems": ["nervous"], "related": ["medulla", "carotidBody"],
       "ms": "Sensors in the brainstem that measure carbon dioxide. When there’s too much, they make you breathe harder.",
       "hs": "Near the surface of the medulla, they sense the acidity of the brain fluid, which rises when blood CO₂ rises (CO₂ crosses into the brain easily). They provide most of the drive to breathe.",
@@ -998,7 +998,7 @@ canvas.trace{ display:block; width:100%; }
     "digestive": {
       "ms": "You can’t breathe and swallow at the same time: a little flap stops food going into your windpipe. The diaphragm also helps you poo.",
       "hs": "The airway and food tube share the throat; the epiglottis and vocal cords close to protect the lungs during swallowing. Taking a breath and bearing down with the diaphragm raises belly pressure for vomiting and passing stools.",
-      "college": "Aspiration of gastric contents causes chemical pneumonitis and infection; reflux can trigger cough and asthma. The lungs can also stop food fat going to the brain because chylomicrons pass the lungs first.",
+      "college": "Aspiration of gastric contents causes chemical pneumonitis and infection; reflux can trigger cough and asthma. Fat absorbed from a meal reaches the blood through the thoracic duct, so chylomicrons pass through the lung capillaries before any other organ.",
       "phd": "Microaspiration of gastric contents is linked to IPF progression and lung transplant rejection; the gut–lung axis (microbiome metabolites like short-chain fatty acids) modulates allergic airway inflammation." },
     "urinary": {
       "ms": "The lungs and kidneys work together to keep your blood from getting too acidic.",
@@ -1019,7 +1019,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "If your blood has too little oxygen, your lips and fingertips can look blue.",
       "hs": "Low blood oxygen can cause cyanosis, a blue tinge to the lips, tongue and nail beds. Long-term low oxygen can cause clubbing of the fingertips. A finger clip measures O₂ saturation through the skin.",
       "college": "Central cyanosis appears when deoxygenated haemoglobin exceeds ~5 g/dL in capillary blood, so it is harder to see in anaemia. Pulse oximetry compares red and infrared absorption.",
-      "phd": "Pulse oximeters overestimate saturation in people with darker skin, leading to missed hypoxaemia (Sjoding et al. 2020); regulators now require more diverse validation." },
+      "phd": "Pulse oximeters overestimate saturation in people with darker skin, leading to missed hypoxaemia (Sjoding et al. 2020); regulators are tightening validation across skin tones." },
     "reproductive": {
       "ms": "Before birth a baby doesn’t breathe air; it gets oxygen from its mother. Its first breath at birth opens the lungs.",
       "hs": "In pregnancy, progesterone makes the mother breathe more, lowering her CO₂ so the baby’s CO₂ can cross the placenta. At birth, the first breaths inflate the lungs, blood flow to them jumps and the baby’s circulation switches to its adult pattern.",
@@ -1092,7 +1092,7 @@ canvas.trace{ display:block; width:100%; }
           "bpg": "7.5"
         },
         "ms": "After a week high up, red cells make more 2,3-BPG, so haemoglobin hands oxygen to the tissues more easily.",
-        "college": "Acclimatisation raises red-cell 2,3-BPG: a right shift (higher P50) that aids unloading, at a small cost to loading at low PAO₂."
+        "college": "Acclimatisation raises red-cell 2,3-BPG: a right shift (higher P50) that aids unloading but costs some loading at a low PAO₂; at altitude the alkalosis’s left shift partly offsets it."
       },
       {
         "id": "fever",
@@ -2971,9 +2971,9 @@ const CONDITIONS = {
 const COND_IDS = Object.keys(CONDITIONS);
 const ZONES = [{ name: "Top (apex)", V: .22, Q: .07 }, { name: "Middle", V: .33, Q: .35 }, { name: "Bottom (base)", V: .45, Q: .58 }];
 /* the body in each part of the day: O₂ use (mL/min), respiratory quotient,
-   cardiac output (L/min), breathing rate, core temperature */
-const BODY = { sleep: { vo2: 215, rq: .82, co: 4.6, f: 11.5, temp: 36.5 }, rest: { vo2: 265, rq: .82, co: 5.2, f: 14, temp: 36.9 },
-  meal: { vo2: 290, rq: .9, co: 5.6, f: 14, temp: 37 }, exercise: { vo2: 2000, rq: .95, co: 16, f: 26, temp: 37.9 } };
+   cardiac output (L/min: heart rate × stroke volume of the phase vitals), breathing rate, core temperature */
+const BODY = { sleep: { vo2: 215, rq: .82, co: 3.9, f: 11.5, temp: 36.5 }, rest: { vo2: 265, rq: .82, co: 4.7, f: 14, temp: 36.9 },
+  meal: { vo2: 290, rq: .9, co: 5.1, f: 14, temp: 37 }, exercise: { vo2: 2000, rq: .95, co: 16, f: 26, temp: 37.9 } };
 
 /* haemoglobin: Hill curve with a shifting P50 */
 const HB = 150, N_HILL = 2.7;
@@ -3011,9 +3011,15 @@ const makeLung = () => {
 
   /* --- control: what ventilation the brainstem asks for (L/min) --- */
   function hypoxia(){ return clamp(14 / Math.max(1, S.PaO2 - 25) - .19, 0, 3); }
+  /* the PaCO₂ the chemoreflex defends: ~40 awake, a few mmHg higher in sleep (the
+     wakefulness drive is gone) and with the chronic CO₂ retention of severe COPD */
+  const setPoint = () => 40 + (O.state().phase === "sleep" ? 4 : 0) + (S.cond === "copd" ? 7 : 0);
   function command(){
     const ph = O.state().phase, G = 2 * (ph === "sleep" ? .6 : 1) * (S.cond === "copd" ? .6 : 1), hyp = hypoxia();
-    let ve = 28 * vco2() / 1000 * (ph === "exercise" ? .9 : 1) + G * (S.PaCO2 - 40) * (1 + hyp) + 5 * hyp + cond().drive;
+    /* above the set point, CO₂ drives breathing (~2 L/min per mmHg, steeper when hypoxic); below
+       it, the brake is weak (a 'dog-leg'), so hypoxia can make you hyperventilate, as at altitude */
+    const e = S.PaCO2 - setPoint();
+    const ve = 28 * vco2() / 1000 * (ph === "exercise" ? .9 : 1) + (e > 0 ? G * (1 + hyp) : .15 * G) * e + 8 * hyp + cond().drive;
     return Math.max(0, ve);
   }
   function control(dt){
@@ -3041,7 +3047,11 @@ const makeLung = () => {
   /* --- V/Q and diffusion: an A–a gradient from three zones and a shunt --- */
   function exchange(){
     const ph = O.state().phase, c = cond();
-    const hco3 = 24 - (ph === "exercise" ? 1.5 : 0);   /* a little lactate near the ventilatory threshold */
+    /* bicarbonate, mmol/L: a little lactate near the ventilatory threshold; at altitude the kidneys
+       shed bicarbonate (~0.45 per mmHg of hypocapnia, as after days there), and in COPD they keep it
+       (~0.35 per mmHg of chronic hypercapnia), so pH stays near normal */
+    const hco3 = 24 - (ph === "exercise" ? 1.5 : 0) - (S.alt > 0 ? .45 * Math.max(0, 40 - S.PaCO2) : 0)
+      + (S.cond === "copd" ? .35 * Math.max(0, S.PaCO2 - 40) : 0);
     S.pH = 6.1 + Math.log10(hco3 / (.03 * S.PaCO2));
     if (!S.tempTouched) S.temp = body().temp;
     S.p50 = 26.8 * Math.pow(10, .48 * (7.4 - S.pH)) * Math.exp(.024 * (S.temp - 37)) * Math.pow(S.bpg / 5, .3) * (S.fetal ? .71 : 1);
@@ -3066,7 +3076,7 @@ const makeLung = () => {
     const PaVQ = invSat((Ca - .03 * 90) / (1.34 * HB), S.p50), ideal = pio2 - .863 * vo2 / VA;
     S.Aa = clamp(ideal - PaVQ, 3, 90);
     /* diffusion: equilibration time constant vs capillary transit time */
-    const tau = .08 / c.D * (1 + Math.max(0, 80 - S.PAO2) / 50), transit = .75 * Math.pow(5.2 / Q, .85);
+    const tau = .08 / c.D * (1 + Math.max(0, 80 - S.PAO2) / 50), transit = .75 * Math.pow(4.7 / Q, .85);
     S.tau = tau; S.transit = transit; S.Pv = Pv;
     S.diff = Math.max(0, (S.PAO2 - S.Aa - Pv)) * Math.exp(-transit / tau);
     S.PvO2 = Pv; S.SvO2 = sat(Pv, S.p50);

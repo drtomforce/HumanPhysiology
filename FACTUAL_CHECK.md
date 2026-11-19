@@ -66,7 +66,8 @@ A committed file, `fact-check/ledger.json`, holds one row per checkable item, gr
 - **Code keys**:
   - `const:<NAME>` for a top-level `UPPERCASE` constant, split into `const:<NAME>.<id>` for arrays of `{ id: … }` entries and `const:<NAME>.<prop>` for objects (for example `const:PHYSIO.heartRate`, `const:IMPULSES.kneeJerk`);
   - `mod:<Name>` for a PascalCase module such as `mod:Physio`, as one item;
-  - `fn:<name>` for a top-level function, which catches the organ models and the numbers inside drawing code.
+  - `const:<NAME>` also for a numeric `UPPERCASE` constant (`const HB = 150, N_HILL = 2.7;`), one item per statement, keyed by its first name;
+  - `fn:<name>` for a top-level function, declared or as an arrow function in a lowercase `const` (`const makeLung = () => { … }`), which catches the organ models and the numbers inside drawing code. Code between two declarations that is not itself one (an `App.registerTopic({ … })` call, say) goes with the declaration before it.
   When a code item changes, look at its `git diff` to see whether a physiological number or rule changed.
 - **Ignore list**: `ledger.ignore[<page>]` names the constants, modules and functions that are only drawing, layout or UI. The scan leaves them out. Add a name there when a new page brings one.
 - **Status** is one of `unchecked`, `ok`, `fixed`, `n/a` (no factual claim: a button label, an id) or `issue #<n>`.
@@ -84,6 +85,7 @@ A committed file, `fact-check/ledger.json`, holds one row per checkable item, gr
 A small Node script, `fact-check/scan.mjs`, keeps the ledger up to date. Like `tests/*.mjs`, it needs no build and no dependencies.
 - `node fact-check/scan.mjs` prints a table per page: items, counts by status, and how many are new, changed or removed since the ledger.
 - `--update` writes new and changed items into the ledger as `unchecked` and drops removed ones.
+- `--status` writes `fact-check/status.js`, the per-section counts (no keys or text) that the reader-facing overview `fact-check.html` draws. `--update`, `--mark` and `--verify` rewrite it too, and `--check` fails while it is out of date. Sections are found by pattern (`<block>:<first path segment>`, with each page's glossary, code and organ header as one section each), so a new page or system shows up without editing the overview; give a new section a readable name in `SECTION_LABELS` in `scan.mjs`.
 - `--list` prints the unchecked items with their text; add `--all` for every item, or `--full` for untruncated text.
 - `--mark <status>` sets the status of the selected items, with an optional `--note "…"`. `--mark ok`, `fixed` and `"issue #<n>"` need `--by <who>` (or the `FACT_CHECK_BY` environment variable) and at least one source:
   - `--lookup <id>:<locator> --url <link> --quote "<excerpt>"` for a source opened and read. Each `--lookup` needs its own `--url` and `--quote`, given in the same order. The script fetches every link first and refuses the whole mark if one is dead (see [Links](#links)).
@@ -253,7 +255,7 @@ One canonical value per shared quantity. Every page uses these values or explain
 |---|---|---|---|---|
 | Heart rate | ~70 bpm awake, ~52–55 asleep | ~150 in the run | body, heart | `guyton14` ch. 9, 21 |
 | Stroke volume | ~70 mL | ~105 mL upright running (+~50%) | body, heart | `guyton14` ch. 9; `rowell1993` |
-| Cardiac output | ~5 L/min (~4 asleep) | ~16 L/min at VO₂ 2 L/min; >20 possible | body, heart, kidneys, liver | `guyton14` ch. 20, 21 |
+| Cardiac output | ~5 L/min (~4 asleep) | ~16 L/min at VO₂ 2 L/min; >20 possible | body, heart, lungs, kidneys, liver | `guyton14` ch. 20, 21 |
 | Blood pressure | ~118/76 awake, ~10–15% lower asleep | SBP ~165, DBP flat in the run | body, heart | `esh2023` (dipping); `acsm11` |
 | O₂ uptake (VO₂) | ~250 mL/min awake, ~210 asleep | ~2.0 L/min in the run, a fast jog (~8 METs, about the ventilatory threshold for an average adult) | body, lungs | `acsm11` (3.5 mL/kg/min = 1 MET) |
 | SpO₂ / SaO₂ | 97–98% awake, ~96% asleep | ~97% in the run | body, heart, lungs | `west11` ch. 6 |
@@ -272,6 +274,7 @@ One canonical value per shared quantity. Every page uses these values or explain
 | Blood neutrophils, lymphocytes | neutrophils ~3.2 (early morning) → ~4.1 ×10⁹/L (afternoon); lymphocytes ~2.6 (midnight) → ~1.8 ×10⁹/L (late morning) | run: neutrophils ~5–5.6, lymphocytes ~3.1 then ~1.5 an hour after | body | `haus1999`; `campbell2018` |
 | Immune response timing | neutrophils at a wound within hours; dendritic cells in the draining node in ~1–2 days; primary IgM ~day 5–7, IgG peak ~2 weeks; contraction of the clone by 90–95% | secondary response within 1–3 days, 10–100× more antibody, mostly IgG; flu incubation 1–4 days (~2), shedding 5–7 days in adults | body (infection ride) | `janeway10`; `amanna2007`; `krammer2018`, `carrat2008` (flu) |
 | Cerebral blood flow | ~750 mL/min (~15% of CO), autoregulated | | body, brain | `guyton14` ch. 62 |
+| Blood gases at altitude | 2,400 m (cabin): PIO₂ ~110, PaO₂ ~55–60 mmHg; 4,000 m: PaO₂ ~45, PaCO₂ ~32 | Everest summit, acclimatised: PB ~253, PaO₂ ~25–30, PaCO₂ ~7–13 mmHg, SaO₂ ~70%, pH ~7.5–7.7 | lungs | `west11` ch. 9; `west1983`; `grocott2009` |
 
 The Source column uses ids from [`fact-check/sources.json`](#sources). Fill in each row the first time the backlog reaches that quantity. Add rows as new pages bring new shared quantities (muscle blood flow, skin temperature, bone turnover and so on).
 
@@ -298,19 +301,20 @@ The backlog, in order of exposure: the body view is what every reader sees first
 | 1b ✅ | Immune & lymphatic system on the body (new on 2026-11-18: `systems.immune`, its glossary terms, `PHYSIO.neutrophils` / `lymphocytes` / `il6`, the lymph channels in `Physio.at()`, `mod:Immune`) | 177 | 100%: all four phases, the eight pins, 25 glossary terms, the white-cell and IL-6 keyframes, the lymph model. Fixed: splenic slit width, the neutrophil and lymphocyte glossary entries. Filed: the lymph volumes at hs vs college, tonsillectomy and immunity. One look-up each in `openstax-ap2e` and `campbell2018`; the rest from memory | 2026-11-19 | #17, #18 |
 | 1c ✅ | Follow an infection on the body (new on 2026-11-19: `infection` in `#body-content` (4 journeys, 23 stops), 21 glossary terms, `INFECTIONS` and its legs (`NEUTRO_RIDE`, `DC_ARM`, `DC_NOSE`, `AB_ARM`, `AB_NOSE`), `mod:InfectionRide`, and the edited `fn:lapseRide`, `mod:Immune` and `mod:Scene`) | 245 | 100%: all journeys and stops at four levels, the glossary, the ride's timings against its text. Fixed: complement "punching holes" in Gram-positive splinter bacteria (alarm.hs and the glossary), the interferon glossary entry (IFN-γ), where nasal IgA comes from (abFlu.hs). 21 rows looked up in `openstax-ap2e`; the papers the PhD text names are now in `sources.json` (from memory). The edited `mod:Scene`, `mod:Cascade` and `mod:DropRide` go with the animation modules in row 1 | 2026-11-19 | |
 | 2 ✅ | Heart | 1092 | 100%: every section, part, rhythm, occlusion, scenario, lens card and pulse feature at four levels, the glossary, the 12-lead, coronary-territory, Gould stenosis and pleth models (measured in the page). Fixed: gut flow after a meal (hs vs college), six → seven live systems (also on the lungs page), left-main diameter, the AV delay vs the PR interval, left main and angina, a wrong glossary link ("echo"). 3 rows looked up in `klabunde-web`; the rest from memory. The blood-pressure model was retuned the same day: the aorta now stiffens as it is stretched, so rest 120/76, run 166/81, sleep 102/69 (was 125/74, 143/77, 109/53), with SV, EF and CO unchanged; the pleth's artery settings were retuned to match (SI 6.1 young, 9.2 at 70, 17 with atherosclerosis) | 2026-11-19 | |
-| 3 | Lungs | 743 | 1% (the run's breathing model and text) | 2026-11-17 | |
+| 3 ✅ | Lungs | 728 | 100%: every section, part, condition, control test, lens card, scenario and note at four levels, the glossary, and the model (run headless across phases, conditions, altitudes, 5% CO₂, breath-hold and hyperventilation). Fixed: the chemoreflex had no CO₂ set point or dog-leg, so PaCO₂ stayed 40 asleep and in COPD and nobody hyperventilated at altitude (Everest PaO₂ 15, SaO₂ 18%); now sleep 43, COPD 45, 4,000 m 44/33, Everest 27/10 with SaO₂ 68%, with renal bicarbonate compensation; the model's cardiac outputs now match the phase vitals (sleep 3.9, rest 4.7 L/min). Text: alveolar surface "a tennis court" → a badminton court and the barrier "a few hundredths" → under a thousandth of a mm (looked up in `openstax-ap2e`), alveolar ventilation 4.2 → 4.9 L/min, alveolus size (ms vs hs), the Everest gases, the Bohr effect, GLI Global, Kerley B lines, smoking and cilia, PCD, Dbx1 citation, chylomicrons, pulse-oximeter regulation, 2,3-BPG at altitude, the model description. 2 rows looked up; the rest from memory. Drawing functions went to the ignore list | 2026-11-19 | |
 | 4 | Kidneys | 1128 | 0% | | |
 | 5 | Brain | 1027 | 0% (`SLEEP_CYCLES` fixed with the body view) | 2026-11-17 | |
 | 6 | Stomach & gut | 1342 | 0% | | |
 | 7 | Liver | 934 | 0% | | |
 | 8 | Pancreas | 910 | 0% | | |
-| 9 | Glossaries (included in the counts above) | | body: 100% (2026-11-19); organ pages: 0% | 2026-11-19 | |
-| 10a | Shared organ engine (`engine`: phase vitals, schedule, beat and breath loop) | 9 | 56% | 2026-11-17 | |
+| 9 | Glossaries (included in the counts above) | | body, heart, lungs: 100% (2026-11-19); other organ pages: 0% | 2026-11-19 | |
+| 10a ✅ | Shared organ engine (`engine`: phase vitals, schedule, beat and breath loop) | 6 | 100% (the loop, `delta()` and the UI helpers went to the ignore list on 2026-11-19) | 2026-11-19 | |
 | 10 | `README.md` (not in the ledger; check by hand) | | 0% | | |
 | 11 | Random re-checks (`--recheck-stats`) | | 0 re-checked (on 2026-11-19 no approved row was yet 60 days old) | 2026-11-19 | |
+| 13 | Code the scan missed until 2026-11-19 (arrow functions and numeric constants, now tracked on every page) | | body: `fn:pick`, `fn:skinP` and `fn:eyePupil` (the topic illustrations registered after them, ~78 kB) still unchecked; heart: `fn:makeHeart` (the model itself: only `mod:Heart`, one line, was tracked when the model was retuned), `fn:flowShare`, `const:CA0`, `const:R_MIN` still unchecked. The rest checked or ignored | 2026-11-19 | |
 | 12 | Independent verifications of look-ups (`--recheck-stats`) | | 0 verified (on 2026-11-19 there were no look-ups from earlier runs to verify) | 2026-11-19 | |
 
-Item counts come from `node fact-check/scan.mjs` on 2026-11-17 (rows 1b and 1c on the day they landed). On 2026-11-19 the body page as a whole was fully checked (3,018 items, after 6 drawing functions went to the ignore list): 2,612 `ok`, 51 `fixed`, 353 `n/a`, 2 filed. A glossary's items are the `body-glossary:` and `organ-glossary:` keys on each page.
+Item counts come from `node fact-check/scan.mjs` on 2026-11-17 (rows 1b and 1c on the day they landed). On 2026-11-19 the body page as a whole was fully checked (3,018 items, after 6 drawing functions went to the ignore list): 2,612 `ok`, 51 `fixed`, 353 `n/a`, 2 filed. Later that day the scan was widened to arrow functions and numeric constants, and helpers went to the ignore lists: body 3,027 items (3 unchecked, see row 13), heart 1,097 (4 unchecked), lungs 728 (all checked: 680 `ok`, 24 `fixed`, 24 `n/a`). A glossary's items are the `body-glossary:` and `organ-glossary:` keys on each page.
 
 New pages and systems from the nightly build get a row as they land, and are checked before the backlog continues. Tick a row ✅ when all its ledger rows are `ok`, `fixed` or filed.
 

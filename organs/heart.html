@@ -3402,7 +3402,7 @@ const LATERAL = new Set(["I", "aVL", "V5", "V6"]), RIGHTP = new Set(["V1", "V2",
    ========================================================================= */
 /* per-phase presets: how much sympathetic drive changes contractility,
    resistance (afterload) and venous filling (preload) */
-const PRESET = { sleep: { c: .95, a: .95, p: 1.0 }, rest: { c: 1, a: 1, p: 1 }, meal: { c: 1.02, a: .96, p: 1.0 }, exercise: { c: 2.7, a: .36, p: 2.0 } };
+const PRESET = { sleep: { c: .95, a: 1.03, p: 1.0 }, rest: { c: 1, a: 1, p: 1 }, meal: { c: 1.02, a: .96, p: 1.0 }, exercise: { c: 2.7, a: .41, p: 2.0 } };
 const RHYTHM_IDS = ["sinus", "avb1", "wenck", "mobitz2", "avb3", "rbbb", "lbbb", "afib", "saArrest"];
 const DT = 0.00025, REC_DT = 0.002, REC_N = 4096;
 /* the arteries between the heart and a fingertip pulse oximeter.
@@ -3411,10 +3411,10 @@ const DT = 0.00025, REC_DT = 0.002, REC_N = 4096;
    k: its size; tau: smoothing by the vessels on the way (s); tone: how far the fingertip
    vessels swell with each pulse (sets the perfusion index) */
 const ART = {
-  young:    { comp: 1,   ptt: .13, dT: .32, k: .42, tau: .032, tone: 1 },
-  older:    { comp: .7,  ptt: .1,  dT: .27, k: .55, tau: .036, tone: .8 },
-  athero:   { comp: .45, ptt: .07, dT: .215, k: .72, tau: .04,  tone: .5 },
-  stenosis: { comp: .45, ptt: .2,  dT: .19, k: .55, tau: .1,   tone: .22 },
+  young:    { comp: 1,   ptt: .13, dT: .32, k: .42, tau: .04,  tone: 1 },
+  older:    { comp: .7,  ptt: .1,  dT: .27, k: .55, tau: .05,  tone: .8 },
+  athero:   { comp: .45, ptt: .07, dT: .215, k: .45, tau: .05,  tone: .5 },
+  stenosis: { comp: .45, ptt: .2,  dT: .19, k: .3,  tau: .12,  tone: .22 },
   cold:     { comp: 1,   ptt: .15, dT: .29, k: .58, tau: .045, tone: .18 },
   warm:     { comp: 1,   ptt: .14, dT: .32, k: .25, tau: .03,  tone: 2.2 }
 };
@@ -3427,6 +3427,10 @@ const ART_IDS = Object.keys(ART);
    exit, ∝ (1/area − 1)²). So a 50% narrowing barely matters, 70% caps flow near what exercise needs, and beyond
    ~85% even resting flow can't get through. */
 const R_MIN = .25;
+/* The aorta stiffens as it is stretched: its compliance (mL/mmHg, ×ART comp) falls as pressure rises,
+   CA0·exp(−(P − 90)/CA_K) within [CA_LO, CA_HI]. So pulse pressure widens in exercise (systolic ~165, diastolic
+   about flat) and the long diastoles of sleep don't drain diastolic pressure (a ~10–15% dip, ~102/69). */
+const CA0 = 1.6, CA_K = 24, CA_LO = .3, CA_HI = 1.8;
 /* The left main carries the flow for both the LAD and the circumflex, about three quarters of the left ventricle, so
    the same percent narrowing loses far more pressure there (the loss grows with the flow, and with its square). Its
    larger loss makes ≥50% significant, against ≥70% elsewhere: angina on exercise from ~50%, ischaemia at rest from ~75%.
@@ -3554,9 +3558,9 @@ const makeHeart = () => {
     let ea = 0;
     if (S.rhythm !== "afib"){ const p = lastP(t); if (p){ const ta = t - p.t - .04; if (ta >= 0 && ta < .16) ea = Math.sin(Math.PI * ta / .16) ** 2; } }
     const Pla = (.15 + .25 * ea) * (S.Vla - 20) + 2;
-    const Ppv = 10 * m.p * u.p * fx.rv, R = 1.15 * m.a * u.a;
+    const Ppv = 10 * m.p * u.p * fx.rv, R = 1.06 * m.a * u.a;
     const Qpv = (Ppv - Pla) / .03, Qmv = Math.max(0, (Pla - Plv) / .006), Qav = Math.max(0, (Plv - S.Pa) / .008);
-    S.Vla += (Qpv - Qmv) * dt; S.Vlv += (Qmv - Qav) * dt; S.Pa += (Qav - S.Pa / R) / (1.1 * ART[S.art].comp) * dt;
+    S.Vla += (Qpv - Qmv) * dt; S.Vlv += (Qmv - Qav) * dt; S.Pa += (Qav - S.Pa / R) / (CA0 * ART[S.art].comp * Math.min(CA_HI, Math.max(CA_LO, Math.exp(-(S.Pa - 90) / CA_K)))) * dt;
     S.Vlv = Math.max(V0 + 1, S.Vlv);
     S.Plv = Plv; S.Pla = Pla; S.Qmv = Qmv; S.Qav = Qav; S.Qpv = Qpv; S.el = el; S.Emax = Emax; S.Qout = S.Pa / R;
     /* coronary flow: perfusion pressure minus the squeeze of the wall around the vessels */

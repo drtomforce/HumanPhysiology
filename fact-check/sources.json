@@ -32,6 +32,8 @@
  "levick2010": {"kind": "review", "cite": "Levick JR, Michel CC. Microvascular fluid exchange and the revised Starling principle. Cardiovasc Res. 2010;87(2):198-210. doi:10.1093/cvr/cvq062"},
  "haus1999": {"kind": "review", "cite": "Haus E, Smolensky MH. Biologic rhythms in the immune system. Chronobiol Int. 1999;16(5):581-622. doi:10.3109/07420529908998730"},
  "campbell2018": {"kind": "review", "access": "open", "cite": "Campbell JP, Turner JE. Debunking the myth of exercise-induced immune suppression: redefining the impact of exercise on immunological health across the lifespan. Front Immunol. 2018;9:648. doi:10.3389/fimmu.2018.00648"},
+ "stewart2002": {"kind": "review", "cite": "Stewart IB, McKenzie DC. The human spleen during physiological stress. Sports Med. 2002;32(6):361-369. doi:10.2165/00007256-200232060-00002"},
+ "ilardo2018": {"kind": "primary", "cite": "Ilardo MA, Moltke I, Korneliussen TS, et al. Physiological and genetic adaptations to diving in sea nomads. Cell. 2018;173(3):569-580.e15. doi:10.1016/j.cell.2018.03.054"},
  "besedovsky2012": {"kind": "review", "cite": "Besedovsky L, Lange T, Born J. Sleep and immune function. Pflugers Arch. 2012;463(1):121-137. doi:10.1007/s00424-011-1044-0"},
  "lange2003": {"kind": "primary", "cite": "Lange T, Perras B, Fehm HL, Born J. Sleep enhances the human antibody response to hepatitis A vaccination. Psychosom Med. 2003;65(5):831-835. doi:10.1097/01.PSY.0000091382.61178.F1"},
  "prather2015": {"kind": "primary", "cite": "Prather AA, Janicki-Deverts D, Hall MH, Cohen S. Behaviorally assessed sleep and susceptibility to the common cold. Sleep. 2015;38(9):1353-1359. doi:10.5665/sleep.4968"},

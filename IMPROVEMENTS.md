@@ -7,14 +7,14 @@ The README describes what already exists. This file only lists what doesn't exis
 
 | | Done | Remaining |
 |---|---|---|
-| Organs on the body (close-up + phase text) | 13: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat | New organs: see [New organs for the body](#new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 7: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas | 6 existing organs + any new ones |
+| Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#new-organs-for-the-body) |
+| Organ deep-dive pages (`organs/<id>.html`) | 7: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas | 7 existing organs (including the spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic | 3: muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 7: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection | One per new system, plus cross-system journeys |
 
 ## Next up
 
-Both items here are done. The liver and pancreas pages are built, and the immune & lymphatic system animates on the body with its "follow an infection" journey. The next step is the spleen & lymph nodes as a new organ (see [3.1](#31-spleen--lymph-nodes) and [Suggested order](#suggested-order)).
+Both items here are done. The liver and pancreas pages are built, the immune & lymphatic system animates on the body with its "follow an infection" journey, and the spleen & lymph nodes are now an organ on the body ([3.1](#31-spleen--lymph-nodes)). The next step is the muscles and bones pages (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -152,7 +152,7 @@ The layer and the "follow an infection" journey are built: see the README for wh
   - **More germs**: a cold virus (no vaccine, all innate and T cells), tetanus in a dirty wound (a toxin, neutralised by vaccine antibodies), a gut infection through the Peyer's patches with IgA, and a urinary infection (shared with the urinary system).
   - **Vaccinated is per ride**: the toggle switches between the twin journeys rather than being a body-wide setting that other rides or a future infection state could read.
   - **Neck nodes** sit under the throat's label in the whole-body view, so a tap there opens the throat. The armpit nodes, the other nodes, the spleen, the thymus and the moving cells start a ride.
-- **Spleen & lymph nodes as an organ** (3.1): the spleen, thymus, tonsils, marrow and Peyer's patches are drawn in the layer, but there is no organ topic, close-up or hotspot for them yet. The "Part of" chips now list the immune system for the gut, liver, skin, bones and throat.
+- **Spleen & lymph nodes as an organ ✅ Done** (3.1): a body topic with a close-up, phase text and a hotspot on the spleen. The thymus, tonsils, marrow and Peyer's patches are drawn in the layer but still have no topic of their own. The "Part of" chips list the immune system for the gut, liver, skin, bones, throat and spleen.
 - **Chylomicrons** ride their own lymph routes here; the fat bite journey still draws its own path up `THORACIC_D`. The two could share the lymph dots, so a bite's chylomicron is one of the milky dots.
 - **Channels are simplified**: thoracic duct flow (`lymphFlow`, ~1.2 mL/min at rest, ~3× in the run), `chyle` (gut activity lagged by 1.5 h), `nodeTraffic` (0–1, high in deep sleep with low cortisol), `spleen` (−25% in the run), and keyframed `neutrophils`, `lymphocytes` (×10⁹/L) and `il6`. They are not yet read by the vitals panel, and there is no CRP, fever or infection state.
 - **Tap targets ✅ Done**: tapping a node, the tonsils, the spleen, the thymus or a moving cell starts the infection journey (the armpit nodes start the splinter, the neck nodes and tonsils the flu).
@@ -160,7 +160,7 @@ The layer and the "follow an infection" journey are built: see the README for wh
 - **Animate**: lymph creeping centrally, faster with muscle activity in the run and with breathing. White-cell traffic through nodes. The overnight peak of immune activity in sleep and the effect of cortisol through the day. Chylomicrons already ride the lacteals in the fat bite journey, so share that path.
 - **Physiology channels**: lymph flow, neutrophil and lymphocyte counts (with their daily rhythm), and inflammatory markers.
 - **Journey: follow an infection**: a splinter or a cold virus → mast cells and neutrophils → a dendritic cell carries antigen to a lymph node → a T cell is activated → B cells → plasma cells → antibodies → memory. Time-lapse from minutes to about two weeks. Add a "vaccinated" toggle for a faster second response.
-- **Needs**: a new organ for the spleen and lymph nodes (see 3.1).
+- **Needs**: ~~a new organ for the spleen and lymph nodes~~ (done, see 3.1).
 
 ### 2.2 Muscles & skeleton
 - **Draw**: the main skeleton and the big muscle groups (quadriceps, hamstrings, calves, glutes, back, arms, intercostals and the diaphragm, which is already drawn).
@@ -187,8 +187,12 @@ The layer and the "follow an infection" journey are built: see the README for wh
 
 The body has no close-up or topic yet for these. Each would need a body topic, a close-up simulation, phase text, `ORGAN_SYSTEMS` entries, and later a deep-dive page.
 
-### 3.1 Spleen & lymph nodes
-Red pulp filtering old red cells, white pulp as an immune hub, a node's cortex, paracortex and medulla. Needed for the immune system (2.1).
+### 3.1 Spleen & lymph nodes ✅ Done (on the body; deep-dive page still open)
+Built as a body topic `spleen` ("Spleen & lymph nodes"): text for the four phases at four levels, seven new glossary terms (paracortex, marginal zone, afferent lymphatics, mesenteric nodes, oral tolerance, bilirubin, S1P), `ORGAN_SYSTEMS` (immune, circulatory), a hotspot on the spleen, the spleen drawn on the body outside the immune layer (it contracts in the run either way), the "follow an infection" ride offered from its panel (`INFECTION_FOR_TOPIC`), and a close-up: the spleen and a lymph node in section (lymph flowing through at `lymphFlow`, milky with `chyle`, lymphocytes homing across the HEV at `nodeTraffic`, a dendritic cell riding in), with a magnifier on the splenic pulp (central arteriole and white pulp, open red-pulp cords, red cells squeezing through the sinus slits, an old cell eaten by a macrophage that keeps its iron). On desktop the spleen's dot first sat on the "Stomach & gut" label, so the spleen (`SPLEEN_AT`, the immune layer's too) moved up from (703, 478) to (705, 436), beside the stomach's fundus under the diaphragm, which is also closer to where it lies; its fact pin moved with it. Adding a 14th dot jammed the phone dot-spreading on landscape phones (844 × 390), so `Hotspots.spread` now also tries sideways moves in its later rounds. Still open:
+- **Deep-dive page** (`organs/spleen.html`): anatomy of the spleen, a node and the lymphatic tree; how it works: a red cell's deformability against the slit size (spherocytosis, sickle cell, malaria), lymphocyte recirculation (HEV entry, dwell time, S1P exit, fingolimod), and a germinal centre over two weeks; scenarios: splenectomy (vaccines, Howell–Jolly bodies), splenomegaly and hypersplenism, a swollen node in an infection, lymphoedema, and glandular fever with a splenic rupture risk.
+- **One node for all**: the close-up shows a generic node that turns milky after meals, as a mesenteric node would. A choice of node (neck, armpit, gut) could show what each drains.
+- **The node doesn't swell**: there is no infection state yet (see 2.1), so the close-up can't show a reactive node with germinal centres growing.
+- **Thymus, tonsils and marrow** could get topics of their own, or join this one as tabs.
 
 ### 3.2 Endocrine glands: pituitary, thyroid, adrenal glands
 These already appear in the hormone cascades but have no organ card. One "Endocrine glands" topic, or three separate ones, with a deep-dive page covering:
@@ -275,7 +279,7 @@ These span several organs and are best built as their own pages (for example `ex
 3. ~~Export utility~~ (done).
 4. ~~Mobile view of the body~~ (done).
 5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
-6. **Immune & lymphatic system on the body**: ~~the animated layer~~ (done); ~~the "follow an infection" journey~~ (done); next the spleen and lymph nodes as a new organ.
+6. ~~**Immune & lymphatic system on the body**~~: ~~the animated layer~~ (done); ~~the "follow an infection" journey~~ (done); ~~the spleen and lymph nodes as a new organ~~ (done; its deep-dive page is listed under 3.1).
 7. Muscles and bones pages, then the muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).
 9. Eyes, ears and throat pages.

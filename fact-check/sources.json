@@ -68,5 +68,7 @@
  "gray2001": {"kind": "primary", "access": "subscription", "cite": "Gray PA, Janczewski WA, Mellen N, McCrimmon DR, Feldman JL. Normal breathing requires preBötzinger complex neurokinin-1 receptor-expressing neurons. Nat Neurosci. 2001;4(9):927-930. doi:10.1038/nn0901-927"},
  "gray2010": {"kind": "primary", "access": "open", "cite": "Gray PA, Hayes JA, Ling GY, et al. Developmental origin of preBötzinger complex respiratory neurons. J Neurosci. 2010;30(44):14883-14895. doi:10.1523/JNEUROSCI.4031-10.2010"},
  "sjoding2020": {"kind": "primary", "access": "open", "cite": "Sjoding MW, Dickson RP, Iwashyna TJ, Gay SE, Valley TS. Racial bias in pulse oximetry measurement. N Engl J Med. 2020;383(25):2477-2478. doi:10.1056/NEJMc2029240"},
- "barkauskas2013": {"kind": "primary", "access": "open", "cite": "Barkauskas CE, Cronce MJ, Rackley CR, et al. Type 2 alveolar cells are stem cells in adult lung. J Clin Invest. 2013;123(7):3025-3036. doi:10.1172/JCI68782"}
+ "barkauskas2013": {"kind": "primary", "access": "open", "cite": "Barkauskas CE, Cronce MJ, Rackley CR, et al. Type 2 alveolar cells are stem cells in adult lung. J Clin Invest. 2013;123(7):3025-3036. doi:10.1172/JCI68782"},
+ "singh2021": {"kind": "primary", "cite": "Singh AK, Carroll K, McMurray JJV, et al. Daprodustat for the treatment of anemia in patients not undergoing dialysis. N Engl J Med. 2021;385(25):2313-2324. doi:10.1056/NEJMoa2113380"},
+ "wharram2005": {"kind": "primary", "cite": "Wharram BL, Goyal M, Wiggins JE, et al. Podocyte depletion causes glomerulosclerosis: diphtheria toxin-induced podocyte depletion in rats expressing human diphtheria toxin receptor transgene. J Am Soc Nephrol. 2005;16(10):2941-2952. doi:10.1681/ASN.2005010055"}
 }

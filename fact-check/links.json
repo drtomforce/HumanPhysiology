@@ -177,11 +177,26 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-5-the-small-and-large-intestines",
   "checked": "2026-11-19"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-4-microscopic-anatomy-of-the-kidney": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-20"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-5-physiology-of-urine-formation": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-20"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=the%20osteoblast%20becomes%20trapped%20within%20it": {
   "state": "ok",
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
   "checked": "2026-11-19"
+ },
+ "https://pmc.ncbi.nlm.nih.gov/articles/PMC3256323/": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-20"
  },
  "https://pubmed.ncbi.nlm.nih.gov/25668261/#:~:text=shortened%20time%20to%2080%25%20hemoglobin%20recovery": {
   "state": "ok",

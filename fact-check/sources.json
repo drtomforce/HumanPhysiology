@@ -34,7 +34,7 @@
  "campbell2018": {"kind": "review", "access": "open", "cite": "Campbell JP, Turner JE. Debunking the myth of exercise-induced immune suppression: redefining the impact of exercise on immunological health across the lifespan. Front Immunol. 2018;9:648. doi:10.3389/fimmu.2018.00648"},
  "stewart2002": {"kind": "review", "cite": "Stewart IB, McKenzie DC. The human spleen during physiological stress. Sports Med. 2002;32(6):361-369. doi:10.2165/00007256-200232060-00002"},
  "ilardo2018": {"kind": "primary", "cite": "Ilardo MA, Moltke I, Korneliussen TS, et al. Physiological and genetic adaptations to diving in sea nomads. Cell. 2018;173(3):569-580.e15. doi:10.1016/j.cell.2018.03.054"},
- "besedovsky2012": {"kind": "review", "cite": "Besedovsky L, Lange T, Born J. Sleep and immune function. Pflugers Arch. 2012;463(1):121-137. doi:10.1007/s00424-011-1044-0"},
+ "besedovsky2012": {"kind": "review", "access": "open", "cite": "Besedovsky L, Lange T, Born J. Sleep and immune function. Pflugers Arch. 2012;463(1):121-137. doi:10.1007/s00424-011-1044-0"},
  "lange2003": {"kind": "primary", "cite": "Lange T, Perras B, Fehm HL, Born J. Sleep enhances the human antibody response to hepatitis A vaccination. Psychosom Med. 2003;65(5):831-835. doi:10.1097/01.PSY.0000091382.61178.F1"},
  "prather2015": {"kind": "primary", "cite": "Prather AA, Janicki-Deverts D, Hall MH, Cohen S. Behaviorally assessed sleep and susceptibility to the common cold. Sleep. 2015;38(9):1353-1359. doi:10.5665/sleep.4968"},
  "scheiermann2012": {"kind": "primary", "cite": "Scheiermann C, Kunisaki Y, Lucas D, et al. Adrenergic nerves govern circadian leukocyte recruitment to tissues. Immunity. 2012;37(2):290-301. doi:10.1016/j.immuni.2012.05.021"},
@@ -68,5 +68,7 @@
  "gray2001": {"kind": "primary", "access": "subscription", "cite": "Gray PA, Janczewski WA, Mellen N, McCrimmon DR, Feldman JL. Normal breathing requires preBötzinger complex neurokinin-1 receptor-expressing neurons. Nat Neurosci. 2001;4(9):927-930. doi:10.1038/nn0901-927"},
  "gray2010": {"kind": "primary", "access": "open", "cite": "Gray PA, Hayes JA, Ling GY, et al. Developmental origin of preBötzinger complex respiratory neurons. J Neurosci. 2010;30(44):14883-14895. doi:10.1523/JNEUROSCI.4031-10.2010"},
  "sjoding2020": {"kind": "primary", "access": "open", "cite": "Sjoding MW, Dickson RP, Iwashyna TJ, Gay SE, Valley TS. Racial bias in pulse oximetry measurement. N Engl J Med. 2020;383(25):2477-2478. doi:10.1056/NEJMc2029240"},
- "barkauskas2013": {"kind": "primary", "access": "open", "cite": "Barkauskas CE, Cronce MJ, Rackley CR, et al. Type 2 alveolar cells are stem cells in adult lung. J Clin Invest. 2013;123(7):3025-3036. doi:10.1172/JCI68782"}
+ "barkauskas2013": {"kind": "primary", "access": "open", "cite": "Barkauskas CE, Cronce MJ, Rackley CR, et al. Type 2 alveolar cells are stem cells in adult lung. J Clin Invest. 2013;123(7):3025-3036. doi:10.1172/JCI68782"},
+ "singh2021": {"kind": "primary", "cite": "Singh AK, Carroll K, McMurray JJV, et al. Daprodustat for the treatment of anemia in patients not undergoing dialysis. N Engl J Med. 2021;385(25):2313-2324. doi:10.1056/NEJMoa2113380"},
+ "wharram2005": {"kind": "primary", "cite": "Wharram BL, Goyal M, Wiggins JE, et al. Podocyte depletion causes glomerulosclerosis: diphtheria toxin-induced podocyte depletion in rats expressing human diphtheria toxin receptor transgene. J Am Soc Nephrol. 2005;16(10):2941-2952. doi:10.1681/ASN.2005010055"}
 }

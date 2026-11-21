@@ -6,7 +6,8 @@
    Report a problem, and Fact check opens fact-check.html with a Back link to the same view.
    On fact-check.html, in light and dark: fact-check/status.js is loaded, the waffle draws one
    square per ledger row (its section counts add up to the ledger), both colour modes switch the
-   legend, the reports list fills in (or falls back to links when GitHub can't be reached; the
+   legend, hovering a square shows a tooltip that marks that square's category and goes away when
+   the pointer leaves, the reports list fills in (or falls back to links when GitHub can't be reached; the
    GitHub API is blocked here so the check doesn't depend on the network), and nothing scrolls
    sideways at 390 px. It serves the repository on a local port itself. Needs the playwright package. */
 import { createServer } from "node:http";
@@ -103,13 +104,20 @@ for (const [tag, opts] of [
   if (sq2 !== r.n) fail(tag, `outcome mode drew ${sq2} squares`);
   await page.locator('#modeSeg button[data-mode="src"]').click();
 
-  /* tooltip on a section */
+  /* tooltip on a section: hover the first square of the first waffle */
   if (!opts.hasTouch){
-    const fig = page.locator("#pages .sec canvas").first(), b = await fig.boundingBox();
+    const fig = page.locator("#pages .sec canvas").first();
+    await fig.scrollIntoViewIfNeeded();
+    /* the page hides the tooltip on scroll, and that event lands a frame late, so let it settle first */
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const b = await fig.boundingBox();
     await page.mouse.move(b.x + 2, b.y + 2);
-    const tip = await page.evaluate(() => ({ on: document.querySelector("#tip").classList.contains("on"), text: document.querySelector("#tip").textContent }));
+    const tip = await page.evaluate(() => { const t = document.querySelector("#tip");
+      return { on: t.classList.contains("on"), hot: t.querySelectorAll("tr.hot").length, text: t.textContent }; });
     if (!tip.on || !/·/.test(tip.text)) fail(tag, `no tooltip on hover: ${tip.text}`);
+    else if (!tip.hot) fail(tag, `tooltip doesn't mark the hovered square's category: ${tip.text}`);
     await page.mouse.move(2, 2);
+    if (await page.evaluate(() => document.querySelector("#tip").classList.contains("on"))) fail(tag, "tooltip stays up after the pointer leaves");
   }
 
   /* the reports list falls back when GitHub can't be reached */

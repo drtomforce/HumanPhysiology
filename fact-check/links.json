@@ -17,6 +17,12 @@
   "final": "https://cvphysiology.com/blood-flow/bf001",
   "checked": "2026-11-19"
  },
+ "https://github.com/drtomforce/HumanPhysiology/blob/726350dbb484297df94b075dc2436c34846bd502/FACTUAL_CHECK.md#L268": {
+  "state": "broken",
+  "code": 404,
+  "final": "https://github.com/drtomforce/HumanPhysiology/blob/726350dbb484297df94b075dc2436c34846bd502/FACTUAL_CHECK.md",
+  "checked": "2026-11-21"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-2-skeletal-muscle": {
   "state": "ok",
   "code": 200,
@@ -193,6 +199,11 @@
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-6-accessory-organs-in-digestion-the-liver-pancreas-and-gallbladder": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-21"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-4-microscopic-anatomy-of-the-kidney": {
   "state": "ok",
   "code": 200,
@@ -252,5 +263,10 @@
   "code": 200,
   "final": "https://www.frontiersin.org/journals/immunology/articles/10.3389/fimmu.2018.00648/full",
   "checked": "2026-11-19"
+ },
+ "https://www.jci.org/articles/view/106016": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-21"
  }
 }

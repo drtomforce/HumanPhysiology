@@ -411,6 +411,7 @@ const SECTION_LABELS = {
   "organ-content:rhythms": "Rhythms", "organ-content:stages": "Sleep stages", "organ-content:strokes": "Strokes",
   "organ-content:dx": "Diagnosis", "organ-content:hp": "H. pylori", "organ-content:msgs": "Messages",
   "organ-content:nacOpts": "Paracetamol antidote", "organ-content:ab": "Acid–base", "organ-content:adh": "ADH",
+  "organ-content:cycle": "Cross-bridge cycle", "organ-content:fibres": "Fibre types", "organ-content:adapt": "Training table",
 };
 const sectionOf = key => {
   const i = key.indexOf(":"), block = key.slice(0, i), first = key.slice(i + 1).split(".")[0];

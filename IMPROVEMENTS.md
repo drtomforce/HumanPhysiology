@@ -8,13 +8,13 @@ The README describes what already exists. This file only lists what doesn't exis
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 7: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas | 7 existing organs (including the spleen & lymph nodes) + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 8: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles | 6 existing organs (bones, skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic | 3: muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 7: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection | One per new system, plus cross-system journeys |
 
 ## Next up
 
-Both items here are done. The liver and pancreas pages are built, the immune & lymphatic system animates on the body with its "follow an infection" journey, and the spleen & lymph nodes are now an organ on the body ([3.1](#31-spleen--lymph-nodes)). The next step is the muscles and bones pages (see [Suggested order](#suggested-order)).
+Both items here are done. The liver, pancreas and muscles pages are built, the immune & lymphatic system animates on the body with its "follow an infection" journey, and the spleen & lymph nodes are now an organ on the body ([3.1](#31-spleen--lymph-nodes)). The next step is the bones page ([1.6](#16-bones-organsboneshtml)), then the muscles & skeleton system on the body (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -96,7 +96,16 @@ Built as planned below; see the README for what it covers. What changed from the
 - **Exocrine juice**: bicarbonate from duct cells (CFTR) and enzymes from acini. Secretin and CCK control, and what goes wrong in cystic fibrosis.
 - **Scenarios**: type 1 diabetes and DKA, type 2 diabetes, hypoglycaemia from too much insulin, acute pancreatitis, cystic fibrosis, a GLP-1 agonist.
 
-### 1.5 Muscles (`organs/muscles.html`)
+### 1.5 Muscles (`organs/muscles.html`) ✅ Done
+Built as planned below; see the README for what it covers. What changed from the plan, and what is still open for this page:
+- **Cross-bridges**: a four-state kinetic scheme (D → A1 → A2 → R) driven by Ca²⁺ on troponin and by ATP, without strain-dependent rates, so the force–velocity curve is Hill's equation drawn beside it rather than a result of the same model. A Huxley (1957) style strain-dependent model would let the two sections share one mechanism, and would also give the force transient after a quick length step.
+- **Fatigue inside the fibre** is not modelled: force does not fall with inorganic phosphate, H⁺ or reduced SR Ca²⁺ release, so a sprint's power fall comes only from the energy-supply model, and the motor-unit pool only tires through its junctions (myasthenia). The energy-systems chart is its own three-minute model and does not feed the run model.
+- **The run** uses rules rather than a full physiology: a carbohydrate share that rises with intensity, a fat-oxidation ceiling, a liver that releases 0.3–0.45 g/min until ~90 g is gone, lactate from the lactate threshold, cardiac drift of 0.1 bpm/min, and exhaustion when a fixed work capacity above the critical speed is spent. There is no heat, sweat or dehydration, no central fatigue, and the page's run is not the body's run.
+- **Training, bed rest and soreness** are fixed rules (12 weeks of endurance or strength training; bed rest losing ~0.5% of muscle a day at first; soreness and CK curves scaled by the eccentric load), not models of protein turnover. There is no ageing (sarcopenia), no feeding or protein effect on muscle building, and no muscle protein balance through the day.
+- **Malignant hyperthermia** in the readouts is a timeline rule (temperature, end-tidal CO₂, K⁺ after 20 minutes, dantrolene at 10 minutes), not driven by the coupling model's ATP use.
+- **Not yet built**: the stretch reflex and spindle as an interactive circuit (shared with the brain page), EMG, smooth and cardiac muscle side by side with skeletal muscle, and passing a condition across to other pages (bed rest → bones, myasthenia → lungs).
+- **More scenarios**: Duchenne muscular dystrophy, statin myopathy, McArdle disease, hypokalaemic periodic paralysis, Lambert–Eaton syndrome, ALS, sarcopenia and a hamstring strain.
+- **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8b); the PhD text names its key sources.
 - **Anatomy**: muscle → fascicle → fibre → myofibril → sarcomere (Z-lines, A and I bands, actin, myosin, titin), the neuromuscular junction, and T-tubules with the sarcoplasmic reticulum.
 - **Contraction**: the cross-bridge cycle step by step (ATP, ADP + Pᵢ, the power stroke), excitation–contraction coupling (DHPR → RyR1 → Ca²⁺ → troponin). Length–tension and force–velocity curves you can probe.
 - **Recruitment and fibre types**: motor units recruited in order of size (Henneman), rate coding from twitch to tetanus, and type I, IIa and IIx fibres. Energy systems (phosphocreatine, glycolysis, oxidative) over the course of the evening run.
@@ -280,7 +289,7 @@ These span several organs and are best built as their own pages (for example `ex
 4. ~~Mobile view of the body~~ (done).
 5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
 6. ~~**Immune & lymphatic system on the body**~~: ~~the animated layer~~ (done); ~~the "follow an infection" journey~~ (done); ~~the spleen and lymph nodes as a new organ~~ (done; its deep-dive page is listed under 3.1).
-7. Muscles and bones pages, then the muscles & skeleton system on the body.
+7. ~~Muscles page~~ (done). Bones page, then the muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).
 9. Eyes, ears and throat pages.
 10. Endocrine glands, and blood & vessels as new organs with pages.

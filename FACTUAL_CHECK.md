@@ -275,6 +275,8 @@ One canonical value per shared quantity. Every page uses these values or explain
 | Immune response timing | neutrophils at a wound within hours; dendritic cells in the draining node in ~1–2 days; primary IgM ~day 5–7, IgG peak ~2 weeks; contraction of the clone by 90–95% | secondary response within 1–3 days, 10–100× more antibody, mostly IgG; flu incubation 1–4 days (~2), shedding 5–7 days in adults | body (infection ride) | `janeway10`; `amanna2007`; `krammer2018`, `carrat2008` (flu) |
 | Cerebral blood flow | ~750 mL/min (~15% of CO), autoregulated | | body, brain | `guyton14` ch. 62 |
 | Blood gases at altitude | 2,400 m (cabin): PIO₂ ~110, PaO₂ ~55–60 mmHg; 4,000 m: PaO₂ ~45, PaCO₂ ~32 | Everest summit, acclimatised: PB ~253, PaO₂ ~25–30, PaCO₂ ~7–13 mmHg, SaO₂ ~70%, pH ~7.5–7.7 | lungs | `west11` ch. 9; `west1983`; `grocott2009` |
+| Skeletal muscle blood flow and O₂ use | ~1 L/min (~20% of CO), ~60 mL O₂/min, a–v O₂ ~60 mL/L; ~0.8 L/min and ~45 mL/min asleep | ~11 L/min and ~1.7 L O₂/min in the run (a–v O₂ ~150 mL/L, ~70% of CO) | muscles | `guyton14` ch. 21, 85; `rowell1993` |
+| Muscle glycogen | ~420 g (~15 g/kg × 28 kg of muscle; the body text says 400–500 g); ~25% more when endurance-trained, ~60% more after carbohydrate loading | the 1-h run at ~67% VO₂max uses ~a third of the leg muscles’ glycogen; at marathon pace it runs out after ~2.5 h without carbohydrate | body, muscles | `guyton14` ch. 85 |
 
 The Source column uses ids from [`fact-check/sources.json`](#sources). Fill in each row the first time the backlog reaches that quantity. Add rows as new pages bring new shared quantities (muscle blood flow, skin temperature, bone turnover and so on).
 
@@ -308,6 +310,7 @@ The backlog, in order of exposure: the body view is what every reader sees first
 | 6 | Stomach & gut | 1342 | 0% | | |
 | 7 | Liver | 934 | 0% | | |
 | 8 | Pancreas | 910 | 0% | | |
+| 8b | Muscles (new on 2026-11-21: `organs/muscles.html`, its glossary and its models `fn:capacity`, `fn:ecStep`, `fn:muStep`, `fn:run`, `fn:energy`, `fn:doms`, `fn:mhAt`, `fn:dayAt`) | 990 | 0%: not yet checked. The nightly build that wrote it cited its key sources in the PhD text (Huxley & Niedergerke 1954, Huxley & Hanson 1954, Lymn & Taylor 1971, Gordon et al. 1966, Walker & Schrodt 1974, Hill 1938, Henneman 1957, Fuglevand et al. 1993, Bergström et al. 1967, Coyle et al. 1986, Holloszy 1967, MacLennan et al. 1990, Patrick & Lindstrom 1973) but marked no rows; drawing and UI helpers are on the ignore list | | |
 | 9 | Glossaries (included in the counts above) | | body, heart, lungs: 100% (2026-11-19); kidneys: the 23 filtration terms (2026-11-20); other organ pages: 0% | 2026-11-20 | |
 | 10a ✅ | Shared organ engine (`engine`: phase vitals, schedule, beat and breath loop) | 6 | 100% (the loop, `delta()` and the UI helpers went to the ignore list on 2026-11-19) | 2026-11-19 | |
 | 10 | `README.md` (not in the ledger; check by hand) | | 0% | | |

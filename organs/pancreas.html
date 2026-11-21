@@ -781,11 +781,11 @@ canvas.trace{ display:block; width:100%; }
     "ms": "Your blood sugar stays between about 4 and 8 mmol/L almost all the time, even after a big sugary drink. Insulin pulls sugar into your cells and tells your liver to stop making it. Glucagon does the opposite when sugar runs low. Try a glucose drink test, then break the system in different ways.",
     "hs": "In a glucose tolerance test you drink 75 g of glucose and blood sugar is measured for two hours. In a healthy person it peaks at about 7–8 mmol/L and is back below 7.8 by two hours. In diabetes it stays high, either because the β-cells make too little insulin (type 1) or because the body responds poorly to insulin and the β-cells can’t make up for it (type 2).",
     "college": "One model runs every test: an extended Bergman minimal model with gut absorption, incretins, β-cell secretion (from the β-cell section’s model), hepatic insulin extraction, remote insulin action, glucagon, hepatic glucose output, renal glucose spill above ~10 mmol/L and ketones, after a 24-hour run-in. Change insulin sensitivity and β-cell function, add injected insulin, or switch to the same glucose by vein (no incretins) or a hyperinsulinaemic–euglycaemic clamp.",
-    "phd": "Calibration: fasting glucose 4.9 mmol/L and insulin 8 µU/mL, OGTT peak ~7.6 mmol/L at 30 min, 2-h glucose 6.0, insulin peak ~70 µU/mL; clamp M ≈ 9 mg/kg/min at ~110 µU/mL. Insulin sensitivity also scales hepatic suppression (as SI^0.8). The incretin gain falls with β-cell function, a stand-in for the reduced incretin effect in type 2 diabetes. Ketoacid titrates bicarbonate 1.8:1 (acetoacetate and lactate unmeasured), and Winter’s formula sets PaCO₂."
+    "phd": "Calibration: fasting glucose 4.9 mmol/L and insulin 8 µU/mL, OGTT glucose ~7.6 mmol/L at 30 min (peak ~7.8 at ~35 min), 2-h glucose 6.0, insulin peak ~90 µU/mL at ~45 min; clamp M ≈ 9 mg/kg/min at ~110 µU/mL. Insulin sensitivity also scales hepatic suppression (as SI^0.8). The incretin gain falls with β-cell function, a stand-in for the reduced incretin effect in type 2 diabetes. Ketoacid titrates bicarbonate 1.8:1 (acetoacetate and lactate unmeasured), and Winter’s formula sets PaCO₂."
    },
    "switchNote": {
     "ms": "Insulin and glucagon work like a see-saw. When sugar is high, insulin goes up and glucagon goes down. When sugar is low, it flips. Insulin made inside the islet also helps switch glucagon off, which is why glucagon stays high after a meal when β-cells are gone.",
-    "college": "The α-cell is restrained by insulin, zinc and GABA from neighbouring β-cells and by somatostatin from δ-cells. Without β-cells (type 1 diabetes) glucagon is not suppressed after meals and paradoxically fails to rise in hypoglycaemia, because the fall in intra-islet insulin is the signal that switches it on. The table compares this test with the WHO criteria."
+    "college": "The α-cell is restrained by insulin, zinc and GABA from neighbouring β-cells and by somatostatin from δ-cells. Without β-cells (type 1 diabetes) glucagon is not suppressed after meals and paradoxically fails to rise in hypoglycaemia, because the fall in intra-islet insulin is a key signal that switches it on. The table compares this test with the WHO criteria."
    },
    "hint": {
     "ms": "Choose a test and change the sliders to see how the pancreas copes."
@@ -1353,7 +1353,7 @@ canvas.trace{ display:block; width:100%; }
    },
    "ms": "A gate that lets chloride (a part of salt) out of the duct cell. Water follows. When it is broken, as in cystic fibrosis, the juice becomes thick and sticky.",
    "hs": "CFTR is a chloride channel opened by secretin’s signal. Chloride and bicarbonate leave the cell through it, and water follows by osmosis. In cystic fibrosis CFTR doesn’t work, so too little water and bicarbonate are made, and the thick juice blocks the ducts.",
-   "college": "An ATP-gated anion channel opened by PKA phosphorylation (secretin → cAMP). It secretes Cl⁻ that the SLC26A6 exchanger swaps back for HCO₃⁻, and conducts HCO₃⁻ itself. About 85% of people with cystic fibrosis are pancreatic insufficient from birth.",
+   "college": "An ATP-gated anion channel opened by PKA phosphorylation (secretin → cAMP). It secretes Cl⁻ that the SLC26A6 exchanger swaps back for HCO₃⁻, and conducts HCO₃⁻ itself. About 85% of people with cystic fibrosis are pancreatic insufficient, most of them from birth or within the first year.",
    "phd": "CFTR modulators (elexacaftor–tezacaftor–ivacaftor) restore enough function in F508del carriers that some young children regain exocrine function and faecal elastase rises. Pancreatic phenotype tracks residual CFTR function more closely than lung disease does."
   },
   "ae": {
@@ -1512,13 +1512,13 @@ canvas.trace{ display:block; width:100%; }
   },
   {
    "name": "Amylase and lipase",
-   "ms": "These two are released already switched on: they can’t hurt the pancreas.",
+   "ms": "These two are released already switched on: they don’t digest the gland’s own cells.",
    "college": "Secreted active; lipase needs colipase and bile salts, and is destroyed below pH ~4."
   },
   {
    "name": "SPINK1, the safety catch",
    "ms": "A blocker inside the pancreas that stops any trypsin switched on by mistake.",
-   "college": "Serine protease inhibitor Kazal type 1 inhibits ~20% of potential trypsin activity; CTRC degrades the rest."
+   "college": "Serine protease inhibitor Kazal type 1 inhibits ~20% of potential trypsin activity; CTRC and trypsin’s own autolysis clear the rest."
   },
   {
    "id": "panc",
@@ -1550,7 +1550,7 @@ canvas.trace{ display:block; width:100%; }
    ],
    [
     "HOMA-IR",
-    "~1",
+    "~1–2",
     "rises with resistance",
     "often > 3"
    ]
@@ -4098,7 +4098,7 @@ function glucose(p, opts = {}){
     const HGO = HGOp - Ra * (oral ? .35 : .15) * clamp(Ih / 40);         /* minus first-pass uptake of the load */
     /* uptake: brain (insulin-independent), other tissues, insulin-driven muscle and fat; the kidney spills above ~10 mmol/L */
     const U = 1.0 * G / (G + 1) + .114 * G + si * .015 * Ir * G;
-    const ren = Math.max(0, 22.5 * G - 375) / W;
+    const Fg = 22.5 * G, ren = (Fg <= 235 ? 0 : Fg >= 515 ? Fg - 375 : (Fg - 235) ** 2 / 560) / W;   /* filtered load (mg/min) against a splayed Tm of 375, as on the kidneys page: spill from ~10.4 mmol/L */
     /* the clamp: the operator adjusts a glucose drip to hold 5 mmol/L */
     const gir = test === "clamp" && t > 0 ? Math.max(0, U + ren - HGO + 1.5 * (5 - G)) : 0;
     G = Math.max(.8, G + (HGO + Ra + gir - U - ren) * W / 180 / VG * DT);

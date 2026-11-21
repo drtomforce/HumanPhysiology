@@ -83,6 +83,8 @@
  "coyle1986": {"kind": "primary", "access": "subscription", "cite": "Coyle EF, Coggan AR, Hemmert MK, Ivy JL. Muscle glycogen utilization during prolonged strenuous exercise when fed carbohydrate. J Appl Physiol. 1986;61(1):165-172."},
  "jeukendrup2004": {"kind": "review", "access": "subscription", "cite": "Jeukendrup AE. Carbohydrate intake during exercise and performance. Nutrition. 2004;20(7-8):669-677."},
  "schwellnus2009": {"kind": "review", "access": "subscription", "cite": "Schwellnus MP. Cause of exercise associated muscle cramps (EAMC) — altered neuromuscular control, dehydration or electrolyte depletion? Br J Sports Med. 2009;43(6):401-408."},
+ "button2012": {"kind": "primary", "access": "subscription", "cite": "Button B, Cai LH, Ehre C, et al. A periciliary brush promotes the lung health by separating the mucus layer from airway epithelia. Science. 2012;337(6097):937-941. doi:10.1126/science.1223012"},
+ "andersen1985": {"kind": "primary", "access": "open", "cite": "Andersen P, Saltin B. Maximal perfusion of skeletal muscle in man. J Physiol. 1985;366:233-249. doi:10.1113/jphysiol.1985.sp015794"},
  "saltin2007": {"kind": "review", "access": "open", "cite": "Saltin B. Exercise hyperaemia: magnitude and aspects on regulation in humans. J Physiol. 2007;583(Pt 3):819-823."},
  "gandevia2001": {"kind": "review", "access": "subscription", "cite": "Gandevia SC. Spinal and supraspinal factors in human muscle fatigue. Physiol Rev. 2001;81(4):1725-1789."},
  "dempsey2006": {"kind": "review", "access": "subscription", "cite": "Dempsey JA, Romer L, Rodman J, Miller J, Smith C. Consequences of exercise-induced respiratory muscle work. Respir Physiol Neurobiol. 2006;151(2-3):242-250."},

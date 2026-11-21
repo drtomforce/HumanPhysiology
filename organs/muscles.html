@@ -739,8 +739,8 @@ canvas.trace{ display:block; width:100%; }
    "intro": {
     "ms": "A nerve signal runs over the muscle fibre and dives into it through tiny tubes. That makes a store inside the fibre release calcium. Calcium is the ‘go’ signal: it uncovers grip points on the actin threads, and little myosin heads grab them and pull, again and again, using ATP for each pull. When the signals stop, pumps put the calcium away and the muscle relaxes.",
     "hs": "The action potential runs down the T-tubules. Voltage sensors there (DHPRs) open calcium channels (RyR1) in the sarcoplasmic reticulum. Calcium binds troponin, which shifts tropomyosin off the myosin-binding sites on actin. Myosin heads then bind, pull (the power stroke), and let go when a new ATP binds. SERCA pumps use ATP to return calcium to the store. Without ATP the heads can’t let go: that is rigor mortis.",
-    "college": "In skeletal muscle, DHPR (Cav1.1) is a voltage sensor mechanically coupled to RyR1, so Ca²⁺ entry from outside is not needed. Free Ca²⁺ rises from ~0.05 to ~1–2 µM within milliseconds; troponin C’s regulatory sites switch the thin filament on (pCa₅₀ ≈ 6). The cross-bridge cycle (Lymn & Taylor 1971) runs below: binding, Pi release and the power stroke, ADP release, then ATP binding and detachment. Below the cycle, the length–tension and force–velocity relations follow from the same filaments.",
-    "phd": "The model: Ca²⁺ released at each action potential and pumped back by SERCA (Hill 2, K 0.35 µM); troponin activation with Hill 3, K 0.8 µM; a four-state scheme D → A1 → A2 → R → D with rates 40·θ, 30, 50 and 150/s (ATP-dependent), played 20× slower in the figure. Force is the strongly bound share, scaled to a fused tetanus. Charge movement (Schneider & Chandler 1973) and the tetrad arrangement of DHPRs over alternate RyR1s (Block et al. 1988) underpin the mechanical coupling."
+    "college": "In skeletal muscle, DHPR (Cav1.1) is a voltage sensor mechanically coupled to RyR1, so Ca²⁺ entry from outside is not needed. Free Ca²⁺ rises from ~0.05 µM to a brief peak of ~10–20 µM in a fast fibre (~10 µM in a slow one) within milliseconds; troponin C’s regulatory sites switch the thin filament on (pCa₅₀ ≈ 6). The cross-bridge cycle (Lymn & Taylor 1971) runs below: binding, Pi release and the power stroke, ADP release, then ATP binding and detachment. Below the cycle, the length–tension and force–velocity relations follow from the same filaments.",
+    "phd": "The model: Ca²⁺ released at each action potential and pumped back by SERCA (Hill 2, K 0.35 µM); troponin activation with Hill 3, K 0.8 µM; a four-state scheme D → A1 → A2 → R → D with rates 40·θ, 30, 50 and 150/s (ATP-dependent), played 20× slower in the figure; its Ca²⁺ is a smoothed average that peaks near 1.5 µM, below the brief peaks measured with fast dyes (Baylor & Hollingworth 2003). Force is the strongly bound share, scaled to a fused tetanus. Charge movement (Schneider & Chandler 1973) and the tetrad arrangement of DHPRs over alternate RyR1s (Block et al. 1988) underpin the mechanical coupling."
    },
    "hint": {
     "ms": "Tap or hover over a part: the T-tubule, the calcium store, its channels and pumps, troponin, tropomyosin or a myosin head."
@@ -754,7 +754,7 @@ canvas.trace{ display:block; width:100%; }
     "ms": "Each nerve cell in your spinal cord controls its own group of muscle fibres: a motor unit. To lift a pencil, your brain switches on just a few small units. To lift something heavy, it adds bigger and bigger ones and makes them all fire faster. Slide the effort and watch them join in.",
     "hs": "A motor unit is one motor neuron and all the fibres it supplies, from a few in an eye muscle to over a thousand in a thigh muscle. Units are recruited in order of size: small, slow, tireless units first, large, fast, fatiguing ones last (Henneman’s size principle). Force rises both by recruiting more units and by firing each one faster (rate coding), so its twitches merge into a smooth tetanus.",
     "college": "The pool below has 120 units whose recruitment thresholds span 30-fold and twitch forces 100-fold, with contraction times from 90 ms (slow) to 30 ms (fast), all recruited by 80% of maximal effort, then firing faster up to 30–50 Hz (after Fuglevand et al. 1993). Each impulse must also cross the neuromuscular junction: acetylcholine opens receptors on the end plate, and the end-plate potential is normally 3–4 times what is needed to fire the fibre.",
-    "phd": "Units are typed by fibre: type I by ~45% of the force, IIa ~37%, IIx ~18%, matched to vastus lateralis fibre areas. Each junction has a safety factor of 3.5 × receptor share × release share (× 1.5 on neostigmine), spread ±20% between junctions; transmitter ready for release runs down by 0.3% per impulse and refills with τ ≈ 5 s, so firing fails when the safety factor nears 1, as in myasthenia gravis, where anti-AChR antibodies cut receptor numbers (Patrick & Lindstrom 1973; Drachman 1994)."
+    "phd": "Units are typed by fibre: type I by ~46% of the force, IIa ~34%, IIx ~20%, close to vastus lateralis fibre areas (~50 : 35 : 15), with type II fibres a little stronger per area. Each junction has a safety factor of 3.5 × receptor share × release share (× 1.5 on neostigmine), spread ±20% between junctions; transmitter ready for release runs down by 0.3% per impulse and refills with τ ≈ 5 s, so firing fails when the safety factor nears 1, as in myasthenia gravis, where anti-AChR antibodies cut receptor numbers (Patrick & Lindstrom 1973; Drachman 1994)."
    },
    "tetNote": {
     "ms": "At low rates each twitch is separate. Faster, they pile up. Slow units fuse into a smooth pull at about 20–30 a second; fast units need 60 or more.",
@@ -772,7 +772,7 @@ canvas.trace{ display:block; width:100%; }
     "ms": "Muscles only store enough ATP for a couple of seconds, so they keep remaking it. Fast systems give a quick burst; slow systems that use oxygen keep you going for hours. On a long run your muscles burn their stored sugar (glycogen) and fat. If the glycogen runs out, your legs feel like lead: runners call it hitting the wall.",
     "hs": "ATP is remade three ways: phosphocreatine (instant, lasts ~10 s of sprinting), glycolysis (fast, makes lactate) and oxidation in mitochondria (slow to start, lasts for hours). The faster you run, the more carbohydrate you burn compared with fat. Leg glycogen lasts about 2–3 hours at marathon pace; drinking carbohydrate and carbohydrate loading make it last longer. Training adds mitochondria and capillaries.",
     "college": "The run model works minute by minute: O₂ cost from the ACSM running equation, VO₂max 43 mL/kg/min (untrained), a carbohydrate share that rises with intensity, fat oxidation capped near 0.5–0.7 g/min, blood glucose from the liver and drinks, and the rest from leg glycogen. Lactate starts rising at the lactate threshold (~60% VO₂max untrained, ~72% trained) and runs away above the critical speed. Change the pace, the distance, the drinks and the training.",
-    "phd": "Calibration: 7.5 km/h ≈ 2.0 L/min (67% VO₂max), HR ~150, ~36% fat, leg glycogen down ~32% in an hour; a trained runner at 10.5 km/h (78% VO₂max) without carbohydrate hits the wall near 28 km, and finishes with 60 g/h and loading (Bergström et al. 1967; Coyle et al. 1986; Jeukendrup 2004). Hepatic output is 0.3–0.45 g/min until ~90 g of liver glycogen is gone, then gluconeogenesis only. PCr kinetics: on-transient τ ≈ 30 s untrained (≈ 22 s trained)."
+    "phd": "Calibration: 7.5 km/h ≈ 2.0 L/min (67% VO₂max), HR ~150, ~36% fat, leg glycogen down ~32% in an hour; a trained runner at 10.5 km/h (78% VO₂max) without carbohydrate hits the wall near 28 km, and finishes with 60 g/h and loading (Bergström et al. 1967; Coyle et al. 1986; Jeukendrup 2004). Hepatic output is 0.3–0.45 g/min until ~90 g of liver glycogen is gone, then gluconeogenesis only. PCr kinetics: on-transient τ ≈ 30 s untrained (≈ 18 s trained)."
    },
    "domsNote": {
     "ms": "Soreness peaks a day or two after a run, especially an unaccustomed downhill one, then fades. The next time it is much milder.",
@@ -1779,7 +1779,7 @@ canvas.trace{ display:block; width:100%; }
   "reproductive": {
    "ms": "Hormones made by the ovaries and testes affect muscles. Testosterone helps muscles grow bigger, which is one reason men and women differ in muscle size on average.",
    "hs": "Testosterone increases muscle protein synthesis and the number of nuclei in fibres. Oestrogen helps muscle repair and its sensitivity to insulin. Pregnancy and childbirth depend on muscles too: the uterus is smooth muscle, and the pelvic floor is skeletal muscle.",
-   "college": "Men have on average ~40% more muscle mass than women, mostly in the upper body, largely from testosterone. Muscle loss after menopause is linked to falling oestrogen. The pelvic floor muscles (levator ani) support the pelvic organs and are stretched or injured in vaginal birth.",
+   "college": "Men have on average ~55% more skeletal muscle than women (about 33 vs 21 kg, or 38% vs 31% of body mass), with the gap largest in the upper body, largely from testosterone. Muscle loss after menopause is linked to falling oestrogen. The pelvic floor muscles (levator ani) support the pelvic organs and are stretched or injured in vaginal birth.",
    "phd": "Androgens act through the androgen receptor in muscle fibres and satellite cells, and supraphysiological doses raise strength even without training (Bhasin et al. 1996). Uterine smooth muscle uses oxytocin receptors and gap junctions (connexin 43) that rise at term."
   }
  },
@@ -1820,7 +1820,7 @@ canvas.trace{ display:block; width:100%; }
    },
    "ecCramp": {
     "ms": "A cramp holds the muscle short, on the crowded side of the length–tension curve.",
-    "college": "Cramps start at short lengths, on the ascending limb, where spindle unloading and tendon-organ silence favour runaway motor neuron firing."
+    "college": "Cramps start at short lengths, on the ascending limb, where tendon-organ inhibition is weakest; fatigue adds to this by raising spindle drive and lowering tendon-organ inhibition, so motor neurons can fire on their own (the altered neuromuscular control theory)."
    },
    "ecFibre": {
     "ms": "Training or bed rest has changed the fibre mix, so the whole muscle’s speed curve has shifted.",
@@ -4417,7 +4417,18 @@ function mhAt(p, min){
 }
 
 /* ---------- the day: glycogen, lactate, muscle O₂ use and blood flow at the body's hour ---------- */
-const RUN_AT = 17;
+const RUN_AT = 17, DINNER_AT = 19;                                      /* the evening meal starts at 19:00 (the engine's SCHEDULE) */
+/* refilling the run's glycogen deficit: slow while fasting (~1–2 mmol/kg/h, mostly from lactate),
+   fast once carbohydrate is eaten (~5 mmol/kg/h at first, slowing as the stores fill), but never above
+   ~8 mmol glucosyl/kg/h in the working muscle (~18 g/h): after the default run it is back by ~24 h */
+const REFILL_FASTING = 20, REFILL_FED = 6;                              /* time constants, h */
+const REFILL_MAX = 8 * .162 * LEG_KG;                                  /* g/h (162 g per mol of glucosyl units) */
+/* deficit D (g) after h hours refilling at D/τ, capped at REFILL_MAX: linear while capped, then exponential */
+function refill(D, h, tau){
+  const tCap = Math.max(0, (D - REFILL_MAX * tau) / REFILL_MAX);
+  if (h <= tCap) return D - REFILL_MAX * h;
+  return Math.min(D, REFILL_MAX * tau) * Math.exp(-(h - tCap) / tau);
+}
 const PHASE_M = { sleep: { vo2: 45, av: 55 }, rest: { vo2: 60, av: 60 }, meal: { vo2: 55, av: 60 }, exercise: { vo2: 0, av: 150 } };
 function dayAt(R, hour, phase){
   const m = (hour - RUN_AT) * 60, end = R.n - 1;
@@ -4425,7 +4436,8 @@ function dayAt(R, hour, phase){
   if (m >= 0 && m <= end) left = R.gly0 - (R.leg0 - R.left[Math.round(m)] / 100 * R.leg0);
   else {
     const since = m > end ? (m - end) / 60 : (hour + 24 - RUN_AT) * 1 - end / 60;   /* hours since the run ended */
-    const used = R.used * (since < 2 ? Math.exp(-since / 30) : Math.exp(-2 / 30) * Math.exp(-(since - 2) / 9));
+    const toMeal = Math.max(0, DINNER_AT - RUN_AT - end / 60);                    /* hours from the end of the run to dinner */
+    const used = refill(refill(R.used, Math.min(since, toMeal), REFILL_FASTING), Math.max(0, since - toMeal), REFILL_FED);
     left = R.gly0 - used;
   }
   const running = m >= 0 && m <= end, i = running ? Math.round(m) : 0;
@@ -5144,7 +5156,7 @@ function renderAll(){
   const am = [];
   if (P.atp < 5) am.push(msg("warn", { ms: "Locked stiff: rigor", college: "Rigor: no ATP to release the cross-bridges" }, { ms: "Without ATP the myosin heads stay stuck to actin, so the muscle can’t relax or be stretched. After death this is rigor mortis.", college: "Rigor mortis starts 2–6 h after death as ATP runs out, peaks at about 12 h and passes off over 1–3 days as the proteins break down." }));
   if (P.mh && !P.dan) am.push(msg("warn", { ms: "Malignant hyperthermia", college: "Malignant hyperthermia crisis" }, { ms: "The muscles are stuck working flat out, so the body overheats fast. It is an emergency in the operating theatre.", college: "Uncontrolled RyR1 Ca²⁺ release under a volatile anaesthetic or suxamethonium: rigidity, rising end-tidal CO₂, tachycardia, then heat, hyperkalaemia and rhabdomyolysis." }));
-  if (P.cramp && !V.stretch) am.push(msg("warn", { ms: "A cramp", college: "Muscle cramp" }, { ms: "Part of the muscle has squeezed on its own and won’t let go. Stretching it gently is the quickest fix.", college: "Involuntary, painful, high-frequency discharge of motor units, starting in the nerve endings rather than the muscle. Stretch stops it within seconds, through tendon-organ and reciprocal inhibition." }));
+  if (P.cramp && !V.stretch) am.push(msg("warn", { ms: "A cramp", college: "Muscle cramp" }, { ms: "Part of the muscle has squeezed on its own and won’t let go. Stretching it gently is the quickest fix.", college: "Involuntary, painful, high-frequency discharge of motor units, starting in the nerves (the motor neurons or their terminals) rather than in the muscle. Stretch stops it within seconds, through tendon-organ and reciprocal inhibition." }));
   putHTML($("#anatMsg"), am.join(""));
   /* contraction */
   const ec = ecNow();

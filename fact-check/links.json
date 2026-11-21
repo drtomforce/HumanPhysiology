@@ -221,6 +221,21 @@
   "final": "https://pubmed.ncbi.nlm.nih.gov/25668261/",
   "checked": "2026-11-19"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:10904038%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-21"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:12813151%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-21"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:5773093%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-21"
+ },
  "https://www.frontiersin.org/articles/10.3389/fimmu.2018.00648/full": {
   "state": "ok",
   "code": 200,

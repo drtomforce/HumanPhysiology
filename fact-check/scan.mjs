@@ -37,7 +37,8 @@
                                                   gets "via": "lookup" only if every source was looked up
          [--recheck]                              … as the result of a random re-check (needs --key): keeps the
                                                   original "checked" date, sets "rechecked" and logs the outcome
-                                                  to fact-check/rechecks.jsonl
+                                                  to fact-check/rechecks.jsonl; once per key per day. Fixed in the
+                                                  text first? --update, then --recheck --mark fixed
      node fact-check/scan.mjs --sample <n>        pick n approved items (ok, fixed, n/a) at random for a re-check
          [--seed <s>] [--min-age <days>]          seed defaults to today's date; skips items (re)checked in the
                                                   last 60 days
@@ -285,9 +286,13 @@ function cite(row, keepOld){
 const prefixed = (key, row) => keyed(key) && rowOk(row);
 const days = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5;
 const recheckLog = [], pool = [], verifyLog = [], vpool = [];
+const recheckedToday = new Set();   /* "<page> <key>" already in rechecks.jsonl with today's date */
 let verified = 0;
 
 const today = new Date().toISOString().slice(0, 10);
+if (existsSync(RECHECKS)) for (const l of readFileSync(RECHECKS, "utf8").split("\n").filter(Boolean)){
+  const e = JSON.parse(l); if (e.date === today) recheckedToday.add(`${e.page} ${e.key}`);
+}
 const report = [];
 let dirty = false, unchecked = 0, marked = 0;
 
@@ -310,9 +315,11 @@ for (const { id: page, path, engine } of pageFiles()){
   if (flag("--update")){
     for (const key of fresh) rows[key] = { hash: hash(squash(items.get(key))), status: "unchecked" };
     for (const key of changed){
-      const was = rows[key].status;
-      rows[key] = { hash: hash(squash(items.get(key))), status: "unchecked", ...(rows[key].note ? { note: rows[key].note } : {}),
-        ...(rows[key].src ? { src: rows[key].src } : {}), ...(rows[key].mem ? { mem: rows[key].mem } : {}), ...(was !== "unchecked" ? { was } : {}) };
+      const old = rows[key], was = old.status, approved = /^(ok|fixed|n\/a)$/.test(was);
+      rows[key] = { hash: hash(squash(items.get(key))), status: "unchecked", ...(old.note ? { note: old.note } : {}),
+        ...(old.src ? { src: old.src } : {}), ...(old.mem ? { mem: old.mem } : {}), ...(was !== "unchecked" ? { was } : {}),
+        /* the approval this row had, so a re-check that failed and was fixed in the text can still be logged against its batch */
+        ...(approved ? { wasChecked: old.wasChecked || old.checked || null, wasVia: old.wasVia || viaOf(old) } : {}) };
     }
     for (const key of removed) delete rows[key];
     ledger.pages[page] = Object.fromEntries(Object.entries(rows).sort(([a], [b]) => a.localeCompare(b, "en")));
@@ -322,21 +329,26 @@ for (const { id: page, path, engine } of pageFiles()){
     for (const [key, row] of Object.entries(ledger.pages[page] || {})){
       if (!prefixed(key, row) || !items.has(key) || row.hash !== hash(squash(items.get(key)))) continue;
       if (flag("--unchecked") && row.status !== "unchecked") continue;
-      const before = row.status, batchDate = row.checked;
+      const fixedFirst = flag("--recheck") && row.status === "unchecked" && /^(ok|fixed|n\/a)$/.test(row.was || "") && markStatus === "fixed";
+      const before = fixedFirst ? row.was : row.status, batchDate = fixedFirst ? row.wasChecked : row.checked;
       if (flag("--recheck")){
-        if (!/^(ok|fixed|n\/a)$/.test(before)) die(`--recheck: ${page} ${key} is "${before}", not an approved row`);
-        recheckLog.push({ date: today, seed: one("--seed") || today, page, key, was: before, batch: batchDate || null, wasVia: viaOf(row), wasBy: row.by || null, by: by || null, now: markStatus,
+        if (!/^(ok|fixed|n\/a)$/.test(before)) die(`--recheck: ${page} ${key} is "${before}", not an approved row` +
+          (row.status === "unchecked" && row.was ? ` (its text changed since it was "${row.was}"; a re-check that failed and was fixed in the text is recorded with --mark fixed)` : ""));
+        if (recheckedToday.has(`${page} ${key}`)) die(`--recheck: ${page} ${key} was already re-checked today (see fact-check/rechecks.jsonl)`);
+        recheckLog.push({ date: today, seed: one("--seed") || today, page, key, was: before, batch: batchDate || null, wasVia: fixedFirst ? row.wasVia || "unknown" : viaOf(row), wasBy: row.by || null, by: by || null, now: markStatus,
           via: !cited ? null : memArgs.length ? "memory" : "lookup", ...(lookArgs.length ? { lookup: lookArgs } : {}), ...(memArgs.length ? { memory: memArgs } : {}), ...(note ? { note } : {}) });
         row.rechecked = today;
         if (markStatus !== before){ row.status = markStatus; row.checked = today; if (by) row.by = by; }
+        if (fixedFirst){ row.status = markStatus; row.checked = today; delete row.rechecked; delete row.was; }
       } else {
-        if (markStatus === "unchecked" && before !== "unchecked") row.was = before; else delete row.was;
+        if (markStatus === "unchecked" && before !== "unchecked") row.was = before; else { delete row.was; delete row.wasChecked; delete row.wasVia; }
         row.status = markStatus; row.checked = today; delete row.rechecked;
         if (by && markStatus !== "unchecked") row.by = by; else delete row.by;
       }
       if (cited) cite(row, flag("--recheck") && markStatus === before);   /* a confirming re-check adds to the old citations */
       else if (!flag("--recheck")) delete row.via;                        /* unchecked, n/a: the old src / mem stay as a lead */
       if (note != null){ if (note) row.note = note; else delete row.note; }
+      if (row.status !== "unchecked"){ delete row.wasChecked; delete row.wasVia; }
       marked++;
     }
   }
@@ -377,7 +389,7 @@ for (const { id: page, path, engine } of pageFiles()){
     if (flag("--list") && prefixed(key, row) && (flag("--all") || st === "unchecked"))
       console.log(`${page} ${key} [${row && row.hash === hash(squash(items.get(key))) ? row.status + (st === "n/a" ? "" : ", via " + viaOf(row)) : "unchecked"}]\n    ${squash(items.get(key)).slice(0, flag("--full") ? Infinity : 400)}`);
     /* approved, current, and not (re)checked in the last --min-age days: eligible for a random re-check */
-    if (sampleN != null && /^(ok|fixed|n\/a)$/.test(st) && prefixed(key, row) && !(days(row.rechecked || row.checked || "1970-01-01", today) < minAge))
+    if (sampleN != null && /^(ok|fixed|n\/a)$/.test(st) && prefixed(key, row) && !recheckedToday.has(`${page} ${key}`) && !(days(row.rechecked || row.checked || "1970-01-01", today) < minAge))
       pool.push({ page, key, row, text: items.get(key) });
   }
   report.push({ page, ...counts, new: fresh.length, changed: changed.length, removed: removed.length });
@@ -390,6 +402,8 @@ function format(l){
     Object.entries(rows).map(([k, r]) => `   ${JSON.stringify(k)}: ${JSON.stringify(r)}`).join(",\n") + "\n  }").join(",\n");
   return `{\n "version": ${l.version},\n "ignore": {\n${ig}\n },\n "pages": {\n${pg}\n }\n}\n`;
 }
+if ((markStatus || verifyResult) && dirty && !flag("--update"))
+  die("The ledger is out of date for the selected pages: run with --update first. Nothing was marked or logged.");
 if (verifyResult && !verified) die(`--verify: no current look-up citation "${citeArg}" on that key (or the row isn't approved)`);
 if (flag("--update") || markStatus || verified) writeFileSync(LEDGER, format(ledger));
 if (verifyLog.length) appendFileSync(VERIFICATIONS, verifyLog.map(r => JSON.stringify(r)).join("\n") + "\n");

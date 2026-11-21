@@ -683,7 +683,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "Sitting still, your brain is still one of the hungriest organs you have: 2% of your weight but a fifth of your energy. Its waves are fast and small, with a 10-per-second alpha rhythm when you close your eyes.",
       "hs": "Awake and relaxed, the brain uses about 50 mL of oxygen and 75 mg of glucose a minute, carried by 700 mL of blood. The EEG shows low, fast beta waves with eyes open and alpha waves at the back of the head when the eyes close.",
       "college": "Resting cerebral blood flow is ~50 mL/100 g/min (≈700 mL/min, 14% of cardiac output), CMRO₂ ~3.3 mL/100 g/min and glucose use ~5.5 mg/100 g/min. Even at rest the default-mode network (medial prefrontal, posterior cingulate, angular gyrus) is busy.",
-      "phd": "Task-evoked increases in metabolism are small (<5%) compared with the brain’s ongoing ‘dark energy’ (Raichle). Glucose uptake exceeds O₂ use during activation (aerobic glycolysis), a mismatch that underlies the BOLD signal."
+      "phd": "Task-evoked increases in metabolism are small (<5%) compared with the brain’s ongoing ‘dark energy’ (Raichle). During activation blood flow and glucose uptake rise far more than O₂ use (aerobic glycolysis); the excess of flow over O₂ use is what makes the BOLD signal."
     },
     "meal": {
       "ms": "After a meal your brain is watching the food arrive. Messages from your stomach and gut tell it when you’re full, and it may make you feel a little sleepy.",
@@ -715,16 +715,16 @@ canvas.trace{ display:block; width:100%; }
         "ms": "Neurons send messages as tiny electric pulses. A pulse happens when little gates in the cell’s skin open and let salt (sodium) rush in, then other gates let potassium out to reset it. Push the neuron and watch it fire.",
         "hs": "At rest the inside of a neuron is about −65 mV. A big enough push opens voltage-gated Na⁺ channels: Na⁺ floods in and the voltage shoots up to about +40 mV. Then Na⁺ channels close and K⁺ channels open, bringing the voltage back down. Change the stimulus, block the channels or raise the potassium outside.",
         "college": "Hodgkin and Huxley’s model: the membrane is a capacitor with Na⁺, K⁺ and leak conductances in parallel. Fast m gates open Na⁺ channels, slower h gates inactivate them and n gates open K⁺ channels. The positive feedback of Na⁺ entry gives a threshold; inactivation and K⁺ efflux give the refractory period.",
-        "phd": "C·dV/dt = I − ḡNa·m³h(V − ENa) − ḡK·n⁴(V − EK) − gL(V − EL), with each gate following first-order kinetics with voltage-dependent α and β. Steady current produces a type II onset (Hopf bifurcation) at ~6–7 µA/cm²; raised extracellular K⁺ depolarises EK and leads to depolarisation block."
+        "phd": "C·dV/dt = I − ḡNa·m³h(V − ENa) − ḡK·n⁴(V − EK) − gL(V − EL), with each gate following first-order kinetics with voltage-dependent α and β. Steady current gives type II excitability: repetitive firing starts abruptly, at a non-zero rate, at ~6.3 µA/cm² (rest stays stable alongside it up to a subcritical Hopf bifurcation at ~9.8 µA/cm²); raised extracellular K⁺ depolarises EK and leads to depolarisation block."
       },
       "steps": [
         { "name": "Resting", "ms": "The neuron waits, slightly negative inside.", "hs": "The membrane sits near −65 mV, mostly set by K⁺ leaking out. The Na⁺/K⁺ pump keeps Na⁺ high outside and K⁺ high inside.", "college": "Resting potential lies near EK because resting K⁺ permeability dominates; the Goldman–Hodgkin–Katz equation weights each ion by its permeability.", "phd": "The electrogenic Na⁺/K⁺-ATPase contributes a few mV directly; its main role is to maintain the gradients that the channels dissipate." },
         { "name": "Rising phase", "ms": "Sodium gates open. Salt rushes in and the inside turns positive.", "hs": "Past threshold (about −55 mV) Na⁺ channels open, Na⁺ rushes in and the voltage rockets towards +40 mV in under a millisecond.", "college": "Depolarisation opens more Na⁺ channels (m gates), which depolarises further: regenerative positive feedback, so the spike is all-or-none.", "phd": "Threshold is where inward Na⁺ current first exceeds outward K⁺ and leak current; it depends on the rate of depolarisation because of h-gate accommodation." },
-        { "name": "Falling phase", "ms": "Sodium gates shut and potassium gates open. Potassium flows out and the inside goes negative again.", "hs": "Na⁺ channels inactivate and slower K⁺ channels open; K⁺ leaves and the voltage falls back.", "college": "h gates close the Na⁺ channels while n gates open delayed-rectifier K⁺ channels, so outward current dominates and repolarises the membrane.", "phd": "Inactivation is the ball-and-chain (IFM motif) of the Nav channel’s III–IV linker; Kv channels lack fast inactivation in the HH formulation." },
-        { "name": "Undershoot and reset", "ms": "For a moment it’s extra negative and can’t fire again, so pulses only go one way.", "hs": "K⁺ channels stay open a little too long, so the voltage dips below rest. During this refractory period another spike is hard or impossible.", "college": "The absolute refractory period (Na⁺ channels inactivated) is followed by a relative one (K⁺ conductance still high), limiting firing rate and making propagation one-way.", "phd": "Refractoriness sets maximum firing frequency (~500 Hz in fast-spiking interneurons with Kv3 channels and resurgent Na⁺ current)." }
+        { "name": "Falling phase", "ms": "Sodium gates shut and potassium gates open. Potassium flows out and the inside goes negative again.", "hs": "Na⁺ channels inactivate and slower K⁺ channels open; K⁺ leaves and the voltage falls back.", "college": "h gates close the Na⁺ channels while n gates open delayed-rectifier K⁺ channels, so outward current dominates and repolarises the membrane.", "phd": "Fast inactivation is a hinged lid: the IFM motif of the Nav channel’s III–IV linker (the ball-and-chain is the N-type inactivation of Shaker K⁺ channels); Kv channels lack fast inactivation in the HH formulation." },
+        { "name": "Undershoot and reset", "ms": "For a moment it’s extra negative and can’t fire again, so pulses only go one way.", "hs": "K⁺ channels stay open a little too long, so the voltage dips below rest. During this refractory period another spike is hard or impossible.", "college": "The absolute refractory period (Na⁺ channels inactivated) is followed by a relative one (K⁺ conductance still high), limiting firing rate and making propagation one-way.", "phd": "Refractoriness sets maximum firing frequency: several hundred Hz in fast-spiking interneurons, whose Kv3 channels repolarise each spike quickly; a resurgent Na⁺ current helps Purkinje cells fire fast in the same way." }
       ],
       "raceNote": {
-        "ms": "Fatty wrapping called myelin lets signals jump from gap to gap, so they travel 50 times faster. Without it, a message to your toe would take a whole second.",
+        "ms": "Fatty wrapping called myelin lets signals jump from gap to gap, so they travel 50 to 100 times faster. Without it, a message to your toe would take a whole second.",
         "hs": "Myelinated axons conduct by saltatory conduction: the impulse jumps between nodes of Ranvier. Speed rises with axon diameter. Thin unmyelinated C fibres (slow, burning pain) crawl at about 1 m/s; thick Aα fibres (muscle commands) race at 80–120 m/s.",
         "college": "In myelinated fibres conduction velocity ≈ 6 m/s per µm of outer diameter; in unmyelinated fibres it rises only with √diameter. Myelin lowers membrane capacitance and raises resistance, so current spreads farther and only nodes need to regenerate the spike.",
         "phd": "Demyelination raises internodal capacitance and leak, causing slowing, temporal dispersion and conduction block; redistribution of Nav1.2/1.6 channels along demyelinated axons can restore slow continuous conduction at a high energy cost."
@@ -736,12 +736,12 @@ canvas.trace{ display:block; width:100%; }
         "ms": "Sleep isn’t one thing. Your brain dips into light sleep, sinks into deep sleep with big slow waves, then floats up into dreaming REM sleep, again and again through the night. Move through the day and watch the brain waves change.",
         "hs": "Sleep labs record brain waves (EEG), eye movements and chin muscle tone. Each stage has a signature: alpha when relaxed awake, theta in N1, spindles and K-complexes in N2, big delta waves in N3, and in REM fast waves, darting eyes and paralysed muscles. Drag the time or press time-lapse.",
         "college": "Staging follows AASM rules on 30-s epochs. Slow-wave sleep dominates early cycles, REM later. The EEG reflects summed postsynaptic currents of pyramidal cells; synchrony (thalamocortical bursting in NREM) makes waves big and slow, while desynchronised activity (wake, REM) makes them small and fast.",
-        "phd": "NREM rhythms arise from thalamocortical circuits: spindles from the reticular nucleus’s rebound bursting, slow oscillations from cortical up/down states, delta from thalamocortical cells’ intrinsic pacemaking. REM is gated by pontine cholinergic and glutamatergic ‘REM-on’ cells and monoaminergic ‘REM-off’ cells (flip-flop switch, Saper et al.)."
+        "phd": "NREM rhythms arise from thalamocortical circuits: spindles from the reticular nucleus’s rebound bursting, slow oscillations from cortical up/down states, delta from thalamocortical cells’ intrinsic pacemaking. REM is gated by a flip-flop switch between mutually inhibitory GABAergic ‘REM-on’ neurons in the dorsal pons and ‘REM-off’ neurons in the ventrolateral periaqueductal grey (Lu, Saper et al. 2006); pontine cholinergic cells, and monoaminergic cells that fall silent in REM, modulate it (the older reciprocal-interaction model)."
       },
       "procNote": {
         "ms": "Two things make you sleepy: a chemical called adenosine that builds up the longer you’re awake, and your body clock, which knows it’s night.",
         "hs": "Sleep pressure (adenosine) builds while you’re awake and clears while you sleep. The body clock pushes alertness up through the day, which is why you can feel more awake in the evening than mid-afternoon. Caffeine blocks adenosine receptors, hiding the pressure, not removing it.",
-        "college": "Borbély’s two-process model: sleep starts when Process S exceeds an upper threshold shaped by Process C and ends when it falls to a lower one. The SCN’s alerting signal peaks in the evening (the ‘wake maintenance zone’), opposing the high sleep pressure just before bedtime.",
+        "college": "Borbély’s two-process model: sleep starts when Process S reaches an upper limit shaped by Process C and ends when it falls to a lower one. The SCN’s alerting signal peaks in the evening (the ‘wake maintenance zone’), opposing the high sleep pressure just before bedtime.",
         "phd": "Adenosine acts through A1 receptors (inhibiting wake-promoting basal forebrain neurons) and A2A receptors (activating sleep-promoting circuits in the nucleus accumbens shell and VLPO). Caffeine’s half-life is ~5 h (longer in pregnancy and with CYP1A2 inhibitors)."
       }
     },
@@ -765,7 +765,7 @@ canvas.trace{ display:block; width:100%; }
       "nav": "Body systems", "kicker": "Connections", "title": "The brain through the lens of every body system",
       "intro": {
         "ms": "The brain talks to every part of your body, and every part sends messages back.",
-        "hs": "The brain controls the other systems through nerves and hormones, and it depends on them for oxygen, fuel and a steady environment. Here is how each one connects. Six of them can be watched live on the main body page.",
+        "hs": "The brain controls the other systems through nerves and hormones, and it depends on them for oxygen, fuel and a steady environment. Here is how each one connects. Seven of them can be watched live on the main body page.",
         "college": "The brain integrates sensory input, issues motor and autonomic output, and runs the neuroendocrine axes. Each card summarises the key couplings.",
         "phd": "Each card notes the main physiological couplings and a clinically important example of their failure."
       }
@@ -819,7 +819,7 @@ canvas.trace{ display:block; width:100%; }
     "none": { "name": "All arteries open",
       "ms": "All the arteries are open and blood flows to every part of the brain.",
       "hs": "Every territory gets its share of the 700 mL a minute. Choose an artery to block and see which part of the brain loses its blood.",
-      "college": "Normal perfusion, about 50 mL/100 g/min in grey matter and 20 in white matter.",
+      "college": "Normal perfusion, about 50 mL/100 g/min on average: ~80 in grey matter and ~20 in white matter.",
       "phd": "Grey matter flow is ~80, white matter ~20 mL/100 g/min; ischaemic thresholds are time-dependent: tissue survives lower flow for shorter periods." },
     "mcaL": { "name": "Left middle cerebral artery blocked",
       "ms": "This is the most common kind of stroke. The left side of the brain controls the right side of the body and, for most people, speech.",
@@ -843,7 +843,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "This artery feeds the brainstem and cerebellum, which run breathing, consciousness and balance. It is one of the most dangerous strokes.",
       "hs": "The basilar supplies the brainstem, the cerebellum and, through the PCAs, the back of the brain. Blocking it can cause dizziness, double vision, weakness on both sides, coma or ‘locked-in’ syndrome.",
       "college": "Basilar occlusion causes bilateral motor signs, cranial-nerve palsies, ataxia, reduced consciousness and can progress to locked-in syndrome (ventral pons) with preserved vertical eye movements.",
-      "phd": "Mortality without recanalisation exceeds 80%; the ATTENTION and BAOCHE trials (2022) showed benefit of thrombectomy up to 24 h.",
+      "phd": "Without recanalisation most patients die or are left severely disabled (older series quote mortality of 80–90%); the ATTENTION (within 12 h) and BAOCHE (6–24 h) trials (2022) showed benefit of thrombectomy.",
       "deficits": ["Dizziness and loss of balance", "Double vision", "Weakness on both sides", "Trouble swallowing and speaking", "Drowsiness or coma"] },
     "icaL": { "name": "Left internal carotid blocked",
       "ms": "A big artery is blocked, but the ring of arteries under the brain shares blood from the other side, so the brain may be fine.",
@@ -922,7 +922,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "The top of the brainstem. It helps move your eyes and holds cells that make dopamine.",
       "hs": "The midbrain controls eye movements and pupil size, relays hearing and vision reflexes, and holds the substantia nigra, whose dopamine cells are lost in Parkinson’s disease.",
       "college": "The superior and inferior colliculi run visual and auditory orienting reflexes; the cerebral aqueduct passes through it; the VTA sends dopamine to reward circuits.",
-      "phd": "Loss of ~60–80% of nigral dopamine neurons precedes motor signs of Parkinson’s; α-synuclein pathology may begin in the gut or olfactory bulb (Braak staging)." },
+      "phd": "By the time motor signs of Parkinson’s appear, roughly half of the nigral dopamine neurons and most (~60–80%) of their striatal terminals and dopamine are lost; α-synuclein pathology may begin in the gut or olfactory bulb (Braak staging)." },
     "pons": { "name": "Pons", "kind": "Brainstem", "systems": ["nervous", "respiratory"], "related": ["medulla", "cerebellum", "midbrain"],
       "ms": "The bulge of the brainstem. It is a bridge to the cerebellum and helps switch on dreaming sleep.",
       "hs": "The pons relays signals from the cortex to the cerebellum, holds nerves for the face and chewing, helps smooth breathing and starts REM sleep.",
@@ -990,7 +990,7 @@ canvas.trace{ display:block; width:100%; }
       "phd": "Total CSF volume ~150 mL is renewed 3–4 times a day; communicating hydrocephalus reflects impaired absorption, and normal-pressure hydrocephalus presents with gait, cognition and urinary problems." },
     "choroidPlexus": { "name": "Choroid plexus", "kind": "Secretory tissue", "systems": ["nervous", "urinary", "circulatory"], "related": ["ventricles", "csf"],
       "ms": "Frilly tissue inside the ventricles that makes the brain’s fluid from blood.",
-      "hs": "The choroid plexus filters blood and secretes about half a litre of cerebrospinal fluid a day.",
+      "hs": "The choroid plexus makes most of the cerebrospinal fluid, about half a litre a day in all, by actively pumping salt out of the blood, with water following. It is secreted, not filtered.",
       "college": "Its epithelium (the blood–CSF barrier) actively secretes Na⁺, Cl⁻ and HCO₃⁻ with water following, using Na⁺/K⁺-ATPase and carbonic anhydrase (blocked by acetazolamide).",
       "phd": "Recent work suggests the NKCC1 cotransporter moves water directly with ions (Steffensen et al. 2018), challenging purely osmotic models of CSF secretion." },
     "csf": { "name": "Cerebrospinal fluid", "kind": "Fluid", "systems": ["nervous", "immune", "circulatory"], "related": ["ventricles", "meninges"],
@@ -1012,7 +1012,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "Branches that collect messages from other neurons.",
       "hs": "Dendrites receive signals from thousands of synapses, often on tiny spines. Some signals push the neuron to fire, others hold it back.",
       "college": "Excitatory and inhibitory postsynaptic potentials spread passively and sum at the axon initial segment; spines compartmentalise Ca²⁺ and change shape with learning.",
-      "phd": "Active dendritic conductances (NMDA spikes, Ca²⁺ plateaus) let single pyramidal neurons compute non-linear functions such as XOR (Gidon et al. 2020)." },
+      "phd": "Active dendritic conductances (NMDA spikes, Ca²⁺ plateaus) let single pyramidal neurons compute non-linear functions; in human layer 2/3 neurons, graded dendritic Ca²⁺ action potentials can even compute XOR (Gidon et al. 2020)." },
     "soma": { "name": "Cell body", "kind": "Part of a neuron", "systems": ["nervous"], "related": ["dendrites", "axonHillock"],
       "ms": "The neuron’s control centre, with the nucleus inside.",
       "hs": "The cell body holds the nucleus and makes the proteins the neuron needs, which are shipped down the axon.",
@@ -1037,7 +1037,7 @@ canvas.trace{ display:block; width:100%; }
       "ms": "Little gaps in the wrapping where the signal is boosted.",
       "hs": "At each node the action potential is regenerated, so it jumps from node to node.",
       "college": "Nodes hold dense Nav channels; paranodal junctions keep the internodal K⁺ channels hidden under the myelin.",
-      "phd": "Antibodies against nodal proteins (neurofascin, contactin) cause autoimmune nodopathies with conduction block." },
+      "phd": "Antibodies against nodal and paranodal proteins (neurofascin, contactin-1, Caspr1) cause autoimmune nodopathies with conduction block." },
     "terminal": { "name": "Axon terminals", "kind": "Part of a neuron", "systems": ["nervous"], "related": ["vesicles", "cleft"],
       "ms": "The ends of the axon, where messages are passed to the next cell.",
       "hs": "When the action potential arrives, calcium flows in and the terminal releases neurotransmitter.",
@@ -1060,7 +1060,7 @@ canvas.trace{ display:block; width:100%; }
       "phd": "LTP inserts AMPA receptors at the synapse via CaMKII signalling; ketamine’s antidepressant effect involves NMDA receptor block and downstream BDNF/mTOR signalling." },
     "astrocyte": { "name": "Astrocyte", "kind": "Glial cell", "systems": ["nervous", "circulatory", "immune"], "related": ["cleft", "csf"],
       "ms": "A star-shaped helper cell that feeds neurons and tidies up the synapse.",
-      "hs": "Astrocytes clear neurotransmitter and potassium, wrap blood vessels to form the blood–brain barrier and help control blood flow.",
+      "hs": "Astrocytes clear neurotransmitter and potassium, wrap blood vessels, help maintain the blood–brain barrier (formed by the capillary walls) and help control blood flow.",
       "college": "Astrocyte end-feet ensheath capillaries; they recycle glutamate via glutamine, buffer K⁺ and store glycogen, the brain’s only fuel reserve.",
       "phd": "Astrocytes signal with Ca²⁺ waves and may modulate synapses (the ‘tripartite synapse’), though gliotransmission in vivo is debated." },
     "ica": { "name": "Internal carotid artery", "kind": "Artery", "systems": ["circulatory"], "related": ["mca", "aca", "pcom"],
@@ -1106,7 +1106,7 @@ canvas.trace{ display:block; width:100%; }
   },
   "lens": {
     "circulatory": {
-      "ms": "The brain needs a fifth of your heart’s blood every minute. It also controls your heart rate and blood pressure.",
+      "ms": "The brain gets about a seventh of your heart’s blood every minute. It also controls your heart rate and blood pressure.",
       "hs": "About 15% of cardiac output goes to the brain. The brainstem sets heart rate and blood pressure through autonomic nerves and the baroreflex, and the blood–brain barrier protects neurons from what’s in the blood.",
       "college": "Medullary centres integrate baroreceptor input (NTS) and drive sympathetic (RVLM) and vagal (nucleus ambiguus) output. Cerebral autoregulation and neurovascular coupling match local flow to activity.",
       "phd": "The neurovascular unit (endothelium, pericytes, astrocytes, neurons) controls capillary flow; pericyte constriction after ischaemia contributes to no-reflow despite recanalisation (Hall et al. 2014)." },
@@ -1189,10 +1189,10 @@ canvas.trace{ display:block; width:100%; }
         "id": "faint",
         "name": "Fainting",
         "params": {
-          "map": "45"
+          "map": "40"
         },
         "ms": "Blood pressure drops below what the brain can cope with, so blood flow falls and you black out.",
-        "college": "MAP below the lower autoregulatory limit: flow becomes pressure-passive; below ~20 mL/100 g/min consciousness is lost (syncope)."
+        "college": "MAP below the lower autoregulatory limit: flow becomes pressure-passive, and when it falls to about half of normal (~20–25 mL/100 g/min) consciousness is lost (syncope)."
       },
       {
         "id": "panic",
@@ -1258,14 +1258,14 @@ canvas.trace{ display:block; width:100%; }
           "hour": 23.25
         },
         "ms": "Bedtime, but a lot of the afternoon’s caffeine is still in your blood, hiding how sleepy you are.",
-        "college": "With a ~5 h half-life, about a quarter of a 4 pm dose remains at 11 pm, antagonising adenosine A1/A2A receptors and delaying sleep onset."
+        "college": "With a ~5 h half-life, more than a third of a 4 pm dose remains at 11 pm, antagonising adenosine A1/A2A receptors and delaying sleep onset."
       }
     ],
     "title": "Your brain",
     "healthy": "A healthy brain: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
     "areas": {
       "mcaL": "the motor and sensory strips, Broca’s and Wernicke’s areas, the hearing area and the deep basal ganglia",
-      "acaL": "the front of the frontal lobe and the cingulate gyrus on the inner surface",
+      "acaL": "the inner surface of the frontal lobe and the cingulate gyrus",
       "pcaL": "the vision area at the back, the hippocampus and the thalamus",
       "basilar": "the brainstem, the cerebellum and both vision areas"
     },
@@ -1279,16 +1279,16 @@ canvas.trace{ display:block; width:100%; }
         "college": "Collateral flow through the anterior and posterior communicating arteries perfuses both territories; only the watershed zones between them are at risk, so no region goes dark in the figure."
       },
       "flowAnat": {
-        "ms": "Brain blood flow is down to {cbf} mL per 100 g each minute, so the outer layer of the brain goes quiet. Below about 20 you would faint.",
-        "college": "Cerebral blood flow of {cbf} mL/100 g/min is below the threshold for normal synaptic activity (~35); cortical activity fades, and below ~20 the EEG flattens and consciousness is lost."
+        "ms": "Brain blood flow is down to {cbf} mL per 100 g each minute, so the outer layer of the brain goes quiet. At about 20–25 you faint.",
+        "college": "Cerebral blood flow of {cbf} mL/100 g/min is well below normal: protein synthesis falters below ~35, and near ~20 synaptic transmission fails, the EEG flattens and consciousness is lost."
       },
       "nightAnat": {
         "ms": "You are staying up all night, so the brain shows waking activity instead of sleep: no slow waves wash over the cortex.",
         "college": "With sleep skipped the cortex stays in a waking state: no slow oscillation in N3 and no REM pattern, while sleep pressure keeps building."
       },
       "nightBlood": {
-        "ms": "Awake all night, the brain keeps using blood at the waking rate ({cbf} mL a minute) instead of using less in deep sleep.",
-        "college": "Skipping sleep keeps cerebral metabolism, and with it blood flow ({cbf} mL/min), at waking levels instead of falling by about a quarter in N3."
+        "ms": "Awake all night, the brain keeps using blood at the waking rate ({cbf} mL a minute) instead of following the night’s sleep stages: less in deep sleep, as much or more in REM.",
+        "college": "Skipping sleep keeps cerebral metabolism and blood flow ({cbf} mL/min) at waking levels, instead of falling in deep sleep (O₂ use by about a quarter in N3) and rising again in REM."
       },
       "nightSleep": {
         "ms": "It’s daytime now, so staying up all night changes nothing yet. Move to the night (or press a ‘Deep sleep’ button) to see the brain stay awake.",
@@ -1316,7 +1316,8 @@ canvas.trace{ display:block; width:100%; }
   "EEG": { "def": "Electroencephalogram: brain waves recorded from the scalp.", "match": ["EEG"] },
   "REM": { "def": "Rapid eye movement sleep, when most vivid dreams happen.", "match": ["REM"] },
   "spindles": { "def": "Bursts of 11–16 Hz waves lasting about a second, typical of N2 sleep.", "match": ["spindles", "spindle"] },
-  "delta waves": { "def": "Big, slow brain waves (0.5–2 Hz) of deep sleep.", "match": ["delta waves", "delta"] },
+  "muscle spindles": { "def": "Stretch receptors inside a muscle that tell the spinal cord and brain how long the muscle is and how fast it is changing (nothing to do with sleep spindles).", "match": ["muscle spindles", "muscle spindle"] },
+  "delta waves": { "def": "Big, slow brain waves (below 4 Hz); those of 0.5–2 Hz mark deep (N3) sleep.", "match": ["delta waves", "delta"] },
   "adenosine": { "def": "A molecule that builds up while awake and makes you sleepy; caffeine blocks its receptors.", "match": ["adenosine"] },
   "melatonin": { "def": "The darkness hormone made by the pineal gland at night.", "match": ["melatonin"] },
   "circle of Willis": { "def": "A ring of arteries under the brain that links the carotid and vertebral supplies.", "match": ["circle of Willis"] },
@@ -3538,9 +3539,9 @@ function renderSteps(){ apSteps.innerHTML = (O.get("sections.signals.steps") || 
 function apMessage(){
   const S = HH.S; let m = "";
   if (S.naB) m = "<b>Na⁺ channels blocked</b>The stimulus only nudges the voltage: no Na⁺ rush, no action potential. Local anaesthetics like lidocaine numb a tooth this way, and the puffer-fish poison tetrodotoxin blocks the same channels.";
-  else if (S.Ko >= 11) m = "<b>Very high potassium outside</b>The resting voltage has crept up so far that Na⁺ channels stay inactivated: the neuron falls silent (depolarisation block). High blood potassium is dangerous for the same reason, above all for the heart.";
-  else if (S.Ko >= 7) m = "<b>High potassium outside</b>Less K⁺ leaks out, so the resting voltage rises towards threshold and the neuron fires more easily, even on its own.";
-  else if (S.kB) m = "<b>K⁺ channels blocked</b>Without enough K⁺ current each spike repolarises slowly and lasts much longer, and more transmitter is released at the synapse. Some seizure drugs and toxins act on K⁺ channels.";
+  else if (S.Ko >= 9) m = "<b>Very high potassium outside</b>The resting voltage has crept up so far that Na⁺ channels stay inactivated: the neuron falls silent (depolarisation block). High blood potassium is dangerous for the same reason, above all for the heart.";
+  else if (S.Ko >= 6) m = "<b>High potassium outside</b>Less K⁺ leaks out, so the resting voltage rises towards threshold and the neuron fires more easily, even on its own.";
+  else if (S.kB) m = "<b>K⁺ channels blocked</b>Without enough K⁺ current each spike repolarises more slowly and lasts longer, and more transmitter is released at the synapse. Some seizure drugs and toxins act on K⁺ channels.";
   else if (S.amp > 0 && S.Iss < 6.2 && !S.spikes.some(t => S.t - t < 60)) m = "<b>Below threshold</b>Each pulse makes a small bump that fades away. Only a push that reaches threshold triggers a spike, and every spike is the same size: all or none.";
   else if (S.Iss >= 6.2) m = "<b>A steady push</b>With a steady current the neuron fires again and again. Stronger currents raise the firing rate: neurons code strength as frequency, not size.";
   alertBox($("#apMsg"), m);
@@ -3807,7 +3808,7 @@ function procMessage(){
   jumps.forEach(([l, hr]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = l; b.onclick = () => O.set({ hour: hr }); jh.appendChild(b); });
   $("#lapseBtn").onclick = () => { lapse = !lapse; toggle($("#lapseBtn"), lapse); if (lapse && O.state().paused) O.set({ paused: false }); };
   $("#coffeeBtn").onclick = () => { proc.coffee = !proc.coffee; toggle($("#coffeeBtn"), proc.coffee); procMessage(); O.altered(); };
-  $("#nightBtn").onclick = () => { proc.night = !proc.night; toggle($("#nightBtn"), proc.night); procMessage(); renderStage(); O.altered(); };
+  $("#nightBtn").onclick = () => { proc.night = !proc.night; toggle($("#nightBtn"), proc.night); syncBloodDefaults(); procMessage(); renderStage(); O.altered(); };
 })();
 
 /* =========================================================================
@@ -3942,9 +3943,9 @@ const cbfNow = () => cbf100(blood.map, blood.co2, blood.htn, metabNow());
 const cbfTotal = () => cbfNow() * 14 * (1 - STROKES[blood.stroke].loss);
 /* the healthy reference at this time of day: asleep at night, default pressure and CO₂, no stroke */
 function refBrain(){ const n = proc.night; proc.night = false; const b = brainNow(); proc.night = n; return b; }
-const refCbf100 = () => cbf100(mapDefault(), co2Default(), false, MET[refBrain().key].cbf);
+const refCbf100 = () => cbf100(mapDefault(), co2Default(false), false, MET[refBrain().key].cbf);
 const mapDefault = () => { const v = O.vitals(); return Math.round(v.dbp + (v.sbp - v.dbp) / 3); };
-const co2Default = () => ({ sleep: 43, rest: 40, meal: 40, exercise: 38 })[O.state().phase];
+const co2Default = (night = proc.night) => { const p = O.state().phase; return p === "sleep" && night ? 40 : ({ sleep: 43, rest: 40, meal: 40, exercise: 40 })[p]; }; /* awake all night: waking PaCO₂ */
 const arC = makeCanvas($("#autoreg")), crC = makeCanvas($("#co2react"));
 function plotFrame(c, xlab, x0, x1, xticks){
   const { ctx, w, h } = c, L = 34, gw = w - L - 10, top = 22, gh = h - top - 34;
@@ -4078,7 +4079,7 @@ function clearChange(id){
   else if (id === "dC") setSl("dC", RACE0.dC);
   else if (id === "ms"){ race.ms = false; toggle($("#msBtn"), false); renderMyelin(); restartRace(); }
   else if (id === "coffee"){ proc.coffee = false; toggle($("#coffeeBtn"), false); procMessage(); }
-  else if (id === "night"){ proc.night = false; toggle($("#nightBtn"), false); procMessage(); renderStage(); }
+  else if (id === "night"){ proc.night = false; toggle($("#nightBtn"), false); syncBloodDefaults(); procMessage(); renderStage(); }
   else if (id === "stroke"){ blood.stroke = "none"; wil.choice.set("none"); renderStroke(); }
   else if (id === "map"){ blood.mapTouched = false; syncBloodDefaults(); }
   else if (id === "co2"){ blood.co2Touched = false; syncBloodDefaults(); }
@@ -4137,7 +4138,7 @@ O.alter({
     if (P.get("kblock") === "1"){ HH.S.kB = true; toggle($("#kBtn"), true); }
     if (P.get("ms") === "1"){ race.ms = true; toggle($("#msBtn"), true); renderMyelin(); restartRace(); }
     if (P.get("coffee") === "1"){ proc.coffee = true; toggle($("#coffeeBtn"), true); }
-    if (P.get("night") === "1"){ proc.night = true; toggle($("#nightBtn"), true); }
+    if (P.get("night") === "1"){ proc.night = true; toggle($("#nightBtn"), true); syncBloodDefaults(); }
     if (STROKE_LABEL[P.get("stroke")]){ blood.stroke = P.get("stroke"); wil.choice.set(blood.stroke); }
     if (P.get("htn") === "1"){ blood.htn = true; toggle($("#htnBtn"), true); }
   }

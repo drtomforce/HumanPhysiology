@@ -4417,7 +4417,18 @@ function mhAt(p, min){
 }
 
 /* ---------- the day: glycogen, lactate, muscle O₂ use and blood flow at the body's hour ---------- */
-const RUN_AT = 17;
+const RUN_AT = 17, DINNER_AT = 19;                                      /* the evening meal starts at 19:00 (the engine's SCHEDULE) */
+/* refilling the run's glycogen deficit: slow while fasting (~1–2 mmol/kg/h, mostly from lactate),
+   fast once carbohydrate is eaten (~5 mmol/kg/h at first, slowing as the stores fill), but never above
+   ~8 mmol glucosyl/kg/h in the working muscle (~18 g/h): after the default run it is back by ~24 h */
+const REFILL_FASTING = 20, REFILL_FED = 6;                              /* time constants, h */
+const REFILL_MAX = 8 * .162 * LEG_KG;                                  /* g/h (162 g per mol of glucosyl units) */
+/* deficit D (g) after h hours refilling at D/τ, capped at REFILL_MAX: linear while capped, then exponential */
+function refill(D, h, tau){
+  const tCap = Math.max(0, (D - REFILL_MAX * tau) / REFILL_MAX);
+  if (h <= tCap) return D - REFILL_MAX * h;
+  return Math.min(D, REFILL_MAX * tau) * Math.exp(-(h - tCap) / tau);
+}
 const PHASE_M = { sleep: { vo2: 45, av: 55 }, rest: { vo2: 60, av: 60 }, meal: { vo2: 55, av: 60 }, exercise: { vo2: 0, av: 150 } };
 function dayAt(R, hour, phase){
   const m = (hour - RUN_AT) * 60, end = R.n - 1;
@@ -4425,7 +4436,8 @@ function dayAt(R, hour, phase){
   if (m >= 0 && m <= end) left = R.gly0 - (R.leg0 - R.left[Math.round(m)] / 100 * R.leg0);
   else {
     const since = m > end ? (m - end) / 60 : (hour + 24 - RUN_AT) * 1 - end / 60;   /* hours since the run ended */
-    const used = R.used * (since < 2 ? Math.exp(-since / 30) : Math.exp(-2 / 30) * Math.exp(-(since - 2) / 9));
+    const toMeal = Math.max(0, DINNER_AT - RUN_AT - end / 60);                    /* hours from the end of the run to dinner */
+    const used = refill(refill(R.used, Math.min(since, toMeal), REFILL_FASTING), Math.max(0, since - toMeal), REFILL_FED);
     left = R.gly0 - used;
   }
   const running = m >= 0 && m <= end, i = running ? Math.round(m) : 0;

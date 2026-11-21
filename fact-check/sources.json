@@ -89,5 +89,7 @@
  "steensberg2001": {"kind": "primary", "access": "open", "cite": "Steensberg A, Febbraio MA, Osada T, et al. Interleukin-6 production in contracting human skeletal muscle is influenced by pre-exercise muscle glycogen content. J Physiol. 2001;537(Pt 2):633-639."},
  "burzyn2013": {"kind": "primary", "access": "subscription", "cite": "Burzyn D, Kuswanto W, Kolodin D, et al. A special population of regulatory T cells potentiates muscle repair. Cell. 2013;155(6):1282-1295."},
  "bhasin1996": {"kind": "primary", "access": "subscription", "cite": "Bhasin S, Storer TW, Berman N, et al. The effects of supraphysiologic doses of testosterone on muscle size and strength in normal men. N Engl J Med. 1996;335(1):1-7."},
- "drachman1994": {"kind": "review", "access": "subscription", "cite": "Drachman DB. Myasthenia gravis. N Engl J Med. 1994;330(25):1797-1810."}
+ "drachman1994": {"kind": "review", "access": "subscription", "cite": "Drachman DB. Myasthenia gravis. N Engl J Med. 1994;330(25):1797-1810."},
+ "ivy1988": {"kind": "primary", "access": "subscription", "cite": "Ivy JL, Katz AL, Cutler CL, Sherman WM, Coyle EF. Muscle glycogen synthesis after exercise: effect of time of carbohydrate ingestion. J Appl Physiol. 1988;64(4):1480-1485."},
+ "jentjens2003": {"kind": "review", "access": "subscription", "cite": "Jentjens R, Jeukendrup AE. Determinants of post-exercise glycogen synthesis during short-term recovery. Sports Med. 2003;33(2):117-144."}
 }

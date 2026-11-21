@@ -8987,7 +8987,7 @@ App.registerTopic({
     x += `<circle cx="262" cy="110" r="54" fill="#f7ecdc" stroke="#d8b98e" stroke-width="1.5"/>`;
     for (let yy = 66; yy <= 154; yy += 11) for (let xx = 214 + ((yy / 11) % 2) * 5.5; xx <= 312; xx += 11){
       const d = Math.hypot(xx - 262, yy - 110); if (d > 48) continue;
-      const rv = rng(), col = rv < .07 ? "#6aa7c8" : d > 34 && rv < .75 ? "#9b7bc8" : rv < .3 ? "#9b7bc8" : "#7fb36b";
+      const rv = rng(), col = rv < .08 ? "#6aa7c8" : rv < .43 ? "#9b7bc8" : "#7fb36b";   /* human islet: β ~57%, α ~35%, δ ~8%, mixed throughout (not a rodent core and mantle) */
       x += `<circle cx="${f1(xx)}" cy="${yy}" r="5.2" fill="${col}" stroke="#ffffff" stroke-width=".6" opacity=".9"/>`;
     }
     x += `<path d="M196 58 C236 90 284 84 330 158" stroke="#d6404c" stroke-width="8" fill="none" opacity=".8" stroke-linecap="round"/>`;
@@ -9018,14 +9018,14 @@ App.registerTopic({
     const rbc = k.stream("rbc", L, CAP, 6, () => el("ellipse", { rx: 3.4, ry: 2.2, fill: "#f08a90" }));
     const fI = k.stream("ins", L, CAP, 18, ins), fG = k.stream("gcg", L, CAP, 14, gcg);
     const sI = k.spray("sI", L, 16, ins), sG = k.spray("sG", L, 12, gcg);
-    /* hormones bud from the islet cells (β in the core, α at the rim) and are washed away in its capillary */
+    /* hormones bud from the islet cells, mixed through the islet as in humans, and are washed away in its capillary */
     const bud = (r0, r1) => () => { const a = R() * Math.PI * 2, r = lerp(r0, r1, R()), [x1, y1] = S.at(.25 + R() * .45); return { x0: 262 + Math.cos(a) * r, y0: 110 + Math.sin(a) * r, x1, y1, life: 1.3 }; };
     return (dt, ph) => {
       const pulse = 1 + .3 * Math.sin(2 * Math.PI * k.t / 6); /* insulin comes in pulses */
       rbc.tick(dt, 26, { rotate: true });
       fI.tick(dt, 22, { jit: 9, count: Math.round(Math.min(18, 1 + 15 * ph.insulin * pulse)) });
       fG.tick(dt, 22, { jit: 9, count: Math.round(1 + 11 * ph.glucagon) });
-      sI.emit(.4 + 4 * ph.insulin * pulse, dt, bud(4, 30)); sG.emit(.3 + 3 * ph.glucagon, dt, bud(34, 46));
+      sI.emit(.4 + 4 * ph.insulin * pulse, dt, bud(4, 46)); sG.emit(.3 + 3 * ph.glucagon, dt, bud(4, 46));
       sI.tick(dt); sG.tick(dt);
     };
   }

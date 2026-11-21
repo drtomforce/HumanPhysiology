@@ -1021,7 +1021,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "The outer layer. All of the kidney’s million tiny filters sit here.",
    "hs": "The cortex holds the glomeruli, proximal and distal tubules. It gets about 90% of the kidney’s blood flow.",
    "college": "Contains glomeruli and convoluted tubules; its fluid is iso-osmotic (~300 mOsm/kg). It extends between the pyramids as renal columns.",
-   "phd": "Cortical blood flow is highest per gram of any organ (~4 mL/min/g); cortical thinning on ultrasound is a marker of chronic kidney disease."
+   "phd": "Cortical blood flow, ~4 mL/min/g, is among the highest per gram of any organ; cortical thinning on ultrasound is a marker of chronic kidney disease."
   },
   "pyramid": {
    "name": "Renal pyramid (medulla)",
@@ -1115,7 +1115,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "The funnel that collects all the urine and pours it into the ureter.",
    "hs": "The funnel where the calyces meet. If the ureter is blocked (by a stone, for example), urine backs up and the pelvis swells: hydronephrosis.",
    "college": "When the outflow is obstructed, pelvic and tubular pressure rise, opposing filtration (raised P_BS) and causing hydronephrosis.",
-   "phd": "Pelviureteric junction obstruction is the commonest cause of antenatal hydronephrosis."
+   "phd": "Most antenatal hydronephrosis is transient; pelviureteric junction obstruction is its commonest obstructive cause."
   },
   "ureter": {
    "name": "Ureter",
@@ -1674,7 +1674,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "A door that lets potassium out into the urine.",
    "hs": "Potassium is secreted here; more sodium arriving, faster flow and aldosterone all increase it.",
    "college": "Distal Na⁺ delivery and flow (loop and thiazide diuretics) increase K⁺ secretion, causing hypokalaemia.",
-   "phd": "High-K⁺ diets activate WNK–SPAK inhibition of NCC, shifting Na⁺ reabsorption to ENaC to favour K⁺ secretion (the potassium switch)."
+   "phd": "High-K⁺ diets turn down WNK–SPAK signalling in the distal convoluted tubule, so NCC is switched off and more Na⁺ reaches ENaC, favouring K⁺ secretion (the potassium switch)."
   },
   "nakatpase": {
    "name": "Na⁺/K⁺-ATPase",
@@ -1720,7 +1720,7 @@ canvas.trace{ display:block; width:100%; }
   "digestive": {
    "ms": "Water and salt you eat and drink are absorbed by your gut and then balanced by your kidneys. The liver makes urea, which the kidneys get rid of.",
    "hs": "The kidneys excrete the urea made by the liver from protein, and the acid made by metabolism. Diarrhoea and vomiting change the salt, water and acid that the kidneys must correct.",
-   "college": "The proximal tubule shares many transporters with the gut (SGLT1/2, PepT, NHE3); renal gluconeogenesis supplies up to a quarter of glucose in a long fast.",
+   "college": "The proximal tubule shares many transporters with the gut (SGLT1/2, PepT, NHE3); renal gluconeogenesis supplies about a fifth of glucose after an overnight fast and about half after weeks of fasting.",
    "phd": "Hepatorenal syndrome: splanchnic vasodilation in cirrhosis causes intense renal vasoconstriction with structurally normal kidneys."
   },
   "urinary": {
@@ -1895,7 +1895,7 @@ canvas.trace{ display:block; width:100%; }
     "college": "Nephron loss lowers Kf: GFR {gfr} mL/min; scarring thins the cortex and shrinks the kidney."
    },
    "anatDI": {
-    "ms": "Without working ADH, the collecting duct stays leaky to nothing but salt: the urine is dilute ({uosm} mOsm/kg) and there’s lots of it ({v} mL/min).",
+    "ms": "Without working ADH, the collecting duct stays water-tight: the urine is dilute ({uosm} mOsm/kg) and there’s lots of it ({v} mL/min).",
     "college": "No AQP2 in the collecting duct: tubular fluid stays as dilute as it left the diluting segment ({uosm} mOsm/kg) at {v} mL/min."
    },
    "anatSiadh": {
@@ -2154,7 +2154,6 @@ canvas.trace{ display:block; width:100%; }
   "def": "The part of the loop that pumps salt out (with NKCC2) but lets no water follow.",
   "match": [
    "thick ascending limb",
-   "ascending limb",
    "TAL",
    "diluting segment"
   ]
@@ -2288,7 +2287,6 @@ canvas.trace{ display:block; width:100%; }
   "def": "Too much acid in the blood (pH below 7.35).",
   "match": [
    "acidosis",
-   "acidic",
    "ketoacidosis",
    "DKA"
   ]
@@ -2296,8 +2294,7 @@ canvas.trace{ display:block; width:100%; }
  "alkalosis": {
   "def": "Too little acid in the blood (pH above 7.45).",
   "match": [
-   "alkalosis",
-   "alkaline"
+   "alkalosis"
   ]
  },
  "bicarbonate": {
@@ -4274,7 +4271,7 @@ const BODY = {
   sleep:    { aff: 1.1,  symp: 1,   ren: 1,   nonosm: 1.5, osm: .5,  insens: .5,  hco3: 0,  pco2: 4 },
   rest:     { aff: 1,    symp: 1,   ren: 1,   nonosm: 0,   osm: .6,  insens: .6,  hco3: 0,  pco2: 0 },
   meal:     { aff: .93,  symp: 1,   ren: .9,  nonosm: 0,   osm: .7,  insens: .6,  hco3: 1,  pco2: .5 },
-  exercise: { aff: 1,    symp: 1.5, ren: 2.5, nonosm: 3,   osm: .55, insens: 1.6, hco3: -4, pco2: 0 }
+  exercise: { aff: 1,    symp: 1.5, ren: 2.5, nonosm: 3,   osm: .55, insens: 1.6, hco3: -1.5, pco2: 0 }
 };
 const body = () => BODY[O.state().phase];
 const phaseMAP = () => { const v = O.vitals(); return v.dbp + (v.sbp - v.dbp) / 3; };
@@ -4341,7 +4338,8 @@ const makeKidney = () => {
     let adh = (Math.max(0, .5 * (P - 284)) + b.nonosm + (R.MAP < 80 ? (80 - R.MAP) * .15 : 0)) * cen;
     if (p.adh === "siadh") adh = Math.max(adh, 8);
     const tot = adh + K.ddavp;
-    const eT = tot * tot / (tot * tot + 2.56) * (p.adh === "nephro" ? .08 : 1);
+    const sat = tot * tot / (tot * tot + 2.56);
+    const eT = p.adh === "nephro" ? .06 + .02 * sat : sat;   /* nephrogenic DI: a small residual permeability, barely ADH-dependent */
     W.e += (eT - W.e) * (1 - Math.exp(-dt / 20));
     const ureaF = p.urea ? W.e * R.scar * R.wash * (p.loop ? .3 : 1) : 0;
     const I = R.Dst.map((d, i) => d + UREA[i] * ureaF);
@@ -4385,7 +4383,8 @@ function acidBase(p, g){
   } else {
     hco3 = metab;
     const d = metab - 24;
-    pco2 = p.comp === "minutes" ? 40 + b.pco2 : 40 + b.pco2 + (d < 0 ? 1.2 * d : .7 * d);
+    /* compensated: Winter's formula for acidosis (PaCO₂ = 1.5·HCO₃⁻ + 8, never above 40), +0.7 per mmol/L for alkalosis */
+    pco2 = p.comp === "minutes" ? 40 + b.pco2 : 40 + b.pco2 + (d < 0 ? Math.min(0, 1.5 * metab + 8 - 40) : .7 * d);
   }
   pco2 = clamp(pco2, 10, 110);
   const ph = 6.1 + Math.log10(hco3 / (.03 * pco2));
@@ -4396,7 +4395,8 @@ function acidBase(p, g){
   if (ckd) k += Math.max(0, 7.4 - ph) * 2;
   k = clamp(k, 2, 7.5);
   /* the kidney's response */
-  const acid = Math.max(0, 24 - hco3), alk = Math.max(0, hco3 - 26), days = p.comp === "days" ? 1 : p.comp === "hours" ? .35 : .08;
+  /* the kidney answers the metabolic component: in a compensated respiratory disorder it holds the new HCO₃⁻ at a normal net acid excretion */
+  const acid = Math.max(0, 24 - metab), alk = Math.max(0, metab - 26), days = p.comp === "days" ? 1 : p.comp === "hours" ? .35 : .08;
   const ammo = Math.min(1, p.kf / .6);
   const nh4 = Math.min(300, (40 + acid * 14 * days) * ammo * (alk ? Math.max(.3, 1 - alk * .06) : 1));
   const ta = (20 + acid * 1.2 * days) * Math.max(.4, mass);

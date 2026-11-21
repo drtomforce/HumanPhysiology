@@ -712,7 +712,7 @@ canvas.trace{ display:block; width:100%; }
   "sleep": {
    "ms": "While you sleep and don’t eat, your liver keeps your blood sugar steady. During the day it stored some sugar as a starchy fuel called glycogen. At night it slowly breaks that store down and releases the sugar into your blood, so your brain has fuel until breakfast.",
    "hs": "The liver stores about 100 grams of glucose as glycogen. Overnight the pancreas releases the hormone glucagon. This signals the liver to break down glycogen and also to make new glucose from building blocks such as amino acids and lactate. By morning, much of the liver’s glycogen has been used up. The liver also cleans the blood by breaking down drugs and toxins.",
-   "college": "After an overnight fast, glycogenolysis and gluconeogenesis each supply roughly half of hepatic glucose output, about 2 mg/kg/min. The share from gluconeogenesis rises the longer the fast lasts. Glucagon raises cAMP in hepatocytes, which activates glycogen phosphorylase and inhibits glycogen synthase. Cortisol and growth hormone rise in the early morning and add to hepatic glucose output (the ‘dawn phenomenon’).",
+   "college": "After an overnight fast, hepatic glucose output is about 2 mg/kg/min, with glycogenolysis supplying rather more than half of it and gluconeogenesis the rest. The share from gluconeogenesis rises the longer the fast lasts. Glucagon raises cAMP in hepatocytes, which activates glycogen phosphorylase and inhibits glycogen synthase. Cortisol and growth hormone rise in the early morning and add to hepatic glucose output (the ‘dawn phenomenon’).",
    "phd": "A large fraction of the hepatic transcriptome oscillates with the circadian clock, and feeding is the dominant zeitgeber for the liver: food at the ‘wrong’ time can decouple it from the SCN (Damiola et al. 2000). ¹³C-NMR studies (Rothman et al. 1991; Landau et al. 1996) put gluconeogenesis at about half of glucose output after 14 hours of fasting and over 90% after 40 hours."
   },
   "rest": {
@@ -765,7 +765,7 @@ canvas.trace{ display:block; width:100%; }
     "ms": "After meals your liver saves sugar as glycogen. Between meals and overnight it spends that store to keep your blood sugar steady. If you don’t eat for a long time, it makes brand-new sugar and another fuel, ketones, for your brain.",
     "hs": "Insulin after a meal tells the liver to store glucose as glycogen and make fat from any extra. Glucagon between meals tells it to break glycogen down and make new glucose (gluconeogenesis) from lactate, amino acids and glycerol. In a long fast, glycogen runs out and the liver burns fat into ketone bodies, which the brain can use instead of glucose.",
     "college": "One model runs the whole day minute by minute: meals add glucose to the portal vein, a simple pancreas sets insulin and glucagon, and the liver decides between glycogen synthesis, glycogenolysis, gluconeogenesis, de novo lipogenesis, β-oxidation, ketogenesis and VLDL export. Switch to a three-day fast to watch the hand-over from glycogen to gluconeogenesis to ketones.",
-    "phd": "The model is a teaching simplification calibrated to human isotope data: hepatic glucose output ~2 mg/kg/min after an overnight fast with ~45% from gluconeogenesis, ~95% by 40 h; liver glycogen ~50–100 g over a mixed-diet day; β-hydroxybutyrate ~0.1 fed, ~2–3 mmol/L after three days. Hepatic insulin resistance from steatosis is a single gain; alcohol’s NADH load halves gluconeogenesis while ethanol is in the blood."
+    "phd": "The model is a teaching simplification calibrated to human isotope data: hepatic glucose output ~2 mg/kg/min after an overnight fast with ~37% of it from gluconeogenesis (a little below the ~50% the isotope studies report at 14 h, because the model leans on glycogenolysis while the store is full), ~97% by 40 h; liver glycogen ~50–110 g over a mixed-diet day; β-hydroxybutyrate ~0.1 fed, ~2–3 mmol/L after three days. Hepatic insulin resistance from steatosis is a single gain; alcohol’s NADH load halves gluconeogenesis while ethanol is in the blood."
    },
    "hormoneNote": {
     "ms": "Insulin (blue) is the ‘store it’ signal and glucagon (orange) is the ‘release it’ signal. After a meal insulin wins; overnight and in the run, glucagon wins.",
@@ -841,7 +841,7 @@ canvas.trace{ display:block; width:100%; }
     "couinaud",
     "gallbladder"
    ],
-   "ms": "The big right part of the liver, tucked under your right ribs. It is about five times bigger than the left lobe.",
+   "ms": "The big right part of the liver, tucked under your right ribs. It is several times bigger than the left lobe.",
    "hs": "The right lobe is the largest, taking up most of the space under the right ribs and the dome of the diaphragm. The gallbladder sits in a hollow on its underside.",
    "college": "Anatomically the right lobe lies to the right of the falciform ligament; functionally (Cantlie’s line, from the gallbladder fossa to the IVC) the right liver is segments V–VIII, about 60% of the volume, supplied by the right portal vein and hepatic artery.",
    "phd": "The functional, not the surface, division guides resection: a right hepatectomy removes V–VIII along the middle hepatic vein plane. Living donors give the right lobe to adults, with the remnant needing ≥30% of the volume to avoid post-hepatectomy liver failure."
@@ -997,7 +997,7 @@ canvas.trace{ display:block; width:100%; }
    ],
    "ms": "Doctors divide the liver into eight pieces. Each piece has its own pipes, so a surgeon can remove one and leave the rest working.",
    "hs": "The liver has eight segments, numbered I to VIII. Each has its own branch of the portal vein, hepatic artery and bile duct, and they are separated by the hepatic veins. Surgeons can remove whole segments safely.",
-   "college": "Segments are defined by the portal pedicles (Glissonian sheaths) in the centre and the hepatic veins at their borders: the middle hepatic vein splits right from left liver; the right vein splits VII–VIII from V–VI; the portal bifurcation splits upper from lower segments.",
+   "college": "Segments are defined by the portal pedicles (Glissonian sheaths) in the centre and the hepatic veins at their borders: the middle hepatic vein splits right from left liver; the right hepatic vein splits the anterior sector (V, VIII) from the posterior sector (VI, VII); the plane of the portal bifurcation splits the upper segments (VII, VIII) from the lower (V, VI).",
    "phd": "Brisbane 2000 terminology names resections by segment (e.g. right hemihepatectomy, V–VIII). Portal vein embolisation of the side to be removed makes the remnant grow beforehand."
   },
   "varices": {
@@ -1159,7 +1159,7 @@ canvas.trace{ display:block; width:100%; }
    ],
    "ms": "A tiny channel between liver cells where bile is made. Bile flows out to the corners of the lobule, the opposite way to the blood.",
    "hs": "Bile canaliculi are tiny channels formed between neighbouring hepatocytes. Bile flows along them towards the portal triads, opposite to the blood, into the bile ductules.",
-   "college": "The canalicular membrane, sealed by tight junctions, pumps bile acids (BSEP), conjugated bilirubin (MRP2) and phospholipid (MDR3) into the lumen; water follows osmotically. Bile-salt-dependent and -independent flow together make ~600 mL/day.",
+   "college": "The canalicular membrane, sealed by tight junctions, pumps bile acids (BSEP), conjugated bilirubin (MRP2) and phospholipid (MDR3) into the lumen; water follows osmotically. Bile-salt-dependent and -independent flow together make ~600–1,000 mL/day.",
    "phd": "Mutations in BSEP (ABCB11), MDR3 (ABCB4) or FIC1 (ATP8B1) cause the progressive familial intrahepatic cholestases; drugs that inhibit BSEP (bosentan, some antibiotics) cause cholestatic drug injury. Dubin–Johnson syndrome is MRP2 deficiency."
   },
   "zone1": {
@@ -1239,7 +1239,7 @@ canvas.trace{ display:block; width:100%; }
    ],
    "ms": "A store of sugar packed into tight bundles, like a pantry. The liver fills it after meals and empties it overnight.",
    "hs": "Glycogen is a branched chain of glucose. The liver holds up to about 100 g, enough for about a day of brain fuel. Insulin turns on glycogen synthase; glucagon and adrenaline turn on glycogen phosphorylase.",
-   "college": "Liver glycogen ranges ~40–100 g over a mixed-diet day (up to ~150 g on a high-carbohydrate diet). Unlike muscle, the liver has glucose-6-phosphatase, so its glycogen can leave as free glucose. About a third of post-meal glycogen is made by the indirect pathway from lactate and alanine.",
+   "college": "Liver glycogen ranges ~50–110 g over a mixed-diet day (up to ~150 g on a high-carbohydrate diet). Unlike muscle, the liver has glucose-6-phosphatase, so its glycogen can leave as free glucose. About a third of post-meal glycogen is made by the indirect pathway from lactate and alanine.",
    "phd": "Glycogen synthase is activated by dephosphorylation (PP1 bound by GL, which glycogen phosphorylase a inhibits), so phosphorylase must be inactivated before synthase can turn on, a glucose-sensing switch in the hepatocyte. ¹³C-MRS measures liver glycogen non-invasively."
   },
   "gng": {
@@ -1255,7 +1255,7 @@ canvas.trace{ display:block; width:100%; }
    ],
    "ms": "Making brand-new sugar from leftovers, such as bits of protein and the lactate from your muscles.",
    "hs": "Gluconeogenesis makes glucose from lactate, amino acids such as alanine, and glycerol from fat. It keeps blood sugar up when glycogen runs low, and it is switched on by glucagon and cortisol.",
-   "college": "It reverses glycolysis around three irreversible steps (pyruvate carboxylase and PEPCK, fructose-1,6-bisphosphatase, glucose-6-phosphatase). Energy and acetyl-CoA, the allosteric activator of pyruvate carboxylase, come from fatty-acid oxidation. The kidney adds up to a quarter of output in a long fast.",
+   "college": "It reverses glycolysis around three irreversible steps (pyruvate carboxylase and PEPCK, fructose-1,6-bisphosphatase, glucose-6-phosphatase). Energy and acetyl-CoA, the allosteric activator of pyruvate carboxylase, come from fatty-acid oxidation. The kidney adds about a fifth of glucose output after an overnight fast and about half after weeks of starvation.",
    "phd": "Substrate supply limits flux in a fast: muscle proteolysis provides alanine and glutamine. Alcohol’s NADH load converts pyruvate to lactate and oxaloacetate to malate, starving the pathway, hence alcohol-induced fasting hypoglycaemia. Metformin lowers gluconeogenesis partly through redox changes (mitochondrial glycerophosphate dehydrogenase)."
   },
   "dnl": {
@@ -1548,7 +1548,7 @@ canvas.trace{ display:block; width:100%; }
   },
   "digestive": {
    "ms": "The liver makes bile, which helps you digest fat, and it is the first stop for all the food you absorb.",
-   "hs": "The liver makes about 600 mL of bile a day, stored in the gallbladder and released after meals to help digest fat. All the nutrients absorbed from the gut (except most fat) pass through the liver in the portal vein before reaching the rest of the body.",
+   "hs": "The liver makes about 600 mL to a litre of bile a day, some of it stored in the gallbladder and released after meals to help digest fat. All the nutrients absorbed from the gut (except most fat) pass through the liver in the portal vein before reaching the rest of the body.",
    "college": "Bile acids emulsify fat and form micelles that carry fat-soluble vitamins; without them steatorrhoea follows. The liver is the first pass for glucose, amino acids (it makes urea from their nitrogen), fructose, drugs and bacterial products. Chylomicrons skip it, entering via the lymph.",
    "phd": "Bile acids shape the microbiome and signal through FXR (ileal FGF19 → hepatic CYP7A1 repression) and TGR5 (GLP-1 release, brown-fat thermogenesis). Gut barrier failure delivers endotoxin to the portal vein and drives Kupffer-cell inflammation in alcohol-related and fatty liver disease."
   },
@@ -4111,7 +4111,7 @@ function metab(p, func){
     const It = (.05 + .03 * clamp((Gl - 3.6) / 1.2) + .3 * Math.max(0, Gl - 4.8) * (1 + Ra / 6) / (1 + .1 * Math.max(0, Gl - 4.8))) * (1 - .8 * mus) / (.5 + .5 * Sm);
     I += (It - I) / 15;
     const Gn = clamp(.2 + .3 * clamp((5.6 - Gl) / 1.6) + .55 * mus - .25 * Math.min(1, I) + .15 * clamp(fastH / 48), .05, 1);
-    const Ih = I * 1.6 * Sl / (I * 1.6 * Sl + .35);   /* the liver sees portal insulin, ~1.6× systemic */
+    const Ih = I * 1.6 * Sl / (I * 1.6 * Sl + .35);   /* the liver sees portal insulin: 2–3× systemic in life, flattened to 1.6× here because the rest of the gain sits in this curve */
     const gf = clamp(gly / cap);
     const HGOd = 2.72 * (1 - .85 * Ih) * (.5 + Gn) + 1.6 * mus;
     const etF = 1 - .5 * clamp(bac / .3);
@@ -4486,7 +4486,7 @@ function buildLobule(){
   for (const c of cells){
     const dead = deadSet.has(c);
     let fill = V.zones ? zoneColor(c.s) : C("--cell");
-    /* glycogen makes cells paler and pinker (more in zone 1 when filling, emptied from zone 1 first when fasting) */
+    /* glycogen makes cells paler and pinker (a little more pericentrally, where the direct pathway lays it down) */
     const gz = clamp(glyF * (c.zone === 3 ? 1.1 : c.zone === 2 ? 1 : .85));
     fill = mix(fill, C("--gly"), .28 * gz);
     if (dead) fill = C("--s6");

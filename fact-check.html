@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fact check — HumanPhysiology</title>
+<meta name="description" content="How the facts on HumanPhysiology are checked, how far the check has got, and what readers have reported.">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="static/images/favicon-32.png">
+<link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HumanPhysiology">
+<meta property="og:title" content="Fact check — HumanPhysiology">
+<meta property="og:description" content="How the facts on HumanPhysiology are checked, how far the check has got, and what readers have reported.">
+<meta property="og:url" content="https://drtomforce.github.io/HumanPhysiology/fact-check.html">
+<meta property="og:image" content="https://drtomforce.github.io/HumanPhysiology/static/images/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The HumanPhysiology logo above the words: A day in the life of the human body">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fact check — HumanPhysiology">
+<meta name="twitter:description" content="How the facts on HumanPhysiology are checked, how far the check has got, and what readers have reported.">
+<meta name="twitter:image" content="https://drtomforce.github.io/HumanPhysiology/static/images/social-card.png">
 <meta name="description" content="How the facts in HumanPhysiology are checked, how far the check has got, and what readers have reported.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,7 +79,8 @@ code{ font-size:.9em; background:var(--surface-2); padding:1px 5px; border-radiu
 /* ---------- header ---------- */
 .top{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 24px; border-bottom:1px solid var(--line); }
 .brand{ display:flex; align-items:center; gap:12px; min-width:0; text-decoration:none; }
-.brand svg{ flex:none; }
+.brand svg, .brand-logo{ flex:none; }
+.brand-logo{ display:block; height:34px; width:auto; }
 .brand-title{ font-family:var(--serif); font-size:21px; font-weight:500; letter-spacing:-0.01em; margin:0; line-height:1.1; }
 .brand-sub{ margin:2px 0 0; color:var(--muted); font-size:13px; }
 .pill{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); color:var(--muted); border-radius:999px; padding:5px 12px 5px 9px; font-size:13px; font-weight:500; text-decoration:none; white-space:nowrap; background:transparent; cursor:pointer; }
@@ -181,7 +199,7 @@ footer{ margin-top:56px; padding-top:16px; border-top:1px solid var(--line); col
 
 <header class="top">
   <a class="brand" id="home" href="index.html">
-    <svg width="34" height="34" viewBox="-50 -50 100 100" aria-hidden="true"><path fill="var(--accent)" d="M0 34 C-30 14 -44 -4 -40 -20 C-36 -36 -14 -40 0 -24 C14 -40 36 -36 40 -20 C44 -4 30 14 0 34Z"/></svg>
+    <img class="brand-logo" src="static/images/accumbenslogotype10057_20261122.webp" width="63" height="34" alt="" aria-hidden="true">
     <div>
       <p class="brand-title">HumanPhysiology</p>
       <p class="brand-sub">A day in the life of the human body</p>

@@ -11,6 +11,7 @@ The README describes what already exists. This file only lists what doesn't exis
 | Organ deep-dive pages (`organs/<id>.html`) | 9: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones | 5 existing organs (skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic | 3: muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 7: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection | One per new system, plus cross-system journeys |
+| Prediction questions | 0 | A Predict section on the 9 finished pages, the questions hub and the converging cases: see [Questions](#6-questions-predict-then-watch) |
 
 ## Next up
 
@@ -52,6 +53,7 @@ These are the conventions the heart, lungs and brain pages set. Each new page sh
 10. **Export**: every figure has an id, an `aria-label` and a `data-export-name`; canvases are sized by a helper that reads `window.__exportDpr` and sets `node.__fit`; live recordings are added to the CSV with `OrganPage.exportData()`, and `node tests/export-check.mjs <page>` passes.
 11. **Facts checked** (see `FACTUAL_CHECK.md`): the page's numbers agree with the consistency registry there, the PhD / MD text names its key sources, every ledger row it approves cites sources from `fact-check/sources.json`, with `--by claude-nightly-<date>`, as `--lookup <id>:<locator> --url <the page it fetched> --quote "<text copied from that page>"` only for a passage it actually fetched and read in the session, and as `--memory <id>` otherwise, and after `node fact-check/scan.mjs --update`, `node fact-check/scan.mjs --check --page <id>` passes, or the page is listed as unchecked in `FACTUAL_CHECK.md`. Add the page's drawing and UI constants and functions to `ledger.ignore` in `fact-check/ledger.json`.
 12. **European setting and SI units only**: lab values, readouts, axes, CSV headers and text use SI units alone (glucose and urea in mmol/L, bilirubin and creatinine in µmol/L), with no US conventional units in brackets. Blood pressure stays in mmHg. Where a rule differs by country (a legal limit, a guideline), show the UK value and the usual European one.
+13. **Predict section**: 2–3 questions built on the page's own scenarios, in the format of [6.2](#62-question-format), listed on the questions hub.
 
 ---
 
@@ -284,11 +286,88 @@ These span several organs and are best built as their own pages (for example `ex
 
 - **Changes across pages**: carry a condition from one organ page to another, for example heart failure on the heart page → pulmonary oedema on the lungs page → lower GFR on the kidneys page, through the shareable-link format.
 - **Body view scenarios**: bring the organ pages' scenarios (an asthma attack, a heart attack, dehydration) to the whole body, so every vital, system and journey responds.
-- **Quizzes**: a short check-your-understanding set per section at each reading level.
+- **Quizzes**: replaced by prediction questions; see [Questions](#6-questions-predict-then-watch).
 - **Accessibility**: keyboard access to every figure and slider, text alternatives for the animated figures, a reduced-motion mode, and colour-blind-safe system colours.
 - **Performance**: `index.html` is ~800 KB. Consider splitting it into modules once more systems are added, keeping the no-build, open-in-a-browser promise.
 - **Tests**: `tests/export-check.mjs` already loads every page without errors and applies one scenario. Extend it (or add a sibling) so every scenario applies and resets cleanly, and the sync engine is up to date (`node organs/sync-engine.mjs --check`).
 - **Glossary**: add every new term from the pages above, with its match forms.
+
+## 6. Questions: predict, then watch
+
+Questions that make the reader commit to a hypothesis before the model runs, then explain what happened. The loop follows quansatz (Brief → Predict → Run → Reconcile → Depth), but nothing here is new machinery: the background is the pages' existing text at the reader's level, the setting is a scenario a page already has, and the run is that page's own model with its healthy reference beside it. Questions start isolated, one organ and one scenario, and lead on to converging cases where several organ systems meet.
+
+Decisions so far:
+- **Where**: a Predict section on each organ page, run by that page's models, plus a hub page (`explore/questions.html`). Converging cases move from page to page through links.
+- **Levels**: the same scenario and the same hypotheses at all four levels. Only the wording changes (background, setting, choices, explanations). The PhD / MD level adds a deeper paragraph with its sources.
+- **No score**: each choice has its own explanation. Finished questions are remembered and unlock the converging cases.
+- **Choices only** for now. Predicting a number on a slider comes later ([6.7](#67-later)).
+
+### 6.1 The loop
+1. **Background**: the parts of the page the question needs, at the reader's level. These are links to, or excerpts of, the page's anatomy and how-it-works sections, not new text. Every term the setting uses is in the glossary.
+2. **Setting**: the scenario told as a case, without naming the diagnosis ("A 19-year-old with type 1 diabetes has been vomiting since yesterday and has missed two insulin doses …").
+3. **Hypothesis**: 3–4 choices. The common wrong intuition comes first and nothing is preselected. "Run it" stays disabled until a choice is made, and the choice is locked once it runs.
+4. **Run**: `applyScenario` on the page's real models. The dashed healthy traces and the ▲/▼ readouts of `OrganPage.delta()` show what changed. The Changes bar lists the scenario, so undo, reset and the shareable link work as they do now. The figures named in the question's `watch` list are scrolled to and highlighted.
+5. **Reconcile**: the explanation for the choice that was made, saying why it holds or where it fails, and pointing at the trace or readout that shows it. The other choices' explanations can be opened afterwards.
+6. **Deeper**: the PhD / MD paragraph and its sources, and a link to the next question or the converging case it leads to.
+
+### 6.2 Question format
+One entry per question in the page's content JSON, under `questions`:
+
+```json
+{ "id": "kidneys-dry-osm",
+  "scenario": "dry",
+  "background": ["concentrate"],
+  "setting":   { "ms": "…", "hs": "…", "college": "…", "phd": "…" },
+  "hypotheses": [
+    { "id": "dilute", "text": { "ms": "…", … }, "reconcile": { "ms": "…", … } },
+    { "id": "conc",   "text": { … }, "reconcile": { … } }
+  ],
+  "correct": "conc",
+  "watch": ["urineOsm", "adh"],
+  "leadsTo": ["cholera-shock"] }
+```
+
+A question names an existing scenario by its id rather than copying its params, so the two can't drift apart. Text objects use `levelText()`, so a missing level falls back the way it does now.
+
+### 6.3 Single-organ questions
+A starter set of two or three per finished page, each on a scenario that already exists (the scenario ids are in brackets):
+- **Heart**: an inferior heart attack, then which ECG leads change (`inferiorMI`), and why the same patient's rate falls (`inferiorCHB`). Septic shock: what happens to systemic resistance and cardiac output (`sepsis`).
+- **Lungs**: an asthma attack, then what the flow–volume loop does (`asthma`). The summit of Everest versus a week at altitude: which way PaCO₂ goes (`everest`, `acclimatised`).
+- **Brain**: a local anaesthetic, then which fibres stop first (`lidocaine`). Panic and over-breathing: why the fingers tingle (`panic`). Very high potassium (`hyperK`).
+- **Kidneys**: dehydrated after a run, then urine volume and osmolality (`dry`). An SGLT2 inhibitor: glucose in the urine with normal blood glucose (`sglt2`). SIADH: plasma sodium (`siadh`).
+- **Stomach & gut**: cholera, then where the water comes from (`cholera`), and why sugar in the drink helps (`ors`). Lactose intolerance and a glass of milk (`lactose`).
+- **Liver**: a paracetamol overdose, then which zone of the acinus dies first (`overdose`), and what NAC at 8 hours changes (`nac`). Three days without food: what fuels the brain (`fast`).
+- **Pancreas**: type 1 diabetes and a day without insulin, then glucose, ketones and pH (`t1dka`). Too much insulin (`hypo`). Type 2 on a sulfonylurea versus a GLP-1 drug: which one can cause a hypo (`t2dsu`, `t2dglp`).
+- **Bones**: primary hyperparathyroidism, then serum Ca²⁺ and phosphate (`hpt`). Six months in space: where the calcium goes (`astronaut`). Chronic kidney disease, shared with the kidneys page (`ckd`).
+- **Muscles**: myasthenia, then force over repeated stimulation (`mg`) and with neostigmine (`mgNeo`). A marathon without fuel: when the wall comes (`wall`).
+
+### 6.4 Converging cases
+Each case unlocks once its parent questions are done. It visits several pages in turn and carries the condition across in the shareable-link format, which also builds "Changes across pages" ([5](#5-shared-and-supporting-work)). At every stop the reader predicts again, so the case is a chain of the same loop. The case card names the pages it needs and says "not yet available" until they all exist. Where a stop has no matching scenario yet, one is added to that page.
+- **Diabetic ketoacidosis**: pancreas (`t1dka`: no insulin, glucose and ketones rise) → kidneys (`diabetes`: osmotic diuresis, dehydration, bicarbonate) → lungs (Kussmaul breathing and a low PaCO₂; needs a metabolic-acidosis scenario) → heart and brain (potassium when insulin is given: `hyperK`, and a low-K⁺ ECG).
+- **Cholera to shock**: gut (`cholera`) → kidneys (prerenal injury; `dry` or a new `cholera` stop) → heart (rate and stroke volume with low volume) → gut again (`ors`, the cure).
+- **Heart failure**: heart (`failure`) → lungs (pulmonary oedema; needs a scenario) → kidneys (low GFR, RAAS, a loop diuretic: `loop`).
+- **The marathon wall**: muscles (`wall`) → liver (glycogen gone, gluconeogenesis; the `fast` model at the pace of a run) → pancreas (insulin down, glucagon up) → muscles again (`wallFuel`).
+- **Altitude**: lungs (`everest` → `acclimatised`) → kidneys (bicarbonate loss; needs a scenario) → bones (EPO and red cells; `donation` shows the marrow refilling, and a hypoxia scenario is needed). This is also 4.2's "Altitude acclimatisation".
+
+### 6.5 Hub page (`explore/questions.html`)
+- The questions are grouped by organ and system, with a done or open mark on each, kept in `localStorage` by question id (wrapped in try/catch, so the page works without it).
+- The converging cases are drawn as a small map with their parent questions, like quansatz's insight web. A case lights up when its parents are done, and any case can still be opened directly.
+- The hub links to each Predict section and back, carrying `level`. `index.html` links to the hub, and an organ's side panel on the body lists that organ's questions.
+
+### 6.6 Conventions
+- The text is written at all four levels and uses SI units only, as in the deep-dive conventions.
+- **Facts**: each explanation agrees with the model it runs and with the consistency registry in `FACTUAL_CHECK.md`. The PhD / MD paragraph names its sources from `fact-check/sources.json`.
+- **A test**, `tests/questions-check.mjs`, checks every question:
+  - its scenario exists and applies and resets cleanly;
+  - `correct` names one of its hypotheses;
+  - every level has its text, or a deliberate fallback;
+  - each `watch` readout moves the way the correct explanation says (up, down or unchanged against the healthy reference);
+  - every `leadsTo` case exists.
+
+### 6.7 Later
+- **Predicting a number**: a slider ("GFR will fall to about … mL/min"), judged against the model's result within a margin, with an explanation for each of too high, too low and close.
+- **On the body**: questions on the body view once "Body view scenarios" ([5](#5-shared-and-supporting-work)) exists, so a converging case can end on the whole body with every vital responding.
+- **New pages**: skin, eyes, ears, throat and spleen each get a Predict section as they are built (convention 13), and each new page opens the converging cases that were waiting for it.
 
 ## Suggested order
 
@@ -299,8 +378,9 @@ These span several organs and are best built as their own pages (for example `ex
 5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
 6. ~~**Immune & lymphatic system on the body**~~: ~~the animated layer~~ (done); ~~the "follow an infection" journey~~ (done); ~~the spleen and lymph nodes as a new organ~~ (done; its deep-dive page is listed under 3.1).
 7. ~~Muscles page~~ (done). ~~Bones page~~ (done). The muscles & skeleton system on the body.
-8. Skin page and the skin system on the body (heat balance).
-9. Eyes, ears and throat pages.
-10. Endocrine glands, and blood & vessels as new organs with pages.
-11. Reproductive system and organs.
-12. Cross-organ explorations and the extra sections on the heart, lungs and brain.
+8. Prediction questions: Predict sections on the nine finished pages and the hub ([6.1–6.3](#61-the-loop), [6.5](#65-hub-page-explorequestionshtml)), then the first converging case (diabetic ketoacidosis).
+9. Skin page and the skin system on the body (heat balance).
+10. Eyes, ears and throat pages.
+11. Endocrine glands, and blood & vessels as new organs with pages.
+12. Reproductive system and organs.
+13. Cross-organ explorations and the extra sections on the heart, lungs and brain.

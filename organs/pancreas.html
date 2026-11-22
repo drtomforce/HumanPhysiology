@@ -99,6 +99,8 @@ a{ color:inherit; }
 .op-top{ position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
 .op-bar{ display:flex; align-items:center; gap:14px; padding-top:10px; padding-bottom:10px; flex-wrap:wrap; }
 .op-back{ display:inline-flex; align-items:center; gap:6px; text-decoration:none; border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 13px 6px 10px; font-size:13px; font-weight:500; white-space:nowrap; }
+.op-logo{ display:block; flex:none; line-height:0; border-radius:6px; }
+.op-logo img{ display:block; height:28px; width:auto; }
 .op-back:hover{ background:var(--surface-2); }
 .op-name{ font-family:var(--serif); font-size:19px; font-weight:500; margin:0; letter-spacing:-.01em; white-space:nowrap; }
 .op-ctrls{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
@@ -447,6 +449,7 @@ canvas.trace{ display:block; width:100%; }
 <body>
 <header class="op-top">
   <div class="wrap op-bar">
+    <a class="op-logo" href="../index.html" aria-label="HumanPhysiology home"><img src="../static/images/accumbenslogotype10057_20261122.webp" width="52" height="28" alt=""></a>
     <a class="op-back" data-back href="../index.html"><svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>The whole body</a>
     <p class="op-name" data-organ-name></p>
     <div class="op-ctrls" data-controls></div>

@@ -73,11 +73,17 @@
                    memory, timed like URINES over about two weeks; each has a
                    vaccinated twin (vax, id + "Vax") with a faster second response;
                    text in CONTENT.infection.
+                   STEPS lists the step journeys (step ride): the motorLeg impulse's
+                   legs, then legs with a real duration (ms) along a path or at a
+                   point: cross-bridges, the foot landing (land, which pins the
+                   body's stride), the stretch report to the cerebellum, the tendon,
+                   the bone and its osteocytes; text in CONTENT.step (and, for the
+                   motor command, CONTENT.impulse).
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
                    follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg, breath,
                    breathSeg, bite, biteSeg, drop, dropSeg, infection, infectionSeg,
-                   ridePaused}. shown = which body systems
+                   step, stepSeg, ridePaused}. shown = which body systems
                    are drawn; live = the one that is animated (setSystem / setLive keep
                    the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
@@ -87,7 +93,8 @@
                    for a breath journey (startBreath / stopBreath), bite / biteSeg
                    for a bite journey (startBite / stopBite) and drop / dropSeg for a
                    urinary journey (startDrop / stopDrop), infection / infectionSeg
-                   for an infection journey (startInfection / stopInfection); one ride at a time
+                   for an infection journey (startInfection / stopInfection) and step / stepSeg
+                   for a step journey (startStep / stopStep); one ride at a time
                    (stopRides), and riding(s) says whether one is on.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
@@ -116,7 +123,8 @@
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
-                   IMPULSE rides one action potential in bullet time: its
+                   IMPULSE rides one action potential in bullet time (on the
+                   bulletRide engine, which STEP RIDE shares): its
                    timeScale() slows the beat, breath, blood and clock in the frame
                    loop, and IMPULSE CARD shows the stop, fibre, speed and real ms.
                    CASCADE is its mirror image, a hormone signal in time-lapse (built,
@@ -137,6 +145,10 @@
                    INFECTION RIDE follows one infection in time-lapse over days
                    (lapseRide, clockScreen); INFECTION CARD shows the stop, the cell
                    or molecule, the day, and a Vaccinated toggle.
+                   STEP RIDE follows one running step in bullet time and pins the
+                   body's stride to it (Msk.pin), so the foot lands, the ground
+                   pushes back and the bones bend when the ride says; STEP CARD
+                   shows the stop, the fibre or the load, real ms and an Other leg button.
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -150,7 +162,7 @@
 
  7. UI              Panel (intro with the live-system and sleep-stage cards, organ
                    view with "Part of" chips, red-cell, nerve-impulse, hormone-cascade,
-                   breath, bite, drop and infection journey views), timeline with
+                   breath, bite, drop, infection and step journey views), timeline with
                    the hypnogram strip, level switch, system switches, glossary tooltips.
 
  7b. REPORT        The REPORTER blocks (synced from organs/_template.html by
@@ -277,10 +289,10 @@ button{ font:inherit; color:inherit; }
 #s-blood .rbc.follow{ stroke:#fff; stroke-width:1.3; }
 #s-blood .rbc-trail{ fill:none; stroke:var(--ink); stroke-opacity:.5; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 /* the followed nerve impulse, its trail and puffs of transmitter at synapses */
-#s-impulse .imp-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-#s-impulse .imp-halo, #s-cascade .imp-halo{ opacity:.28; }
+#s-impulse .imp-dot, #s-stepRide .imp-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-impulse .imp-halo, #s-cascade .imp-halo, #s-stepRide .imp-halo{ opacity:.28; }
 #s-cascade .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-#s-impulse .imp-trail, #s-cascade .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+#s-impulse .imp-trail, #s-cascade .imp-trail, #s-stepRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 .follow-label.imp-paths{ margin-top:22px; }
 .imp-group{ margin:10px 0 6px; font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.07em; }
 .journey-steps{ list-style:none; margin:0 0 18px; padding:0; display:grid; gap:2px; counter-reset:j; }
@@ -533,7 +545,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .ms-mus.behind{ stroke-dasharray:3 2; }
 .ms-ic{ fill:none; stroke-width:2; stroke-linecap:round; }
 .ms-dia{ fill:none; stroke-width:4; stroke-linecap:round; }
-.ms-strain{ fill:none; stroke:#2fb3a3; stroke-width:10; stroke-linecap:round; opacity:0; }
+.ms-strain{ fill:none; stroke:#2fb3a3; stroke-width:10; stroke-linecap:round; }
 .ms-ocy{ fill:#a68c6a; }
 .ms-grf{ fill:none; stroke:#4a6fd1; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; }
 .ms-dot{ stroke:#ffffff80; stroke-width:.4; }
@@ -818,6 +830,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="journey" id="biteCard" aria-live="polite"></div>
       <div class="journey" id="dropCard" aria-live="polite"></div>
       <div class="journey" id="infectionCard" aria-live="polite"></div>
+      <div class="journey" id="stepCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <button class="zoom-reset" id="zoomReset" type="button">Whole body</button>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
@@ -3763,6 +3776,78 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "phd": "Seasonal vaccine effectiveness against medically attended influenza is typically 40–60% when the strains match, lower in older people and after antigenic drift. The nasal live attenuated vaccine also raises mucosal IgA and T cells. The strains are chosen twice a year, for each hemisphere, on WHO recommendations."
       }
     }
+  },
+  "step": {
+    "journeys": {
+      "run": { "name": "A running step", "group": "Muscles & skeleton",
+        "blurb": "One step of the evening run, from the motor cortex’s command to the bone it bends. The quadriceps braces, the foot lands and the ground pushes back, stretch sensors tell the cerebellum how the landing went, and the load runs through the tendon into the shin bone, where osteocytes feel it.",
+        "effect": "The step is done. Over the next hours the osteocytes make less sclerostin, and new bone is laid down where it bends most" }
+    },
+    "stops": {
+      "crossBridges": {
+        "name": "Cross-bridges pull: the thigh braces",
+        "ms": "Inside the muscle fibres, calcium lets millions of tiny protein arms grab the next thread and pull. They are called cross-bridges. The thigh muscle tenses just before the foot touches the ground, so the knee is ready to catch your weight.",
+        "hs": "Calcium binds to troponin, which moves tropomyosin out of the way, so myosin heads can grab actin and pull: a cross-bridge. Each pull uses one ATP. Force takes a few tens of milliseconds to build, so the quadriceps is switched on just before the foot lands. This pre-activation stiffens the knee for the impact.",
+        "college": "Ca²⁺ binding to troponin C shifts tropomyosin off the myosin-binding sites on actin. Myosin heads, cocked by ATP hydrolysis, attach, release phosphate and make the power stroke of about 5–10 nm, then let go when a new ATP binds. Force rises over tens of milliseconds because of the electromechanical delay and the elastic tendon in series. In running, the knee extensors’ EMG starts roughly 50–100 ms before the foot touches down.",
+        "phd": "Much of the stepping rhythm in steady running comes from spinal central pattern generators. The motor cortex is needed most for precise foot placement and stepping over obstacles (Drew & Marigold 2015). Pre-activation tunes leg stiffness to the impact the runner expects: it grows with speed and with the height of a drop (Komi 2000). In the body here, the command starts in the cortex, as in the nerve impulse journey."
+      },
+      "footStrike": {
+        "name": "The foot lands",
+        "ms": "The foot hits the ground and the ground pushes back. In a run the push is about two and a half times your body weight. Each foot is on the ground for about a quarter of a second at every step.",
+        "hs": "When you run, the ground-reaction force rises to about 2.5 times body weight at mid-stance, the middle of the time the foot is on the ground. At 168 steps a minute each foot is down for about a quarter of a second, a bit more than a third of each stride. Watch the blue arrow under the foot grow.",
+        "college": "The vertical ground-reaction force in running has a brief impact peak in heel strikers, about 1.5–2.5 times body weight in the first few tens of milliseconds, and a larger active peak of 2–3 times body weight at mid-stance, as the centre of mass is slowed and pushed back up. Contact lasts about 0.2–0.3 s, some 35–40% of the stride (Cavanagh & Lafortune 1980).",
+        "phd": "Forefoot strikers have little or no impact transient, though the active peak is about the same (Lieberman et al. 2010). The leg behaves like a spring, and runners keep the combined stiffness of leg and ground about the same on soft and hard surfaces by adjusting the leg (Ferris et al. 1998). The body here uses 2.5 times body weight and a foot on the ground for 38% of the stride."
+      },
+      "spindle": {
+        "name": "Stretch sensors report the landing",
+        "ms": "As the knee bends under your weight, the thigh muscle is stretched while it pulls. Stretch sensors inside it fire, and the signal races back up the leg to the spinal cord.",
+        "hs": "The landing stretches the quadriceps while it is working, an eccentric contraction. Muscle spindles inside it sense the stretch and fire along Ia fibres, the fastest in the body. Signals like these tell your brain where your leg is without looking. This sense is called proprioception.",
+        "college": "Ia afferents from the primary spindle endings signal how fast and how far the muscle is stretched, II afferents its length, and Ib afferents from Golgi tendon organs the force in the tendon. γ-motor neurons, switched on together with the α-motor neurons, keep the spindles taut as the muscle lengthens and shortens through the stride. Ia afferents conduct at up to about 120 m/s.",
+        "phd": "In the stance phase the same Ia volley drives a short-latency stretch reflex onto the extensor motor neurons. In walking, sensory feedback supplies a large share of the soleus muscle’s activity (Sinkjær et al. 2000). Proprioception needs PIEZO2: people born without it cannot sense where their limbs are and walk only by watching their feet (Chesler et al. 2016)."
+      },
+      "clarke": {
+        "name": "Relay in Clarke’s column",
+        "ms": "In the spinal cord the signal jumps to a new nerve cell, which sends it on to the back of the brain. You never feel this message. It is for the part of the brain that keeps your movements smooth.",
+        "hs": "Stretch signals from the leg climb a little way up the spinal cord to Clarke’s column, a column of nerve cells that runs from the bottom of the neck to the top of the lower back. There they cross a synapse onto cells whose fibres run straight to the cerebellum. Branches of the same sensory fibres also make the stretch reflex, which stiffens the knee.",
+        "college": "Clarke’s column (the dorsal nucleus, in lamina VII from about C8 to L3) receives Ia, Ib and II afferents from the leg. Those entering below it climb in the fasciculus gracilis to reach it. Its large neurons give rise to the dorsal spinocerebellar tract. The synapse is glutamatergic, with a delay under a millisecond.",
+        "phd": "Dorsal spinocerebellar tract neurons do more than relay one muscle: many combine several receptor types across the limb and encode the limb’s overall length and orientation (Bosco & Poppele 2001). The ventral spinocerebellar tract instead reports what the spinal interneurons and the central pattern generator are doing, a copy of the spinal motor output."
+      },
+      "dsct": {
+        "name": "Up to the cerebellum",
+        "ms": "The message shoots up the side of the spinal cord to the cerebellum, the wrinkled part at the back of the brain that helps with balance and timing. It stays on the same side as the leg the whole way.",
+        "hs": "The dorsal spinocerebellar tract runs up the outer edge of the spinal cord on the same side as the leg and enters the cerebellum through its lowest stalk. Unlike touch and the motor command it never crosses over, so each half of the cerebellum looks after its own side of the body. From the knee to the cerebellum takes a little over 10 ms.",
+        "college": "Dorsal spinocerebellar axons are among the largest and fastest in the cord. They climb on the same side in the lateral funiculus, enter through the inferior cerebellar peduncle and end as mossy fibres in the spinal parts of the cerebellum: the vermis and intermediate zone of the anterior lobe and the paramedian lobule.",
+        "phd": "Because each half of the cerebellum serves its own side, a cerebellar stroke makes the limbs on the same side clumsy, unlike a stroke in the cortex. Damage to the vermis of the anterior lobe, as in long-term heavy drinking, causes a wide-based, unsteady gait that affects the legs much more than the arms."
+      },
+      "cerebellum": {
+        "name": "The cerebellum compares and corrects",
+        "ms": "The cerebellum compares what the leg was told to do with what really happened. If the landing was off, it quietly adjusts the next step. You never notice it working.",
+        "hs": "The cerebellum gets a copy of each motor command as well as the report from the leg. Its Purkinje cells compare the two. If the ground was softer or the step shorter than planned, the cerebellum adjusts the commands for the next steps, through the thalamus to the motor cortex and through the brainstem. This is how you keep running smoothly on uneven ground.",
+        "college": "Mossy fibres excite granule cells, whose parallel fibres contact the Purkinje cells. Purkinje cells inhibit the deep cerebellar nuclei with GABA, and these project to the thalamus (and on to the motor cortex) and to brainstem nuclei that drive the reticulospinal and vestibulospinal tracts. Climbing fibres from the inferior olive signal errors, and over many repetitions they change the parallel-fibre synapses: this is how stepping adapts.",
+        "phd": "On a split-belt treadmill, people relearn a symmetrical gait within about 10–15 minutes and limp the other way for a while when the belts are matched again. Patients with cerebellar damage cannot make this adaptation (Morton & Bastian 2006). The cerebellum is thought to hold a forward model that predicts the sensory result of a command from its efference copy, so it can correct a step before the feedback arrives."
+      },
+      "tendon": {
+        "name": "Force through the tendon",
+        "ms": "Back in the leg, the thigh muscle pulls on a tough cord, the tendon, which runs over the kneecap to the shin bone. It stretches a little, like a spring, and stores energy that helps the push-off.",
+        "hs": "Muscles pull on bones through tendons, made of collagen. The quadriceps tendon holds the kneecap and carries on as the patellar tendon to the shin. As the knee bends under the load, muscle and tendon are stretched while pulling, and the tendon stores elastic energy, which it gives back as you push off. The Achilles tendon at the back of the ankle does the same.",
+        "college": "Tendon is mostly water and type I collagen. It stretches about 4–5% at its working loads and gives back about 90% of the energy stored in it. In running this stretch–shortening cycle lets the tendons store and return energy while the muscle fibres work at a fairly steady length, where they are most economical. The Achilles tendon carries about 6–8 times body weight.",
+        "phd": "Ker et al. (1987) estimated that at 4.5 m/s the Achilles tendon stores about 35 J and the arch of the foot about 17 J at each step, about half of the mechanical energy the body loses and regains. Tendons adapt to training over months to years, much more slowly than muscle grows, which is one reason why overuse injuries follow a quick rise in training (Magnusson & Kjær 2019)."
+      },
+      "boneBend": {
+        "name": "The shin bone bends",
+        "ms": "The force runs into the shin bone and bends it, a tiny bit. Bone looks rigid, but it bends like a very stiff spring, by about a thousandth of its length, and springs back.",
+        "hs": "At mid-stance, about a seventh of a second after landing, the shin bone (tibia) carries the most load. It bends by about 1,000 microstrain, 0.1% of its length: one side is squeezed and the other stretched. Watch the tibia and the femur glow. Bone is built to take this millions of times.",
+        "college": "Strain gauges fixed to the human tibia measure about 1,000 µε in running, and up to about 2,000 µε in zigzag uphill running (Burr et al. 1996). Cortical bone breaks in a single load at around 15,000–25,000 µε, so everyday strains are more than ten times lower: a large safety factor. Repeated loading still makes microdamage, which remodelling repairs.",
+        "phd": "A stress fracture is fatigue damage outpacing repair, often a few weeks into a sudden rise in training, when new remodelling sites briefly leave the bone more porous. How fast the bone is strained matters as well as how much: Turner’s (1998) rules are that dynamic loads build bone and static ones don’t, that short bouts are enough, and that bone gets used to the loads it is given."
+      },
+      "osteocytes": {
+        "name": "Osteocytes feel the bend",
+        "ms": "Deep inside the bone live osteocytes, cells buried in tiny caves and joined by thin tunnels. When the bone bends, fluid is squeezed through the tunnels and the cells feel it. Over the next hours and weeks they tell the bone to grow stronger where it is used.",
+        "hs": "Osteocytes are the most common cells in bone. Each sits in a little hollow, a lacuna, and reaches its neighbours through tiny channels called canaliculi. Each bend of the bone pushes fluid through the channels, and the cells sense the flow within seconds. Over the next hours they make less sclerostin, a brake on bone building, so osteoblasts lay down new bone where the strain is highest.",
+        "college": "Fluid shear on the osteocytes’ processes, sensed partly by the channel PIEZO1, raises their Ca²⁺ within seconds and releases ATP, nitric oxide and prostaglandin E2 within minutes. Sclerostin falls within about a day of loading, which frees the Wnt/β-catenin signal in osteoblasts. The response levels off after a few dozen loading cycles and comes back after a few hours’ rest, so short bouts with breaks build bone best.",
+        "phd": "The human skeleton holds about 42 billion osteocytes with about 3.7 trillion connections (Buenzli & Sims 2015). Removing Piezo1 from osteoblasts and osteocytes in mice makes bone thin and blunts its response to loading (Li et al. 2019). Romosozumab, an antibody against sclerostin, builds bone by taking away the same brake, as on the bones page. The body here keeps one peak strain a day, which the bones page’s mechanostat uses."
+      }
+    }
   }
 }
 </script>
@@ -4035,7 +4120,35 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "leucine": { "def": "An amino acid that switches on muscle protein building through mTORC1.", "match": ["leucine"] },
   "mTORC1": { "def": "A protein complex inside cells that senses amino acids, insulin and exercise and switches on protein building.", "match": ["mTORC1"] },
   "amino acids": { "def": "The building blocks of proteins.", "match": ["amino acids", "amino acid"] },
-  "reciprocal inhibition": { "def": "When one muscle contracts, the spinal cord relaxes its opposing partner, so they don’t fight each other.", "match": ["reciprocal inhibition"] }
+  "reciprocal inhibition": { "def": "When one muscle contracts, the spinal cord relaxes its opposing partner, so they don’t fight each other.", "match": ["reciprocal inhibition"] },
+  "cross-bridges": { "def": "The links that myosin heads make with actin as they pull. Each cycle of grab, pull and let go uses one ATP.", "match": ["cross-bridges", "cross-bridge"] },
+  "troponin": { "def": "A protein on the thin filaments of muscle. When calcium binds to it, it moves tropomyosin aside so myosin can grab actin.", "match": ["troponin", "troponin C"] },
+  "tropomyosin": { "def": "A thread-like protein that lies along actin and covers the places where myosin binds, until calcium and troponin move it.", "match": ["tropomyosin"] },
+  "myosin": { "def": "The motor protein of the thick filaments in muscle. Its heads pull on actin, powered by ATP.", "match": ["myosin", "myosin heads"] },
+  "actin": { "def": "The protein of the thin filaments in muscle, which myosin heads grab and pull.", "match": ["actin"] },
+  "pre-activation": { "def": "Switching a muscle on just before the foot lands, so the leg is already stiff when the impact comes.", "match": ["pre-activation"] },
+  "central pattern generators": { "def": "Networks of nerve cells in the spinal cord that can make the rhythm of stepping by themselves, steered by the brain and by feedback from the legs.", "match": ["central pattern generators", "central pattern generator"] },
+  "mid-stance": { "def": "The middle of the time a foot is on the ground, when the leg carries the most load.", "match": ["mid-stance"] },
+  "proprioception": { "def": "The sense of where your body parts are and how they move, from sensors in muscles, tendons and joints.", "match": ["proprioception", "proprioceptive"] },
+  "Golgi tendon organs": { "def": "Sensors where a muscle joins its tendon that report how hard the muscle is pulling (Ib fibres).", "match": ["Golgi tendon organs", "Golgi tendon organ"] },
+  "stretch reflex": { "def": "A spinal reflex: a stretched muscle’s spindles excite its own motor neurons, so it pulls back. The knee-jerk is one.", "match": ["stretch reflex", "stretch reflexes"] },
+  "Clarke’s column": { "def": "A column of nerve cells in the spinal cord, from about C8 to L3, that relays signals from the leg’s muscle and tendon sensors to the cerebellum.", "match": ["Clarke’s column", "dorsal nucleus"] },
+  "spinocerebellar tract": { "def": "Bundles of fast nerve fibres that carry information about the limbs’ position and movement from the spinal cord to the cerebellum, on the same side.", "match": ["dorsal spinocerebellar tract", "ventral spinocerebellar tract", "spinocerebellar tract", "dorsal spinocerebellar axons", "dorsal spinocerebellar tract neurons"] },
+  "cerebellum": { "def": "The wrinkled part at the back of the brain, under the cerebrum, that coordinates movement, balance and timing and learns from errors.", "match": ["cerebellum", "cerebellar"] },
+  "Purkinje cells": { "def": "The large output cells of the cerebellar cortex. They inhibit the deep cerebellar nuclei with GABA.", "match": ["Purkinje cells", "Purkinje cell"] },
+  "mossy fibres": { "def": "Inputs to the cerebellum from the spinal cord and brainstem, which excite its granule cells.", "match": ["mossy fibres"] },
+  "climbing fibres": { "def": "Inputs to the cerebellum from the inferior olive. Each wraps around one Purkinje cell and signals errors that change its synapses.", "match": ["climbing fibres"] },
+  "efference copy": { "def": "A copy of a motor command sent to other parts of the brain, so they can predict what the movement will feel like.", "match": ["efference copy"] },
+  "patellar tendon": { "def": "The tendon from the kneecap to the top of the shin bone, through which the quadriceps straightens the knee.", "match": ["patellar tendon"] },
+  "stretch–shortening cycle": { "def": "A muscle and its tendon being stretched while active and then shortening, as in each running step. The tendon stores energy and gives it back.", "match": ["stretch–shortening cycle"] },
+  "stress fracture": { "def": "A crack in a bone from repeated loading rather than one big blow, when damage builds up faster than it is repaired.", "match": ["stress fracture", "stress fractures"] },
+  "canaliculi": { "def": "Tiny channels in bone through which osteocytes reach each other and fluid flows.", "match": ["canaliculi"] },
+  "lacuna": { "def": "The little hollow in bone in which an osteocyte sits.", "match": ["lacuna", "lacunae"] },
+  "PIEZO1": { "def": "A channel that opens when a cell membrane is stretched or sheared. Bone cells use it to sense loading.", "match": ["PIEZO1", "Piezo1"] },
+  "PIEZO2": { "def": "A stretch-gated channel in touch sensors and in muscle spindles. Without it, touch and the sense of limb position are lost.", "match": ["PIEZO2"] },
+  "prostaglandin E2": { "def": "A short-lived signalling lipid. In bone, osteocytes release it when loaded, and it helps start bone building.", "match": ["prostaglandin E2"] },
+  "Wnt/β-catenin": { "def": "A signalling pathway that tells osteoblasts to build bone. Sclerostin blocks it.", "match": ["Wnt/β-catenin", "Wnt"] },
+  "romosozumab": { "def": "An antibody drug against sclerostin, given as a monthly injection for a year to build bone in severe osteoporosis.", "match": ["romosozumab"] }
 }
 </script>
 
@@ -5436,7 +5549,17 @@ const STRINGS = {
   anotherInfection: "Another germ",
   vaccinated: "Vaccinated",
   infectionDone: t => `Done after ${t} of real time`,
-  infectionKind: { step: "cells at work", blood: "riding the blood", lymph: "in the lymph" }
+  infectionKind: { step: "cells at work", blood: "riding the blood", lymph: "in the lymph" },
+  followStep: "Follow a step",
+  followingStep: "Step ride · bullet time",
+  stepTitle: "Journey of a step",
+  stepLede: "Follow one step of the evening run, from the motor cortex to the bone it bends, with the report that goes back to the cerebellum on the way. The step itself is over in about a third of a second, so time is slowed down tens to thousands of times, and the whole body’s stride with it. Started at another time of day, the clock jumps to the run.",
+  stepHint: "Tip: with the muscles & skeleton live, tap a leg muscle, a leg bone or a foot to follow a step on that side.",
+  otherLeg: "Other leg",
+  stepDone: t => `Done after ${t} of real time`,
+  stepKind: { muscle: "Muscle at work", force: "Force through the leg", bone: "Bone at work", sensory: "Brain at work" },
+  stepGrf: v => `the ground pushes back at up to ${v} × body weight`,
+  stepStrain: v => `bending by about ${v} microstrain`
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -5729,11 +5852,13 @@ const store = createStore({
   dropSeg: null,    /* which leg of that journey the molecule is on */
   infection: null,  /* id of the infection journey being followed, or null */
   infectionSeg: null, /* which leg of that journey the infection is on */
+  step: null,       /* id of the step journey being followed, or null */
+  stepSeg: null,    /* which leg of that journey the step is on */
   ridePaused: false, /* the ride (and the whole body with it) is frozen so you can read */
   ...loadSystems()
 });
-/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath, a bite, a drop or an infection)? */
-const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null || s.drop != null || s.infection != null;
+/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath, a bite, a drop, an infection or a step)? */
+const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null || s.drop != null || s.infection != null || s.step != null;
 /* System switches. Switching a system on makes it live; switching off the
    live one hands "live" to another shown system (or to none). */
 function setSystem(id, on){
@@ -6353,6 +6478,46 @@ const MANDIBLE_D = "M552 186 C556 214 578 232 600 232 C622 232 644 214 648 186";
    femur and tibia, for the viewer's left leg; FOOT_AT = where each foot meets the ground */
 const LEG_STRAIN = [[551, legY(622), 543, legY(758)], [542, legY(784), 537, legY(838)]];
 const FOOT_AT = [[524, legY(ANKLE_Y) + 31], [676, legY(ANKLE_Y) + 31]];
+/* Step journeys (STEP RIDE), in bullet time like IMPULSES and on the same
+   engine (bulletRide): fibre and synapse legs as there, plus legs with a real
+   duration ms, either along a path d or waiting at a point (at, world
+   coordinates; otherwise where the last leg ended). The run's step begins with
+   the motorLeg impulse's legs (their text is in CONTENT.impulse.stops); the rest
+   have their text in CONTENT.step.stops. kind = colour (STEP_COLOR), jump = the
+   leg starts somewhere new, land = the foot lands as this leg starts (tLand, the
+   real ms from the motor cortex, is worked out below), and the body's stride is
+   pinned to it (Msk.pin), so the arrow, the bone glow and the osteocytes light
+   up when the text says they do. Real times: cortex → quadriceps ≈ 26 ms, force
+   builds for ~60 ms before the foot lands (pre-activation); the stretch reaches
+   the cerebellum ~13 ms after the sensors fire; tendon and bone take the load
+   up to mid-stance (~0.14 s after landing at 168 steps/min, the foot down ~38%
+   of the stride); the osteocytes then sense the next few steps too. */
+const STEP_COLOR = { muscle: "#e0473c", force: "#4a6fd1", bone: "#2fb3a3" };
+const stepColor = kind => STEP_COLOR[kind] || NERVE_COLOR[kind];
+const STEPS = [
+  { id: "run", kind: "motor", legs: [
+    ...IMPULSE_BY_ID.motorLeg.legs,
+    { stop: "crossBridges", ms: 60, kind: "muscle" },
+    { stop: "footStrike", ms: 40, at: [FOOT_AT[0][0], FOOT_AT[0][1] - 6], kind: "force", land: true, jump: true },
+    { stop: "spindle", d: "M548 700 C556 680 566 652 574 630 C582 610 594 598 598 588 L598 528", fibre: "Ia", v: 90, len: .55, kind: "sensory", jump: true },
+    { stop: "clarke", syn: .7, tx: "glutamate", kind: "sensory" },
+    { stop: "dsct", d: "M598 528 L596 240 C593 224 589 214 585 207", fibre: "tract", v: 70, len: .45, kind: "sensory" },
+    { stop: "cerebellum", ms: 20, kind: "sensory" },
+    { stop: "tendon", d: "M558 752 C552 760 546 766 543 772 L542 790", ms: 35, kind: "force", jump: true },
+    { stop: "boneBend", d: "M542 790 L540 812", ms: 40, kind: "bone" },
+    { stop: "osteocytes", ms: 3000, screen: 3.4, kind: "bone" }
+  ] }
+];
+STEPS.forEach(j => {
+  let t = 0;
+  for (const l of j.legs){ if (l.land) break; t += l.syn != null ? l.syn : l.ms != null ? l.ms : l.len / l.v * 1000; }
+  j.tLand = t;
+});
+const STEP_BY_ID = Object.fromEntries(STEPS.map(j => [j.id, j]));
+/* organ panels that offer the step ride */
+const STEP_FOR_TOPIC = { muscles: "run", bones: "run" };
+/* a stop's text: the step ride's own, or the nerve impulse journey's for the motor command */
+const stepStop = k => CONTENT.step.stops[k] || CONTENT.impulse.stops[k];
 Object.assign(MOLECULES, {
   urea: ["#9b7fd4", "Urea"], urine: ["#e8cf5a", "Urine"], renin: ["#c2569a", "Renin"], angI: ["#d886b5", "Angiotensin I"],
   angII: ["#a8326e", "Angiotensin II"], aldo: ["#d98b2b", "Aldosterone"], sodium: ["#8fa3b8", "Sodium (Na⁺)"]
@@ -6712,7 +6877,7 @@ const Scene = (() => {
     const strain = both(side => LEG_STRAIN.map(([x1, y1, x2, y2], b) => {
       const X1 = side > 0 ? x1 : 1200 - x1, X2 = side > 0 ? x2 : 1200 - x2;
       const ocy = Array.from({ length: 5 }, (_, i) => { const u = (i + .5) / 5; return `<circle cx="${f1(lerp(X1, X2, u) + (i % 2 ? 2 : -2))}" cy="${f1(lerp(y1, y2, u))}" r="1.4" class="ms-ocy" data-side="${side}"/>`; }).join("");
-      return `<path d="M${f1(X1)} ${f1(y1)} L${f1(X2)} ${f1(y2)}" class="ms-strain" data-side="${side}" data-bone="${b}"/>` + ocy;
+      return `<path d="M${f1(X1)} ${f1(y1)} L${f1(X2)} ${f1(y2)}" class="ms-strain" data-side="${side}" data-bone="${b}" opacity="0"/>` + ocy;
     }).join(""));
     return `<ellipse cx="600" cy="150" rx="54" ry="62" class="ms-skull"/><path d="${MANDIBLE_D}" class="ms-skull"/>`
       + VERTEBRAE.map(([y, w, h]) => `<rect x="${600 - w}" y="${f1(legY(y) - h / 2)}" width="${2 * w}" height="${h}" rx="${f1(h / 2.4)}" class="ms-bone"/>`).join("")
@@ -6726,7 +6891,7 @@ const Scene = (() => {
       + `<path d="${CLAVICLE_D}" class="ms-rib"/><path d="${mirrorD(CLAVICLE_D)}" class="ms-rib"/>`
       + `<path d="${mapD(DIAPHRAGM_D)}" class="ms-dia"/>`
       + FOOT_AT.map(() => `<path d="" class="ms-grf" opacity="0"/>`).join("")
-      + `<g id="s-mskDots"></g>`;
+      + `<g id="s-mskDots"></g><g id="s-stepRide"></g>`;
   }
   function build(){
     const limb = d => `<path d="${d}" class="skin"/>`;
@@ -6868,7 +7033,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide", "mskDots"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide", "mskDots", "stepRide"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -7273,14 +7438,24 @@ function rideLocate(legs, spre, T, f){
   while (i < legs.length - 1 && spre[i + 1] <= t) i++;
   return [i, clamp((t - spre[i]) / legs[i].screen)];
 }
-const Impulse = (() => {
+/* BULLET-TIME RIDES — IMPULSE and STEP RIDE share this engine. A ride is a
+   chain of legs. A path leg has a path d (design coordinates, drawn on the
+   viewer's left side and mirrored for the other side), timed by its real
+   conduction speed v (m/s) and length len (m), or by a real duration ms. A
+   point leg (no d) waits where the last leg ended, or at at (world
+   coordinates), for its real duration: a synapse's delay syn (ms, with a puff
+   of transmitter) or ms. jump = the leg starts somewhere new, so the trail
+   starts afresh. The options say where to draw (ref), which ride is which
+   (byId), a leg's colour (col), what happens as a leg starts (onLeg) and on
+   arrival (effect); both get the helpers in fxApi (rings, flashes, drift). */
+function bulletRide(o){
   const SPEED = 95, MIN_LEG = 1.3, SYN_S = 1.3, SYN_SLOW = 2.2;
   const flip = d => d.replace(/(-?[\d.]+)[ ,]+(-?[\d.]+)/g, (_, x, y) => `${1200 - x} ${y}`);
-  let g, dot, halo, trail, puff = [];
-  const fx = [];
+  let g, dot, halo, trail;
+  const puff = [], fx = [];
   let J = null, mirror = false, legs = [], pre = [], total = 0, li = 0, u = 0, done = false, scale = 1, pts = [], acc = 0, spre = [], T = 1;
   function init(){
-    g = Scene.refs.impulse;
+    g = Scene.refs[o.ref];
     trail = el("polyline", { class: "imp-trail", points: "" }, g);
     for (let i = 0; i < 9; i++) puff.push(el("circle", { r: 1.5, class: "imp-tx", opacity: 0 }, g));
     halo = el("circle", { r: 10, class: "imp-halo" }, g);
@@ -7291,20 +7466,25 @@ const Impulse = (() => {
   function build(j, m){
     let at = [600, 120];
     return j.legs.map(l => {
-      const o = { ...l, kind: l.kind || j.kind };
-      if (l.syn != null){ o.real = l.syn; o.screen = l.syn > 20 ? SYN_SLOW : SYN_S; o.at = at; }
-      else {
-        o.S = sampler(Scene.svg, mapD(m ? flip(l.d) : l.d), 120);
-        o.real = l.len / l.v * 1000;
-        o.screen = Math.max(MIN_LEG, o.S.L / SPEED);
-        at = o.S.at(1);
+      const r = { ...l, kind: l.kind || j.kind };
+      if (l.d){
+        r.S = sampler(Scene.svg, mapD(m ? flip(l.d) : l.d), 120);
+        r.real = l.ms != null ? l.ms : l.len / l.v * 1000;
+        r.screen = l.screen || Math.max(MIN_LEG, r.S.L / SPEED);
+        at = r.S.at(1);
       }
-      return o;
+      else {
+        if (l.at) at = m ? [1200 - l.at[0], l.at[1]] : l.at;
+        r.real = l.syn != null ? l.syn : l.ms;
+        r.screen = l.screen || (r.real > 20 ? SYN_SLOW : SYN_S);
+        r.at = at;
+      }
+      return r;
     });
   }
   function start(id, m = false){
     const fresh = !J;
-    J = IMPULSE_BY_ID[id]; mirror = m;
+    J = o.byId[id]; mirror = m;
     legs = build(J, m); pre = []; total = 0;
     legs.forEach(l => { pre.push(total); total += l.real; });
     ({ spre, T } = screenPre(legs));
@@ -7312,6 +7492,8 @@ const Impulse = (() => {
     if (fresh) scale = 1;
     g.style.display = "";
     trail.setAttribute("points", "");
+    fx.splice(0).forEach(f => f.e.remove());
+    if (o.onLeg) o.onLeg(legs[0], fxApi);
     draw();
   }
   function stop(){
@@ -7324,43 +7506,48 @@ const Impulse = (() => {
     const L = legs[li], [x, y] = L.S ? L.S.at(clamp(u)) : L.at;
     return { x, y };
   };
+  /* move on to leg i (a fresh trail if it starts somewhere new) */
+  function enter(i){
+    li = i; u = 0;
+    if (legs[i].jump){ pts = []; trail.setAttribute("points", ""); }
+    if (o.onLeg) o.onLeg(legs[i], fxApi);
+  }
   /* skip to the next leg (or, after arrival, start again) */
   function next(){
     if (!J) return;
     if (done){ start(J.id, mirror); return; }
-    if (li < legs.length - 1){ li++; u = 0; pts = []; trail.setAttribute("points", ""); }
+    if (li < legs.length - 1){ enter(li + 1); pts = []; trail.setAttribute("points", ""); }
     else arrive();
     draw();
   }
   function arrive(){
     done = true; u = 1;
-    const p = pos(), col = impulseColor(legs[legs.length - 1].kind);
-    ring(p.x, p.y, col, 34);
-    if (J.effect === "quad"){
-      const e = el("ellipse", { cx: mirror ? 655 : 545, cy: QUAD_EL.cy, rx: 27, ry: QUAD_EL.ry, fill: "#e0473c", opacity: 0 }, g);
-      g.insertBefore(e, g.firstChild);
-      fx.push({ e, age: 0, life: 1.4, kind: "flash" });
-    }
-    if (J.effect === "arm") ring(p.x, p.y, "#e0473c", 24, .3);
-    if (J.effect === "slow") Rhythm.kick(-.4, 2.2);
-    if (J.effect === "fast") Rhythm.kick(.3, 9);
-    if (J.effect === "gut") ring(p.x - 8, p.y + 6, "#d97bb6", 46, .25);
-    if (J.effect === "brain") ring(p.x, p.y, col, 22, .3);
-    if (J.effect === "adrenaline"){
-      for (let i = 0; i < 14; i++){
-        const e = el("path", { d: "M0 -3.4 L3.4 0 L0 3.4 L-3.4 0Z", fill: "#e0533d", opacity: 0 }, g);
-        const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 26;
-        fx.push({ e, age: -i * .07, life: 2.4, kind: "drift", x: p.x, y: p.y, dx: Math.cos(a) * r, dy: Math.sin(a) * r });
-      }
-    }
+    const p = pos();
+    ring(p.x, p.y, o.col(legs[legs.length - 1].kind), 34);
+    if (o.effect) o.effect(J, p, fxApi);
   }
   function ring(x, y, col, r, delay = 0){
     const e = el("circle", { cx: f1(x), cy: f1(y), r: 3, fill: "none", stroke: col, "stroke-width": 2, opacity: 0, "vector-effect": "non-scaling-stroke" }, g);
     fx.push({ e, age: -delay, life: 1.3, kind: "ring", r });
   }
+  /* a muscle lighting up: an ellipse that glows and fades, under the rider */
+  function flash(cx, cy, rx, ry, col, life = 1.4){
+    const e = el("ellipse", { cx: f1(cx), cy: f1(cy), rx, ry, fill: col, opacity: 0 }, g);
+    g.insertBefore(e, g.firstChild);
+    fx.push({ e, age: 0, life, kind: "flash" });
+  }
+  /* n little diamonds drifting out from (x, y) */
+  function drift(x, y, col, n){
+    for (let i = 0; i < n; i++){
+      const e = el("path", { d: "M0 -3.4 L3.4 0 L0 3.4 L-3.4 0Z", fill: col, opacity: 0 }, g);
+      const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 26;
+      fx.push({ e, age: -i * .07, life: 2.4, kind: "drift", x, y, dx: Math.cos(a) * r, dy: Math.sin(a) * r });
+    }
+  }
+  const fxApi = { ring, flash, drift, mirror: () => mirror };
   function draw(){
     if (!J) return;
-    const L = legs[li], p = pos(), col = impulseColor(L.kind), syn = L.syn != null;
+    const L = legs[li], p = pos(), col = o.col(L.kind), syn = L.syn != null;
     dot.setAttribute("cx", f1(p.x)); dot.setAttribute("cy", f1(p.y)); dot.setAttribute("fill", col);
     halo.setAttribute("cx", f1(p.x)); halo.setAttribute("cy", f1(p.y)); halo.setAttribute("fill", col);
     trail.setAttribute("stroke", col);
@@ -7380,10 +7567,10 @@ const Impulse = (() => {
     if (!done && !reducedMotion){
       u += dt / L.screen;
       if (u >= 1){
-        if (li < legs.length - 1){ li++; u = 0; } else arrive();
+        if (li < legs.length - 1) enter(li + 1); else arrive();
       }
       acc += dt;
-      if (acc > .03 && L.S){ acc = 0; const p = pos(); pts.push(`${f1(p.x)},${f1(p.y)}`); if (pts.length > 50) pts.shift(); trail.setAttribute("points", pts.join(" ")); }
+      if (acc > .03 && legs[li].S){ acc = 0; const p = pos(); pts.push(`${f1(p.x)},${f1(p.y)}`); if (pts.length > 50) pts.shift(); trail.setAttribute("points", pts.join(" ")); }
     }
     /* bullet time: ease towards this leg's slow-motion, or back to real time after arrival */
     const target = done ? 1 : legs[li].real / 1000 / legs[li].screen;
@@ -7414,7 +7601,43 @@ const Impulse = (() => {
     pts = []; trail.setAttribute("points", "");
     draw();
   }
-  return { init, start, stop, next, tick, info, pos, progress, seek, timeScale: () => J ? scale : 1 };
+  return { init, start, stop, next, tick, info, pos, progress, seek, mirrored: () => mirror, timeScale: () => J ? scale : 1 };
+}
+const Impulse = bulletRide({
+  ref: "impulse", byId: IMPULSE_BY_ID, col: impulseColor,
+  effect(J, p, A){
+    const col = impulseColor(J.legs[J.legs.length - 1].kind || J.kind);
+    if (J.effect === "quad") A.flash(A.mirror() ? 655 : 545, QUAD_EL.cy, 27, QUAD_EL.ry, "#e0473c");
+    if (J.effect === "arm") A.ring(p.x, p.y, "#e0473c", 24, .3);
+    if (J.effect === "slow") Rhythm.kick(-.4, 2.2);
+    if (J.effect === "fast") Rhythm.kick(.3, 9);
+    if (J.effect === "gut") A.ring(p.x - 8, p.y + 6, "#d97bb6", 46, .25);
+    if (J.effect === "brain") A.ring(p.x, p.y, col, 22, .3);
+    if (J.effect === "adrenaline") A.drift(p.x, p.y, "#e0533d", 14);
+  }
+});
+/* STEP RIDE — one step of the run in bullet time, on the IMPULSE engine: the
+   motor command, the quadriceps bracing, the foot landing, the stretch report
+   to the cerebellum, then the load through the tendon into the shin bone and
+   its osteocytes. landing() tells the body's stride where this foot is (Msk.pin),
+   so the ground-reaction arrow and the bone glow follow the ride. */
+const StepRide = (() => {
+  const R = bulletRide({
+    ref: "stepRide", byId: STEP_BY_ID, col: stepColor,
+    onLeg(L, A){
+      const [x, y] = L.at || [0, 0];
+      if (L.stop === "crossBridges") A.flash(A.mirror() ? 655 : 545, QUAD_EL.cy, 27, QUAD_EL.ry, STEP_COLOR.muscle, 2.6);
+      if (L.stop === "footStrike") A.ring(x, y, STEP_COLOR.force, 30);
+      if (L.stop === "cerebellum") A.ring(x, y, NERVE_COLOR.sensory, 22);
+      if (L.stop === "osteocytes"){ A.ring(x, y, STEP_COLOR.bone, 18); A.ring(x, y, STEP_COLOR.bone, 18, .9); }
+    }
+  });
+  /* seconds since this ride's foot landed (negative before), while the ride runs */
+  function landing(){
+    const q = R.info(); if (!q || q.done) return null;
+    return { t: (q.real - STEP_BY_ID[q.id].tLand) / 1000, mirror: R.mirrored() };
+  }
+  return { ...R, landing };
 })();
 
 /* =========================================================================
@@ -8261,6 +8484,7 @@ const Msk = (() => {
   const NP = 90, REST = "#b9675a", WORK = "#e0473c", LAC = "#8e6bd1", GOLD = "#2fb3a3", OCY = "#a68c6a";
   const pool = [], acc = {}, twitch = {};
   let mus = [], strain = [], ocy = [], grf = [], ics = [], dia = null, stride = 0, t = 0, still = "";
+  let pinned = null;                                            /* {t, mirror} from the step ride, or null */
   const strike = [9, 9];                                        /* seconds since each foot last landed */
   function init(){
     const svg = Scene.svg;
@@ -8323,13 +8547,20 @@ const Msk = (() => {
     t += dt;
     still = "";
     const sHz = p.cadence / 120, s0 = stride;
-    stride = (stride + dt * sHz) % 1;
-    /* a foot lands: the viewer's left at phase 0, the right at 0.5 */
-    if (sHz > 0){
-      if (stride < s0) strike[0] = 0;
-      if (s0 < .5 && stride >= .5) strike[1] = 0;
+    if (pinned && sHz > 0){
+      /* a step ride sets the stride: its foot lands pinned.t seconds ago */
+      stride = ((pinned.t * sHz + (pinned.mirror ? .5 : 0)) % 1 + 1) % 1;
+      strike[0] = stride / sHz; strike[1] = ((stride + .5) % 1) / sHz;
     }
-    strike[0] += dt; strike[1] += dt;
+    else {
+      stride = (stride + dt * sHz) % 1;
+      /* a foot lands: the viewer's left at phase 0, the right at 0.5 */
+      if (sHz > 0){
+        if (stride < s0) strike[0] = 0;
+        if (s0 < .5 && stride >= .5) strike[1] = 0;
+      }
+      strike[0] += dt; strike[1] += dt;
+    }
     const stance = sHz > 0 ? .38 / sHz : 1;                     /* the foot is on the ground ~38% of the stride */
     const env = strike.map(x => sHz > 0 && x < stance ? Math.sin(Math.PI * x / stance) : 0);
     /* REM: now and then a finger or toe twitches through the paralysis */
@@ -8391,7 +8622,27 @@ const Msk = (() => {
     ocy.forEach(o => o.e.setAttribute("fill", OCY));
     for (const d of pool) if (d.on){ d.on = false; d.c.setAttribute("opacity", 0); }
   }
-  return { init, tick, setRates };
+  /* the step ride pins the stride ({t: seconds since its foot landed, mirror}), or null */
+  function pin(v){ pinned = v; }
+  /* what was tapped: a leg muscle, a leg bone or a foot, as the side (1 = the viewer's left, −1 the right) */
+  function nearest(x, y, maxD){
+    const seg = (ax, ay, bx, by) => {
+      const dx = bx - ax, dy = by - ay, k = clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1));
+      return Math.hypot(x - ax - k * dx, y - ay - k * dy);
+    };
+    let best = null, bd = maxD;
+    for (const side of [1, -1]){
+      const X = v => side > 0 ? v : 1200 - v;
+      const parts = [...MSK_MUSCLES.filter(m => ["glute", "quad", "hams", "calf"].includes(m.id)).map(m => {
+        const [ax, ay] = bodyPt(...mskPt(m, side, 0, 0)), [bx, by] = bodyPt(...mskPt(m, side, 1, 0));
+        return seg(ax, ay, bx, by) - m.w * .6;
+      }), ...LEG_STRAIN.map(([x1, y1, x2, y2]) => seg(X(x1), y1, X(x2), y2) - 4), Math.hypot(x - FOOT_AT[side > 0 ? 0 : 1][0], y - FOOT_AT[side > 0 ? 0 : 1][1] + 10) - 8];
+      const d = Math.min(...parts);
+      if (d < bd){ bd = d; best = side; }
+    }
+    return best;
+  }
+  return { init, tick, setRates, pin, nearest };
 })();
 
 /* =========================================================================
@@ -10796,6 +11047,7 @@ const Panel = (() => {
         ${id === "digestive" ? `<button type="button" class="chip primary follow-btn" data-bite="">${esc(STRINGS.followBite)}</button>` : ""}
         ${id === "urinary" ? `<button type="button" class="chip primary follow-btn" data-drop="">${esc(STRINGS.followUrine)}</button>` : ""}
         ${id === "immune" ? `<button type="button" class="chip primary follow-btn" data-infection="">${esc(STRINGS.followInfection)}</button>` : ""}
+        ${id === "musculoskeletal" ? `<button type="button" class="chip primary follow-btn" data-step="">${esc(STRINGS.followStep)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -10832,6 +11084,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
     root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
     root.querySelectorAll("[data-infection]").forEach(b => b.addEventListener("click", () => startInfection(b.dataset.infection || null)));
+    root.querySelectorAll("[data-step]").forEach(b => b.addEventListener("click", () => startStep(b.dataset.step || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -10876,7 +11129,8 @@ const Panel = (() => {
       ${BREATH_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.breathTitle)}</p><div class="depth"><button type="button" class="chip" data-breath="${BREATH_FOR_TOPIC[id]}">${esc(STRINGS.followBreath)}: ${esc(CONTENT.breath.journeys[BREATH_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${BITE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.biteTitle)}</p><div class="depth"><button type="button" class="chip" data-bite="${BITE_FOR_TOPIC[id]}">${esc(STRINGS.followBite)}: ${esc(CONTENT.bite.journeys[BITE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${URINE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.urineTitle)}</p><div class="depth"><button type="button" class="chip" data-drop="${URINE_FOR_TOPIC[id]}">${esc(STRINGS.followUrine)}: ${esc(CONTENT.urine.journeys[URINE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
-      ${INFECTION_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.infectionTitle)}</p><div class="depth"><button type="button" class="chip" data-infection="${INFECTION_FOR_TOPIC[id]}">${esc(STRINGS.followInfection)}: ${esc(CONTENT.infection.journeys[INFECTION_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
+      ${INFECTION_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.infectionTitle)}</p><div class="depth"><button type="button" class="chip" data-infection="${INFECTION_FOR_TOPIC[id]}">${esc(STRINGS.followInfection)}: ${esc(CONTENT.infection.journeys[INFECTION_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
+      ${STEP_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.stepTitle)}</p><div class="depth"><button type="button" class="chip" data-step="${STEP_FOR_TOPIC[id]}">${esc(STRINGS.followStep)}: ${esc(CONTENT.step.journeys[STEP_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -10895,6 +11149,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-bite]").forEach(b => b.addEventListener("click", () => startBite(b.dataset.bite || null)));
     root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
     root.querySelectorAll("[data-infection]").forEach(b => b.addEventListener("click", () => startInfection(b.dataset.infection || null)));
+    root.querySelectorAll("[data-step]").forEach(b => b.addEventListener("click", () => startStep(b.dataset.step || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -10969,6 +11224,46 @@ const Panel = (() => {
     root.querySelector("[data-home]").addEventListener("click", stopImpulse);
     root.querySelector("[data-stop]").addEventListener("click", stopImpulse);
     root.querySelectorAll("[data-imp]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.imp)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
+  /* while following a step: its legs as numbered stops, the current one explained
+     (the motor command's stops are the nerve impulse journey's) */
+  function renderStep(s){
+    const C = CONTENT.step, j = STEP_BY_ID[s.step], jc = C.journeys[j.id], seg = s.stepSeg || 0, li = LEVEL_INDEX[s.level];
+    const legs = j.legs, text = levelText(stepStop(legs[seg].stop), s.level);
+    const steps = legs.map((l, i) => `<li style="--c:${stepColor(l.kind || j.kind)}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(stepStop(l.stop).name)}</li>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.stepTitle)}</h2>
+      <p class="lede">${esc(STRINGS.stepLede)}</p>
+      <section class="sys-card" style="--sc:${SYSTEM_BY_ID.musculoskeletal.color}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <div class="related"><p>${esc(STRINGS.impulseTitle)}</p><div class="depth">
+        <button type="button" class="chip" data-impulse="kneeJerk">${esc(STRINGS.followImpulse)}: ${esc(CONTENT.impulse.journeys.kneeJerk.name)}</button>
+      </div></div>
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopFollowing)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.stepHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopStep);
+    root.querySelector("[data-stop]").addEventListener("click", stopStep);
+    root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -11186,8 +11481,9 @@ const Panel = (() => {
 
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic, peeing = s.drop != null && !s.topic, fighting = s.infection != null && !s.topic;
-    const key = fighting ? `infection:${s.infection}|${s.level}|${s.infectionSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic, peeing = s.drop != null && !s.topic, fighting = s.infection != null && !s.topic, stepping = s.step != null && !s.topic;
+    const key = stepping ? `step:${s.step}|${s.level}|${s.stepSeg}`
+              : fighting ? `infection:${s.infection}|${s.level}|${s.infectionSeg}`
               : peeing ? `drop:${s.drop}|${s.level}|${s.dropSeg}`
               : eating ? `bite:${s.bite}|${s.level}|${s.biteSeg}`
               : breathing ? `breath:${s.breath}|${s.level}|${s.breathSeg}`
@@ -11199,7 +11495,7 @@ const Panel = (() => {
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    fighting ? renderInfection(s) : peeing ? renderDrop(s) : eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    stepping ? renderStep(s) : fighting ? renderInfection(s) : peeing ? renderDrop(s) : eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -11964,9 +12260,97 @@ function stopInfection(){
   InfectionRide.stop();
   store.set({ infection: null, infectionSeg: null, ridePaused: false });
 }
+
+/* =========================================================================
+   STEP CARD — over the body while a step is followed: where it is, the fibre
+   and its speed (or the force and the bone's bend), real time elapsed and how
+   much time is slowed
+   ========================================================================= */
+const StepCard = (() => {
+  const box = $("#stepCard");
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingStep)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>${esc(STRINGS.realTime)}</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip" data-j="other">${esc(STRINGS.otherLeg)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    scrub = rideScrub(box, StepRide, STRINGS.scrubRide);
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopStep();
+      else if (b.dataset.j === "other") startStep(store.get().step, !StepRide.mirrored());
+      else { StepRide.next(); tick(); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  /* what the leg is doing: a fibre and its speed, a synapse, or the load it carries */
+  function legMeta(L, p){
+    if (L.syn != null) return STRINGS.synapse(L.tx, fmtMs(L.syn));
+    if (L.fibre) return `${STRINGS.fibre[L.fibre]} · ${L.v} m/s`;
+    if (L.stop === "footStrike") return `${STRINGS.stepKind.force} · ${STRINGS.stepGrf(p.grf.toFixed(1))}`;
+    if (L.stop === "boneBend") return `${STRINGS.stepKind.bone} · ${STRINGS.stepStrain((Math.round(p.boneStrain / 50) * 50).toLocaleString("en-GB"))}`;
+    return `${STRINGS.stepKind[L.kind]} · ${fmtMs(L.real)}`;
+  }
+  function tick(){
+    const s = store.get(); if (s.step == null) return;
+    const q = StepRide.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.stepSeg !== li) store.set({ stepSeg: li }); }
+    const L = q.leg, col = stepColor(L.kind);
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("where", stepStop(L.stop).name, v => els.where.textContent = v);
+    set("time", fmtMs(q.real), v => els.time.textContent = v);
+    set("bar", Math.round(q.real / q.total * 200), v => els.bar.style.width = v / 2 + "%");
+    const meta = q.done ? STRINGS.stepDone(fmtMs(q.total)) : `${legMeta(L, Physio.at(s.hour))} · ${STRINGS.slowed(q.slow)}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.step.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+    scrub.sync();
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.step != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following a step (mirror = the other leg). A step needs the body on
+   its feet at running pace, so from any other hour the clock jumps to the run. */
+const STEP_HOUR = 17.5;
+function startStep(id, mirror = false){
+  stopRides("step");
+  if (store.get().live !== "musculoskeletal") setLive("musculoskeletal");
+  id = STEP_BY_ID[id] ? id : STEPS[0].id;
+  if (Physio.at(store.get().hour).cadence < 160) store.set({ hour: STEP_HOUR });
+  StepRide.start(id, mirror); StepCard.reset();
+  store.set({ step: id, stepSeg: 0, topic: null, ridePaused: false });
+  StepCard.tick();
+  showScene();
+}
+function stopStep(){
+  if (store.get().step == null) return;
+  StepRide.stop();
+  store.set({ step: null, stepSeg: null, ridePaused: false });
+}
 /* end every ride except one (a new ride starting, or Back / Escape ending them all) */
 function stopRides(except){
-  const stops = { follow: stopFollow, impulse: stopImpulse, cascade: stopCascade, breath: stopBreath, bite: stopBite, drop: stopDrop, infection: stopInfection };
+  const stops = { follow: stopFollow, impulse: stopImpulse, cascade: stopCascade, breath: stopBreath, bite: stopBite, drop: stopDrop, infection: stopInfection, step: stopStep };
   for (const k in stops) if (k !== except) stops[k]();
 }
 
@@ -11980,6 +12364,7 @@ const BREATH_W = 220;  /* … and a breath */
 const BITE_W = 250;    /* … and a bite */
 const DROP_W = 200;    /* … and a drop */
 const INFECTION_W = 240; /* … and an infection */
+const STEP_W = 220;    /* … and a step */
 const BODY_MAX = 4;     /* in time-lapse, the heart, breath and blood run at most this much faster… */
 const CLOCK_MAX = 3 * 3600; /* …and the day clock at most 3 h per second, so the sky doesn't strobe */
 function cameraFor(s){
@@ -11990,6 +12375,7 @@ function cameraFor(s){
   if (s.bite != null && !s.topic) return Camera.focusView(Scene.toView(BiteRide.pos()), BITE_W);
   if (s.drop != null && !s.topic) return Camera.focusView(Scene.toView(DropRide.pos()), DROP_W);
   if (s.infection != null && !s.topic) return Camera.focusView(Scene.toView(InfectionRide.pos()), INFECTION_W);
+  if (s.step != null && !s.topic) return Camera.focusView(Scene.toView(StepRide.pos()), STEP_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -12004,7 +12390,7 @@ store.subscribe((s, prev) => {
   }
   Pins.render(s);
   const free = !s.topic && !riding(s);
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop || s.infection !== prev.infection){ if (riding(s)) Camera.resetZoom(); Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop || s.infection !== prev.infection || s.step !== prev.step){ if (riding(s)) Camera.resetZoom(); Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
@@ -12013,6 +12399,7 @@ store.subscribe((s, prev) => {
   if (s.bite != null && (s.topic || s.live !== "digestive")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "digestive") stopBite(); });
   if (s.drop != null && (s.topic || s.live !== "urinary")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "urinary") stopDrop(); });
   if (s.infection != null && (s.topic || s.live !== "immune")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "immune") stopInfection(); });
+  if (s.step != null && (s.topic || s.live !== "musculoskeletal")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "musculoskeletal") stopStep(); });
   Journey.sync(s);
   ImpulseCard.sync(s);
   CascadeCard.sync(s);
@@ -12020,6 +12407,7 @@ store.subscribe((s, prev) => {
   BiteCard.sync(s);
   DropCard.sync(s);
   InfectionCard.sync(s);
+  StepCard.sync(s);
   if (s.topic !== prev.topic){
     if (s.topic) Camera.resetZoom();
     Sheet.sync(s);
@@ -12044,7 +12432,7 @@ function applySystems(s){
    EXPORT — the adapter for the shared Export menu (EXPORT ENGINE, synced from
    organs/_template.html): figures, caption, link, settings, data and the clock
    ========================================================================= */
-const RIDE_KINDS = ["follow", "impulse", "cascade", "breath", "bite", "drop", "infection"];
+const RIDE_KINDS = ["follow", "impulse", "cascade", "breath", "bite", "drop", "infection", "step"];
 function rideEngines(){
   return {
     follow: { eng: { progress: Particles.lapProgress, seek: Particles.lapSeek }, start: id => startFollow(id), label: "One lap of the red cell" },
@@ -12053,7 +12441,8 @@ function rideEngines(){
     breath: { eng: BreathRide, start: id => startBreath(id), label: "The whole breath" },
     bite: { eng: BiteRide, start: id => startBite(id), label: "The whole bite" },
     drop: { eng: DropRide, start: id => startDrop(id), label: "The whole journey of the drop" },
-    infection: { eng: InfectionRide, start: id => startInfection(id), label: "The whole infection" }
+    infection: { eng: InfectionRide, start: id => startInfection(id), label: "The whole infection" },
+    step: { eng: StepRide, start: id => startStep(id), label: "The whole step" }
   };
 }
 const rideKind = s => RIDE_KINDS.find(k => s[k] != null) || null;
@@ -12178,6 +12567,7 @@ function init(){
   Immune.init();
   Msk.init();
   InfectionRide.init();
+  StepRide.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
@@ -12187,6 +12577,7 @@ function init(){
   BiteCard.build();
   DropCard.build();
   InfectionCard.build();
+  StepCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
@@ -12223,6 +12614,11 @@ function init(){
       const id = tapInfection(Immune.nearest(pt.x, pt.y, tol), s.hour);
       if (id){ startInfection(id); return; }
     }
+    /* muscles & skeleton live: tap a leg muscle, a leg bone or a foot to follow a step on that side */
+    if (s.live === "musculoskeletal"){
+      const side = Msk.nearest(pt.x, pt.y, tol);
+      if (side){ startStep(null, side < 0); return; }
+    }
     if (!s.shown.circulatory) return;
     const i = Particles.nearestCell(pt.x, pt.y, tol);
     if (i != null) startFollow(i);
@@ -12258,7 +12654,7 @@ function init(){
        Time-lapse: while a hormone cascade is followed the clock runs at the real
        time of the signal (capped), and the body faster (capped harder) */
     const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : st.drop != null ? DropRide : st.infection != null ? InfectionRide : null;
-    const k = st.impulse != null ? Impulse.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
+    const k = st.impulse != null ? Impulse.timeScale() : st.step != null ? StepRide.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
     /* a paused ride freezes everything: the rider, the body and the clock */
     const paused = st.ridePaused && riding(st) && !st.topic;
     const rdt = paused ? 0 : dt, sdt = rdt * Math.min(k, BODY_MAX);
@@ -12296,6 +12692,7 @@ function init(){
     if (!reducedMotion && live === "digestive") Digestion.tick(bdt, ph); else Digestion.setRates(ph);
     if (!reducedMotion && live === "urinary") Urinary.tick(bdt, ph); else Urinary.setRates(ph);
     if (!reducedMotion && live === "immune") Immune.tick(bdt, ph); else Immune.setRates(ph);
+    Msk.pin(st.step != null && !st.topic ? StepRide.landing() : null);
     if (!reducedMotion && live === "musculoskeletal") Msk.tick(bdt, ph); else Msk.setRates(ph);
     Journey.tick(bdt);
     Impulse.tick(brdt);
@@ -12310,6 +12707,8 @@ function init(){
     DropCard.tick();
     InfectionRide.tick(brdt);
     InfectionCard.tick();
+    StepRide.tick(brdt);
+    StepCard.tick();
   }
   requestAnimationFrame(frame);
   /* the Export menu holds the loop and steps the body frame by frame */
@@ -12336,7 +12735,7 @@ function init(){
 }
 /* the view as URL parameters (read back by the store on start and by startRideFromURL):
    ?level=&hour=&topic=&shown=&live=&ride=<kind>:<id> */
-const RIDES = { follow: null, impulse: IMPULSE_BY_ID, cascade: CASCADE_BY_ID, breath: BREATH_BY_ID, bite: BITE_BY_ID, drop: URINE_BY_ID, infection: INFECTION_BY_ID };
+const RIDES = { follow: null, impulse: IMPULSE_BY_ID, cascade: CASCADE_BY_ID, breath: BREATH_BY_ID, bite: BITE_BY_ID, drop: URINE_BY_ID, infection: INFECTION_BY_ID, step: STEP_BY_ID };
 function rideOf(s){
   for (const kind of Object.keys(RIDES)) if (s[kind] != null)
     return { kind, id: kind === "follow" ? null : s[kind], seg: s[kind + "Seg"] ?? null };
@@ -12356,7 +12755,7 @@ function startRideFromURL(){
   const v = URLP.get("ride"); if (!v) return;
   const [kind, id] = v.split(":");
   if (!(kind in RIDES) || (RIDES[kind] && !RIDES[kind][id])) return;
-  const start = { follow: () => startFollow(), impulse: () => startImpulse(id), cascade: () => startCascade(id), breath: () => startBreath(id), bite: () => startBite(id), drop: () => startDrop(id), infection: () => startInfection(id) };
+  const start = { follow: () => startFollow(), impulse: () => startImpulse(id), cascade: () => startCascade(id), breath: () => startBreath(id), bite: () => startBite(id), drop: () => startDrop(id), infection: () => startInfection(id), step: () => startStep(id) };
   requestAnimationFrame(() => start[kind]());
 }
 init();

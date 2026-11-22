@@ -276,6 +276,61 @@ a{ color:inherit; }
 .because-from{ display:block; font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
 .because-from a{ color:var(--ink); text-decoration:none; border-bottom:1px dotted var(--line-strong); text-transform:none; letter-spacing:0; font-size:12.5px; }
 
+/* predict: a question the reader answers before the model runs (content "questions") */
+.q-list{ display:grid; gap:16px; max-width:880px; }
+.q{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; min-width:0; }
+.q-kick{ margin:0 0 4px; font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.q-kick b{ color:var(--accent); font-weight:600; }
+.q .q-title{ font-family:var(--serif); font-size:22px; font-weight:400; letter-spacing:-.01em; line-height:1.2; margin:0 0 8px; }
+.q-bg{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 10px; font-size:12px; color:var(--muted); }
+.q-bg .chip{ padding:3px 10px; font-size:12px; color:var(--ink); }
+.q-ask{ font-weight:600; font-size:15px; margin:12px 0 8px; }
+.q-choices{ display:grid; gap:6px; }
+.q-choices button{ display:flex; gap:10px; align-items:flex-start; text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:9px 12px; cursor:pointer; font-size:14.5px; line-height:1.4; }
+.q-choices button > i{ flex:none; width:16px; height:16px; border-radius:50%; border:1.5px solid var(--line-strong); margin-top:2px; box-sizing:border-box; }
+.q-choices button > span{ flex:1; min-width:0; }
+.q-choices button[aria-checked="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+.q-choices button[aria-checked="true"] > i{ border:5px solid var(--ink); }
+.q-choices button:not(:disabled):hover{ background:var(--surface-2); }
+.q-choices button:disabled{ cursor:default; color:inherit; }
+.q-choices em{ font-style:normal; font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--accent); white-space:nowrap; margin-top:2px; }
+.q-choices em.yours{ color:var(--muted); }
+.q-act{ display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin-top:12px; }
+.q-run{ border:0; background:var(--ink); color:var(--surface); border-radius:999px; padding:7px 18px; font-size:14px; font-weight:600; cursor:pointer; }
+.q-run:disabled{ opacity:.35; cursor:not-allowed; }
+.q-res{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
+.q-res:focus{ outline:none; }
+.q-verdict{ margin:0 0 6px; font-size:14px; font-weight:600; display:flex; gap:8px; align-items:center; }
+.q-verdict i{ width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none; }
+.q-verdict.no i{ background:var(--sel); }
+.q-sub{ margin:12px 0 0; font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.q-ros{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin-top:6px; }
+.q-ro{ text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:10px; padding:7px 10px; cursor:pointer; min-width:0; }
+.q-ro:hover{ border-color:var(--line-strong); }
+.q-ro .l{ display:block; font-size:11px; color:var(--muted); }
+.q-ro .v{ display:block; font-family:var(--serif); font-size:18px; line-height:1.2; font-variant-numeric:tabular-nums; }
+.q-ro .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:2px; }
+.q-ro .delta{ display:block; margin:1px 0 0; line-height:1.2; }
+.q-ro.fig .v{ font-family:var(--sans); font-size:13px; font-weight:500; }
+.q-more{ margin-top:12px; border-top:1px dashed var(--line); padding-top:8px; }
+.q-more summary{ cursor:pointer; font-size:13px; font-weight:600; }
+.q-more .prose{ font-size:15px; margin-top:8px; }
+.q-more .q-other{ margin:8px 0 0; font-size:14.5px; line-height:1.5; font-family:var(--serif); }
+.q-more .q-other b{ font-family:var(--sans); font-size:13.5px; display:block; }
+.q-next{ display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+.q-hub{ margin:4px 0 0; font-size:13.5px; }
+.q-lit{ box-shadow:0 0 0 2px var(--sel); }
+.q-flash{ animation:q-flash 1.8s ease-out; }
+@keyframes q-flash{ 0%{ box-shadow:0 0 0 7px color-mix(in srgb, var(--sel) 55%, transparent); } 100%{ box-shadow:0 0 0 2px var(--sel); } }
+@media (max-width: 640px){
+  .q{ padding:14px 14px; }
+  .q .q-title{ font-size:20px; }
+  /* the "what happens" tag goes under the choice, so it doesn't squeeze the text */
+  .q-choices button{ flex-wrap:wrap; }
+  .q-choices em{ width:100%; padding-left:26px; margin-top:0; }
+  .q-ros{ grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); }
+}
+
 /* glossary terms */
 .term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
 .term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
@@ -1601,6 +1656,246 @@ canvas.trace{ display:block; width:100%; }
    "phd": "In late pregnancy and lactation the placenta and breast release PTHrP, and osteocytic osteolysis contributes; pregnancy- and lactation-associated osteoporosis is rare but can cause vertebral fractures (Kovacs 2016)."
   }
  },
+ "questions": [
+  {
+   "id": "bones-hpt",
+   "scenario": "hpt",
+   "title": {
+    "ms": "A high calcium found by chance",
+    "college": "Hypercalcaemia on a routine blood test"
+   },
+   "background": [
+    "calcium"
+   ],
+   "setting": {
+    "ms": "Margaret, 62, has a blood test for something else, and her calcium comes back high. One of the four small glands in her neck that control calcium has grown a lump and is making its hormone all the time, without listening to the calcium level.",
+    "hs": "Margaret, 62, has an incidental high calcium. One of her four parathyroid glands has a benign adenoma that secretes PTH without being switched off by calcium, so the normal negative feedback is broken.",
+    "college": "A 62-year-old with incidental hypercalcaemia. A single parathyroid adenoma secretes PTH autonomously: the calcium-sensing receptor's suppression of PTH is lost in the adenomatous tissue.",
+    "phd": "A 62-year-old with primary hyperparathyroidism from a single adenoma: non-suppressed PTH with hypercalcaemia, a rightward shift of the calcium–PTH set point in the adenomatous gland."
+   },
+   "ask": {
+    "ms": "What happens to the calcium and the phosphate in her blood?",
+    "college": "Which way do serum calcium and phosphate go?"
+   },
+   "hypotheses": [
+    {
+     "id": "both",
+     "text": {
+      "ms": "Both go up: the hormone pulls both of them out of bone together.",
+      "college": "Both rise: bone mineral releases calcium and phosphate together."
+     },
+     "reconcile": {
+      "ms": "Bone does release both together, but the hormone also tells the kidney to throw phosphate away in the urine. That wins, so phosphate ends up low while calcium is high.",
+      "college": "Resorption does release both, but PTH also inhibits proximal tubular phosphate reabsorption (NaPi-IIa and IIc, through PTH1R and FGF23-independent signalling). Renal phosphate wasting outweighs the skeletal release, so phosphate falls."
+     }
+    },
+    {
+     "id": "caupplow",
+     "text": {
+      "ms": "Calcium goes up and phosphate goes down.",
+      "college": "Calcium rises, phosphate falls."
+     },
+     "reconcile": {
+      "ms": "Yes. The hormone raises calcium in three ways: it takes it from bone, it makes the kidney keep it, and it makes active vitamin D so the gut absorbs more. At the same time it makes the kidney dump phosphate in the urine, so phosphate falls. She also loses calcium in her urine, which is why kidney stones can form.",
+      "college": "Yes. PTH raises calcium through osteoclastic resorption (indirectly, through RANKL on osteoblasts), distal tubular calcium reabsorption and 1α-hydroxylase-driven calcitriol synthesis, which raises intestinal absorption. It simultaneously causes phosphaturia, so phosphate falls. Despite enhanced tubular reabsorption, the filtered load is so high that urine calcium rises, hence the stone risk."
+     }
+    },
+    {
+     "id": "calow",
+     "text": {
+      "ms": "Calcium goes down, because it is all locked into bone.",
+      "college": "Calcium falls as mineral is deposited in bone."
+     },
+     "reconcile": {
+      "ms": "This hormone does the opposite: it takes calcium out of bone, rather than putting it in. Her bones slowly thin as a result.",
+      "college": "PTH at continuously raised levels is net catabolic for cortical bone: resorption exceeds formation, turnover markers rise and hip density falls. (Intermittent PTH, as in teriparatide, is anabolic instead.)"
+     }
+    }
+   ],
+   "correct": "caupplow",
+   "watch": [
+    "cCa",
+    "cP",
+    "cPth",
+    "cU",
+    "rCtx"
+   ],
+   "expect": {
+    "cCa": "up",
+    "cP": "down",
+    "cPth": "up",
+    "cU": "up",
+    "rCtx": "up"
+   },
+   "deeper": "Primary hyperparathyroidism is now most often found incidentally and is mild. The adenoma's calcium-sensing receptor set point is shifted right, so PTH is not suppressed at a calcium that would silence a normal gland; the remaining glands are suppressed. Cortical bone (distal radius, hip) is lost preferentially while trabecular bone is relatively spared, which is why the forearm is a useful DXA site. The distinction from familial hypocalciuric hypercalcaemia rests on the calcium–creatinine clearance ratio (< 0.01 in FHH), since both give hypercalcaemia with a non-suppressed PTH. Parathyroidectomy cures it and partly restores density. Sources: Boron and Boulpaep, 3rd ed., ch. 52; Guyton and Hall, 14th ed., ch. 80.",
+   "sources": [
+    "boron3",
+    "guyton14"
+   ],
+   "leadsTo": []
+  },
+  {
+   "id": "bones-astronaut",
+   "scenario": "astronaut",
+   "title": {
+    "ms": "Six months in orbit",
+    "college": "Six months in microgravity"
+   },
+   "background": [
+    "remodelling",
+    "calcium"
+   ],
+   "setting": {
+    "ms": "An astronaut spends six months on a space station. She exercises every day, but nothing she does puts her body weight through her legs, because she is weightless.",
+    "hs": "An astronaut spends six months in microgravity. Her bones are never loaded by body weight: the strain the osteocytes in her hip normally feel with every step is almost absent.",
+    "college": "An astronaut after six months in microgravity. Peak daily strain at the hip falls far below the remodelling set point, despite in-flight exercise.",
+    "phd": "Six months of microgravity exposure: hip strain far below the mechanostat threshold, raised sclerostin and RANKL, suppressed formation markers."
+   },
+   "ask": {
+    "ms": "What happens to her bones, and where does the calcium go?",
+    "college": "What happens to bone density, and where does the released calcium go?"
+   },
+   "hypotheses": [
+    {
+     "id": "nothing",
+     "text": {
+      "ms": "Nothing much, as long as she exercises every day.",
+      "college": "Little change, because in-flight exercise preserves bone."
+     },
+     "reconcile": {
+      "ms": "Exercise helps, but bone listens for the squeeze of body weight through the skeleton, and in orbit that is missing. The hip still loses about 1% of its density a month.",
+      "college": "Exercise helps but does not fully substitute: without ground reaction force the peak strain stays below the set point. The model shows hip density falling and the T-score worsening."
+     }
+    },
+    {
+     "id": "lost",
+     "text": {
+      "ms": "Bone is lost, and the calcium leaves in her urine, so she can get kidney stones.",
+      "college": "Density falls; the released calcium is excreted in the urine, raising stone risk."
+     },
+     "reconcile": {
+      "ms": "Yes. The cells inside bone sense that it isn’t being loaded, and call for bone to be removed. The calcium released goes into her blood, where it switches off PTH, so the kidney stops holding on to calcium and lets it out in the urine. That is why kidney stones are a real risk on long missions.",
+      "college": "Yes. With strain below the mechanostat threshold, sclerostin rises (inhibiting Wnt signalling and formation) and RANKL-driven resorption increases: about 1–1.5% of hip bone mineral density a month. The released calcium raises serum calcium slightly, which suppresses PTH and calcitriol, so intestinal absorption falls and urinary calcium rises: a well-documented renal stone risk in spaceflight."
+     }
+    },
+    {
+     "id": "stored",
+     "text": {
+      "ms": "Bone is lost, but the calcium is stored in other bones, so her blood calcium stays the same.",
+      "college": "Density falls, but the calcium is redistributed to other bones and blood calcium is unchanged."
+     },
+     "reconcile": {
+      "ms": "All her weight-bearing bones are unloaded at once, so there is nowhere to move the calcium to. It goes into the blood, and out in the urine.",
+      "college": "Unloading is systemic for the weight-bearing skeleton, so there is no loading gradient to redistribute to. Serum calcium rises slightly, PTH and calcitriol are suppressed, and the calcium is excreted."
+     }
+    }
+   ],
+   "correct": "lost",
+   "watch": [
+    "rBmd",
+    "rStrain",
+    "cU",
+    "cPth",
+    "cD3"
+   ],
+   "expect": {
+    "rBmd": "down",
+    "rStrain": "down",
+    "cU": "up",
+    "cPth": "down",
+    "cD3": "down"
+   },
+   "deeper": "Frost's mechanostat frames remodelling as strain-driven: below roughly 200–400 µε the signal to maintain bone is lost and resorption dominates. Osteocytes are the sensors; unloading raises sclerostin (SOST), which blocks Wnt/β-catenin signalling in osteoblasts, and raises the RANKL:OPG ratio. Lang et al. (2004) measured ~1.5%/month hip BMD loss on the ISS; advanced resistive exercise plus bisphosphonates has since largely prevented it (Sibonga et al.). Recovery after return is slower than the loss and may be incomplete. Sources: Rubin and Lanyon 1984; Boron and Boulpaep, 3rd ed., ch. 52.",
+   "sources": [
+    "rubin1984",
+    "boron3"
+   ],
+   "leadsTo": []
+  },
+  {
+   "id": "bones-ckd",
+   "scenario": "ckd",
+   "title": {
+    "ms": "Failing kidneys, aching bones and tiredness",
+    "college": "Advanced chronic kidney disease"
+   },
+   "background": [
+    "calcium",
+    "marrow"
+   ],
+   "setting": {
+    "ms": "Joseph, 68, has kidneys that work at about a seventh of normal. He is tired, pale and short of breath when he walks upstairs, and his bones ache.",
+    "hs": "Joseph, 68, has advanced chronic kidney disease (GFR about 19 mL/min). The kidney has two jobs here: it gets rid of phosphate and it turns vitamin D into its active form. It also makes the hormone that tells the marrow to produce red cells.",
+    "college": "A 68-year-old with CKD stage 4–5 (GFR about 19 mL/min), not yet on dialysis: phosphate retention, reduced 1α-hydroxylation and reduced erythropoietin production.",
+    "phd": "A 68-year-old with CKD G4–G5: hyperphosphataemia, low calcitriol, secondary hyperparathyroidism (CKD-MBD) and renal anaemia from relative EPO deficiency."
+   },
+   "ask": {
+    "ms": "What is happening to his PTH, his bones and his blood count?",
+    "college": "What happens to PTH, bone turnover and haemoglobin?"
+   },
+   "hypotheses": [
+    {
+     "id": "down",
+     "text": {
+      "ms": "PTH falls, because the kidney is too weak to drive it.",
+      "college": "PTH falls with failing renal function."
+     },
+     "reconcile": {
+      "ms": "It goes the other way. Phosphate builds up and active vitamin D runs short, and both of those push the parathyroid glands to make more PTH, not less.",
+      "college": "PTH is driven by the parathyroid glands, not the kidney. Phosphate retention and low calcitriol (with reduced calcium absorption) both stimulate secretion: PTH rises, and the glands eventually become hyperplastic."
+     }
+    },
+    {
+     "id": "up",
+     "text": {
+      "ms": "PTH rises, his bones are broken down faster, and he is anaemic.",
+      "college": "PTH rises, bone turnover increases, and haemoglobin falls."
+     },
+     "reconcile": {
+      "ms": "Yes. Phosphate piles up and active vitamin D runs short, so the glands make more PTH, which takes calcium from bone: turnover goes up and bone weakens. At the same time the damaged kidney makes less of the hormone that tells the marrow to make red cells, so he is anaemic, which is why he is tired and pale.",
+      "college": "Yes. Phosphate retention and reduced 1α-hydroxylase activity (with FGF23 further suppressing calcitriol) drive secondary hyperparathyroidism: the model shows PTH more than doubled, CTX and P1NP up, density and T-score falling. Separately, reduced peritubular interstitial EPO production lowers red cell production, so haemoglobin falls: renal anaemia."
+     }
+    },
+    {
+     "id": "bone",
+     "text": {
+      "ms": "PTH rises and bones are affected, but his blood count is normal: that is a different organ’s job.",
+      "college": "Secondary hyperparathyroidism only; the anaemia must have another cause."
+     },
+     "reconcile": {
+      "ms": "The kidney does both jobs. As well as handling calcium and phosphate, it makes the hormone that tells the bone marrow to make red cells, so failing kidneys cause anaemia too.",
+      "college": "The kidney is also the main source of erythropoietin. In CKD its production falls relative to the degree of anaemia, and the model shows EPO and red cell production down with haemoglobin around 122 g/L."
+     }
+    }
+   ],
+   "correct": "up",
+   "watch": [
+    "cPth",
+    "cP",
+    "cD3",
+    "rCtx",
+    "mHb",
+    "mEpo"
+   ],
+   "expect": {
+    "cPth": "up",
+    "cP": "up",
+    "cD3": "down",
+    "rCtx": "up",
+    "mHb": "down",
+    "mEpo": "down"
+   },
+   "deeper": "In CKD-MBD, FGF23 rises earliest, maintaining phosphate excretion at the cost of suppressing 1α-hydroxylase and so calcitriol; hyperphosphataemia and hypocalcaemia then drive PTH, and the glands become nodular and less suppressible. High-turnover osteitis fibrosa and low-turnover adynamic bone both occur, and both raise fracture risk, so bone turnover markers and sometimes biopsy guide treatment. Renal anaemia is treated to a target haemoglobin around 100–120 g/L, not to normal: the CHOIR and TREAT trials showed harm from normalising haemoglobin with erythropoiesis-stimulating agents. Sources: KDIGO 2024 CKD guideline; Singh et al. 2006 (CHOIR); Pfeffer et al. 2009 (TREAT).",
+   "sources": [
+    "kdigo2024",
+    "singh2006",
+    "pfeffer2009"
+   ],
+   "leadsTo": [
+    "altitude"
+   ]
+  }
+ ],
  "alter": {
   "title": "Your bones",
   "healthy": {
@@ -3007,6 +3302,7 @@ function renderAlter(){
     putHTML(panel, `<p class="alt-scen-h">Start from a ready-made case. It replaces your current changes.</p><div class="alt-scen-list">${scs.map(sc =>
       `<button type="button" data-alt-scen="${esc(sc.id)}" aria-pressed="${!!(on && on.id === sc.id)}"><b>${esc(sc.name)}</b><span>${esc(levelText(sc))}</span></button>`).join("")}</div>`);
   }
+  syncPredict(on);
 }
 /* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
 function urlParams(){
@@ -3059,7 +3355,7 @@ function shareURL(){
 }
 /* every control in the sections, so a settings file brings back views the URL doesn't carry */
 const ctlRoots = () => $$("[data-section]").map(s => [s.id, s]);
-const ctlSkip = n => n.closest("[data-inspector], [data-because], [data-lens], .op-alter");
+const ctlSkip = n => n.closest("[data-inspector], [data-because], [data-lens], [data-predict], .op-alter");
 const radios = s => $$("[role=radiogroup]", s).filter(n => !ctlSkip(n));
 const tabs = s => $$("[role=tab][aria-selected]", s).filter(n => !ctlSkip(n));
 const toggles = s => $$("button[aria-pressed]", s).filter(n => !ctlSkip(n) && !n.closest("[role=radiogroup]"));
@@ -3155,6 +3451,159 @@ function mountExport(){
   });
 }
 
+/* ---------- predict: commit to a hypothesis, then watch the page's own model ----------
+   Content questions = [{
+     id, scenario,                 an alter.scenarios id: "Run it" applies it like the Scenarios menu
+     title, setting, ask,          levels: a short headline, the case (no diagnosis named), the question
+     background: [section id],     "Read first" links to the sections the question needs
+     hypotheses: [{id, text, reconcile}],   3–4 choices, the common wrong intuition first
+     correct,                      the hypothesis id the model bears out
+     watch: [key],                 readouts to show and light up: a data-ro key, ro-<key> / pro-<key> id,
+                                   a hero data-stat id, or a figure id
+     expect: {key: "up" | "down" | "same"},  how each watched readout moves against the healthy page
+                                   ("same" when a treatment brings it back to normal). Name only
+                                   readouts that settle: a live trace's value (a firing neuron's
+                                   voltage) wanders. tests/questions-check.mjs checks each one.
+     deeper, sources: [id],        the PhD / MD paragraph and its fact-check/sources.json ids
+     leadsTo: [case id]            converging cases on ../explore/questions.html
+   }]
+   The engine adds a "Predict" section before #systems. Answers are kept in localStorage
+   ("humanphysiology.questions": {id: {choice, page, t}}), so the hub can mark them done. */
+const QKEY = "humanphysiology.questions", HUB = "../explore/questions.html";
+const questions = () => get("questions") || [];
+const qState = {};
+let qLast = null, qOn = undefined;
+function qDone(){ try { const d = JSON.parse(storage.get(QKEY) || "{}"); return d && typeof d === "object" ? d : {}; } catch(e){ return {}; } }
+function qSave(id, choice){
+  const d = qDone();
+  if (choice) d[id] = { choice, page: META.id, t: Date.now() }; else delete d[id];
+  storage.set(QKEY, JSON.stringify(d));
+}
+function findWatch(k){
+  const n = document.querySelector(`[data-ro="${CSS.escape(k)}"]`) || document.getElementById("ro-" + k) || document.getElementById("pro-" + k)
+    || document.querySelector(`[data-stat="${CSS.escape(k)}"]`) || document.getElementById(k);
+  if (!n) return null;
+  const tile = n.closest(".ro, .stat");
+  const box = tile || n.closest(".panel") || n;
+  const v = tile ? (n === tile ? $(".v", tile) : n) : null;
+  const label = tile ? ($(".l", tile) || {}).textContent : (n.dataset.exportName || n.getAttribute("aria-label") || k);
+  return { node: n, box, v, label: String(label || k).trim(), section: (n.closest("[data-section]") || {}).id };
+}
+function buildPredict(){
+  if (!questions().length) return;
+  CONTENT.sections ||= {};
+  CONTENT.sections.predict ||= {
+    nav: "Predict", kicker: "Predict, then watch", title: "What do you think will happen?",
+    intro: { ms: "Each question tells you about a person. Pick what you think will happen, then run this page's own model and see if you were right.",
+             college: "Each question sets up a case without naming it. Commit to a prediction, then run the case on this page's models: the dashed healthy traces and the ▲/▼ readouts show what changed, and the explanation says why your choice holds or where it fails." } };
+  let sec = $("#predict");
+  if (!sec){
+    sec = document.createElement("section");
+    sec.className = "sec wrap"; sec.id = "predict"; sec.setAttribute("data-section", "");
+    sec.innerHTML = `<div class="sec-head"><p class="kicker" data-kicker></p><h2 data-title></h2><p class="prose" data-text="sections.predict.intro"></p></div><div class="q-list" data-predict></div>`;
+    const before = $("#systems") || $(".foot");
+    before ? before.before(sec) : $("main").appendChild(sec);
+  }
+  const host = $("[data-predict]", sec) || sec;
+  host.setAttribute("data-predict", "");
+  host.innerHTML = questions().map(q => `<article class="q" id="q-${esc(q.id)}" data-q="${esc(q.id)}"></article>`).join("") + `<p class="q-hub muted" data-q-hub></p>`;
+  const qOf = n => { const c = n.closest("[data-q]"); return c && questions().find(q => q.id === c.dataset.q); };
+  host.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const q = qOf(b); if (!q) return;
+    const st = qState[q.id];
+    if (b.dataset.qPick && !st.ran){ st.choice = b.dataset.qPick; renderPredict(); const n = $(`[data-q-pick="${CSS.escape(st.choice)}"]`, host.querySelector(`[data-q="${CSS.escape(q.id)}"]`)); if (n) n.focus(); }
+    else if (b.hasAttribute("data-q-run") && st.choice){ st.ran = true; qSave(q.id, st.choice); runQuestion(q, true); }
+    else if (b.hasAttribute("data-q-again")) runQuestion(q, false);
+    else if (b.hasAttribute("data-q-over")){ const card = b.closest("[data-q]"); qState[q.id] = { choice: null, ran: false }; qSave(q.id, null); if (qLast === q.id) qLast = null; renderPredict(); const n = $("[data-q-pick]", card); if (n) n.focus(); }
+    else if (b.dataset.qGo){ const w = findWatch(b.dataset.qGo); if (w){ w.box.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" }); flash([w.box]); } }
+  });
+  host.addEventListener("keydown", e => {
+    const b = e.target.closest("[data-q-pick]"); if (!b || b.disabled) return;
+    const k = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]; if (!k) return;
+    e.preventDefault();
+    const all = $$("[data-q-pick]", b.parentNode), n = all[(all.indexOf(b) + k + all.length) % all.length];
+    n.click();
+  });
+}
+function flash(boxes){
+  boxes.forEach(n => { n.classList.remove("q-flash"); void n.getBoundingClientRect(); n.classList.add("q-flash"); setTimeout(() => n.classList.remove("q-flash"), 1900); });
+}
+function runQuestion(q, first){
+  applyScenario(q.scenario); scenOpen = false; qLast = q.id; qOn = undefined;
+  altered();
+  const card = $(`[data-q="${CSS.escape(q.id)}"]`);
+  const res = card && $(".q-res", card);
+  if (res && first) res.focus({ preventScroll: true });
+  flash((q.watch || []).map(findWatch).filter(Boolean).map(w => w.box));
+}
+const qText = v => text(v);
+function cardHTML(q, i, n, st, live){
+  const hs = q.hypotheses || [], chosen = hs.find(h => h.id === st.choice), ok = st.choice === q.correct;
+  const bg = (q.background || []).filter(s => document.getElementById(s));
+  const choices = hs.map(h => {
+    const tags = st.ran ? `${h.id === q.correct ? `<em>What happens</em>` : ""}${h.id === st.choice && h.id !== q.correct ? `<em class="yours">Your prediction</em>` : ""}` : "";
+    const tab = (st.choice ? h.id === st.choice : h === hs[0]) ? 0 : -1;
+    return `<button type="button" role="radio" aria-checked="${h.id === st.choice}" tabindex="${tab}" data-q-pick="${esc(h.id)}"${st.ran ? " disabled" : ""}><i></i><span>${qText(h.text)}</span>${tags}</button>`;
+  }).join("");
+  const act = st.ran
+    ? `<button type="button" class="alt-btn${live ? "" : " strong"}" data-q-again${live ? " disabled" : ""}>${live ? "Running on the page now" : "Run it again"}</button><button type="button" class="alt-btn" data-q-over>Start over</button>`
+    : `<button type="button" class="q-run" data-q-run${st.choice ? "" : " disabled"}>Run it</button><span class="muted small">${st.choice ? "Your choice is locked once it runs." : "Pick what you think will happen first."}</span>`;
+  let res = "";
+  if (st.ran && chosen){
+    const watch = (q.watch || []).filter(k => findWatch(k));
+    const others = hs.filter(h => h !== chosen);
+    const next = questions()[i + 1];
+    const deep = q.deeper ? `<details class="q-more"${state.level === "phd" ? " open" : ""}><summary>Deeper (PhD / MD)</summary><p class="prose">${text(q.deeper)}</p></details>` : "";
+    res = `<div class="q-res" tabindex="-1">
+      <p class="q-verdict ${ok ? "ok" : "no"}"><i></i>${ok ? "Your prediction holds." : "The model shows something else."}</p>
+      <p class="prose">${qText(chosen.reconcile)}</p>
+      ${watch.length ? (live ? `<p class="q-sub">Watch, compared with a healthy one</p><div class="q-ros" data-q-mirror></div>` : `<p class="muted small" style="margin:10px 0 0">The page has changed since. Run it again to see the readouts.</p>`) : ""}
+      ${others.length ? `<details class="q-more"><summary>The other choices</summary>${others.map(h => `<p class="q-other"><b>${qText(h.text)}</b>${qText(h.reconcile)}</p>`).join("")}</details>` : ""}
+      ${deep}
+      <div class="q-next">${next ? `<a class="chip" href="#q-${esc(next.id)}">Next question ›</a>` : ""}${(q.leadsTo || []).map(c => `<a class="chip" href="${esc(HUB)}?level=${esc(state.level)}#case-${esc(c)}">Where this leads: a case across organs ›</a>`).join("")}<a class="chip" href="${esc(HUB)}?level=${esc(state.level)}">All questions ›</a></div>
+    </div>`;
+  }
+  return `<p class="q-kick">Question ${i + 1} of ${n}${st.ran ? " · <b>done</b>" : ""}</p>
+    <h3 class="q-title">${qText(q.title)}</h3>
+    ${bg.length ? `<p class="q-bg"><span>Read first</span>${bg.map(s => `<a class="chip" href="#${esc(s)}">${esc(secName(s))}</a>`).join("")}</p>` : ""}
+    <p class="prose">${qText(q.setting)}</p>
+    <p class="q-ask">${qText(q.ask)}</p>
+    <div class="q-choices" role="radiogroup" aria-label="Your prediction">${choices}</div>
+    <div class="q-act">${act}</div>${res}`;
+}
+function renderPredict(){
+  const host = $("[data-predict]"); if (!host) return;
+  const qs = questions(), done = qDone(), on = qOn || null;
+  qs.forEach((q, i) => {
+    const st = qState[q.id] ||= done[q.id] && (q.hypotheses || []).some(h => h.id === done[q.id].choice) ? { choice: done[q.id].choice, ran: true } : { choice: null, ran: false };
+    const card = $(`[data-q="${CSS.escape(q.id)}"]`, host); if (!card) return;
+    putHTML(card, cardHTML(q, i, qs.length, st, !!(st.ran && on && on.id === q.scenario)));
+  });
+  const hub = $("[data-q-hub]", host);
+  if (hub) putHTML(hub, `More questions, and cases that follow one person across several organs, are on the <a href="${esc(HUB)}?level=${esc(state.level)}">questions page</a>.`);
+  updateMirror();
+}
+/* the watched readouts, mirrored live into the card of the question that is running */
+function updateMirror(){
+  const q = qLast && questions().find(x => x.id === qLast);
+  const box = q && $(`[data-q="${CSS.escape(q.id)}"] [data-q-mirror]`);
+  $$(".q-lit").forEach(n => n.classList.remove("q-lit"));
+  if (!q || !box) return;
+  const ws = (q.watch || []).map(k => [k, findWatch(k)]).filter(([, w]) => w);
+  ws.forEach(([, w]) => w.box.classList.add("q-lit"));
+  putHTML(box, ws.map(([k, w]) => w.v
+    ? `<button type="button" class="q-ro" data-q-go="${esc(k)}" title="Show it in ${esc(secName(w.section))}"><span class="l">${esc(w.label)}</span><span class="v">${w.v.innerHTML}</span></button>`
+    : `<button type="button" class="q-ro fig" data-q-go="${esc(k)}"><span class="l">Figure</span><span class="v">${esc(w.label)} ›</span></button>`).join(""));
+}
+function syncPredict(on){
+  if (!$("[data-predict]")) return;
+  if (on === undefined) on = ALT && changed() ? activeScenario() : null;
+  const id = on ? on.id : null;
+  if (qOn === undefined || (qOn ? qOn.id : null) !== id){ qOn = on; renderPredict(); }
+  else updateMirror();
+}
+
 /* ---------- glossary tooltips ---------- */
 function bindGlossary(){
   const show = n => { const g = GLOSSARY[n.dataset.term]; if (g) showTip(n, `<b>${esc(n.dataset.term)}</b> · ${esc(g.def)}`); };
@@ -3170,9 +3619,9 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
+  buildPredict(); buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
   bindParts(); bindGlossary();
-  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); };
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); renderPredict(); };
   subscribe((s, p) => {
     if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
     if (s.level !== p.level || s.hour !== p.hour) writeURL();
@@ -3204,6 +3653,7 @@ return {
   vitals: () => PHASE_BY_ID[state.phase].vitals,
   inspector: (node, extra) => { node.__extra = extra; },
   alter, altered, fill, changed, delta,
+  predict: { questions, find: findWatch, done: qDone },
   hold, step, exportData, exportLengths
 };
 })();

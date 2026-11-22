@@ -48,7 +48,11 @@
                       lens:{<system id>: levels},
                       alter:{title, healthy, notes:{<key>: levels with {placeholders}},
                              scenarios:[{id, name, params:{key: value, hour?}, …levels}]}
-                      (optional, for the changes bar), …anything the organ needs}
+                      (optional, for the changes bar),
+                      questions:[{id, scenario, title, setting, ask, background,
+                             hypotheses:[{id, text, reconcile}], correct, watch, expect,
+                             deeper, sources, leadsTo}] (optional: the Predict section;
+                             see the comment above buildPredict()), …anything the organ needs}
                      "levels" = {ms, hs, college, phd}. Missing levels fall back
                      to the nearest lower one (then the nearest higher).
                      Any text value may instead be keyed by phase first:
@@ -277,6 +281,61 @@ a{ color:inherit; }
 .because-from{ display:block; font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
 .because-from a{ color:var(--ink); text-decoration:none; border-bottom:1px dotted var(--line-strong); text-transform:none; letter-spacing:0; font-size:12.5px; }
 
+/* predict: a question the reader answers before the model runs (content "questions") */
+.q-list{ display:grid; gap:16px; max-width:880px; }
+.q{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; min-width:0; }
+.q-kick{ margin:0 0 4px; font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.q-kick b{ color:var(--accent); font-weight:600; }
+.q .q-title{ font-family:var(--serif); font-size:22px; font-weight:400; letter-spacing:-.01em; line-height:1.2; margin:0 0 8px; }
+.q-bg{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 10px; font-size:12px; color:var(--muted); }
+.q-bg .chip{ padding:3px 10px; font-size:12px; color:var(--ink); }
+.q-ask{ font-weight:600; font-size:15px; margin:12px 0 8px; }
+.q-choices{ display:grid; gap:6px; }
+.q-choices button{ display:flex; gap:10px; align-items:flex-start; text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:9px 12px; cursor:pointer; font-size:14.5px; line-height:1.4; }
+.q-choices button > i{ flex:none; width:16px; height:16px; border-radius:50%; border:1.5px solid var(--line-strong); margin-top:2px; box-sizing:border-box; }
+.q-choices button > span{ flex:1; min-width:0; }
+.q-choices button[aria-checked="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+.q-choices button[aria-checked="true"] > i{ border:5px solid var(--ink); }
+.q-choices button:not(:disabled):hover{ background:var(--surface-2); }
+.q-choices button:disabled{ cursor:default; color:inherit; }
+.q-choices em{ font-style:normal; font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--accent); white-space:nowrap; margin-top:2px; }
+.q-choices em.yours{ color:var(--muted); }
+.q-act{ display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin-top:12px; }
+.q-run{ border:0; background:var(--ink); color:var(--surface); border-radius:999px; padding:7px 18px; font-size:14px; font-weight:600; cursor:pointer; }
+.q-run:disabled{ opacity:.35; cursor:not-allowed; }
+.q-res{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
+.q-res:focus{ outline:none; }
+.q-verdict{ margin:0 0 6px; font-size:14px; font-weight:600; display:flex; gap:8px; align-items:center; }
+.q-verdict i{ width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none; }
+.q-verdict.no i{ background:var(--sel); }
+.q-sub{ margin:12px 0 0; font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.q-ros{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin-top:6px; }
+.q-ro{ text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:10px; padding:7px 10px; cursor:pointer; min-width:0; }
+.q-ro:hover{ border-color:var(--line-strong); }
+.q-ro .l{ display:block; font-size:11px; color:var(--muted); }
+.q-ro .v{ display:block; font-family:var(--serif); font-size:18px; line-height:1.2; font-variant-numeric:tabular-nums; }
+.q-ro .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:2px; }
+.q-ro .delta{ display:block; margin:1px 0 0; line-height:1.2; }
+.q-ro.fig .v{ font-family:var(--sans); font-size:13px; font-weight:500; }
+.q-more{ margin-top:12px; border-top:1px dashed var(--line); padding-top:8px; }
+.q-more summary{ cursor:pointer; font-size:13px; font-weight:600; }
+.q-more .prose{ font-size:15px; margin-top:8px; }
+.q-more .q-other{ margin:8px 0 0; font-size:14.5px; line-height:1.5; font-family:var(--serif); }
+.q-more .q-other b{ font-family:var(--sans); font-size:13.5px; display:block; }
+.q-next{ display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+.q-hub{ margin:4px 0 0; font-size:13.5px; }
+.q-lit{ box-shadow:0 0 0 2px var(--sel); }
+.q-flash{ animation:q-flash 1.8s ease-out; }
+@keyframes q-flash{ 0%{ box-shadow:0 0 0 7px color-mix(in srgb, var(--sel) 55%, transparent); } 100%{ box-shadow:0 0 0 2px var(--sel); } }
+@media (max-width: 640px){
+  .q{ padding:14px 14px; }
+  .q .q-title{ font-size:20px; }
+  /* the "what happens" tag goes under the choice, so it doesn't squeeze the text */
+  .q-choices button{ flex-wrap:wrap; }
+  .q-choices em{ width:100%; padding-left:26px; margin-top:0; }
+  .q-ros{ grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); }
+}
+
 /* glossary terms */
 .term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
 .term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
@@ -498,6 +557,20 @@ a{ color:inherit; }
   "lens": {
     "circulatory": { "ms": "One card per body system." }
   },
+  "questions": [
+    { "id": "example-damage", "scenario": "damaged",
+      "title": "A short headline that does not name the diagnosis",
+      "background": ["anatomy"],
+      "setting": { "ms": "The case, told about a person.", "college": "The same case with more detail. Write ms and college at least; hs and phd fall back to them." },
+      "ask": "What happens to the organ's rate?",
+      "hypotheses": [
+        { "id": "same", "text": "The common wrong intuition comes first", "reconcile": "Why it fails, pointing at the readout that shows it." },
+        { "id": "down", "text": "It falls", "reconcile": "Why it holds." }
+      ],
+      "correct": "down",
+      "watch": ["hr"], "expect": { "hr": "same" },
+      "deeper": "The PhD / MD paragraph, naming its sources.", "sources": ["guyton14"], "leadsTo": [] }
+  ],
   "alter": {
     "scenarios": [
       { "id": "damaged", "name": "A damaged organ", "params": { "damage": "1" }, "ms": "One line on what this case shows. Add \"hour\" to params to move the clock too." }
@@ -1214,6 +1287,7 @@ function renderAlter(){
     putHTML(panel, `<p class="alt-scen-h">Start from a ready-made case. It replaces your current changes.</p><div class="alt-scen-list">${scs.map(sc =>
       `<button type="button" data-alt-scen="${esc(sc.id)}" aria-pressed="${!!(on && on.id === sc.id)}"><b>${esc(sc.name)}</b><span>${esc(levelText(sc))}</span></button>`).join("")}</div>`);
   }
+  syncPredict(on);
 }
 /* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
 function urlParams(){
@@ -1266,7 +1340,7 @@ function shareURL(){
 }
 /* every control in the sections, so a settings file brings back views the URL doesn't carry */
 const ctlRoots = () => $$("[data-section]").map(s => [s.id, s]);
-const ctlSkip = n => n.closest("[data-inspector], [data-because], [data-lens], .op-alter");
+const ctlSkip = n => n.closest("[data-inspector], [data-because], [data-lens], [data-predict], .op-alter");
 const radios = s => $$("[role=radiogroup]", s).filter(n => !ctlSkip(n));
 const tabs = s => $$("[role=tab][aria-selected]", s).filter(n => !ctlSkip(n));
 const toggles = s => $$("button[aria-pressed]", s).filter(n => !ctlSkip(n) && !n.closest("[role=radiogroup]"));
@@ -1362,6 +1436,159 @@ function mountExport(){
   });
 }
 
+/* ---------- predict: commit to a hypothesis, then watch the page's own model ----------
+   Content questions = [{
+     id, scenario,                 an alter.scenarios id: "Run it" applies it like the Scenarios menu
+     title, setting, ask,          levels: a short headline, the case (no diagnosis named), the question
+     background: [section id],     "Read first" links to the sections the question needs
+     hypotheses: [{id, text, reconcile}],   3–4 choices, the common wrong intuition first
+     correct,                      the hypothesis id the model bears out
+     watch: [key],                 readouts to show and light up: a data-ro key, ro-<key> / pro-<key> id,
+                                   a hero data-stat id, or a figure id
+     expect: {key: "up" | "down" | "same"},  how each watched readout moves against the healthy page
+                                   ("same" when a treatment brings it back to normal). Name only
+                                   readouts that settle: a live trace's value (a firing neuron's
+                                   voltage) wanders. tests/questions-check.mjs checks each one.
+     deeper, sources: [id],        the PhD / MD paragraph and its fact-check/sources.json ids
+     leadsTo: [case id]            converging cases on ../explore/questions.html
+   }]
+   The engine adds a "Predict" section before #systems. Answers are kept in localStorage
+   ("humanphysiology.questions": {id: {choice, page, t}}), so the hub can mark them done. */
+const QKEY = "humanphysiology.questions", HUB = "../explore/questions.html";
+const questions = () => get("questions") || [];
+const qState = {};
+let qLast = null, qOn = undefined;
+function qDone(){ try { const d = JSON.parse(storage.get(QKEY) || "{}"); return d && typeof d === "object" ? d : {}; } catch(e){ return {}; } }
+function qSave(id, choice){
+  const d = qDone();
+  if (choice) d[id] = { choice, page: META.id, t: Date.now() }; else delete d[id];
+  storage.set(QKEY, JSON.stringify(d));
+}
+function findWatch(k){
+  const n = document.querySelector(`[data-ro="${CSS.escape(k)}"]`) || document.getElementById("ro-" + k) || document.getElementById("pro-" + k)
+    || document.querySelector(`[data-stat="${CSS.escape(k)}"]`) || document.getElementById(k);
+  if (!n) return null;
+  const tile = n.closest(".ro, .stat");
+  const box = tile || n.closest(".panel") || n;
+  const v = tile ? (n === tile ? $(".v", tile) : n) : null;
+  const label = tile ? ($(".l", tile) || {}).textContent : (n.dataset.exportName || n.getAttribute("aria-label") || k);
+  return { node: n, box, v, label: String(label || k).trim(), section: (n.closest("[data-section]") || {}).id };
+}
+function buildPredict(){
+  if (!questions().length) return;
+  CONTENT.sections ||= {};
+  CONTENT.sections.predict ||= {
+    nav: "Predict", kicker: "Predict, then watch", title: "What do you think will happen?",
+    intro: { ms: "Each question tells you about a person. Pick what you think will happen, then run this page's own model and see if you were right.",
+             college: "Each question sets up a case without naming it. Commit to a prediction, then run the case on this page's models: the dashed healthy traces and the ▲/▼ readouts show what changed, and the explanation says why your choice holds or where it fails." } };
+  let sec = $("#predict");
+  if (!sec){
+    sec = document.createElement("section");
+    sec.className = "sec wrap"; sec.id = "predict"; sec.setAttribute("data-section", "");
+    sec.innerHTML = `<div class="sec-head"><p class="kicker" data-kicker></p><h2 data-title></h2><p class="prose" data-text="sections.predict.intro"></p></div><div class="q-list" data-predict></div>`;
+    const before = $("#systems") || $(".foot");
+    before ? before.before(sec) : $("main").appendChild(sec);
+  }
+  const host = $("[data-predict]", sec) || sec;
+  host.setAttribute("data-predict", "");
+  host.innerHTML = questions().map(q => `<article class="q" id="q-${esc(q.id)}" data-q="${esc(q.id)}"></article>`).join("") + `<p class="q-hub muted" data-q-hub></p>`;
+  const qOf = n => { const c = n.closest("[data-q]"); return c && questions().find(q => q.id === c.dataset.q); };
+  host.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const q = qOf(b); if (!q) return;
+    const st = qState[q.id];
+    if (b.dataset.qPick && !st.ran){ st.choice = b.dataset.qPick; renderPredict(); const n = $(`[data-q-pick="${CSS.escape(st.choice)}"]`, host.querySelector(`[data-q="${CSS.escape(q.id)}"]`)); if (n) n.focus(); }
+    else if (b.hasAttribute("data-q-run") && st.choice){ st.ran = true; qSave(q.id, st.choice); runQuestion(q, true); }
+    else if (b.hasAttribute("data-q-again")) runQuestion(q, false);
+    else if (b.hasAttribute("data-q-over")){ const card = b.closest("[data-q]"); qState[q.id] = { choice: null, ran: false }; qSave(q.id, null); if (qLast === q.id) qLast = null; renderPredict(); const n = $("[data-q-pick]", card); if (n) n.focus(); }
+    else if (b.dataset.qGo){ const w = findWatch(b.dataset.qGo); if (w){ w.box.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" }); flash([w.box]); } }
+  });
+  host.addEventListener("keydown", e => {
+    const b = e.target.closest("[data-q-pick]"); if (!b || b.disabled) return;
+    const k = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]; if (!k) return;
+    e.preventDefault();
+    const all = $$("[data-q-pick]", b.parentNode), n = all[(all.indexOf(b) + k + all.length) % all.length];
+    n.click();
+  });
+}
+function flash(boxes){
+  boxes.forEach(n => { n.classList.remove("q-flash"); void n.getBoundingClientRect(); n.classList.add("q-flash"); setTimeout(() => n.classList.remove("q-flash"), 1900); });
+}
+function runQuestion(q, first){
+  applyScenario(q.scenario); scenOpen = false; qLast = q.id; qOn = undefined;
+  altered();
+  const card = $(`[data-q="${CSS.escape(q.id)}"]`);
+  const res = card && $(".q-res", card);
+  if (res && first) res.focus({ preventScroll: true });
+  flash((q.watch || []).map(findWatch).filter(Boolean).map(w => w.box));
+}
+const qText = v => text(v);
+function cardHTML(q, i, n, st, live){
+  const hs = q.hypotheses || [], chosen = hs.find(h => h.id === st.choice), ok = st.choice === q.correct;
+  const bg = (q.background || []).filter(s => document.getElementById(s));
+  const choices = hs.map(h => {
+    const tags = st.ran ? `${h.id === q.correct ? `<em>What happens</em>` : ""}${h.id === st.choice && h.id !== q.correct ? `<em class="yours">Your prediction</em>` : ""}` : "";
+    const tab = (st.choice ? h.id === st.choice : h === hs[0]) ? 0 : -1;
+    return `<button type="button" role="radio" aria-checked="${h.id === st.choice}" tabindex="${tab}" data-q-pick="${esc(h.id)}"${st.ran ? " disabled" : ""}><i></i><span>${qText(h.text)}</span>${tags}</button>`;
+  }).join("");
+  const act = st.ran
+    ? `<button type="button" class="alt-btn${live ? "" : " strong"}" data-q-again${live ? " disabled" : ""}>${live ? "Running on the page now" : "Run it again"}</button><button type="button" class="alt-btn" data-q-over>Start over</button>`
+    : `<button type="button" class="q-run" data-q-run${st.choice ? "" : " disabled"}>Run it</button><span class="muted small">${st.choice ? "Your choice is locked once it runs." : "Pick what you think will happen first."}</span>`;
+  let res = "";
+  if (st.ran && chosen){
+    const watch = (q.watch || []).filter(k => findWatch(k));
+    const others = hs.filter(h => h !== chosen);
+    const next = questions()[i + 1];
+    const deep = q.deeper ? `<details class="q-more"${state.level === "phd" ? " open" : ""}><summary>Deeper (PhD / MD)</summary><p class="prose">${text(q.deeper)}</p></details>` : "";
+    res = `<div class="q-res" tabindex="-1">
+      <p class="q-verdict ${ok ? "ok" : "no"}"><i></i>${ok ? "Your prediction holds." : "The model shows something else."}</p>
+      <p class="prose">${qText(chosen.reconcile)}</p>
+      ${watch.length ? (live ? `<p class="q-sub">Watch, compared with a healthy one</p><div class="q-ros" data-q-mirror></div>` : `<p class="muted small" style="margin:10px 0 0">The page has changed since. Run it again to see the readouts.</p>`) : ""}
+      ${others.length ? `<details class="q-more"><summary>The other choices</summary>${others.map(h => `<p class="q-other"><b>${qText(h.text)}</b>${qText(h.reconcile)}</p>`).join("")}</details>` : ""}
+      ${deep}
+      <div class="q-next">${next ? `<a class="chip" href="#q-${esc(next.id)}">Next question ›</a>` : ""}${(q.leadsTo || []).map(c => `<a class="chip" href="${esc(HUB)}?level=${esc(state.level)}#case-${esc(c)}">Where this leads: a case across organs ›</a>`).join("")}<a class="chip" href="${esc(HUB)}?level=${esc(state.level)}">All questions ›</a></div>
+    </div>`;
+  }
+  return `<p class="q-kick">Question ${i + 1} of ${n}${st.ran ? " · <b>done</b>" : ""}</p>
+    <h3 class="q-title">${qText(q.title)}</h3>
+    ${bg.length ? `<p class="q-bg"><span>Read first</span>${bg.map(s => `<a class="chip" href="#${esc(s)}">${esc(secName(s))}</a>`).join("")}</p>` : ""}
+    <p class="prose">${qText(q.setting)}</p>
+    <p class="q-ask">${qText(q.ask)}</p>
+    <div class="q-choices" role="radiogroup" aria-label="Your prediction">${choices}</div>
+    <div class="q-act">${act}</div>${res}`;
+}
+function renderPredict(){
+  const host = $("[data-predict]"); if (!host) return;
+  const qs = questions(), done = qDone(), on = qOn || null;
+  qs.forEach((q, i) => {
+    const st = qState[q.id] ||= done[q.id] && (q.hypotheses || []).some(h => h.id === done[q.id].choice) ? { choice: done[q.id].choice, ran: true } : { choice: null, ran: false };
+    const card = $(`[data-q="${CSS.escape(q.id)}"]`, host); if (!card) return;
+    putHTML(card, cardHTML(q, i, qs.length, st, !!(st.ran && on && on.id === q.scenario)));
+  });
+  const hub = $("[data-q-hub]", host);
+  if (hub) putHTML(hub, `More questions, and cases that follow one person across several organs, are on the <a href="${esc(HUB)}?level=${esc(state.level)}">questions page</a>.`);
+  updateMirror();
+}
+/* the watched readouts, mirrored live into the card of the question that is running */
+function updateMirror(){
+  const q = qLast && questions().find(x => x.id === qLast);
+  const box = q && $(`[data-q="${CSS.escape(q.id)}"] [data-q-mirror]`);
+  $$(".q-lit").forEach(n => n.classList.remove("q-lit"));
+  if (!q || !box) return;
+  const ws = (q.watch || []).map(k => [k, findWatch(k)]).filter(([, w]) => w);
+  ws.forEach(([, w]) => w.box.classList.add("q-lit"));
+  putHTML(box, ws.map(([k, w]) => w.v
+    ? `<button type="button" class="q-ro" data-q-go="${esc(k)}" title="Show it in ${esc(secName(w.section))}"><span class="l">${esc(w.label)}</span><span class="v">${w.v.innerHTML}</span></button>`
+    : `<button type="button" class="q-ro fig" data-q-go="${esc(k)}"><span class="l">Figure</span><span class="v">${esc(w.label)} ›</span></button>`).join(""));
+}
+function syncPredict(on){
+  if (!$("[data-predict]")) return;
+  if (on === undefined) on = ALT && changed() ? activeScenario() : null;
+  const id = on ? on.id : null;
+  if (qOn === undefined || (qOn ? qOn.id : null) !== id){ qOn = on; renderPredict(); }
+  else updateMirror();
+}
+
 /* ---------- glossary tooltips ---------- */
 function bindGlossary(){
   const show = n => { const g = GLOSSARY[n.dataset.term]; if (g) showTip(n, `<b>${esc(n.dataset.term)}</b> · ${esc(g.def)}`); };
@@ -1377,9 +1604,9 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
+  buildPredict(); buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
   bindParts(); bindGlossary();
-  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); };
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); renderPredict(); };
   subscribe((s, p) => {
     if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
     if (s.level !== p.level || s.hour !== p.hour) writeURL();
@@ -1411,6 +1638,7 @@ return {
   vitals: () => PHASE_BY_ID[state.phase].vitals,
   inspector: (node, extra) => { node.__extra = extra; },
   alter, altered, fill, changed, delta,
+  predict: { questions, find: findWatch, done: qDone },
   hold, step, exportData, exportLengths
 };
 })();

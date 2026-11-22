@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Questions · HumanPhysiology</title>
+<meta name="description" content="Predict, then watch: questions that ask you what will happen to a person before the model runs, part of HumanPhysiology: a day in the life of the human body.">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="../static/images/favicon-32.png">
+<link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HumanPhysiology">
+<meta property="og:title" content="Questions · HumanPhysiology">
+<meta property="og:description" content="Predict, then watch: questions that ask you what will happen to a person before the model runs.">
+<meta property="og:url" content="https://drtomforce.github.io/HumanPhysiology/explore/questions.html">
+<meta property="og:image" content="https://drtomforce.github.io/HumanPhysiology/static/images/social-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,300..600;1,7..72,400&family=Schibsted+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+ QUESTIONS HUB. Lists every organ page's prediction questions and the converging cases that
+ follow one person across several organs. It opens on its own, without fetching the pages:
+   #questions  copied from the organ pages by `node explore/sync-questions.mjs` (don't edit)
+   #case-data  written here: {id, title, blurb (levels), stops:[{page, label (levels),
+               scenario? | needs?}], parents:[question ids]}. A stop with "needs" names what
+               is still to build. A case lights up once all its parent questions are done.
+ Answers come from localStorage "humanphysiology.questions" ({id: {choice, page, t}}), which the
+ organ pages write; the reading level is shared through "humanphysiology.level" and ?level=.
+-->
+<style>
+:root{
+  --bg:#EFEAE5; --surface:#F8F5F1; --surface-2:#E6DFD8; --ink:#261D1B; --muted:#6D615B;
+  --line:#DCD2C9; --line-strong:#A99B91; --accent:#2f8f83; --sel:#d9a21b;
+  --serif:"Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans:"Schibsted Grotesk", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+    --line:#342B26; --line-strong:#5A4B42; --accent:#4fb3a6; --sel:#f0c040;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151210; --surface:#1C1815; --surface-2:#29221E; --ink:#EEE6DE; --muted:#A8998F;
+  --line:#342B26; --line-strong:#5A4B42; --accent:#4fb3a6; --sel:#f0c040;
+  color-scheme: dark;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+button{ font:inherit; color:inherit; }
+a{ color:inherit; }
+:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:4px; }
+.wrap{ max-width:1120px; margin:0 auto; padding:0 24px; }
+.top{ position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+.bar{ display:flex; align-items:center; gap:14px; padding-top:10px; padding-bottom:10px; flex-wrap:wrap; }
+.logo{ display:block; flex:none; line-height:0; }
+.logo img{ display:block; height:28px; width:auto; }
+.back{ display:inline-flex; align-items:center; gap:6px; text-decoration:none; border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 13px 6px 10px; font-size:13px; font-weight:500; }
+.back:hover{ background:var(--surface-2); }
+.name{ font-family:var(--serif); font-size:19px; font-weight:500; margin:0; }
+.ctl{ margin-left:auto; display:flex; align-items:center; gap:7px; }
+.ctl > span{ font-size:12px; color:var(--muted); }
+.seg{ display:inline-flex; background:var(--surface-2); border-radius:999px; padding:3px; flex-wrap:wrap; }
+.seg button{ border:0; background:transparent; padding:5px 11px; border-radius:999px; cursor:pointer; font-size:12.5px; font-weight:500; color:var(--muted); white-space:nowrap; }
+.seg button[aria-checked="true"]{ background:var(--surface); color:var(--ink); box-shadow:0 0 0 1px var(--line); }
+.hero{ padding-top:36px; padding-bottom:8px; max-width:760px; }
+.kicker{ margin:0 0 6px; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+h1{ font-family:var(--serif); font-weight:400; font-size:clamp(34px, 5vw, 54px); line-height:1.04; letter-spacing:-.025em; margin:0 0 12px; text-wrap:balance; }
+.lede{ font-family:var(--serif); font-size:18px; line-height:1.5; margin:0; text-wrap:pretty; }
+.progress{ margin:16px 0 0; font-size:13.5px; color:var(--muted); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.progress b{ color:var(--ink); }
+.progress button{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:3px 10px; font-size:12px; cursor:pointer; }
+.sec{ padding-top:36px; padding-bottom:12px; border-top:1px solid var(--line); margin-top:28px; }
+h2{ font-family:var(--serif); font-weight:400; font-size:clamp(24px, 3vw, 34px); line-height:1.1; letter-spacing:-.02em; margin:0 0 8px; }
+.prose{ font-family:var(--serif); font-size:16.5px; line-height:1.6; margin:0; max-width:760px; text-wrap:pretty; }
+.muted{ color:var(--muted); }
+.panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px; min-width:0; }
+.map{ margin-top:18px; }
+.map svg{ display:block; width:100%; height:auto; }
+.map text{ font-family:var(--sans); font-size:12.5px; fill:var(--ink); }
+.map .page{ fill:var(--muted); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; }
+.map .edge{ stroke:var(--line-strong); stroke-width:1.3; fill:none; }
+.map .edge.on{ stroke:var(--accent); stroke-width:2; }
+.map .qn{ fill:var(--surface); stroke:var(--line-strong); stroke-width:1.5; }
+.map .qn.on{ fill:var(--accent); stroke:var(--accent); }
+.map .cn{ fill:var(--surface); stroke:var(--ink); stroke-width:1.5; stroke-dasharray:3 3; }
+.map .cn.on{ fill:var(--sel); stroke:var(--sel); stroke-dasharray:none; }
+.map a:hover text{ text-decoration:underline; }
+.cases{ display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:12px; margin-top:16px; }
+.case{ border-top:4px solid var(--line-strong); display:flex; flex-direction:column; }
+.case.on{ border-top-color:var(--sel); }
+.case:target{ box-shadow:0 0 0 2px var(--sel); }
+.case h3{ font-family:var(--serif); font-weight:400; font-size:21px; margin:0 0 6px; letter-spacing:-.01em; }
+.case .prose{ font-size:15px; }
+.state{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
+.state i{ width:8px; height:8px; border-radius:50%; border:1.5px solid var(--muted); }
+.case.on .state i{ background:var(--sel); border-color:var(--sel); }
+.stops{ list-style:none; margin:12px 0 0; padding:0; counter-reset:stop; display:grid; gap:6px; }
+.stops li{ counter-increment:stop; display:grid; grid-template-columns:22px 1fr; gap:8px; font-size:14px; line-height:1.4; }
+.stops li::before{ content:counter(stop); width:20px; height:20px; border-radius:50%; background:var(--surface-2); font-size:11.5px; font-weight:600; display:grid; place-items:center; }
+.stops b{ font-weight:600; }
+.stops .need{ display:block; font-size:12.5px; color:var(--muted); }
+.parents{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; font-size:12.5px; align-items:center; }
+.chip{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:3px 10px; font-size:12.5px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+.chip:hover{ background:var(--surface-2); }
+.chip i{ width:7px; height:7px; border-radius:50%; border:1.5px solid var(--muted); }
+.chip.done i{ background:var(--accent); border-color:var(--accent); }
+.organs{ display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:12px; margin-top:16px; }
+.organ h3{ font-family:var(--serif); font-weight:400; font-size:21px; margin:0 0 8px; display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.organ h3 small{ font-family:var(--sans); font-size:12px; color:var(--muted); }
+.qs{ list-style:none; margin:0; padding:0; display:grid; gap:4px; }
+.qs a{ display:grid; grid-template-columns:14px 1fr; gap:10px; text-decoration:none; padding:7px 8px; margin:0 -8px; border-radius:10px; }
+.qs a:hover{ background:var(--surface-2); }
+.qs i{ width:12px; height:12px; border-radius:50%; border:1.5px solid var(--line-strong); margin-top:4px; }
+.qs .done i{ background:var(--accent); border-color:var(--accent); }
+.qs b{ display:block; font-weight:600; font-size:14.5px; line-height:1.35; }
+.qs span{ display:block; color:var(--muted); font-size:13.5px; line-height:1.35; }
+.foot{ border-top:1px solid var(--line); margin-top:40px; padding-top:20px; padding-bottom:40px; color:var(--muted); font-size:13px; display:flex; gap:16px; flex-wrap:wrap; justify-content:space-between; }
+@media (max-width: 640px){
+  .wrap{ padding:0 16px; }
+  .top{ position:static; }
+  .name, .ctl > span{ display:none; }
+  .ctl{ margin-left:0; width:100%; }
+  .seg .f{ display:none; }
+  .cases, .organs{ grid-template-columns:minmax(0,1fr); }
+  /* the map is too wide to read on a phone; the cards below say the same thing */
+  .map{ display:none; }
+}
+.seg .s{ display:none; }
+@media (max-width: 640px){ .seg .s{ display:inline; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <a class="logo" href="../index.html" aria-label="HumanPhysiology home"><img src="../static/images/accumbenslogotype10057_20261122.webp" width="52" height="28" alt=""></a>
+    <a class="back" data-back href="../index.html"><svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>The whole body</a>
+    <p class="name">Questions</p>
+    <div class="ctl"><span>Reading level</span><div class="seg" role="radiogroup" aria-label="Reading level" data-levels></div></div>
+  </div>
+</header>
+<main>
+  <div class="wrap hero">
+    <p class="kicker">Predict, then watch</p>
+    <h1>What do you think will happen?</h1>
+    <p class="lede" data-lede></p>
+    <p class="progress" data-progress></p>
+  </div>
+
+  <section class="sec wrap" id="cases" aria-labelledby="casesH">
+    <h2 id="casesH">Cases across organs</h2>
+    <p class="prose" data-cases-intro></p>
+    <div class="panel map" data-map></div>
+    <div class="cases" data-cases></div>
+  </section>
+
+  <section class="sec wrap" id="organs" aria-labelledby="organsH">
+    <h2 id="organsH">Questions by organ</h2>
+    <p class="prose" data-organs-intro></p>
+    <div class="organs" data-organs></div>
+  </section>
+
+  <footer class="wrap foot">
+    <span>Values are typical for a healthy adult and simplified for teaching. This is not medical advice.</span>
+    <a data-back href="../index.html">Back to the whole body</a>
+  </footer>
+</main>
+
+<script type="application/json" id="questions">
+[
+ {
+  "page": "bones",
+  "name": "The bones",
+  "questions": [
+   {
+    "id": "bones-hpt",
+    "title": {
+     "ms": "A high calcium found by chance",
+     "college": "Hypercalcaemia on a routine blood test"
+    },
+    "ask": {
+     "ms": "What happens to the calcium and the phosphate in her blood?",
+     "college": "Which way do serum calcium and phosphate go?"
+    },
+    "scenario": "hpt",
+    "leadsTo": []
+   },
+   {
+    "id": "bones-astronaut",
+    "title": {
+     "ms": "Six months in orbit",
+     "college": "Six months in microgravity"
+    },
+    "ask": {
+     "ms": "What happens to her bones, and where does the calcium go?",
+     "college": "What happens to bone density, and where does the released calcium go?"
+    },
+    "scenario": "astronaut",
+    "leadsTo": []
+   },
+   {
+    "id": "bones-ckd",
+    "title": {
+     "ms": "Failing kidneys, aching bones and tiredness",
+     "college": "Advanced chronic kidney disease"
+    },
+    "ask": {
+     "ms": "What is happening to his PTH, his bones and his blood count?",
+     "college": "What happens to PTH, bone turnover and haemoglobin?"
+    },
+    "scenario": "ckd",
+    "leadsTo": [
+     "altitude"
+    ]
+   }
+  ]
+ },
+ {
+  "page": "brain",
+  "name": "The brain",
+  "questions": [
+   {
+    "id": "brain-lidocaine",
+    "title": {
+     "ms": "The dentist’s injection",
+     "college": "A local anaesthetic at the nerve"
+    },
+    "ask": {
+     "ms": "Why does pain go first, while movement is still fine?",
+     "college": "Which fibres stop conducting first, and why?"
+    },
+    "scenario": "lidocaine",
+    "leadsTo": []
+   },
+   {
+    "id": "brain-panic",
+    "title": {
+     "ms": "Breathing too fast, with tingling fingers",
+     "college": "Hyperventilation in a panic attack"
+    },
+    "ask": {
+     "ms": "Why does she feel dizzy, when her oxygen is fine?",
+     "college": "Why the light-headedness, with normal oxygenation?"
+    },
+    "scenario": "panic",
+    "leadsTo": []
+   },
+   {
+    "id": "brain-hyperK",
+    "title": {
+     "ms": "Potassium far too high",
+     "college": "Severe hyperkalaemia at the membrane"
+    },
+    "ask": {
+     "ms": "What happens to a nerve or muscle cell’s ability to fire?",
+     "college": "What happens to excitability as extracellular K⁺ rises?"
+    },
+    "scenario": "hyperK",
+    "leadsTo": [
+     "dka"
+    ]
+   }
+  ]
+ },
+ {
+  "page": "gut",
+  "name": "The stomach & gut",
+  "questions": [
+   {
+    "id": "gut-cholera",
+    "title": {
+     "ms": "Litres of watery diarrhoea",
+     "college": "Profuse watery diarrhoea after drinking unsafe water"
+    },
+    "ask": {
+     "ms": "Where does all that water come from?",
+     "college": "What is the source of the stool water?"
+    },
+    "scenario": "cholera",
+    "leadsTo": [
+     "cholera-shock"
+    ]
+   },
+   {
+    "id": "gut-ors",
+    "title": {
+     "ms": "A cheap drink that saves lives",
+     "college": "Salt and sugar in clean water"
+    },
+    "ask": {
+     "ms": "What does the drink do?",
+     "college": "How does oral rehydration change the picture?"
+    },
+    "scenario": "ors",
+    "leadsTo": [
+     "cholera-shock"
+    ]
+   },
+   {
+    "id": "gut-lactose",
+    "title": {
+     "ms": "A big glass of milk",
+     "college": "A glass of milk without lactase"
+    },
+    "ask": {
+     "ms": "What happens to the milk sugar?",
+     "college": "What happens to the lactose, and what would a breath test show?"
+    },
+    "scenario": "lactose",
+    "leadsTo": []
+   }
+  ]
+ },
+ {
+  "page": "heart",
+  "name": "The heart",
+  "questions": [
+   {
+    "id": "heart-inferiorMI",
+    "title": {
+     "ms": "Chest pain, and a blocked artery at the bottom of the heart",
+     "college": "Occlusion of the proximal right coronary artery"
+    },
+    "ask": {
+     "ms": "Which ECG leads show it?",
+     "college": "Which leads show ST elevation?"
+    },
+    "scenario": "inferiorMI",
+    "leadsTo": []
+   },
+   {
+    "id": "heart-inferiorCHB",
+    "title": {
+     "ms": "The same blocked artery, and a very slow pulse",
+     "college": "The same occlusion, now with complete heart block"
+    },
+    "ask": {
+     "ms": "Why does his heart still beat at all, and what happens to the blood he pumps each minute?",
+     "college": "What keeps the ventricles beating, and what happens to cardiac output?"
+    },
+    "scenario": "inferiorCHB",
+    "leadsTo": []
+   },
+   {
+    "id": "heart-sepsis",
+    "title": {
+     "ms": "A dangerous infection, warm hands and a low blood pressure",
+     "college": "Septic shock: a warm patient with a low pressure"
+    },
+    "ask": {
+     "ms": "What happens to her blood pressure, her heart rate and the blood her heart pumps each minute?",
+     "college": "What happens to systemic vascular resistance, heart rate and cardiac output?"
+    },
+    "scenario": "sepsis",
+    "leadsTo": [
+     "heart-failure"
+    ]
+   }
+  ]
+ },
+ {
+  "page": "kidneys",
+  "name": "The kidneys",
+  "questions": [
+   {
+    "id": "kidneys-dry",
+    "title": {
+     "ms": "A long run in the heat, and nothing to drink",
+     "college": "Two hours of running in the heat without drinking"
+    },
+    "ask": {
+     "ms": "What do her kidneys do with her urine?",
+     "college": "What happens to her urine volume and osmolality?"
+    },
+    "scenario": "dry",
+    "leadsTo": [
+     "cholera-shock"
+    ]
+   },
+   {
+    "id": "kidneys-sglt2",
+    "title": {
+     "ms": "A new tablet, and normal blood sugar",
+     "college": "A new tablet and a normal blood glucose"
+    },
+    "ask": {
+     "ms": "Is there sugar in his urine?",
+     "college": "How much glucose is in his urine?"
+    },
+    "scenario": "sglt2",
+    "leadsTo": []
+   },
+   {
+    "id": "kidneys-siadh",
+    "title": {
+     "ms": "A cough, a scan and a hormone that won’t switch off",
+     "college": "Normal drinking, and ADH that won’t switch off"
+    },
+    "ask": {
+     "ms": "What happens to the salt (sodium) in his blood?",
+     "college": "What happens to his plasma sodium?"
+    },
+    "scenario": "siadh",
+    "leadsTo": []
+   }
+  ]
+ },
+ {
+  "page": "liver",
+  "name": "The liver",
+  "questions": [
+   {
+    "id": "liver-overdose",
+    "title": {
+     "ms": "Far too many painkillers",
+     "college": "A large paracetamol overdose, untreated"
+    },
+    "ask": {
+     "ms": "Which part of the liver is damaged first?",
+     "college": "Which zone of the acinus dies first, and why?"
+    },
+    "scenario": "overdose",
+    "leadsTo": []
+   },
+   {
+    "id": "liver-nac",
+    "title": {
+     "ms": "The antidote, eight hours later",
+     "college": "The same overdose, with acetylcysteine at 8 hours"
+    },
+    "ask": {
+     "ms": "What does the antidote change?",
+     "college": "What does acetylcysteine at 8 hours change, and what does it not?"
+    },
+    "scenario": "nac",
+    "leadsTo": []
+   },
+   {
+    "id": "liver-fast",
+    "title": {
+     "ms": "Three days without food",
+     "college": "Three days of fasting"
+    },
+    "ask": {
+     "ms": "What is her brain running on by day three?",
+     "college": "What fuels the brain at 72 hours?"
+    },
+    "scenario": "fast",
+    "leadsTo": [
+     "marathon-wall"
+    ]
+   }
+  ]
+ },
+ {
+  "page": "lungs",
+  "name": "The lungs",
+  "questions": [
+   {
+    "id": "lungs-asthma",
+    "title": {
+     "ms": "A wheezy night and a blow into a tube",
+     "college": "Wheeze, and a forced breath into a spirometer"
+    },
+    "ask": {
+     "ms": "What does the test show?",
+     "college": "What happens to FEV₁, FVC and their ratio?"
+    },
+    "scenario": "asthma",
+    "leadsTo": []
+   },
+   {
+    "id": "lungs-everest",
+    "title": {
+     "ms": "On top of the world",
+     "college": "At the summit of Everest, breathing air"
+    },
+    "ask": {
+     "ms": "What happens to the carbon dioxide in her blood?",
+     "college": "Which way does her arterial PCO₂ go?"
+    },
+    "scenario": "everest",
+    "leadsTo": [
+     "altitude"
+    ]
+   },
+   {
+    "id": "lungs-acclimatised",
+    "title": {
+     "ms": "A week in the mountains",
+     "college": "A week at 4,000 m"
+    },
+    "ask": {
+     "ms": "How does her haemoglobin handle oxygen now?",
+     "college": "Which way does the oxygen–haemoglobin curve shift, and what does it do?"
+    },
+    "scenario": "acclimatised",
+    "leadsTo": [
+     "altitude"
+    ]
+   }
+  ]
+ },
+ {
+  "page": "muscles",
+  "name": "The muscles",
+  "questions": [
+   {
+    "id": "muscles-mg",
+    "title": {
+     "ms": "Drooping eyelids by the evening",
+     "college": "Weakness that worsens with use"
+    },
+    "ask": {
+     "ms": "What happens to her strength as she keeps holding on?",
+     "college": "What happens to force over repeated stimulation?"
+    },
+    "scenario": "mg",
+    "leadsTo": []
+   },
+   {
+    "id": "muscles-mgneo",
+    "title": {
+     "ms": "A tablet that makes the signal last longer",
+     "college": "Adding a cholinesterase inhibitor"
+    },
+    "ask": {
+     "ms": "Why does that help?",
+     "college": "Why does inhibiting the enzyme restore transmission?"
+    },
+    "scenario": "mgNeo",
+    "leadsTo": []
+   },
+   {
+    "id": "muscles-wall",
+    "title": {
+     "ms": "Hitting the wall at 30 km",
+     "college": "A marathon with no carbohydrate"
+    },
+    "ask": {
+     "ms": "Why does he have to slow down, when fat still has plenty of energy left?",
+     "college": "Why must pace fall once glycogen is gone, when fat stores are ample?"
+    },
+    "scenario": "wall",
+    "leadsTo": [
+     "marathon-wall"
+    ]
+   }
+  ]
+ },
+ {
+  "page": "pancreas",
+  "name": "The pancreas",
+  "questions": [
+   {
+    "id": "pancreas-t1dka",
+    "title": {
+     "ms": "A day without insulin",
+     "college": "Type 1 diabetes, 24 hours without insulin"
+    },
+    "ask": {
+     "ms": "What is happening to her blood sugar, her ketones and her blood’s acidity?",
+     "college": "What happens to glucose, ketones and pH?"
+    },
+    "scenario": "t1dka",
+    "leadsTo": [
+     "dka"
+    ]
+   },
+   {
+    "id": "pancreas-hypo",
+    "title": {
+     "ms": "Too much insulin before a small meal",
+     "college": "An insulin dose too large for the meal"
+    },
+    "ask": {
+     "ms": "Why doesn’t her body rescue her blood sugar by itself?",
+     "college": "Why is the glucagon response absent?"
+    },
+    "scenario": "hypo",
+    "leadsTo": []
+   },
+   {
+    "id": "pancreas-su-glp1",
+    "title": {
+     "ms": "Two tablets for the same diabetes",
+     "college": "A sulfonylurea or a GLP-1 drug"
+    },
+    "ask": {
+     "ms": "Which one can make blood sugar drop too low, and why?",
+     "college": "Which can cause hypoglycaemia, and why?"
+    },
+    "scenario": "t2dsu",
+    "leadsTo": []
+   }
+  ]
+ }
+]
+</script>
+<script type="application/json" id="case-data">
+[
+ { "id": "dka",
+   "title": "Diabetic ketoacidosis",
+   "blurb": { "ms": "A teenager with type 1 diabetes misses insulin and gets ill. Follow what goes wrong in four organs, one after another.", "college": "Insulin deficiency followed through ketogenesis, osmotic diuresis, respiratory compensation and the potassium shift when insulin is given." },
+   "stops": [
+     { "page": "pancreas", "scenario": "t1dka", "label": { "ms": "No insulin: blood sugar and ketones rise", "college": "No insulin: hyperglycaemia and ketogenesis" } },
+     { "page": "kidneys", "scenario": "diabetes", "label": { "ms": "Sugar pulls water into the urine; bicarbonate is used up", "college": "Osmotic diuresis, dehydration and a high anion gap acidosis" } },
+     { "page": "lungs", "needs": "a metabolic-acidosis scenario on the lungs page", "label": { "ms": "Deep, fast breathing blows off carbon dioxide", "college": "Kussmaul breathing: respiratory compensation and a low PaCO₂" } },
+     { "page": "brain", "scenario": "hyperK", "label": { "ms": "Potassium, before and after insulin", "college": "Potassium shifts: high before insulin, falling after it" } }
+   ],
+   "parents": ["pancreas-t1dka", "brain-hyperK"] },
+ { "id": "cholera-shock",
+   "title": "Cholera to shock",
+   "blurb": { "ms": "A gut infection pours water out of the body. Follow it to the kidneys and the heart, and back to the cure.", "college": "Secretory diarrhoea followed through prerenal kidney injury and low-volume circulation, to oral rehydration." },
+   "stops": [
+     { "page": "gut", "scenario": "cholera", "label": { "ms": "Litres of water pour into the gut", "college": "Secretory diarrhoea: CFTR held open" } },
+     { "page": "kidneys", "scenario": "dry", "needs": "the gut’s water loss carried across to the kidneys page", "label": { "ms": "The kidneys save every drop they can", "college": "Prerenal: maximal antidiuresis and a falling GFR" } },
+     { "page": "heart", "needs": "a low-blood-volume scenario on the heart page", "label": { "ms": "A fast heart with little blood to pump", "college": "Hypovolaemia: low preload, tachycardia, falling stroke volume" } },
+     { "page": "gut", "scenario": "ors", "label": { "ms": "The cure: salt and sugar in water", "college": "Oral rehydration through SGLT1" } }
+   ],
+   "parents": ["gut-cholera", "kidneys-dry"] },
+ { "id": "heart-failure",
+   "title": "Heart failure",
+   "blurb": { "ms": "A weak heart backs blood up into the lungs and slows the kidneys. Follow it there and treat it.", "college": "Systolic failure followed through pulmonary oedema to renal hypoperfusion, RAAS and a loop diuretic." },
+   "stops": [
+     { "page": "heart", "scenario": "failure", "label": { "ms": "A weak, enlarged heart", "college": "Reduced contractility, raised filling pressures" } },
+     { "page": "lungs", "needs": "a pulmonary-oedema scenario on the lungs page", "label": { "ms": "Fluid in the lungs", "college": "Pulmonary oedema and a widened A–a gradient" } },
+     { "page": "kidneys", "scenario": "loop", "label": { "ms": "The kidneys keep salt; a water tablet helps", "college": "Low renal perfusion, RAAS, and a loop diuretic" } }
+   ],
+   "parents": ["heart-sepsis", "kidneys-dry"] },
+ { "id": "marathon-wall",
+   "title": "The marathon wall",
+   "blurb": { "ms": "A runner runs out of fuel at 30 km. Follow the sugar from muscle to liver to pancreas, then fix it.", "college": "Glycogen depletion followed through hepatic glucose output and the insulin–glucagon ratio, then carbohydrate feeding." },
+   "stops": [
+     { "page": "muscles", "scenario": "wall", "label": { "ms": "Muscle sugar runs out", "college": "Muscle glycogen depletion" } },
+     { "page": "liver", "scenario": "fast", "needs": "the liver’s fasting model run at the pace of a marathon", "label": { "ms": "The liver makes new sugar", "college": "Hepatic glycogenolysis and gluconeogenesis" } },
+     { "page": "pancreas", "needs": "exercise as a test on the pancreas page", "label": { "ms": "Insulin falls, glucagon rises", "college": "The insulin–glucagon ratio in prolonged exercise" } },
+     { "page": "muscles", "scenario": "wallFuel", "label": { "ms": "Sugar on the way keeps the runner going", "college": "Carbohydrate feeding spares glycogen" } }
+   ],
+   "parents": ["muscles-wall", "liver-fast"] },
+ { "id": "altitude",
+   "title": "Altitude, over weeks",
+   "blurb": { "ms": "A climber goes high and stays there. Follow how the lungs, kidneys and bone marrow adapt over weeks.", "college": "Hypoxic ventilatory response, renal bicarbonate loss and erythropoiesis over weeks at altitude." },
+   "stops": [
+     { "page": "lungs", "scenario": "acclimatised", "label": { "ms": "Breathing harder", "college": "Hypoxic ventilatory response and acclimatisation" } },
+     { "page": "kidneys", "needs": "a respiratory-alkalosis scenario on the kidneys page", "label": { "ms": "The kidneys let bicarbonate go", "college": "Renal compensation for respiratory alkalosis" } },
+     { "page": "bones", "needs": "a hypoxia scenario on the bones page", "label": { "ms": "The marrow makes more red cells", "college": "EPO and erythropoiesis" } }
+   ],
+   "parents": ["lungs-everest", "bones-ckd"] }
+]
+</script>
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k, v){ try { localStorage.setItem(k, v); } catch(e){} } };
+const read = id => { try { return JSON.parse(document.getElementById(id).textContent); } catch(e){ return []; } };
+const PAGES = read("questions"), CASES = read("case-data");
+const LEVELS = [["ms", "Middle school", "Middle"], ["hs", "High school", "High"], ["college", "College", "College"], ["phd", "PhD / MD", "PhD"]];
+const IDS = LEVELS.map(l => l[0]);
+const url = new URLSearchParams(location.search);
+let level = IDS.includes(url.get("level")) ? url.get("level") : IDS.includes(store.get("humanphysiology.level")) ? store.get("humanphysiology.level") : "hs";
+/* a level object falls back to the nearest lower level, then the nearest higher one */
+function lt(v){
+  if (v == null) return ""; if (typeof v === "string") return v;
+  const i = IDS.indexOf(level);
+  for (let j = i; j >= 0; j--) if (v[IDS[j]] != null) return v[IDS[j]];
+  for (let j = i + 1; j < IDS.length; j++) if (v[IDS[j]] != null) return v[IDS[j]];
+  return "";
+}
+const done = () => { try { const d = JSON.parse(store.get("humanphysiology.questions") || "{}"); return d && typeof d === "object" ? d : {}; } catch(e){ return {}; } };
+const Q = Object.fromEntries(PAGES.flatMap(p => p.questions.map(q => [q.id, { ...q, page: p.page, pageName: p.name }])));
+const NAME = Object.fromEntries(PAGES.map(p => [p.page, p.name]));
+const pageName = id => NAME[id] || id.charAt(0).toUpperCase() + id.slice(1);
+const qHref = q => `../organs/${q.page}.html?level=${level}#q-${q.id}`;
+const pageHref = id => `../organs/${id}.html?level=${level}`;
+const TEXT = {
+  lede: { ms: "Each question tells you about a person and asks what will happen. Make your guess first, then the page runs its own model so you can see if you were right, and why.", college: "Each question sets up a case without naming the diagnosis and asks you to commit to a prediction. The organ page then runs that case on its own models, with the healthy reference beside it, and explains why your choice holds or where it fails." },
+  cases: { ms: "Some cases don’t stay in one organ. They follow one person from organ to organ. Each case opens once you have done the questions it builds on.", college: "Converging cases follow one person across several organ pages, predicting again at every stop. Each builds on single-organ questions, shown linked on the map; a case lights up when those are done." },
+  organs: { ms: "Two or three questions for each organ. A filled dot means you have done it on this device.", college: "Each organ page has its own Predict section. A filled dot means the question has been answered in this browser." }
+};
+
+function renderLevels(){
+  const seg = $("[data-levels]");
+  seg.innerHTML = LEVELS.map(([id, label, short]) => `<button type="button" role="radio" data-v="${id}" aria-checked="${id === level}"><span class="f">${label}</span><span class="s">${short}</span></button>`).join("");
+}
+function render(){
+  const d = done(), all = Object.values(Q), n = all.filter(q => d[q.id]).length;
+  $("[data-lede]").textContent = lt(TEXT.lede);
+  $("[data-cases-intro]").textContent = lt(TEXT.cases);
+  $("[data-organs-intro]").textContent = lt(TEXT.organs);
+  $("[data-progress]").innerHTML = `<span><b>${n}</b> of ${all.length} questions done</span>${n ? `<button type="button" data-clear>Forget my answers</button>` : ""}`;
+  $$("[data-back]").forEach(a => { a.href = `../index.html?level=${level}`; });
+
+  /* by organ */
+  $("[data-organs]").innerHTML = PAGES.map(p => {
+    const k = p.questions.filter(q => d[q.id]).length;
+    return `<article class="panel organ"><h3><a href="${esc(pageHref(p.page))}#predict" style="text-decoration:none">${esc(p.name)}</a><small>${k} of ${p.questions.length} done</small></h3><ul class="qs">${p.questions.map(q =>
+      `<li data-hub-q="${esc(q.id)}" class="${d[q.id] ? "done" : ""}"><a href="${esc(qHref({ ...q, page: p.page }))}"><i aria-hidden="true"></i><div><b>${esc(lt(q.title))}</b><span>${esc(lt(q.ask))}</span>${d[q.id] ? `<span class="sr" style="position:absolute;left:-9999px">Done</span>` : ""}</div></a></li>`).join("")}</ul></article>`;
+  }).join("");
+
+  /* cases */
+  const caseOn = c => c.parents.every(id => d[id]);
+  $("[data-cases]").innerHTML = CASES.map(c => {
+    const on = caseOn(c), needs = c.stops.filter(s => s.needs);
+    const state = needs.length ? "Not yet available" : on ? "Open" : "Opens when its questions are done";
+    return `<article class="panel case${on ? " on" : ""}" id="case-${esc(c.id)}" data-case="${esc(c.id)}">
+      <p class="state"><i></i>${esc(on && needs.length ? "Its questions are done · not yet available" : state)}</p>
+      <h3>${esc(c.title)}</h3>
+      <p class="prose">${esc(lt(c.blurb))}</p>
+      <ol class="stops">${c.stops.map(s => `<li><div><a href="${esc(pageHref(s.page))}"><b>${esc(pageName(s.page))}</b></a> · ${esc(lt(s.label))}${s.needs ? `<span class="need">Still to build: ${esc(s.needs)}.</span>` : ""}</div></li>`).join("")}</ol>
+      <div class="parents"><span class="muted">Builds on</span>${c.parents.filter(id => Q[id]).map(id => `<a class="chip${d[id] ? " done" : ""}" href="${esc(qHref(Q[id]))}"><i aria-hidden="true"></i>${esc(Q[id].pageName)}: ${esc(lt(Q[id].title))}</a>`).join("")}</div>
+    </article>`;
+  }).join("");
+  renderMap(d, caseOn);
+}
+/* the map: parent questions on the left, cases on the right, linked */
+function renderMap(d, caseOn){
+  const parents = [...new Set(CASES.flatMap(c => c.parents))].filter(id => Q[id]);
+  const W = 860, row = 34, top = 26, H = top + Math.max(parents.length, CASES.length * 2) * row / (parents.length >= CASES.length * 2 ? 1 : 1) + 10;
+  const py = i => top + i * row + 8, cy = i => top + (i + .5) * ((H - top - 10) / CASES.length);
+  const qx = 380, cx = 520;
+  const edges = CASES.flatMap((c, ci) => c.parents.filter(id => Q[id]).map(id => {
+    const y1 = py(parents.indexOf(id)), y2 = cy(ci), on = !!d[id];
+    return `<path class="edge${on ? " on" : ""}" d="M${qx + 7},${y1} C${(qx + cx) / 2},${y1} ${(qx + cx) / 2},${y2} ${cx - 9},${y2}"/>`;
+  })).join("");
+  const qs = parents.map((id, i) => { const q = Q[id]; return `<a href="${esc(qHref(q))}"><title>${esc(q.pageName)}: ${esc(lt(q.title))}</title><text x="${qx - 12}" y="${py(i) + 4}" text-anchor="end"><tspan class="page">${esc(q.pageName)}</tspan>  ${esc(trim(lt(q.title), 38))}</text><circle class="qn${d[id] ? " on" : ""}" cx="${qx}" cy="${py(i)}" r="6"/></a>`; }).join("");
+  const cs = CASES.map((c, i) => `<a href="#case-${esc(c.id)}"><circle class="cn${caseOn(c) ? " on" : ""}" cx="${cx}" cy="${cy(i)}" r="8"/><text x="${cx + 16}" y="${cy(i) + 4.5}" style="font-size:14px;font-weight:600">${esc(c.title)}</text></a>`).join("");
+  $("[data-map]").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Map of the cases across organs and the questions each builds on"><text class="page" x="${qx}" y="14" text-anchor="end">Questions</text><text class="page" x="${cx}" y="14">Cases</text>${edges}${qs}${cs}</svg>`;
+}
+const trim = (s, n) => s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-levels] [data-v]");
+  if (b){ level = b.dataset.v; store.set("humanphysiology.level", level); const p = new URLSearchParams(location.search); p.set("level", level); try { history.replaceState(null, "", "?" + p + location.hash); } catch(err){} renderLevels(); render(); return; }
+  if (e.target.closest("[data-clear]")){ store.set("humanphysiology.questions", "{}"); render(); }
+});
+document.addEventListener("keydown", e => {
+  const b = e.target.closest("[data-levels] [data-v]"); if (!b) return;
+  const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key]; if (!k) return;
+  e.preventDefault(); const all = $$("[data-levels] [data-v]"); const n = all[(all.indexOf(b) + k + all.length) % all.length]; n.click(); $(`[data-levels] [data-v="${n.dataset.v}"]`).focus();
+});
+addEventListener("storage", e => { if (e.key === "humanphysiology.questions") render(); });
+addEventListener("pageshow", render);
+renderLevels(); render();
+if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }
+})();
+</script>
+</body>
+</html>

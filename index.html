@@ -17,7 +17,8 @@
 
  1. DATA (JSON blocks in <script type="application/json">)
     #body-content  topics → phases → levels → text, and systems (circulatory,
-                   nervous, endocrine, respiratory, digestive, urinary, immune) → phases → levels
+                   nervous, endocrine, respiratory, digestive, urinary, immune,
+                   musculoskeletal) → phases → levels
                    → text plus fact pins
                    {title, x, y, levels…}. The schema is the contract.
     #body-glossary term → definition + match forms. Terms are auto-linked.
@@ -90,7 +91,11 @@
                    up LYMPH_ROUTES through the nodes, milky after meals and pumped
                    by muscle and breathing in the run, lymphocytes homing into the
                    nodes (most at night), neutrophils leaving the marrow, IL-6
-                   from working thighs and the spleen contracting (IMMUNE).
+                   from working thighs and the spleen contracting (IMMUNE), and the
+                   skeleton and the big muscle groups, lit by the posture of the hour
+                   (limp in REM sleep) and, in the run, in turn with each stride, with
+                   motor units firing, the ground pushing back and the leg bones
+                   bending at each footstep, and lactate leaving working muscle (MSK).
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
@@ -502,6 +507,18 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .im-peyer{ fill:#9fcf78; stroke:#3f7a30; stroke-width:.6; }
 .im-marrow{ fill:#d9664f; opacity:.45; }
 .im-dot{ stroke:#ffffff80; stroke-width:.4; }
+.ms-bone{ fill:var(--bone); stroke:var(--bone-line); stroke-width:.9; opacity:.85; }
+.ms-bone.pelvis{ opacity:.6; }
+.ms-rib{ fill:none; stroke:var(--bone-line); stroke-width:2.2; stroke-linecap:round; opacity:.55; }
+.ms-skull{ fill:none; stroke:var(--bone-line); stroke-width:2; opacity:.75; }
+.ms-mus{ stroke:#8a3328; stroke-width:1; stroke-opacity:.75; }
+.ms-mus.behind{ stroke-dasharray:3 2; }
+.ms-ic{ fill:none; stroke-width:2; stroke-linecap:round; }
+.ms-dia{ fill:none; stroke-width:4; stroke-linecap:round; }
+.ms-strain{ fill:none; stroke:#2fb3a3; stroke-width:10; stroke-linecap:round; opacity:0; }
+.ms-ocy{ fill:#a68c6a; }
+.ms-grf{ fill:none; stroke:#4a6fd1; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; }
+.ms-dot{ stroke:#ffffff80; stroke-width:.4; }
 #s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo, #s-infectionRide .imp-halo{ opacity:.28; }
 #s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot, #s-infectionRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
 #s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail, #s-infectionRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
@@ -1915,6 +1932,118 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "hs": "The walls of lymph vessels contract on their own, a few times a minute, and each segment between two valves pumps like a tiny heart. Walking and running squeeze them much harder.",
           "college": "Lymphangions contract intrinsically at about 1–10 times a minute, faster when stretched. Extrinsic pumps (skeletal muscle, breathing and arterial pulsation) add to the flow, which is why long periods of standing still make ankles swell.",
           "phd": "When lymph drainage fails, protein-rich fluid builds up (lymphoedema), for example after nodes are removed for cancer surgery or in filariasis. VEGF-C and its receptor VEGFR-3 drive lymph vessel growth, and Milroy disease comes from VEGFR-3 mutations."
+        }
+      ]
+    },
+    "musculoskeletal": {
+      "name": "Muscles & skeleton",
+      "blurb": "Bones, joints and the big muscle groups: holding you up, moving you and taking the load at every step",
+      "phases": {
+        "sleep": {
+          "ms": "While you sleep, your muscles relax and your bones get a rest from carrying you. In dream sleep (REM), your brain switches off almost all your muscles, so you don’t act out your dreams. Only your breathing muscles and the muscles that move your eyes keep working. Growth hormone, released in deep sleep, helps your muscles and bones repair and grow.",
+          "hs": "Lying down takes the load off your skeleton: the force through your legs falls from about your body weight to almost nothing, and the strain in your leg bones drops about fifteen-fold. In deep sleep the muscles are relaxed but keep a little tone. In REM sleep the brainstem blocks the motor neurons of the spinal cord, so the limbs go limp (atonia), apart from small twitches of the fingers and toes. The diaphragm keeps working. Growth hormone peaks in the first deep sleep and helps repair muscle and build bone.",
+          "college": "In REM sleep, inhibition from the medulla (glycine and GABA), driven from the pons, hyperpolarises the spinal α-motor neurons, so the limbs lose their tone; brief phasic twitches break through. The diaphragm and the eye muscles are spared, but tone in the intercostal and upper-airway muscles falls, which is why snoring and apnoeas cluster in REM. Overnight the muscles keep refilling the glycogen the run used, from the evening meal, and bones are barely loaded: the strain in the shin falls to a few tens of microstrain.",
+          "phd": "REM atonia comes from glutamatergic neurons of the pontine sublaterodorsal nucleus that drive medullary interneurons, which release glycine and GABA onto motor neurons (Brooks and Peever, 2012). When atonia fails, in REM sleep behaviour disorder, people act out their dreams, and the disorder often comes years before Parkinson’s disease or dementia with Lewy bodies. Long bed rest without loading frees osteocyte sclerostin and bone resorption: in strict bed rest the hip loses about 1% of its bone mineral a month, a little slower than in space (1–1.5% a month)."
+        },
+        "rest": {
+          "ms": "Even sitting still, many of your muscles are at work. Muscles in your back, neck and calves hold you upright, tightening a little whenever you start to tip. Your skeleton carries your weight and protects your brain, heart and lungs. Inside your bones, the marrow makes new blood cells all day long.",
+          "hs": "Muscles that hold your posture, like the deep back muscles and the soleus in your calf, stay slightly active all day. They are made mostly of slow, red fibres that hardly tire. Your muscles make up about 40% of your body weight and use about a fifth of your oxygen even at rest. Your 206 bones meet at joints, and muscles pull on them through tendons, working as levers.",
+          "college": "Postural muscles fire at low rates, recruiting small, slow motor units first (the size principle). Standing quietly, the body sways a little and the soleus corrects it all the time, at little energy cost. At rest skeletal muscle uses ~60 mL O₂/min, about a fifth of the body’s oxygen, mostly burning fatty acids. It holds ~420 g of glycogen, about four times the liver’s store, but because muscle lacks glucose-6-phosphatase it keeps that glycogen for itself.",
+          "phd": "Muscle is the largest site of insulin-stimulated glucose disposal, taking up about 80% of an infused glucose load under a hyperinsulinaemic clamp (DeFronzo et al., 1981), which ties muscle mass and activity to the risk of type 2 diabetes. Bone is remodelled all the time: about a tenth of the adult skeleton is replaced each year, in small units where osteoclasts dig out old bone and osteoblasts refill the pit. Osteocytes, more than 90% of bone cells, steer this through sclerostin and RANKL."
+        },
+        "meal": {
+          "ms": "After a meal, your muscles store sugar from your food as glycogen, a fuel they can use later. The protein in your food gives your muscles the building blocks to repair and grow. Chewing is muscle work too: the muscles that close your jaw can press your back teeth together very hard.",
+          "hs": "After a meal, insulin opens the way for glucose into your muscles, which store much of it as glycogen. Muscles hold about four times as much glycogen as the liver, but they keep it for themselves. Amino acids from the protein in your meal switch on muscle building for a few hours. Your bones notice meals too: gut hormones released when you eat slow down the cells that break bone down.",
+          "college": "Insulin moves GLUT4 transporters to the muscle membrane and activates glycogen synthase, so muscle stores much of a meal’s glucose. A meal with about 20–40 g of protein raises muscle protein synthesis for a few hours, led by leucine acting through mTORC1; exercise beforehand makes the effect larger. Gut hormones released by eating (GLP-2 and GIP) lower bone resorption, so the blood marker CTX falls after meals; that is why CTX is measured fasting, in the morning.",
+          "phd": "The ‘muscle full’ effect: after protein, muscle protein synthesis rises within about 45 minutes and falls back after 2–3 hours, even while amino acids stay high in the blood (Atherton et al., 2010). Older adults need more protein per meal for the same response (anabolic resistance). GLP-2 given at bedtime lowers night-time CTX, which suggests that the gut helps set the daily rhythm of bone resorption (Henriksen et al., 2003)."
+        },
+        "exercise": {
+          "ms": "When you run, your leg muscles take turns: one leg pushes off while the other swings forward. Each time a foot lands, the ground pushes back with about two and a half times your body weight, and your bones bend a tiny bit. That bending tells your bones to grow stronger. Your muscles burn their stored sugar, and you breathe hard to bring them oxygen.",
+          "hs": "With each stride, nerve signals switch the muscles on in turn: the hamstrings slow the swinging leg, the quadriceps and buttock muscles catch your weight as the foot lands, and the calf pushes you off. The ground pushes back with 2–3 times your body weight. Your leg bones bend by about a tenth of a per cent, and osteocytes inside them sense it and signal for bone to be added. Working muscles use about 85% of the oxygen you breathe in, burning glycogen and fat, and some lactate spills into the blood.",
+          "college": "At about 168 steps a minute, each leg goes through its stance and swing 1.4 times a second. Muscles act as springs and brakes as well as motors: the quadriceps contract while being stretched as the knee bends on landing (eccentric work), and the Achilles tendon stores elastic energy and returns it at push-off. Peak vertical ground-reaction force is about 2.5 times body weight, and peak tibial strain about 1,000 microstrain. Muscle O₂ use rises nearly thirty-fold, to ~1.7 L/min; an hour’s jog burns ~70 g of muscle glycogen, and blood lactate settles near 2 mmol/L.",
+          "phd": "Motor units are recruited in order of size (Henneman’s principle), so a jog relies mainly on slow, oxidative type I fibres, with fast fibres added as the pace or fatigue rises. Bone responds to dynamic rather than static strain, and its response saturates after a few dozen loading cycles, so short bouts with rests between them build more bone than one long run (Turner and Robling, 2003). Contraction also moves GLUT4 to the membrane without insulin, through AMPK and Ca²⁺ signalling, and muscle releases myokines such as IL-6."
+        }
+      },
+      "pins": [
+        {
+          "id": "ribs",
+          "title": "Ribs and breathing muscles",
+          "x": 516,
+          "y": 344,
+          "ms": "Your 12 pairs of ribs make a cage that protects your heart and lungs. The muscles between the ribs and the dome-shaped diaphragm below them do the work of breathing.",
+          "hs": "The diaphragm does most of the work of quiet breathing. In the run, the intercostal muscles between the ribs join in, lifting the ribs up and out like bucket handles, so the chest takes in more air.",
+          "college": "The diaphragm, supplied by the phrenic nerves (C3–C5), keeps working through REM atonia, as the eye muscles do. External intercostals raise the ribs in inspiration; in hard exercise, internal intercostals and the abdominal muscles make breathing out active too.",
+          "phd": "The diaphragm is rich in fatigue-resistant fibres, yet it can tire in very hard exercise, and a reflex from the working breathing muscles then diverts blood from the legs (Dempsey et al., 2006). Days on a ventilator make the diaphragm waste away quickly."
+        },
+        {
+          "id": "arm",
+          "title": "Arm muscles in pairs",
+          "x": 444,
+          "y": 384,
+          "ms": "Muscles can only pull, never push. So they work in pairs: the biceps bends your elbow and the triceps straightens it.",
+          "hs": "When one muscle of a pair contracts, the spinal cord relaxes its partner (reciprocal inhibition). In the run, each arm swings with the opposite leg, which balances the twist of the body at each stride.",
+          "college": "The elbow is a third-class lever: the biceps attaches a few centimetres from the joint, so it must pull with several times the weight held in the hand, trading force for speed and range of movement.",
+          "phd": "Arm swing in running mostly balances the angular momentum of the swinging legs. Running with the arms held still costs about 3–13% more energy, depending on how they are held (Arellano and Kram, 2014)."
+        },
+        {
+          "id": "spine",
+          "title": "Spine and back muscles",
+          "x": 600,
+          "y": 486,
+          "ms": "Your backbone is a stack of small bones called vertebrae, with soft discs between them. It holds you up, lets you bend and protects the spinal cord inside it.",
+          "hs": "The spine has 7 neck, 12 chest and 5 lower-back vertebrae, then the sacrum and the tailbone, whose bones are fused. Its S-shaped curves act like a spring. The long erector spinae muscles beside it hold you upright and tighten at every footstep in the run.",
+          "college": "Each disc carries load through a pressurised gel core (the nucleus pulposus) inside a fibrous ring. Discs lose water under load through the day and take it back lying down at night, so you are about 1–2 cm shorter in the evening than in the morning.",
+          "phd": "Pressure measured inside a lumbar disc is about 0.1 MPa lying down, 0.5 MPa standing and over 2 MPa lifting a weight with a rounded back (Wilke et al., 1999). In space, without that load, the discs swell and astronauts grow up to about 3% taller."
+        },
+        {
+          "id": "pelvis",
+          "title": "Pelvis and buttock muscles",
+          "x": 668,
+          "y": 572,
+          "ms": "Your hip bones form a strong ring, the pelvis, that passes your weight from your spine to your legs. The biggest muscle in your body, in your buttock, keeps you upright when you run and climb.",
+          "hs": "The pelvis carries the weight of the upper body to the thigh bones at the hips, ball-and-socket joints that move in every direction. The gluteus maximus straightens the hip: it is fairly quiet in walking but works hard in running, climbing stairs and getting up from a chair.",
+          "college": "In running, the gluteus maximus fires as the foot lands, stopping the trunk from pitching forward and the hip from bending. It is much larger in humans than in apes, which may be an adaptation for running (Lieberman et al., 2006).",
+          "phd": "Instrumented hip implants record about 2.4 times body weight through the joint in walking (Bergmann et al., 2001), and more in jogging. Most of that force comes from the muscles that steady the hip, not from body weight itself."
+        },
+        {
+          "id": "thigh",
+          "title": "Quadriceps and hamstrings",
+          "x": 546,
+          "y": 690,
+          "ms": "The big muscles on the front of your thigh straighten your knee, and the ones at the back bend it. When you run, they take turns at every stride.",
+          "hs": "The quadriceps catch you as your foot lands, holding the bending knee like a spring. The hamstrings slow the lower leg at the end of each swing, just before the foot lands, which is when they are most often torn.",
+          "college": "On landing the quadriceps contract while being stretched (eccentric work), absorbing energy. Eccentric contractions make more force for less ATP, but they cause most muscle soreness. Muscle O₂ use rises from ~60 mL/min at rest to about 1.7 L/min in this run.",
+          "phd": "The hamstrings cross both the hip and the knee. In late swing they brake the knee while being stretched at both joints, reaching their greatest length just before the foot lands (Thelen et al., 2005), when most hamstring strains happen."
+        },
+        {
+          "id": "knee",
+          "title": "Knee",
+          "x": 657,
+          "y": 771,
+          "ms": "Your knee is a hinge between the thigh bone and the shin bone. The kneecap sits in the tendon of your thigh muscles and helps them pull.",
+          "hs": "Smooth cartilage covers the ends of the bones, and two rubbery menisci between them spread the load. Strong ligaments, such as the cruciate ligaments inside the joint, stop the bones sliding apart. The kneecap holds the quadriceps tendon away from the joint, giving it more leverage.",
+          "college": "The patella lengthens the moment arm of the quadriceps, so the same muscle force turns the knee harder. Joint cartilage has no blood vessels: it is fed from the joint fluid, which is squeezed out and drawn back in as the joint is loaded and unloaded, so movement helps keep it healthy.",
+          "phd": "The forces between the kneecap and the thigh bone reach several times body weight in running and deep squats. Recreational running does not appear to raise the risk of knee osteoarthritis (Alentorn-Geli et al., 2017)."
+        },
+        {
+          "id": "calf",
+          "title": "Calf and Achilles tendon",
+          "x": 541,
+          "y": 795,
+          "ms": "Your calf muscles lift your heel and push you off at every step. They pull on the Achilles tendon, the strongest tendon in your body.",
+          "hs": "The calf has two main muscles: the gastrocnemius, which also crosses the knee, and the soleus beneath it, a postural muscle that stops you tipping forward when you stand. In running, the Achilles tendon stretches as you land and recoils like a spring as you push off.",
+          "college": "Tendons store elastic energy: in running, the Achilles tendon and the arch of the foot return about half of the mechanical energy of each step (Ker et al., 1987). The calf’s muscle fibres can then work at nearly constant length, which saves ATP.",
+          "phd": "Peak Achilles tendon force in running is about 6–8 times body weight. The soleus is mostly slow, type I fibres (about 70–80%), while the gastrocnemius has more fast fibres."
+        },
+        {
+          "id": "shin",
+          "title": "Shin bone under load",
+          "x": 662,
+          "y": 826,
+          "ms": "Each time your foot lands in a run, your shin bone bends and squashes by about a thousandth of its length. Cells buried inside the bone feel this and tell it to grow stronger.",
+          "hs": "Bone strain is measured in microstrain: 1,000 microstrain is a change in length of 0.1%. Running loads the shin bone (tibia) to about 1,000 microstrain, about 30 times more than lying in bed. Osteocytes sense the fluid squeezed through their tiny channels and steer bone building and breakdown.",
+          "college": "Frost’s mechanostat: below ~100 microstrain bone is removed, above ~1,500 it is added, and in between it is kept. Dynamic loads matter more than static ones, which is why standing still builds little bone. Repeated loads without enough rest cause stress fractures, most often of the tibia in runners.",
+          "phd": "Strain gauges fixed to the tibia of volunteers record several hundred microstrain in walking and around 1,000–2,000 in running and jumping (Burr et al., 1996). Osteocytes answer through sclerostin: loading lowers it, freeing Wnt signalling in osteoblasts, and romosozumab, an antibody against sclerostin, mimics this."
         }
       ]
     }
@@ -3857,7 +3986,38 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "mesenteric nodes": { "def": "The lymph nodes in the sheet of tissue that holds the intestines. They filter all the lymph from the gut.", "match": ["mesenteric nodes", "mesenteric lymph nodes"] },
   "oral tolerance": { "def": "The immune system learning to leave harmless things that are swallowed, such as food, alone.", "match": ["oral tolerance"] },
   "bilirubin": { "def": "A yellow pigment made when haem from old red blood cells is broken down. The liver puts it into bile.", "match": ["bilirubin"] },
-  "S1P": { "def": "Sphingosine-1-phosphate: a lipid that is high in blood and lymph and low inside lymph nodes. Lymphocytes follow it to leave a node.", "match": ["sphingosine-1-phosphate", "S1P"] }
+  "S1P": { "def": "Sphingosine-1-phosphate: a lipid that is high in blood and lymph and low inside lymph nodes. Lymphocytes follow it to leave a node.", "match": ["sphingosine-1-phosphate", "S1P"] },
+  "atonia": { "def": "The loss of muscle tone in REM sleep, when the brainstem switches off the motor neurons to the limbs.", "match": ["atonia", "REM atonia"] },
+  "REM sleep behaviour disorder": { "def": "A sleep disorder in which REM atonia fails, so people act out their dreams.", "match": ["REM sleep behaviour disorder"] },
+  "motor units": { "def": "One motor neuron and all the muscle fibres it controls. They are switched on from the smallest to the largest (the size principle).", "match": ["motor units", "motor unit", "size principle", "Henneman’s principle"] },
+  "slow-twitch fibres": { "def": "Type I muscle fibres: slow, red, full of mitochondria and hard to tire. Postural muscles such as the soleus are mostly made of them.", "match": ["slow-twitch fibres", "type I fibres", "slow, red fibres", "slow, oxidative type I fibres"] },
+  "eccentric": { "def": "A contraction in which a muscle is pulling while it is being stretched, braking a movement, as the quadriceps do when you land or walk downhill.", "match": ["eccentric", "eccentric work", "eccentric contractions"] },
+  "tendons": { "def": "Tough cords of collagen that join muscles to bones and store elastic energy when stretched.", "match": ["tendons", "tendon"] },
+  "ligaments": { "def": "Strong bands of collagen that join bone to bone across a joint and stop it moving the wrong way.", "match": ["ligaments", "ligament", "cruciate ligaments"] },
+  "menisci": { "def": "Two C-shaped pads of rubbery cartilage in the knee that spread the load between the thigh bone and the shin bone.", "match": ["menisci", "meniscus"] },
+  "cartilage": { "def": "Smooth, slippery tissue without blood vessels that covers the ends of bones in joints.", "match": ["cartilage"] },
+  "quadriceps": { "def": "The four muscles on the front of the thigh that straighten the knee.", "match": ["quadriceps"] },
+  "hamstrings": { "def": "The muscles on the back of the thigh that bend the knee and straighten the hip.", "match": ["hamstrings", "hamstring"] },
+  "gluteus maximus": { "def": "The big buttock muscle that straightens the hip, working hardest in running, climbing and rising from a chair.", "match": ["gluteus maximus", "gluteus medius", "glutes"] },
+  "calf muscles": { "def": "The gastrocnemius and the soleus, which lift the heel through the Achilles tendon.", "match": ["gastrocnemius", "soleus"] },
+  "Achilles tendon": { "def": "The thick tendon that joins the calf muscles to the heel bone, and the body’s strongest tendon.", "match": ["Achilles tendon"] },
+  "erector spinae": { "def": "Long muscles running beside the spine that hold the back upright.", "match": ["erector spinae"] },
+  "intercostal muscles": { "def": "Muscles between the ribs that lift the chest wall in deep breathing (and pull it down in forced breathing out).", "match": ["intercostal muscles", "intercostals", "intercostal"] },
+  "vertebrae": { "def": "The small bones that stack up to form the spine.", "match": ["vertebrae", "vertebra"] },
+  "pelvis": { "def": "The ring of hip bones and sacrum that passes the body’s weight from the spine to the legs.", "match": ["pelvis", "sacrum"] },
+  "tibia": { "def": "The shin bone, which carries most of the body’s weight below the knee.", "match": ["tibia", "tibial", "shin bone"] },
+  "femur": { "def": "The thigh bone, the longest bone in the body.", "match": ["femur", "thigh bones", "thigh bone"] },
+  "patella": { "def": "The kneecap, a bone that sits in the tendon of the quadriceps.", "match": ["patella", "kneecap"] },
+  "ground-reaction force": { "def": "The force with which the ground pushes back on the foot. In running it peaks at about 2–3 times body weight.", "match": ["ground-reaction force"] },
+  "microstrain": { "def": "A unit of how much a material is stretched or squashed: 1,000 microstrain is a change in length of 0.1%.", "match": ["microstrain"] },
+  "mechanostat": { "def": "Frost’s idea that bone adjusts its strength to keep the strain from everyday loads within a set range.", "match": ["mechanostat"] },
+  "sclerostin": { "def": "A protein made by osteocytes that brakes bone building. Loading lowers it.", "match": ["sclerostin"] },
+  "RANKL": { "def": "A signal from osteocytes and osteoblasts that makes osteoclasts form and dissolve bone.", "match": ["RANKL"] },
+  "CTX": { "def": "A fragment of collagen released when bone is broken down, measured in the blood as a marker of bone resorption.", "match": ["CTX"] },
+  "leucine": { "def": "An amino acid that switches on muscle protein building through mTORC1.", "match": ["leucine"] },
+  "mTORC1": { "def": "A protein complex inside cells that senses amino acids, insulin and exercise and switches on protein building.", "match": ["mTORC1"] },
+  "amino acids": { "def": "The building blocks of proteins.", "match": ["amino acids", "amino acid"] },
+  "reciprocal inhibition": { "def": "When one muscle contracts, the spinal cord relaxes its opposing partner, so they don’t fight each other.", "match": ["reciprocal inhibition"] }
 }
 </script>
 
@@ -5114,7 +5274,10 @@ const SYSTEMS = [
              ["#c2569a", "Renin from the kidney"]] },
   { id: "immune", short: "Immune", color: "#5f9e4b",
     legend: [["#a9d37f", "Lymph flowing back to the blood"], ["#f2dc9a", "Milky lymph (chyle) after a meal"], ["#6f7fd8", "Lymphocytes homing to nodes"],
-             ["#c9a0dc", "Neutrophils leaving the marrow"], ["#e56b3d", "IL-6 from working muscle"]] }
+             ["#c9a0dc", "Neutrophils leaving the marrow"], ["#e56b3d", "IL-6 from working muscle"]] },
+  { id: "musculoskeletal", short: "Muscles", color: "#b0603a",
+    legend: [["#e0473c", "Muscles at work"], ["#f2c230", "Motor units firing"], ["#4a6fd1", "Ground pushing back at each footstep"],
+             ["#2fb3a3", "Bones bending under the load"], ["#8e6bd1", "Lactate leaving working muscle"]] }
 ];
 const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
 /* which systems each organ topic belongs to (shown as "Part of" chips) */
@@ -5135,8 +5298,8 @@ const ORGAN_PAGES = {
 const ORGAN_SYSTEMS = {
   brain: ["nervous", "endocrine", "respiratory"], heart: ["circulatory", "nervous"], lungs: ["respiratory", "circulatory"],
   gut: ["digestive", "nervous", "endocrine", "circulatory", "immune"], liver: ["digestive", "circulatory", "endocrine", "immune"],
-  pancreas: ["endocrine", "digestive"], kidneys: ["urinary", "endocrine", "circulatory"], muscles: ["nervous", "circulatory", "respiratory"],
-  skin: ["circulatory", "nervous", "immune"], bones: ["circulatory", "endocrine", "immune"],
+  pancreas: ["endocrine", "digestive"], kidneys: ["urinary", "endocrine", "circulatory"], muscles: ["musculoskeletal", "nervous", "circulatory", "respiratory"],
+  skin: ["circulatory", "nervous", "immune"], bones: ["musculoskeletal", "circulatory", "endocrine", "immune"],
   eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "digestive", "nervous", "endocrine", "immune"],
   spleen: ["immune", "circulatory"]
 };
@@ -5154,7 +5317,7 @@ function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.fr
 
 const STRINGS = {
   introTitle: "A day in the life of your body",
-  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air, food, urine and immune cells. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
+  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air, food, urine, immune cells, and muscles and bones. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
   schedule: "Today’s plan: tap to jump",
   explore: "Look closer",
   hint: "Tip: dotted words have short definitions. Hover or tap them. Values are typical for a healthy adult.",
@@ -5313,6 +5476,14 @@ const PHYSIO = {
   /* IL-6, relative 0–1: a small rise in the night, several-fold from working
      muscle in the run (a myokine), back down within a few hours */
   il6:        [[0,.24],[3,.28],[6,.22],[9,.12],[16.8,.12],[17.5,.42],[18.3,.62],[19,.45],[20.5,.24],[23,.22]],
+  /* muscle glycogen, g in ~28 kg of muscle (~15 g/kg, ~420 g when full), and blood
+     lactate, mmol/L. Sampled from the muscles page's day model (dayAt): an hour's
+     jog at 17:00 burns ~70 g of leg glycogen and holds lactate near 2 mmol/L; the
+     stores refill slowly until dinner, then faster, and are full again by the next
+     afternoon. Muscle keeps its glycogen (no glucose-6-phosphatase), so the night
+     doesn't drain it as it drains the liver's. */
+  muscleGlycogen: [[0,389],[2.5,400],[6.5,410],[12,416],[16.8,418],[17.05,417],[17.5,385],[17.95,350],[18.3,347],[19,349],[20.25,363],[22,377],[23,384]],
+  lactate:    [[0,.8],[6.4,.8],[6.6,1],[16.8,1],[17.15,1.8],[17.5,1.94],[17.95,1.94],[18.3,1.2],[18.6,1],[22.9,1],[23.1,.8]],
   /* thyroid hormone: steady through the day */
   thyroid:    [[0,.35],[12,.35]],
   /* stomach contents, 0–1: filled at each meal and emptied over 3–4 h (dinner
@@ -5469,6 +5640,19 @@ const Physio = {
     out.lymphFlow = 1.2 * (.8 + .2 * out.awake) * (1 + .6 * out.chyle) * (1 + 2.2 * out.muscle);
     out.nodeTraffic = clamp(.45 + .3 * (1 - out.awake) + .2 * out.sws - .25 * out.cortisol - .15 * out.muscle);
     out.spleen = 1 - .25 * clamp((out.muscle - .1) / .9);
+    /* muscles and skeleton. Muscle O₂ use, mL/min: ~45 asleep, ~60 awake at rest
+       (about a fifth of the body's), ~1.7 L/min in the run (~85% of it), as on the
+       muscles page. Above muscle ≈ 0.2 the body is on its feet and stepping: a walk
+       at ~110 steps/min, rising to ~168 (a stride 1.4 times a second) in the run.
+       grf = peak vertical ground-reaction force, × body weight: 0 lying, 1 standing,
+       ~1.2 walking, ~2.5 running. boneStrain = peak strain in the leg bones,
+       microstrain, on the bones page's scale: ~30 in bed, ~450 on an ordinary
+       day on your feet, ~700 walking, ~1,000 running. */
+    const stepping = out.muscle > .2 ? 1 : 0, pace = clamp((out.muscle - .2) / .8);
+    out.muscleVO2 = 45 + 15 * out.awake + 1640 * clamp((out.muscle - .15) / .85);
+    out.cadence = stepping * (110 + 58 * pace);
+    out.grf = out.awake * (stepping ? 1.2 + 1.3 * pace : 1);
+    out.boneStrain = stepping ? 700 + 300 * pace : 30 + 420 * out.awake;
     return out;
   }
 };
@@ -5491,7 +5675,7 @@ const URLP = new URLSearchParams(location.search);
 const urlHour = parseFloat(URLP.get("hour"));
 const savedLevel = LEVEL_INDEX[URLP.get("level")] !== undefined ? URLP.get("level") : storage.get("humanphysiology.level");
 function loadSystems(){
-  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false, urinary: false, immune: false };
+  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false, urinary: false, immune: false, musculoskeletal: false };
   let live = "circulatory";
   try {
     const s = JSON.parse(storage.get("humanphysiology.shown") || "null");
@@ -6107,6 +6291,50 @@ const THYMUS_D = "M0 -10 C-4 -12 -10 -8 -10 0 C-10 8 -6 13 -1 12 L0 6 L1 12 C6 1
 const MARROW = [[600, 346, 3, 13], [532, 578, 9, 6], [668, 578, 9, 6], [549, 642, 4.5, 10], [651, 642, 4.5, 10]];
 const PEYER = [[612, 612], [596, 612], [581, 609]];
 const IL6_AT = [[548, 690], [652, 690]];
+/* Muscles & skeleton (design coordinates, mapped like NERV; drawn for the
+   viewer's left side and mirrored for the right). Each muscle is a spindle from
+   a to b with half-width w; "back" muscles lie behind the bones and are drawn
+   with a dashed edge. The limb bones (femur, tibia, humerus, forearm) are part
+   of the body itself; this layer adds the skull, spine, ribs, sternum,
+   clavicles and pelvis, and the strain glow on the leg bones. */
+const MSK_MUSCLES = [
+  { id: "glute", name: "Gluteus maximus", a: [532, 572], b: [548, 624], w: 13, back: 1 },
+  { id: "quad", name: "Quadriceps", a: [549, 614], b: [540, 764], w: 15 },
+  { id: "hams", name: "Hamstrings", a: [557, 618], b: [548, 758], w: 8, back: 1 },
+  { id: "calf", name: "Calf", a: [545, 776], b: [540, 812], w: 9, back: 1 },
+  { id: "back", name: "Erector spinae", a: [579, 330], b: [580, 556], w: 5, back: 1 },
+  { id: "delt", name: "Deltoid", a: [490, 276], b: [468, 330], w: 10 },
+  { id: "biceps", name: "Biceps", a: [457, 338], b: [443, 432], w: 8 },
+  { id: "triceps", name: "Triceps", a: [446, 330], b: [433, 428], w: 6.5, back: 1 },
+  { id: "forearm", name: "Forearm muscles", a: [437, 462], b: [428, 548], w: 6 }
+];
+const mskMirror = ([x, y]) => [1200 - x, y];
+/* a point inside a muscle: u along it (0–1), v across it (−1–1), in design coordinates */
+const mskPt = (m, side, u, v) => {
+  const [ax, ay] = side > 0 ? m.a : mskMirror(m.a), [bx, by] = side > 0 ? m.b : mskMirror(m.b);
+  const L = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / L, ny = (bx - ax) / L, h = m.w * v * Math.sin(Math.PI * u);
+  return [lerp(ax, bx, u) + nx * h, lerp(ay, by, u) + ny * h];
+};
+/* the outline: two cubics whose control points sit 4/3·w off the axis, so the belly is w wide */
+const mskSpindle = (m, side) => {
+  const [ax, ay] = side > 0 ? m.a : mskMirror(m.a), [bx, by] = side > 0 ? m.b : mskMirror(m.b);
+  const L = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / L, ny = (bx - ax) / L;
+  const P = (u, v) => `${f1(lerp(ax, bx, u) + nx * m.w * v)} ${f1(lerp(ay, by, u) + ny * m.w * v)}`;
+  return `M${P(0, 0)} C${P(.12, 4 / 3)} ${P(.88, 4 / 3)} ${P(1, 0)} C${P(.88, -4 / 3)} ${P(.12, -4 / 3)} ${P(0, 0)}Z`;
+};
+/* the spine: 7 neck, 12 chest and 5 lower-back vertebrae, then the sacrum */
+const VERTEBRAE = [...Array.from({ length: 7 }, (_, i) => [242 + i * 9, 5, 3]), ...Array.from({ length: 12 }, (_, i) => [304 + i * 13.5, 6, 4.5]),
+  ...Array.from({ length: 5 }, (_, i) => [470 + i * 17, 7.5, 6])];
+const RIB_YS = [296, 322, 348, 374, 400, 426];
+const ribD = y => `M596 ${y} C572 ${y - 12} 526 ${y - 8} 508 ${y + 14}`;
+const ILIUM_D = "M596 560 C580 552 556 540 532 540 C518 542 515 558 523 574 C531 590 541 602 551 610 C565 618 584 618 596 606 C592 590 592 572 596 560Z";
+const SACRUM_D = "M589 556 L611 556 L605 596 L595 596Z";
+const CLAVICLE_D = "M594 290 C566 280 522 276 486 284";
+const MANDIBLE_D = "M552 186 C556 214 578 232 600 232 C622 232 644 214 648 186";
+/* the leg bones (as drawn in Scene's legBones, body coordinates) that glow with strain:
+   femur and tibia, for the viewer's left leg; FOOT_AT = where each foot meets the ground */
+const LEG_STRAIN = [[551, legY(622), 543, legY(758)], [542, legY(784), 537, legY(838)]];
+const FOOT_AT = [[524, legY(ANKLE_Y) + 31], [676, legY(ANKLE_Y) + 31]];
 Object.assign(MOLECULES, {
   urea: ["#9b7fd4", "Urea"], urine: ["#e8cf5a", "Urine"], renin: ["#c2569a", "Renin"], angI: ["#d886b5", "Angiotensin I"],
   angII: ["#a8326e", "Angiotensin II"], aldo: ["#d98b2b", "Aldosterone"], sodium: ["#8fa3b8", "Sodium (Na⁺)"]
@@ -6456,6 +6684,32 @@ const Scene = (() => {
   const armBone = (x1, y1, x2, y2, w, side) => bone(...bodyPt(mx(x1, side), y1), ...bodyPt(mx(x2, side), y2), w);
   const armBones = side => armBone(464, 304, 441, 438, 9, side) + armBone(437, 456, 424, 570, 6, side) + armBone(447, 458, 434, 570, 5, side);
   const [handLx, handY] = bodyPt(422, 606);
+  /* muscles & skeleton: behind the organs go the skull, spine, pelvis, the limb
+     and back muscles and, over them, the leg bones' strain glow; in front of them the ribs,
+     sternum and clavicles, the breathing muscles, the ground-reaction arrows and
+     the moving dots */
+  function mskBack(){
+    const both = f => f(1) + f(-1);
+    const mus = MSK_MUSCLES.map(m => both(side => `<path d="${mapD(mskSpindle(m, side))}" class="ms-mus${m.back ? " behind" : ""}" data-m="${m.id}" data-side="${side}"/>`)).join("");
+    const strain = both(side => LEG_STRAIN.map(([x1, y1, x2, y2], b) => {
+      const X1 = side > 0 ? x1 : 1200 - x1, X2 = side > 0 ? x2 : 1200 - x2;
+      const ocy = Array.from({ length: 5 }, (_, i) => { const u = (i + .5) / 5; return `<circle cx="${f1(lerp(X1, X2, u) + (i % 2 ? 2 : -2))}" cy="${f1(lerp(y1, y2, u))}" r="1.4" class="ms-ocy" data-side="${side}"/>`; }).join("");
+      return `<path d="M${f1(X1)} ${f1(y1)} L${f1(X2)} ${f1(y2)}" class="ms-strain" data-side="${side}" data-bone="${b}"/>` + ocy;
+    }).join(""));
+    return `<ellipse cx="600" cy="150" rx="54" ry="62" class="ms-skull"/><path d="${MANDIBLE_D}" class="ms-skull"/>`
+      + VERTEBRAE.map(([y, w, h]) => `<rect x="${600 - w}" y="${f1(legY(y) - h / 2)}" width="${2 * w}" height="${h}" rx="${f1(h / 2.4)}" class="ms-bone"/>`).join("")
+      + `<path d="${ILIUM_D}" class="ms-bone pelvis"/><path d="${mirrorD(ILIUM_D)}" class="ms-bone pelvis"/><path d="${SACRUM_D}" class="ms-bone pelvis"/>`
+      + mus + strain;
+  }
+  function mskFront(){
+    return RIB_YS.map(y => `<path d="${ribD(y)}" class="ms-rib"/><path d="${mirrorD(ribD(y))}" class="ms-rib"/>`).join("")
+      + RIB_YS.slice(0, -1).map(y => `<path d="${ribD(y + 13)}" class="ms-ic"/><path d="${mirrorD(ribD(y + 13))}" class="ms-ic"/>`).join("")
+      + `<rect x="595" y="294" width="10" height="112" rx="4" class="ms-bone"/>`
+      + `<path d="${CLAVICLE_D}" class="ms-rib"/><path d="${mirrorD(CLAVICLE_D)}" class="ms-rib"/>`
+      + `<path d="${mapD(DIAPHRAGM_D)}" class="ms-dia"/>`
+      + FOOT_AT.map(() => `<path d="" class="ms-grf" opacity="0"/>`).join("")
+      + `<g id="s-mskDots"></g>`;
+  }
   function build(){
     const limb = d => `<path d="${d}" class="skin"/>`;
     let stars = "";
@@ -6498,6 +6752,7 @@ const Scene = (() => {
       <ellipse cx="541" cy="170" rx="10" ry="16" class="skin"/><ellipse cx="659" cy="170" rx="10" ry="16" class="skin"/>
       <ellipse cx="600" cy="160" rx="60" ry="70" class="skin"/>
       <g id="s-flush" opacity="0">${flushLimbs}<path d="${TORSO_D}"/><ellipse cx="600" cy="160" rx="60" ry="70"/></g>
+      <g id="s-msk" class="sys sys-musculoskeletal">${mskBack()}</g>
       <g id="s-vessels" class="sys sys-circulatory">${vessels(1)}</g>
       <path id="s-eso" d="${ORG.eso}" stroke="#dba08e" stroke-width="7" fill="none" stroke-linecap="round"/>
       <g id="s-lungs">
@@ -6582,6 +6837,7 @@ const Scene = (() => {
         <g id="s-immuneDots"></g>
         <g id="s-infectionRide"></g>
       </g>
+      <g id="s-mskFront" class="sys sys-musculoskeletal">${mskFront()}</g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
       <g id="s-eyesShut" class="face"><path d="M571 189 Q578 194 585 189"/><path d="M615 189 Q622 194 629 189"/></g>
@@ -6594,7 +6850,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide", "mskDots"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -6677,6 +6933,8 @@ const Scene = (() => {
       g.classList.toggle("off", !shown[id]);
       g.classList.toggle("dim", !!shown[id] && live !== id);
     }));
+    /* the muscles layer draws its own quadriceps, so the body's plain ones step aside */
+    [r.quadL, r.quadR].forEach(q => q.style.display = shown.musculoskeletal ? "none" : "");
     /* hormones travel in the blood: keep a faint trace of the vessels while they are live */
     svg.querySelectorAll("#s-vessels, #s-pulm").forEach(g => g.classList.toggle("ghost", !shown.circulatory && live === "endocrine"));
   }
@@ -7965,6 +8223,157 @@ const Immune = (() => {
     return null;
   }
   return { init, tick, setRates, nearest };
+})();
+
+/* =========================================================================
+   MSK — muscles and skeleton at work. Each muscle group glows with its
+   activation: a little postural tone awake, less asleep and none in REM sleep
+   (atonia: only the diaphragm keeps working, and the fingers and toes twitch
+   now and then). On the feet the legs step at the hour's cadence, one stride
+   1.4 times a second in the run, and the muscles take turns through it: the
+   hamstrings brake the swinging leg, the glutes and quadriceps catch the
+   landing, the calf pushes off, the back steadies each footstep and the arms
+   swing against the legs. Each footstep sends a ground-reaction arrow up from
+   the foot and makes the femur and tibia glow with strain, lighting their
+   osteocytes. Motor units fire as sparks in working muscle, lactate leaves it
+   when blood lactate rises, and the diaphragm and (in the run) the intercostals
+   pull on each in-breath. Runs only while the system is live.
+   ========================================================================= */
+const Msk = (() => {
+  const NP = 90, REST = "#b9675a", WORK = "#e0473c", LAC = "#8e6bd1", GOLD = "#2fb3a3", OCY = "#a68c6a";
+  const pool = [], acc = {}, twitch = {};
+  let mus = [], strain = [], ocy = [], grf = [], ics = [], dia = null, stride = 0, t = 0, still = "";
+  const strike = [9, 9];                                        /* seconds since each foot last landed */
+  function init(){
+    const svg = Scene.svg;
+    mus = [...svg.querySelectorAll("#s-msk .ms-mus")].map(e => {
+      const m = MSK_MUSCLES.find(q => q.id === e.dataset.m), side = +e.dataset.side;
+      return { e, m, side, key: m.id + side, last: -1 };
+    });
+    strain = [...svg.querySelectorAll("#s-msk .ms-strain")].map(e => ({ e, side: +e.dataset.side }));
+    ocy = [...svg.querySelectorAll("#s-msk .ms-ocy")].map(e => ({ e, side: +e.dataset.side }));
+    grf = [...svg.querySelectorAll("#s-mskFront .ms-grf")];
+    ics = [...svg.querySelectorAll("#s-mskFront .ms-ic")];
+    dia = svg.querySelector("#s-mskFront .ms-dia");
+    for (let i = 0; i < NP; i++) pool.push({ c: el("circle", { r: 1.5, class: "ms-dot", opacity: 0 }, Scene.refs.mskDots), on: false });
+  }
+  /* a bump of width w around phase c of the stride (circular); its mean when there is no stride */
+  const bump = (s, c, w) => { const d = ((s - c) % 1 + 1.5) % 1 - .5; return Math.exp(-(d / w) * (d / w)); };
+  /* activation 0–1 of one muscle on one side. s = this leg's place in the stride
+     (0 = its foot lands), or null for a still picture (the stride's mean) */
+  function act(id, s, p){
+    const run = p.cadence > 0 ? clamp((p.muscle - .2) / .8) : 0, step = p.cadence > 0 ? 1 : 0;
+    const rem = p.rem || 0, tone = p.awake * .16 + (1 - p.awake) * .05 * (1 - rem);
+    const B = (c, w) => s == null ? 1.77 * w : bump(s, c, w);
+    const k = step * (.35 + .65 * run);                         /* a walk works the legs less than a run */
+    switch (id){
+      case "glute": return tone * .6 + k * (.15 + .8 * B(.98, .1));
+      case "quad": return tone * .4 + k * (.2 + .8 * B(.04, .09));
+      case "hams": return tone * .3 + k * (.15 + .85 * B(.86, .08));
+      case "calf": return tone + k * (.2 + .8 * B(.17, .08));
+      case "back": return tone + k * (.25 + .5 * Math.max(B(.03, .07), B(.53, .07)));
+      case "delt": case "biceps": return tone * .25 + k * (.1 + .35 * B(.15, .15));
+      case "triceps": return tone * .25 + k * (.1 + .3 * B(.65, .15));
+      default: return tone * .3 + k * .12;
+    }
+  }
+  /* the arm on one side swings with the opposite leg; the back muscles follow both feet */
+  const legOf = (m, side) => m.id === "delt" || m.id === "biceps" || m.id === "triceps" || m.id === "forearm" ? -side : side;
+  const sOf = side => (stride + (side > 0 ? 0 : .5)) % 1;
+  function paint(o, a){
+    a = clamp(a);
+    if (Math.abs(a - o.last) < .02) return;
+    o.last = a;
+    o.e.setAttribute("fill", mix(REST, WORK, a));
+    o.e.setAttribute("fill-opacity", f1((.4 + .55 * a) * 100) / 100);
+  }
+  function breathing(p, insp){
+    const run = p.cadence > 0 ? clamp((p.muscle - .2) / .8) : 0, rem = p.rem || 0;
+    const ad = .3 + .7 * insp, ai = clamp(insp * (.15 + .85 * run) * (1 - .8 * rem) + .05 * p.awake);
+    dia.setAttribute("stroke", mix(REST, WORK, ad)); dia.setAttribute("opacity", f1((.4 + .5 * ad) * 100) / 100);
+    dia.setAttribute("transform", `translate(0 ${f1(3 * insp)})`);
+    ics.forEach(e => { e.setAttribute("stroke", mix(REST, WORK, ai)); e.setAttribute("opacity", f1((.15 + .7 * ai) * 100) / 100); });
+  }
+  function spawn(col, r, extra){
+    const d = pool.find(q => !q.on); if (!d) return null;
+    Object.assign(d, { on: true, u: 0 }, extra);
+    d.c.setAttribute("fill", col); d.c.setAttribute("r", r);
+    return d;
+  }
+  function emit(key, rate, dt, f){ acc[key] = (acc[key] || 0) + dt * rate; while (acc[key] >= 1){ acc[key]--; f(); } }
+  function tick(dt, p){
+    t += dt;
+    still = "";
+    const sHz = p.cadence / 120, s0 = stride;
+    stride = (stride + dt * sHz) % 1;
+    /* a foot lands: the viewer's left at phase 0, the right at 0.5 */
+    if (sHz > 0){
+      if (stride < s0) strike[0] = 0;
+      if (s0 < .5 && stride >= .5) strike[1] = 0;
+    }
+    strike[0] += dt; strike[1] += dt;
+    const stance = sHz > 0 ? .38 / sHz : 1;                     /* the foot is on the ground ~38% of the stride */
+    const env = strike.map(x => sHz > 0 && x < stance ? Math.sin(Math.PI * x / stance) : 0);
+    /* REM: now and then a finger or toe twitches through the paralysis */
+    if ((p.rem || 0) > .5 && p.awake < .5) emit("twitch", 1.2, dt, () => {
+      const o = mus[Math.floor(Math.random() * mus.length)];
+      if (o.m.id === "forearm" || o.m.id === "calf"){ twitch[o.key] = 1; sparkIn(o); }
+    });
+    for (const o of mus){
+      const tw = twitch[o.key] || 0;
+      if (tw) twitch[o.key] = Math.max(0, tw - dt * 6);
+      const a = clamp(act(o.m.id, sHz > 0 ? sOf(legOf(o.m, o.side)) : null, p) + .5 * tw);
+      paint(o, a);
+      /* motor units fire as sparks: more, and more often, as the muscle works harder */
+      emit("m" + o.key, 16 * Math.pow(a, 1.6), dt, () => sparkIn(o));
+      /* lactate leaves the working leg muscles when blood lactate is up */
+      if (o.m.id === "quad" || o.m.id === "hams" || o.m.id === "calf") emit("l" + o.key, 2.2 * clamp((p.lactate - 1.1) / .8) * a, dt, () => {
+        const [x, y] = bodyPt(...mskPt(o.m, o.side, .3 + .4 * Math.random(), Math.random() * 2 - 1));
+        spawn(LAC, 1.5, { kind: "drift", from: [x, y], to: [x + o.side * 6, y - 22], T: 1.6 });
+      });
+    }
+    breathing(p, Math.max(0, Rhythm.insp));
+    if ((p.rem || 0) < .5 || p.awake > .5) emit("dia", 3 * (.3 + Math.max(0, Rhythm.insp)), dt, () => {
+      const [x, y] = bodyPt(560 + Math.random() * 80, 438 + Math.random() * 6);
+      spawn(NERVE_COLOR.motor, 1.4, { kind: "spark", from: [x, y], T: .18 });
+    });
+    /* each footstep: the ground pushes back and the leg bones bend */
+    const sk = clamp(p.boneStrain / 1000);
+    FOOT_AT.forEach(([x, y], i) => {
+      const L = 24 * p.grf * env[i], e = grf[i];
+      if (L < .5){ e.setAttribute("opacity", 0); return; }
+      e.setAttribute("d", `M${x} ${y} L${x} ${f1(y - L)} M${x - 5} ${f1(y - L + 7)} L${x} ${f1(y - L)} L${x + 5} ${f1(y - L + 7)}`);
+      e.setAttribute("opacity", f1(.9 * Math.min(1, env[i] * 2) * 100) / 100);
+    });
+    strain.forEach(o => o.e.setAttribute("opacity", f1(.8 * sk * env[o.side > 0 ? 0 : 1] * 100) / 100));
+    ocy.forEach(o => { const v = env[o.side > 0 ? 0 : 1] * sk; o.e.setAttribute("fill", v > .05 ? mix(OCY, GOLD, v) : OCY); });
+    for (const d of pool){
+      if (!d.on) continue;
+      d.u += dt / d.T;
+      if (d.u >= 1){ d.on = false; d.c.setAttribute("opacity", 0); continue; }
+      let pt = d.from, op;
+      if (d.kind === "spark") op = 1 - d.u;
+      else { const e = ease.out(d.u); pt = [lerp(d.from[0], d.to[0], e), lerp(d.from[1], d.to[1], e)]; op = .9 * Math.sin(Math.PI * d.u); }
+      d.c.setAttribute("cx", f1(pt[0])); d.c.setAttribute("cy", f1(pt[1])); d.c.setAttribute("opacity", f1(op * 100) / 100);
+    }
+  }
+  function sparkIn(o){
+    const [x, y] = bodyPt(...mskPt(o.m, o.side, .15 + .7 * Math.random(), (Math.random() * 2 - 1) * .8));
+    spawn(NERVE_COLOR.motor, 1.5, { kind: "spark", from: [x, y], T: .16 });
+  }
+  /* a still picture (reduced motion, or not live): the stride's mean activation, no dots */
+  function setRates(p){
+    const k = `${p.muscle.toFixed(2)}|${p.awake.toFixed(2)}|${(p.rem || 0).toFixed(1)}|${p.cadence.toFixed(0)}`;
+    if (k === still) return;
+    still = k;
+    mus.forEach(o => paint(o, act(o.m.id, null, p)));
+    breathing(p, .3);
+    grf.forEach(e => e.setAttribute("opacity", 0));
+    strain.forEach(o => o.e.setAttribute("opacity", 0));
+    ocy.forEach(o => o.e.setAttribute("fill", OCY));
+    for (const d of pool) if (d.on){ d.on = false; d.c.setAttribute("opacity", 0); }
+  }
+  return { init, tick, setRates };
 })();
 
 /* =========================================================================
@@ -11677,7 +12086,9 @@ const EXPORT_VITALS = [
   ["vagal", "Vagal tone", "relative 0-1", 2], ["sympathetic", "Sympathetic tone", "relative 0-1", 2],
   ["gfr", "GFR", "mL/min", 0], ["urineFlow", "Urine flow", "mL/min", 2], ["urineOsm", "Urine osmolality", "mOsm/kg", 0],
   ["lymphFlow", "Thoracic duct lymph flow", "mL/min", 2], ["neutrophils", "Blood neutrophils", "10^9/L", 2],
-  ["lymphocytes", "Blood lymphocytes", "10^9/L", 2], ["il6", "IL-6", "relative 0-1", 2]
+  ["lymphocytes", "Blood lymphocytes", "10^9/L", 2], ["il6", "IL-6", "relative 0-1", 2],
+  ["muscleVO2", "Muscle O2 use", "mL/min", 0], ["muscleGlycogen", "Muscle glycogen", "g", 0], ["lactate", "Blood lactate", "mmol/L", 2],
+  ["cadence", "Cadence", "steps/min", 0], ["grf", "Peak ground-reaction force", "x body weight", 2], ["boneStrain", "Peak leg-bone strain", "microstrain", 0]
 ];
 function bodyData(){
   const probe = Physio.at(12), cols = EXPORT_VITALS.filter(([k]) => Number.isFinite(probe[k]));
@@ -11747,6 +12158,7 @@ function init(){
   Urinary.init();
   DropRide.init();
   Immune.init();
+  Msk.init();
   InfectionRide.init();
   Hotspots.build();
   Controls.build();
@@ -11866,6 +12278,7 @@ function init(){
     if (!reducedMotion && live === "digestive") Digestion.tick(bdt, ph); else Digestion.setRates(ph);
     if (!reducedMotion && live === "urinary") Urinary.tick(bdt, ph); else Urinary.setRates(ph);
     if (!reducedMotion && live === "immune") Immune.tick(bdt, ph); else Immune.setRates(ph);
+    if (!reducedMotion && live === "musculoskeletal") Msk.tick(bdt, ph); else Msk.setRates(ph);
     Journey.tick(bdt);
     Impulse.tick(brdt);
     ImpulseCard.tick();

@@ -11,12 +11,12 @@ When a section is done, replace its plan with a one-line pointer to the README a
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#3-new-organs-for-the-body) |
 | Organ deep-dive pages (`organs/<id>.html`) | 9: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones | 5 existing organs (skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 8: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic, muscles & skeleton | 2: skin, reproductive |
-| Journeys ("follow a …") | 7: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection | Follow a step (muscles & skeleton), one per new system, plus cross-system journeys |
+| Journeys ("follow a …") | 8: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step | One per new system, plus cross-system journeys |
 | Prediction questions | 0 | A Predict section on the 9 finished pages, the questions hub and the converging cases: see [Questions](#6-questions-predict-then-watch) |
 
 ## Next up
 
-Both items below are built; what is listed under them is still open. The muscles & skeleton layer is on the body; next is its "follow a step" journey ([2.2](#22-muscles--skeleton-layer--done-journey-still-open)), then the prediction questions (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The muscles & skeleton system and its "follow a step" journey are on the body; next are the prediction questions (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -132,7 +132,7 @@ Built; see the README for what it covers. What changed from the plan, and what i
 
 ## 2. Body systems still to animate on the body
 
-Organ pages already have lens cards for these systems; the ones below that aren't done can't be shown on the body yet. Each needs what the existing seven have: a layer (`.sys-<id>`) with its own animator, text for each phase at four levels, numbered fact pins, a card in the side panel, a "Part of" chip mapping in `ORGAN_SYSTEMS`, and a journey to ride along. Once a system is animated, its lens cards on the organ pages should link back to it.
+Organ pages already have lens cards for these systems; the ones below that aren't done can't be shown on the body yet. Each needs what the existing eight have: a layer (`.sys-<id>`) with its own animator, text for each phase at four levels, numbered fact pins, a card in the side panel, a "Part of" chip mapping in `ORGAN_SYSTEMS`, and a journey to ride along. Once a system is animated, its lens cards on the organ pages should link back to it.
 
 ### 2.1 Immune & lymphatic ✅ Done
 The layer, the "follow an infection" journey and the spleen & lymph nodes topic ([3.1](#31-spleen--lymph-nodes--done-on-the-body-deep-dive-page-still-open)) are built: see the README for what they cover, and `node tests/systems-check.mjs immune` for their check. What changed from the plan, and what is still open:
@@ -145,9 +145,14 @@ The layer, the "follow an infection" journey and the spleen & lymph nodes topic 
 - **Chylomicrons** ride their own lymph routes here; the fat bite journey still draws its own path up `THORACIC_D`. The two could share the lymph dots, so a bite's chylomicron is one of the milky dots.
 - **Channels are simplified**: thoracic duct flow (`lymphFlow`, ~1.2 mL/min at rest, ~3× in the run), `chyle` (gut activity lagged by 1.5 h), `nodeTraffic` (0–1, high in deep sleep with low cortisol), `spleen` (−25% in the run), and keyframed `neutrophils`, `lymphocytes` (×10⁹/L) and `il6`. They are not yet read by the vitals panel, and there is no CRP, fever or infection state.
 
-### 2.2 Muscles & skeleton (layer ✅ done, journey still open)
-The layer is built: see the README for what it covers, and `node tests/systems-check.mjs musculo` for its check. What changed from the plan, and what is still open:
-- **Journey: follow a step** is not built: motor cortex → spinal cord → motor neuron → NMJ → the sarcomere's cross-bridges → force → tendon → bone strain → osteocytes, then proprioceptors back to the cerebellum. It can share code with the nerve-impulse journey and the knee-jerk reflex, and the card needs its follow button (and `?ride=` support) once it exists.
+### 2.2 Muscles & skeleton ✅ Done
+The layer and the "follow a step" journey are built: see the README for what they cover, and `node tests/systems-check.mjs musculo` for their check. What changed from the plan, and what is still open:
+- **Follow a step**:
+  - **Order**: the stops run in real-time order, so the stretch report reaches the cerebellum (about 13 ms after the spindles fire) before the tendon and the bone take the load up to mid-stance, rather than coming last as planned.
+  - **Shared engine**: the step ride and the nerve impulse run on one bullet-time engine (`bulletRide`), and the step's first seven stops are the "Brain → thigh muscle" impulse's legs and text. Those texts say "the right leg", so the *Other leg* ride (the left leg) is labelled for the wrong side at the motor cortex stop.
+  - **Running only**: there is one journey, a running step; outside the run the clock jumps to 17:30. A walking step (~1.2 × body weight, ~700 µε) belongs with short walks through the day (below).
+  - **The cerebellum doesn't correct anything**: its stop explains the comparison and the correction, but the next step is not changed. Uneven ground, a missed step or a split-belt treadmill could make the correction visible.
+  - **Not ridden**: Golgi tendon organs (Ib) and the stretch reflex back onto the quadriceps are in the text only; the push-off with the calf and the Achilles tendon's recoil, and the slow loading response of the bone (NO, PGE2, sclerostin over hours) as a time-lapse after the step.
 - **No postures**: the figure stays standing all day. Every system's paths are drawn on that one figure, so lying in sleep, sitting and the running stride are shown by which muscles work (limp in REM, postural tone awake, alternating legs in the run), not by moving the limbs. Posing the figure would need the paths of every layer to follow a skeleton.
 - **No walking in the day**: the body only steps when the `muscle` channel is above 0.2 (the run and its warm-up and cool-down). Short walks through the day (to breakfast, at lunch) would add steps at ~1.2 × body weight and ~700 µε.
 - **Motor traffic is the layer's own**: the sparks follow each muscle's activation, not the pulses the nervous layer sends down the motor nerves, and the activation timing through the stride (quadriceps and glutes at landing, calf at push-off, hamstrings in late swing) is a set of bumps, not a model of the stretch reflex or a central pattern generator.
@@ -238,7 +243,6 @@ These span several organs and are best built as their own pages (for example `ex
 - **Pharmacology**: one drug taken by mouth and followed through absorption, first-pass metabolism, distribution, effect and clearance by the liver or kidney, with a plasma-concentration curve and dosing intervals.
 
 ### 4.3 New journeys on the body
-- Follow a step (muscles & skeleton, see 2.2).
 - Follow the heat, and sunlight → vitamin D (skin, see 2.3).
 - Follow a cycle (reproductive, see 2.4).
 - Follow a drug (see Pharmacology in 4.2).
@@ -336,12 +340,11 @@ Each case unlocks once its parent questions are done. It visits several pages in
 
 ## Suggested order
 
-Done so far: the kidneys, gut, liver, pancreas, muscles and bones pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, and the muscles & skeleton layer on the body.
+Done so far: the kidneys, gut, liver, pancreas, muscles and bones pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, and the muscles & skeleton system on the body with its "follow a step" journey.
 
-1. The "follow a step" journey for the muscles & skeleton system ([2.2](#22-muscles--skeleton-layer--done-journey-still-open)).
-2. Prediction questions: Predict sections on the nine finished pages and the hub ([6.1–6.3](#61-the-loop), [6.5](#65-hub-page-explorequestionshtml)), then the first converging case (diabetic ketoacidosis).
-3. Skin page and the skin system on the body (heat balance).
-4. Eyes, ears and throat pages.
-5. Endocrine glands, and blood & vessels as new organs with pages.
-6. Reproductive system and organs.
-7. Cross-organ explorations and the extra sections on the heart, lungs and brain.
+1. Prediction questions: Predict sections on the nine finished pages and the hub ([6.1–6.3](#61-the-loop), [6.5](#65-hub-page-explorequestionshtml)), then the first converging case (diabetic ketoacidosis).
+2. Skin page and the skin system on the body (heat balance).
+3. Eyes, ears and throat pages.
+4. Endocrine glands, and blood & vessels as new organs with pages.
+5. Reproductive system and organs.
+6. Cross-organ explorations and the extra sections on the heart, lungs and brain.

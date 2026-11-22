@@ -14,6 +14,10 @@
    For the immune system it also plays every infection journey (?ride=infection:<id>) stop by
    stop to the end, checks each stop's text at all four reading levels, the Vaccinated toggle
    and "Another germ", and that tapping an armpit node starts the splinter journey.
+   For the muscles & skeleton it plays the step journey (?ride=step:<id>) stop by stop from
+   an hour outside the run (the clock must jump to the run), checks its text at four levels,
+   that the foot lands and the bone bends when the ride says (the stride is pinned to it),
+   "Other leg", and that tapping a shin starts a step on that side.
    It serves the repository on a local port itself. Needs the playwright package. */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -104,6 +108,7 @@ for (const id of ids.filter(x => x.includes(only))){
   }
 
   if (id === "immune") await infections(page, fail);
+  if (id === "musculoskeletal") await steps(page, fail);
 
   /* the organ pages' lens link */
   await page.goto(base + `?live=${id}&hour=17.5`);
@@ -172,6 +177,75 @@ async function infections(page, fail){
   const tapped = await page.evaluate(() => store.get().infection);
   if (tapped !== "splinter") fail(`tapping an armpit node started ${tapped}, not the splinter`);
   console.log(`  ✓ ${Object.keys(C.journeys).length} infection journeys, Vaccinated, Another germ, tap a node`);
+}
+/* the step journey, stop by stop, with the stride pinned to it, "Other leg" and a tap on a thigh */
+async function steps(page, fail){
+  const C = await page.evaluate(() => CONTENT.step);
+  for (const [k, st] of Object.entries(C.stops))
+    for (const lv of ["name", "ms", "hs", "college", "phd"]) if (!st[lv] || st[lv].length < (lv === "name" ? 3 : 40)) fail(`step stop ${k} has no ${lv} text`);
+  for (const j of Object.keys(C.journeys)){
+    for (const lv of ["ms", "phd"]){
+      await page.goto(base + `?hour=10&level=${lv}&ride=step:${j}`);
+      await page.waitForTimeout(900);
+      await page.evaluate(() => { window.store = HumanPhysiology.store; });
+      const st = await page.evaluate(() => ({ id: store.get().step, live: store.get().live, hour: store.get().hour, n: document.querySelectorAll(".journey-steps li").length,
+        card: document.querySelector("#stepCard").classList.contains("on") }));
+      if (st.id !== j || st.live !== "musculoskeletal" || !st.card){ fail(`?ride=step:${j} did not start it (${JSON.stringify(st)})`); continue; }
+      if (st.hour < 17.1 || st.hour > 17.95) fail(`started at 10:00, the step ride left the clock at ${st.hour.toFixed(2)} h, not in the run`);
+      const seen = new Set(), arrow = {};
+      /* each stop plays for a moment, then the ride is paused to read it (the stride stays pinned) */
+      const pause = on => page.evaluate(v => HumanPhysiology.store.set({ ridePaused: v }), on);
+      /* back to the start with the card's scrubber */
+      await page.evaluate(() => { const r = document.querySelector("#stepCard .j-scrub input"); r.value = 0; r.dispatchEvent(new Event("input", { bubbles: true })); });
+      for (let i = 0; i < st.n; i++){
+        await pause(false); await page.waitForTimeout(450); await pause(true); await page.waitForTimeout(80);
+        const r = await page.evaluate(() => ({ seg: store.get().stepSeg, where: document.querySelector("#stepCard .j-where").textContent,
+          on: (document.querySelector(".journey-steps li.on") || {}).textContent, text: (document.querySelector("#panel .reading .text") || {}).textContent || "",
+          meta: document.querySelector("#stepCard .j-meta").textContent }));
+        if (r.where !== r.on) fail(`${j} (${lv}), stop ${i + 1}: the card says "${r.where}" but the panel marks "${r.on}"`);
+        if (r.text.length < 40) fail(`${j} (${lv}), stop ${i + 1}: no text in the panel`);
+        if (/undefined|NaN/.test(r.meta)) fail(`${j} (${lv}), stop ${i + 1}: the card's meta reads "${r.meta}"`);
+        seen.add(r.seg);
+        /* the foot's arrow and the tibia's glow on this stop */
+        arrow[r.seg] = await page.evaluate(() => ({ grf: +getComputedStyle(document.querySelectorAll("#scene .ms-grf")[0]).opacity,
+          bone: Math.max(...[...document.querySelectorAll('#scene .ms-strain[data-side="1"]')].map(e => +getComputedStyle(e).opacity)) }));
+        await page.click("#stepCard [data-j=next]");
+        await page.waitForTimeout(120);
+      }
+      const end = await page.evaluate(() => ({ toast: document.querySelector("#stepCard .j-toast").textContent, meta: document.querySelector("#stepCard .j-meta").textContent }));
+      if (seen.size !== st.n) fail(`${j} (${lv}): visited ${seen.size} of ${st.n} stops`);
+      if (end.toast !== C.journeys[j].effect) fail(`${j}: arrival says "${end.toast}", not "${C.journeys[j].effect}"`);
+      if (!/s of real time/.test(end.meta)) fail(`${j}: the end says "${end.meta}", without the time it took`);
+      /* before the landing the foot is in the air; from it on the ground pushes back, and at mid-stance the bone bends */
+      const idx = await page.evaluate(() => [...document.querySelectorAll(".journey-steps li")].map(e => e.textContent));
+      const at = name => idx.indexOf(C.stops[name].name);
+      if (arrow[at("crossBridges")] && arrow[at("crossBridges")].grf > .05) fail(`${j}: the ground pushes back before the foot lands`);
+      if (!arrow[at("footStrike")] || arrow[at("footStrike")].grf < .05) fail(`${j}: no ground-reaction arrow as the foot lands (${JSON.stringify(arrow[at("footStrike")])})`);
+      const mid = arrow[at("boneBend")];
+      if (!mid || mid.grf < .6 || mid.bone < .4) fail(`${j}: at mid-stance the arrow or the tibia's glow is faint (${JSON.stringify(mid)})`);
+    }
+  }
+  /* "Other leg" runs it on the other side: by the cross-bridges stop the rider is in the viewer's right thigh */
+  const inThigh = async () => {
+    await page.evaluate(() => HumanPhysiology.store.set({ ridePaused: true }));
+    const k = await page.evaluate(n => [...document.querySelectorAll(".journey-steps li")].findIndex(e => e.textContent === n), C.stops.crossBridges.name);
+    for (let i = 0; i < k; i++){ await page.click("#stepCard [data-j=next]"); await page.waitForTimeout(60); }
+    return page.evaluate(() => ({ id: HumanPhysiology.store.get().step, x: +document.querySelector("#s-stepRide .imp-dot").getAttribute("cx") }));
+  };
+  await page.click("#stepCard [data-j=other]"); await page.waitForTimeout(300);
+  const other = await inThigh();
+  if (!other.id || other.x < 600) fail(`"Other leg" didn't move the ride to the other leg (${JSON.stringify(other)})`);
+  await page.click("#stepCard [data-j=stop]"); await page.waitForTimeout(600);
+  /* a tap on the viewer's right shin bone starts a step on that side (the thigh sits under the Muscles label) */
+  await page.waitForFunction(() => { const r = document.querySelector('#scene .ms-strain[data-side="-1"][data-bone="1"]').getBoundingClientRect(), k = `${r.x.toFixed(1)},${r.y.toFixed(1)}`;
+    const same = window.__shinAt === k; window.__shinAt = k; return same; }, null, { polling: 300, timeout: 5000 }).catch(() => {});
+  const box = await page.evaluate(() => { const r = document.querySelector('#scene .ms-strain[data-side="-1"][data-bone="1"]').getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
+    return { x, y, hit: !!document.elementFromPoint(x, y).closest("#scene") }; });
+  if (!box.hit) fail("the right shin is covered, so it can't be tapped");
+  await page.mouse.click(box.x, box.y); await page.waitForTimeout(500);
+  const tapped = await inThigh();
+  if (!tapped.id || tapped.x < 600) fail(`tapping the right shin didn't start a step on that side (${JSON.stringify(tapped)})`);
+  console.log(`  ✓ ${Object.keys(C.journeys).length} step journey(s) at two levels, the stride pinned to the ride, Other leg, tap a shin`);
 }
 console.log(failed ? `\n${failed} problem(s)` : "\nAll body systems work.");
 process.exit(failed ? 1 : 0);

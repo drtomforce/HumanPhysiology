@@ -219,11 +219,65 @@
   "code": 200,
   "checked": "2026-11-20"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=branch%20off%20at%20right%20angles": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=canaliculi%20connect%20with%20the%20canaliculi": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=fibrous%20membrane%20called%20the%20periosteum": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=originate%20from%20monocytes%20and%20macrophages": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=protected%20by%20the%20trabeculae": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
+  "checked": "2026-11-22"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=the%20osteoblast%20becomes%20trapped%20within%20it": {
   "state": "ok",
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
-  "checked": "2026-11-19"
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=which%20contains%20blood%20vessels": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure",
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-7-calcium-homeostasis-interactions-of-the-skeletal-system-and-other-organ-systems#:~:text=PTH%20promotes%20reabsorption%20of%20calcium": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-7-calcium-homeostasis-interactions-of-the-skeletal-system-and-other-organ-systems",
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-7-calcium-homeostasis-interactions-of-the-skeletal-system-and-other-organ-systems#:~:text=PTH%20stimulates%20osteoclast%20proliferation": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-7-calcium-homeostasis-interactions-of-the-skeletal-system-and-other-organ-systems",
+  "checked": "2026-11-22"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-7-calcium-homeostasis-interactions-of-the-skeletal-system-and-other-organ-systems#:~:text=inhibits%20osteoclast%20activity": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-7-calcium-homeostasis-interactions-of-the-skeletal-system-and-other-organ-systems",
+  "checked": "2026-11-22"
  },
  "https://pmc.ncbi.nlm.nih.gov/articles/PMC2826360": {
   "state": "ok",

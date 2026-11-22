@@ -778,7 +778,7 @@ canvas.trace{ display:block; width:100%; }
     "ms": "Your skeleton is always being rebuilt. Teams of cells dig out small pits of old bone and fill them with new bone, so about a tenth of your skeleton is replaced every year. If the diggers win, bones get thinner: that is osteoporosis. Bones also listen to how hard you use them, and they can mend themselves when they break.",
     "hs": "Osteoclasts dissolve old bone and osteoblasts build new bone in its place. Hormones set the balance: oestrogen holds osteoclasts back, so bone is lost quickly after the menopause; steroid medicines stop osteoblasts working. Loading the bone keeps or adds bone, disuse removes it. Change the load, the hormones and the medicines and follow the hip over ten years.",
     "college": "Density depends on turnover (how many remodelling units start) times balance (how much each one leaves behind), on the remodelling space (pits open at any moment), on mineral, and on the mechanostat. Antiresorptives (alendronate, denosumab) cut turnover; anabolic drugs (teriparatide, romosozumab) add bone. The model starts at age 50 with the hip at 95% of the young-adult mean (T −0.4) and loses ~0.5% a year with age.",
-    "phd": "Calibration (hip): menopause ~2%/yr loss at first, fading over ~6 years, plus a remodelling-space transient; prednisolone 20 mg/day ~8% in year 1; bed rest ~1% and space ~1.1% a month (LeBlanc et al. 2000; Lang et al. 2004); alendronate +4% and denosumab +6% at 3 years (FREEDOM); romosozumab +7% at 12 months (FRAME), then alendronate; teriparatide with an early dip at the hip. T-score = (density − 100)/12, hip fracture risk ×2.6 per SD (Marshall et al. 1996)."
+    "phd": "Calibration (hip): menopause ~2%/yr loss at first, fading over ~6 years, plus a remodelling-space transient; prednisolone 20 mg/day ~8% in year 1; bed rest ~1% and space ~1.1% a month (LeBlanc et al. 2000; Lang et al. 2004); alendronate +4% (FIT) and denosumab +6% (FREEDOM) at 3 years; romosozumab +7% at 12 months (FRAME), then alendronate; teriparatide with an early dip at the hip. T-score = (density − 100)/12, hip fracture risk ×2.6 per SD (Marshall et al. 1996)."
    },
    "bmuNote": {
     "ms": "Each unit takes about four months. A healthy one refills almost exactly what it removed.",
@@ -812,7 +812,7 @@ canvas.trace{ display:block; width:100%; }
    "title": "Making blood in the marrow",
    "intro": {
     "ms": "Inside your bones is a blood factory. A few special stem cells make all of your blood cells: red cells that carry oxygen, white cells that fight germs, and platelets that plug leaks. Every second about 2 million new red cells leave your marrow. When you lose blood, your kidneys send a hormone called EPO to speed the factory up.",
-    "hs": "Blood stem cells in the red marrow divide into progenitors, which become red cells, platelets and the different white cells. Red cells live about 120 days, platelets about a week and a half, and neutrophils less than a day in the blood, so the marrow never stops. Hormones adjust each line: EPO from the kidneys for red cells, TPO from the liver for platelets and G-CSF for neutrophils.",
+    "hs": "Blood stem cells in the red marrow divide into progenitors, which become red cells, platelets and the different white cells. Red cells live about 120 days, platelets about 9 days, and neutrophils less than a day in the blood, so the marrow never stops. Hormones adjust each line: EPO from the kidneys for red cells, TPO from the liver for platelets and G-CSF for neutrophils.",
     "college": "The model runs day by day: red-cell output follows EPO (which rises exponentially as Hb falls) with ~5 days from CFU-E to reticulocyte and ~1 day ripening in the blood; iron sets how far output can rise. Neutrophils take ~6 days to divide and ~5 days in the marrow store, then live ~7 h in the blood; platelets take ~5 days and live ~9. Lower the working marrow, give chemotherapy, give blood or cut EPO.",
     "phd": "HSCs are rare (~1 in 10⁴–10⁵ marrow cells), mostly quiescent, and kept in perivascular niches by CXCL12 and stem cell factor from leptin-receptor⁺ stromal cells and endothelium. Lineage trees are now seen as a continuum rather than strict binary branches (Laurenti & Göttgens 2018). Neutrophil life in the blood is debated: ~7–10 h by older labelling, longer in some deuterium studies (Pillay et al. 2010; Tak et al. 2013)."
    },
@@ -1183,7 +1183,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "A big bone-eating cell with many nuclei. It sticks to old bone and dissolves a little pit in it.",
    "hs": "Osteoclasts are formed when several precursor cells from the blood fuse. They seal themselves onto the bone and pump out acid, which dissolves the mineral, and enzymes, which digest the collagen. The calcium they free goes into the blood.",
    "college": "Osteoclasts come from the monocyte–macrophage line, driven by M-CSF and RANKL. A sealing zone of αvβ3 integrin and actin rings encloses a ruffled border where a V-ATPase pumps H⁺ (with Cl⁻ through ClC-7), dissolving hydroxyapatite; cathepsin K digests the collagen. Bisphosphonates are taken up here and poison the cell’s mevalonate pathway.",
-   "phd": "Osteoclasts also arise from erythro-myeloid progenitors in development and can recycle into osteomorphs that refuse to form new osteoclasts (McDonald et al. 2021), which may explain the rebound after stopping denosumab. Loss-of-function in CLCN7, TCIRG1 or CTSK causes osteopetrosis or pycnodysostosis."
+   "phd": "Osteoclasts also arise from erythro-myeloid progenitors in development and can split into osteomorphs that later re-fuse into new osteoclasts (McDonald et al. 2021), which may explain the rebound after stopping denosumab. Loss-of-function in CLCN7, TCIRG1 or CTSK causes osteopetrosis or pycnodysostosis."
   },
   "osteoblast": {
    "name": "Osteoblast",
@@ -1516,7 +1516,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "A hormone from the kidneys that tells the marrow to make more red cells when the blood carries too little oxygen.",
    "hs": "When oxygen in the blood falls, after a bleed, in anaemia or at altitude, cells in the kidney make more EPO. A few days later the marrow sends out more red cells. Failing kidneys make too little EPO, so kidney disease causes anaemia.",
    "college": "Peritubular interstitial cells in the renal cortex make EPO under HIF-2α. Normal EPO is ~4–26 IU/L and it rises roughly exponentially as haemoglobin falls, up to 100–1,000-fold in severe anaemia. In CKD EPO is inappropriately low for the degree of anaemia.",
-   "phd": "HIF prolyl-hydroxylase inhibitors such as roxadustat raise endogenous EPO; roxadustat is licensed in Europe for renal anaemia. Too high a haemoglobin target with ESAs in CKD raised stroke and cardiovascular risk (TREAT, Pfeffer et al. 2009)."
+   "phd": "HIF prolyl-hydroxylase inhibitors such as roxadustat raise endogenous EPO; roxadustat is licensed in Europe for renal anaemia. Too high a haemoglobin target with ESAs in CKD doubled the risk of stroke (TREAT, Pfeffer et al. 2009) and raised cardiovascular events (CHOIR, Singh et al. 2006)."
   }
  },
  "lens": {
@@ -1921,8 +1921,7 @@ canvas.trace{ display:block; width:100%; }
   "def": "Dense bone (cortical bone) that forms the shafts of long bones and the shell of all bones.",
   "match": [
    "compact bone",
-   "cortical bone",
-   "cortex"
+   "cortical bone"
   ]
  },
  "spongy bone": {
@@ -4076,7 +4075,7 @@ function drugA(drug, t){
   if (drug === "teriparatide") return t < 2 ? 1.8 : .35;
   return DRUG_A[drug] ?? 1;
 }
-function anabolic(drug, t){ return drug === "romosozumab" && t < 1 ? 7 : drug === "teriparatide" && t < 2 ? 3.5 : 0; }   /* %/yr of new bone */
+function anabolic(drug, t){ return drug === "romosozumab" && t < 1 ? 4 : drug === "teriparatide" && t < 2 ? 3.5 : 0; }   /* %/yr of new bone */
 
 /* ---------- calcium, PTH and vitamin D ----------
    Total serum Ca²⁺ (mmol/L; ionised ≈ half), PTH (pmol/L) from a steep sigmoid of ionised Ca²⁺ (Brown

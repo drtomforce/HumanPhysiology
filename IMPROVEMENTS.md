@@ -2,12 +2,13 @@
 
 A roadmap of what is still to build: the remaining organ deep dives, the body systems the body view doesn't animate yet, and further in-depth explorations, both on the organ pages and across the whole body.
 The README describes what already exists. This file only lists what doesn't exist yet.
+When a section is done, replace its plan with a one-line pointer to the README and keep only what is still open, and what changed from the plan where the model is simpler than the plan said.
 
 ## Where things stand
 
 | | Done | Remaining |
 |---|---|---|
-| Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#new-organs-for-the-body) |
+| Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#3-new-organs-for-the-body) |
 | Organ deep-dive pages (`organs/<id>.html`) | 9: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones | 5 existing organs (skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic | 3: muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 7: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection | One per new system, plus cross-system journeys |
@@ -15,7 +16,7 @@ The README describes what already exists. This file only lists what doesn't exis
 
 ## Next up
 
-Both items here are done. The liver, pancreas, muscles and bones pages are built, the immune & lymphatic system animates on the body with its "follow an infection" journey, and the spleen & lymph nodes are now an organ on the body ([3.1](#31-spleen--lymph-nodes)). The next step is the muscles & skeleton system on the body ([2.2](#22-muscles--skeleton)), then the skin page (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The next step is the muscles & skeleton system on the body ([2.2](#22-muscles--skeleton)), then the skin page (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -62,44 +63,24 @@ These are the conventions the heart, lungs and brain pages set. Each new page sh
 Ordered roughly by teaching value and by how much the existing body simulation already gives each page to build on.
 
 ### 1.1 Kidneys (`organs/kidneys.html`) ✅ Done
-Built as planned below; see the README for what it covers. Still open for this page: a Starling-based clearance calculator you fill in yourself, K⁺ handling as its own interactive section, an AKI section that separates prerenal, renal and postrenal injury, and passing a condition across to the heart and lungs pages.
-- **Anatomy**: the kidney in coronal section (cortex, medullary pyramids, calyces, pelvis, renal artery and vein, ureter), then a nephron (glomerulus, Bowman's capsule, PCT, loop of Henle, DCT, collecting duct, vasa recta, juxtaglomerular apparatus).
-- **Filtration**: Starling forces across the glomerulus (glomerular capillary pressure, Bowman's pressure, oncotic pressure) give GFR live. Use sliders for afferent and efferent arteriolar tone, show autoregulation (myogenic response and tubuloglomerular feedback) holding GFR steady over a range of blood pressure, and add a clearance calculator (inulin, creatinine, PAH).
-- **Concentrating urine**: a countercurrent multiplier you can step through, with the osmolality gradient building from 300 to 1200 mOsm/kg, urea recycling, and ADH and aquaporin-2 setting the final urine concentration. Include a water-deprivation versus water-load test.
-- **Acid–base and electrolytes**: bicarbonate reabsorption, H⁺ secretion and ammonia buffering. K⁺ handling with aldosterone. A Davenport diagram or a simple pH, PaCO₂ and HCO₃⁻ panel that reads the lungs' PaCO₂ for respiratory compensation.
-- **Scenarios**: dehydration, diabetes insipidus (central vs nephrogenic), SIADH, acute kidney injury (prerenal, renal, postrenal), chronic kidney disease, an SGLT2 inhibitor, a loop diuretic.
+Built; see the README for what it covers. Still open for this page: a Starling-based clearance calculator you fill in yourself, K⁺ handling as its own interactive section, an AKI section that separates prerenal, renal and postrenal injury, and passing a condition across to the heart and lungs pages.
 
 ### 1.2 Stomach & gut (`organs/gut.html`) ✅ Done
-Built as planned below; see the README for what it covers. Still open for this page: tie the enterocyte and the meal clock to the body’s bite journeys (open the page at the stage a bite has reached), an interactive enzyme cascade you can step through (trypsinogen → trypsin is a list for now), serotonin and the enterochromaffin cells (with IBS and anti-nausea drugs), bile acids and the enterohepatic circulation (the liver page now exists, so the loop can be shared between the two), and the oesophagus and reflux, which belong with the throat page.
-- **Anatomy**: the GI tract from oesophagus to rectum, then wall layers (mucosa, submucosa, muscularis with Meissner's and Auerbach's plexuses, serosa), gastric glands (parietal, chief, G and D cells) and a villus with its crypt.
-- **Motility**: slow waves from the interstitial cells of Cajal, with spike bursts on top that make contractions. Peristalsis versus segmentation, the migrating motor complex, gastric emptying rate by meal type (liquid, carbohydrate, fat), and the gastrocolic reflex.
-- **Secretion and digestion**: the parietal cell (H⁺/K⁺-ATPase, the alkaline tide) and the cephalic, gastric and intestinal phases with gastrin, histamine, ACh and somatostatin. Enzyme cascades (trypsinogen → trypsin), with brush-border enzymes and transporters tied to the existing bite journeys.
-- **The gut–brain axis and microbiome**: vagal afferents, enteroendocrine cells (CCK, GLP-1, PYY, ghrelin) and satiety. Bacterial fermentation to short-chain fatty acids, and how fibre intake changes the community.
-- **Scenarios**: peptic ulcer (H. pylori or NSAIDs), a proton-pump inhibitor, lactose intolerance, coeliac disease (flattened villi), cholera (CFTR secretion and oral rehydration), gastroparesis, constipation vs diarrhoea.
+Built; see the README for what it covers. Still open for this page: tie the enterocyte and the meal clock to the body’s bite journeys (open the page at the stage a bite has reached), an interactive enzyme cascade you can step through (trypsinogen → trypsin is a list for now), serotonin and the enterochromaffin cells (with IBS and anti-nausea drugs), bile acids and the enterohepatic circulation (the liver page now exists, so the loop can be shared between the two), and the oesophagus and reflux, which belong with the throat page.
 
 ### 1.3 Liver (`organs/liver.html`) ✅ Done
-Built as planned below; see the README for what it covers. Still open for this page: the enterohepatic circulation of bile acids as its own interactive section (it is a readout and a paragraph for now, and needs the gut page's ileum to tie into), an ammonia and urea-cycle section with hepatic encephalopathy, a drug of the reader's choosing followed through absorption, first pass, effect and clearance (the first-pass table is static apart from this liver's extraction), regeneration after a resection or an injury over weeks, zonation beyond three zones, and carrying a condition across to the pancreas page once it exists (fatty liver and insulin resistance belong to both).
-- **Anatomy**: lobes and Couinaud segments, the dual blood supply (portal vein ~75%, hepatic artery ~25%), the lobule and the acinus with zones 1–3, sinusoids, hepatocytes, Kupffer and stellate cells, bile canaliculi.
-- **Metabolism through the day**: glycogen filling after meals and emptying overnight, gluconeogenesis, ketogenesis in a long fast, and lipoprotein output (VLDL), all driven by the body's existing insulin and glucagon channels.
-- **Detoxification and drugs**: phase I (CYP450) and phase II conjugation, first-pass metabolism, and an interactive paracetamol overdose (glutathione depletion, NAPQI, zone 3 necrosis, the N-acetylcysteine antidote). Ethanol metabolism, with alcohol dehydrogenase and its zero-order kinetics.
-- **Bile and bilirubin**: haem → bilirubin → conjugation → bile → urobilinogen loop. Use this section to sort jaundice into pre-hepatic, hepatic and post-hepatic, with urine and stool colour.
-- **Scenarios**: fatty liver, cirrhosis with portal hypertension (varices, ascites, caput medusae), hepatitis, a gallstone blocking the common bile duct, a paracetamol overdose, a long fast.
+Built; see the README for what it covers. Still open for this page: the enterohepatic circulation of bile acids as its own interactive section (it is a readout and a paragraph for now, and needs the gut page's ileum to tie into), an ammonia and urea-cycle section with hepatic encephalopathy, a drug of the reader's choosing followed through absorption, first pass, effect and clearance (the first-pass table is static apart from this liver's extraction), regeneration after a resection or an injury over weeks, zonation beyond three zones, and carrying a condition across to the pancreas page once it exists (fatty liver and insulin resistance belong to both).
 
 ### 1.4 Pancreas (`organs/pancreas.html`) ✅ Done
-Built as planned below; see the README for what it covers. What changed from the plan, and what is still open for this page:
+Built; see the README for what it covers. What changed from the plan, and what is still open for this page:
 - **Electrical bursts are drawn, not solved**: the β-cell's plateau fraction comes from the coupling chain (glucokinase → ATP/ADP → K_ATP), but the bursts themselves are not a channel-level model (Chay–Keizer or similar). A real ion-channel β-cell, with gap-junction coupling across an islet, would let readers block channels one by one as on the brain page.
 - **Glucagon counter-regulation** is a simple rule (low glucose, intra-islet insulin, stress), without a separate adrenaline or cortisol channel; exercise is not yet a test you can run, and the body's insulin and glucagon channels are not yet driven by this model (or the reverse).
 - **The day**: the tests run on their own clocks (three hours, or a meal), not on the body's hour. A day of meals with insulin doses (carbohydrate counting, a pump) would tie it to the body and the liver page's day.
 - **More scenarios**: MODY (glucokinase and HNF1A), neonatal diabetes treated with a sulfonylurea, an insulinoma, gestational diabetes, chronic pancreatitis with type 3c diabetes, SGLT2 inhibitors (shared with the kidneys page) and DPP-4 inhibitors.
 - **Exocrine**: the enzyme cascade is a list, not a step-through; the phases of secretion (cephalic, gastric, intestinal) are shown on one meal clock rather than separated; a secretin test and faecal elastase could be added. Carrying a condition across to the liver page (fatty liver and insulin resistance) and the gut page (enzyme capsules, steatorrhoea) is still to do.
-- **Anatomy**: head, body and tail, the duct system and sphincter of Oddi, acini, and the islets of Langerhans (α, β, δ, PP cells).
-- **The β-cell**: glucose → GLUT2 → ATP/ADP → K_ATP channel closes → depolarisation → Ca²⁺ → insulin granules, with first- and second-phase release. Sliders for glucose, a sulfonylurea and GLP-1 (incretin effect).
-- **Glucose control**: an oral glucose tolerance test and a clamp, driven by a minimal model of glucose and insulin (Bergman), showing insulin sensitivity versus secretion. Glucagon counter-regulation.
-- **Exocrine juice**: bicarbonate from duct cells (CFTR) and enzymes from acini. Secretin and CCK control, and what goes wrong in cystic fibrosis.
-- **Scenarios**: type 1 diabetes and DKA, type 2 diabetes, hypoglycaemia from too much insulin, acute pancreatitis, cystic fibrosis, a GLP-1 agonist.
 
 ### 1.5 Muscles (`organs/muscles.html`) ✅ Done
-Built as planned below; see the README for what it covers. What changed from the plan, and what is still open for this page:
+Built; see the README for what it covers. What changed from the plan, and what is still open for this page:
 - **Cross-bridges**: a four-state kinetic scheme (D → A1 → A2 → R) driven by Ca²⁺ on troponin and by ATP, without strain-dependent rates, so the force–velocity curve is Hill's equation drawn beside it rather than a result of the same model. A Huxley (1957) style strain-dependent model would let the two sections share one mechanism, and would also give the force transient after a quick length step.
 - **Fatigue inside the fibre** is not modelled: force does not fall with inorganic phosphate, H⁺ or reduced SR Ca²⁺ release, so a sprint's power fall comes only from the energy-supply model, and the motor-unit pool only tires through its junctions (myasthenia). The energy-systems chart is its own three-minute model and does not feed the run model.
 - **The run** uses rules rather than a full physiology: a carbohydrate share that rises with intensity, a fat-oxidation ceiling, a liver that releases 0.3–0.45 g/min until ~90 g is gone, lactate from the lactate threshold, cardiac drift of 0.1 bpm/min, and exhaustion when a fixed work capacity above the critical speed is spent. There is no heat, sweat or dehydration, no central fatigue, and the page's run is not the body's run.
@@ -108,14 +89,9 @@ Built as planned below; see the README for what it covers. What changed from the
 - **Not yet built**: the stretch reflex and spindle as an interactive circuit (shared with the brain page), EMG, smooth and cardiac muscle side by side with skeletal muscle, and passing a condition across to other pages (bed rest → bones, myasthenia → lungs).
 - **More scenarios**: Duchenne muscular dystrophy, statin myopathy, McArdle disease, hypokalaemic periodic paralysis, Lambert–Eaton syndrome, ALS, sarcopenia and a hamstring strain.
 - **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8b); the PhD text names its key sources.
-- **Anatomy**: muscle → fascicle → fibre → myofibril → sarcomere (Z-lines, A and I bands, actin, myosin, titin), the neuromuscular junction, and T-tubules with the sarcoplasmic reticulum.
-- **Contraction**: the cross-bridge cycle step by step (ATP, ADP + Pᵢ, the power stroke), excitation–contraction coupling (DHPR → RyR1 → Ca²⁺ → troponin). Length–tension and force–velocity curves you can probe.
-- **Recruitment and fibre types**: motor units recruited in order of size (Henneman), rate coding from twitch to tetanus, and type I, IIa and IIx fibres. Energy systems (phosphocreatine, glycolysis, oxidative) over the course of the evening run.
-- **Fatigue and training**: lactate threshold, glycogen depletion, endurance vs strength adaptations, and delayed-onset soreness.
-- **Scenarios**: myasthenia gravis, botulinum toxin, a cramp, rigor mortis, a marathon "wall", long bed rest (atrophy), malignant hyperthermia.
 
 ### 1.6 Bones (`organs/bones.html`) ✅ Done
-Built as planned below; see the README for what it covers. What changed from the plan, and what is still open for this page:
+Built; see the README for what it covers. What changed from the plan, and what is still open for this page:
 - **Remodelling is a rule, not a cell model**: hip density is turnover × balance plus the remodelling space, mineral and Frost's mechanostat (with strain rising as density² falls), calibrated to published rates (menopause, prednisolone, bed rest and space, the FREEDOM and FRAME trials). There are no RANKL, OPG and sclerostin concentrations driving osteoclast and osteoblast numbers (a Lemaire / Pivonka-style model would do it), no separate cortical and trabecular compartments, no spine, and only one site (the hip). The BMU figure takes its depth, refill and rest from the same rules.
 - **Wolff's law is one number a day**: the loading choice sets a daily peak strain; the number of cycles, their rate and rest between bouts (Rubin & Lanyon) are in the text, not the model. The body's own run is the default, and the anatomy figure follows the body's hour.
 - **Calcium** has no phosphate intake, no FGF23 or Klotho as their own variables, no albumin or pH effect on ionised calcium, no calcimimetic, thiazide or loop diuretic, and the PTH rhythm and the CTX rhythm in the hero are rules over the steady state. Pregnancy and lactation are text only.
@@ -124,12 +100,6 @@ Built as planned below; see the README for what it covers. What changed from the
 - **Not yet built**: the growth plate as its own interactive section (growth hormone, puberty, rickets at the physis), bone as a calcium store across a day of meals tied to the body's meal times, osteogenesis imperfecta, Paget's disease and bone metastases, joints and arthritis, and carrying a condition across to other pages (bed rest from the muscles page, CKD from the kidneys page, which also sets EPO).
 - **More scenarios**: hypoparathyroidism, an anorexia or RED-S athlete, a teenager building peak bone mass, stopping denosumab (rebound), Paget's disease, multiple myeloma, iron-deficiency anaemia, a hip fracture in an older person.
 - **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8c); the PhD text names its key sources, and three registry rows (blood calcium and PTH, bone turnover, haemoglobin and blood cell production) were added.
-- **Anatomy**: a long bone (epiphysis, growth plate, diaphysis, marrow cavity, periosteum), osteons with Haversian canals, trabecular vs cortical bone, and the marrow niche.
-- **Remodelling**: an animated basic multicellular unit (osteoclasts resorb, osteoblasts refill, osteocytes sense strain), with the RANKL/OPG balance and Wolff's law: load the bone and watch it adapt.
-- **Calcium and phosphate**: PTH, vitamin D (skin → liver → kidney) and calcitonin, linking bone, gut and kidney, with a serum Ca²⁺ readout.
-- **Blood formation**: haematopoiesis from stem cell to red cell, white cells and platelets. Tie it to the EPO cascade that already exists.
-- **Fractures**: haematoma → soft callus → hard callus → remodelling, over weeks.
-- **Scenarios**: osteoporosis (menopause, steroids), rickets/osteomalacia, hyperparathyroidism, a fracture healing, an astronaut in microgravity, anaemia from marrow failure.
 
 ### 1.7 Skin (`organs/skin.html`)
 - **Anatomy**: epidermis layers (basale → corneum), melanocytes, Langerhans cells, dermis, hair follicle, sebaceous and sweat glands (eccrine, apocrine), receptors (Meissner, Merkel, Pacinian, Ruffini, free nerve endings) and the dermal blood vessels.
@@ -162,25 +132,18 @@ Built as planned below; see the README for what it covers. What changed from the
 
 ## 2. Body systems still to animate on the body
 
-Organ pages already have lens cards for these four systems, but the body view can't show them yet. Each needs what the existing six have: a layer (`.sys-<id>`) with its own animator, text for each phase at four levels, numbered fact pins, a card in the side panel, a "Part of" chip mapping in `ORGAN_SYSTEMS`, and a journey to ride along. Once a system is animated, its lens cards on the organ pages should link back to it.
+Organ pages already have lens cards for these three systems, but the body view can't show them yet. Each needs what the existing seven have: a layer (`.sys-<id>`) with its own animator, text for each phase at four levels, numbered fact pins, a card in the side panel, a "Part of" chip mapping in `ORGAN_SYSTEMS`, and a journey to ride along. Once a system is animated, its lens cards on the organ pages should link back to it.
 
-### 2.1 Immune & lymphatic (layer and journey ✅ Done, organ still open)
-The layer and the "follow an infection" journey are built: see the README for what they cover, and `node tests/systems-check.mjs immune` for their check. What changed from the plan, and what is still open:
-- **Follow an infection ✅ Done**: two germs, a splinter carrying bacteria into the hand (draining to the armpit nodes) and a flu virus in the nose (draining to the neck nodes), each as a first meeting (about two weeks) and a vaccinated twin (`splinterVax`, `fluVax`, about six days). It is an `INFECTIONS` array run by `lapseRide` (INFECTION RIDE, with `clockScreen`), text in `CONTENT.infection`, a Vaccinated toggle and "Another germ" on the card, and `?ride=infection:<id>`. Still open:
+### 2.1 Immune & lymphatic ✅ Done
+The layer, the "follow an infection" journey and the spleen & lymph nodes topic ([3.1](#31-spleen--lymph-nodes--done-on-the-body-deep-dive-page-still-open)) are built: see the README for what they cover, and `node tests/systems-check.mjs immune` for their check. What changed from the plan, and what is still open:
+- **Follow an infection**:
   - **The journey doesn't change the body**: there is no infection state in the physiology, so the fever, the rising neutrophil count, CRP, the swollen node and the tiredness are told in the text but not shown in the vitals or the layer. An `infection` channel driven by the ride's real time could feed `coreTemp`, `neutrophils`, `lymphocytes`, `il6` and node size.
   - **One thread**: the ride follows one line (innate → dendritic cell → T cell → B cell → plasma cell → antibodies → memory). In reality B-cell and T-cell activation overlap, and killer T cells reach the nose while antibodies are still being made; the text says so, but the ride shows them one after the other.
   - **More germs**: a cold virus (no vaccine, all innate and T cells), tetanus in a dirty wound (a toxin, neutralised by vaccine antibodies), a gut infection through the Peyer's patches with IgA, and a urinary infection (shared with the urinary system).
   - **Vaccinated is per ride**: the toggle switches between the twin journeys rather than being a body-wide setting that other rides or a future infection state could read.
   - **Neck nodes** sit under the throat's label in the whole-body view, so a tap there opens the throat. The armpit nodes, the other nodes, the spleen, the thymus and the moving cells start a ride.
-- **Spleen & lymph nodes as an organ ✅ Done** (3.1): a body topic with a close-up, phase text and a hotspot on the spleen. The thymus, tonsils, marrow and Peyer's patches are drawn in the layer but still have no topic of their own. The "Part of" chips list the immune system for the gut, liver, skin, bones, throat and spleen.
 - **Chylomicrons** ride their own lymph routes here; the fat bite journey still draws its own path up `THORACIC_D`. The two could share the lymph dots, so a bite's chylomicron is one of the milky dots.
 - **Channels are simplified**: thoracic duct flow (`lymphFlow`, ~1.2 mL/min at rest, ~3× in the run), `chyle` (gut activity lagged by 1.5 h), `nodeTraffic` (0–1, high in deep sleep with low cortisol), `spleen` (−25% in the run), and keyframed `neutrophils`, `lymphocytes` (×10⁹/L) and `il6`. They are not yet read by the vitals panel, and there is no CRP, fever or infection state.
-- **Tap targets ✅ Done**: tapping a node, the tonsils, the spleen, the thymus or a moving cell starts the infection journey (the armpit nodes start the splinter, the neck nodes and tonsils the flu).
-- **Draw**: lymph vessels and nodes (neck, armpits, groin, mesenteric), thoracic duct → left subclavian vein, spleen, thymus, tonsils, bone marrow and Peyer's patches.
-- **Animate**: lymph creeping centrally, faster with muscle activity in the run and with breathing. White-cell traffic through nodes. The overnight peak of immune activity in sleep and the effect of cortisol through the day. Chylomicrons already ride the lacteals in the fat bite journey, so share that path.
-- **Physiology channels**: lymph flow, neutrophil and lymphocyte counts (with their daily rhythm), and inflammatory markers.
-- **Journey: follow an infection**: a splinter or a cold virus → mast cells and neutrophils → a dendritic cell carries antigen to a lymph node → a T cell is activated → B cells → plasma cells → antibodies → memory. Time-lapse from minutes to about two weeks. Add a "vaccinated" toggle for a faster second response.
-- **Needs**: ~~a new organ for the spleen and lymph nodes~~ (done, see 3.1).
 
 ### 2.2 Muscles & skeleton
 - **Draw**: the main skeleton and the big muscle groups (quadriceps, hamstrings, calves, glutes, back, arms, intercostals and the diaphragm, which is already drawn).
@@ -208,7 +171,7 @@ The layer and the "follow an infection" journey are built: see the README for wh
 The body has no close-up or topic yet for these. Each would need a body topic, a close-up simulation, phase text, `ORGAN_SYSTEMS` entries, and later a deep-dive page.
 
 ### 3.1 Spleen & lymph nodes ✅ Done (on the body; deep-dive page still open)
-Built as a body topic `spleen` ("Spleen & lymph nodes"): text for the four phases at four levels, seven new glossary terms (paracortex, marginal zone, afferent lymphatics, mesenteric nodes, oral tolerance, bilirubin, S1P), `ORGAN_SYSTEMS` (immune, circulatory), a hotspot on the spleen, the spleen drawn on the body outside the immune layer (it contracts in the run either way), the "follow an infection" ride offered from its panel (`INFECTION_FOR_TOPIC`), and a close-up: the spleen and a lymph node in section (lymph flowing through at `lymphFlow`, milky with `chyle`, lymphocytes homing across the HEV at `nodeTraffic`, a dendritic cell riding in), with a magnifier on the splenic pulp (central arteriole and white pulp, open red-pulp cords, red cells squeezing through the sinus slits, an old cell eaten by a macrophage that keeps its iron). On desktop the spleen's dot first sat on the "Stomach & gut" label, so the spleen (`SPLEEN_AT`, the immune layer's too) moved up from (703, 478) to (705, 436), beside the stomach's fundus under the diaphragm, which is also closer to where it lies; its fact pin moved with it. Adding a 14th dot jammed the phone dot-spreading on landscape phones (844 × 390), so `Hotspots.spread` now also tries sideways moves in its later rounds. Still open:
+Built as the body topic `spleen`; see the README for what it covers. Still open:
 - **Deep-dive page** (`organs/spleen.html`): anatomy of the spleen, a node and the lymphatic tree; how it works: a red cell's deformability against the slit size (spherocytosis, sickle cell, malaria), lymphocyte recirculation (HEV entry, dwell time, S1P exit, fingolimod), and a germinal centre over two weeks; scenarios: splenectomy (vaccines, Howell–Jolly bodies), splenomegaly and hypersplenism, a swollen node in an infection, lymphoedema, and glandular fever with a splenic rupture risk.
 - **One node for all**: the close-up shows a generic node that turns milky after meals, as a mesenteric node would. A choice of node (neck, armpit, gut) could show what each drains.
 - **The node doesn't swell**: there is no infection state yet (see 2.1), so the close-up can't show a reactive node with germinal centres growing.
@@ -272,7 +235,6 @@ These span several organs and are best built as their own pages (for example `ex
 - **Pharmacology**: one drug taken by mouth and followed through absorption, first-pass metabolism, distribution, effect and clearance by the liver or kidney, with a plasma-concentration curve and dosing intervals.
 
 ### 4.3 New journeys on the body
-- ~~Follow an infection (immune, see 2.1)~~ (done).
 - Follow a step (muscles & skeleton, see 2.2).
 - Follow the heat, and sunlight → vitamin D (skin, see 2.3).
 - Follow a cycle (reproductive, see 2.4).
@@ -371,16 +333,12 @@ Each case unlocks once its parent questions are done. It visits several pages in
 
 ## Suggested order
 
-1. ~~Kidneys page~~ (done).
-2. ~~Gut page~~ (done).
-3. ~~Export utility~~ (done).
-4. ~~Mobile view of the body~~ (done).
-5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
-6. ~~**Immune & lymphatic system on the body**~~: ~~the animated layer~~ (done); ~~the "follow an infection" journey~~ (done); ~~the spleen and lymph nodes as a new organ~~ (done; its deep-dive page is listed under 3.1).
-7. ~~Muscles page~~ (done). ~~Bones page~~ (done). The muscles & skeleton system on the body.
-8. Prediction questions: Predict sections on the nine finished pages and the hub ([6.1–6.3](#61-the-loop), [6.5](#65-hub-page-explorequestionshtml)), then the first converging case (diabetic ketoacidosis).
-9. Skin page and the skin system on the body (heat balance).
-10. Eyes, ears and throat pages.
-11. Endocrine glands, and blood & vessels as new organs with pages.
-12. Reproductive system and organs.
-13. Cross-organ explorations and the extra sections on the heart, lungs and brain.
+Done so far: the kidneys, gut, liver, pancreas, muscles and bones pages, export, the mobile view of the body, and the immune & lymphatic system on the body with the spleen & lymph nodes.
+
+1. The muscles & skeleton system on the body.
+2. Prediction questions: Predict sections on the nine finished pages and the hub ([6.1–6.3](#61-the-loop), [6.5](#65-hub-page-explorequestionshtml)), then the first converging case (diabetic ketoacidosis).
+3. Skin page and the skin system on the body (heat balance).
+4. Eyes, ears and throat pages.
+5. Endocrine glands, and blood & vessels as new organs with pages.
+6. Reproductive system and organs.
+7. Cross-organ explorations and the extra sections on the heart, lungs and brain.

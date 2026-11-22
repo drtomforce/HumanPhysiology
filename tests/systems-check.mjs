@@ -35,7 +35,8 @@ const server = createServer(async (req, res) => {
 const base = `http://127.0.0.1:${server.address().port}/index.html`;
 const HOURS = [3, 7.75, 12, 17.5, 18.6, 19.6];
 /* channels each system's animator reads (beyond the shared ones) */
-const CHANNELS = { urinary: ["gfr", "urineFlow", "urineOsm", "renin", "bladder"], immune: ["lymphFlow", "chyle", "nodeTraffic", "spleen", "neutrophils", "lymphocytes", "il6"] };
+const CHANNELS = { urinary: ["gfr", "urineFlow", "urineOsm", "renin", "bladder"], immune: ["lymphFlow", "chyle", "nodeTraffic", "spleen", "neutrophils", "lymphocytes", "il6"],
+  musculoskeletal: ["muscleVO2", "muscleGlycogen", "lactate", "cadence", "grf", "boneStrain"] };
 
 const browser = await chromium.launch();
 let failed = 0;

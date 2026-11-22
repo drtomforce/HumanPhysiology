@@ -8,13 +8,13 @@ The README describes what already exists. This file only lists what doesn't exis
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 8: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles | 6 existing organs (bones, skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 9: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones | 5 existing organs (skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 7: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic | 3: muscles & skeleton, skin, reproductive |
 | Journeys ("follow a …") | 7: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection | One per new system, plus cross-system journeys |
 
 ## Next up
 
-Both items here are done. The liver, pancreas and muscles pages are built, the immune & lymphatic system animates on the body with its "follow an infection" journey, and the spleen & lymph nodes are now an organ on the body ([3.1](#31-spleen--lymph-nodes)). The next step is the bones page ([1.6](#16-bones-organsboneshtml)), then the muscles & skeleton system on the body (see [Suggested order](#suggested-order)).
+Both items here are done. The liver, pancreas, muscles and bones pages are built, the immune & lymphatic system animates on the body with its "follow an infection" journey, and the spleen & lymph nodes are now an organ on the body ([3.1](#31-spleen--lymph-nodes)). The next step is the muscles & skeleton system on the body ([2.2](#22-muscles--skeleton)), then the skin page (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -112,7 +112,16 @@ Built as planned below; see the README for what it covers. What changed from the
 - **Fatigue and training**: lactate threshold, glycogen depletion, endurance vs strength adaptations, and delayed-onset soreness.
 - **Scenarios**: myasthenia gravis, botulinum toxin, a cramp, rigor mortis, a marathon "wall", long bed rest (atrophy), malignant hyperthermia.
 
-### 1.6 Bones (`organs/bones.html`)
+### 1.6 Bones (`organs/bones.html`) ✅ Done
+Built as planned below; see the README for what it covers. What changed from the plan, and what is still open for this page:
+- **Remodelling is a rule, not a cell model**: hip density is turnover × balance plus the remodelling space, mineral and Frost's mechanostat (with strain rising as density² falls), calibrated to published rates (menopause, prednisolone, bed rest and space, the FREEDOM and FRAME trials). There are no RANKL, OPG and sclerostin concentrations driving osteoclast and osteoblast numbers (a Lemaire / Pivonka-style model would do it), no separate cortical and trabecular compartments, no spine, and only one site (the hip). The BMU figure takes its depth, refill and rest from the same rules.
+- **Wolff's law is one number a day**: the loading choice sets a daily peak strain; the number of cycles, their rate and rest between bouts (Rubin & Lanyon) are in the text, not the model. The body's own run is the default, and the anatomy figure follows the body's hour.
+- **Calcium** has no phosphate intake, no FGF23 or Klotho as their own variables, no albumin or pH effect on ionised calcium, no calcimimetic, thiazide or loop diuretic, and the PTH rhythm and the CTX rhythm in the hero are rules over the steady state. Pregnancy and lactation are text only.
+- **Fracture healing** is a staged curve (scaled by smoking, steroids, osteomalacia, space and instability), not a mechanobiological model of the callus; there is no choice of fixation (cast, nail, plate) or of bone, and no child (faster healing, remodelling of angulation).
+- **The marrow** has three lineages with simple feedback (EPO, G-CSF, TPO); there is no altitude (it belongs with the lungs page and the EPO cascade, which the page links to), no B12 or folate, no haemolysis, no G-CSF drug, no transfusion, and lymphocytes are drawn but not modelled. The neutrophil blood half-life (7 h) is the classical value; deuterium studies suggest longer.
+- **Not yet built**: the growth plate as its own interactive section (growth hormone, puberty, rickets at the physis), bone as a calcium store across a day of meals tied to the body's meal times, osteogenesis imperfecta, Paget's disease and bone metastases, joints and arthritis, and carrying a condition across to other pages (bed rest from the muscles page, CKD from the kidneys page, which also sets EPO).
+- **More scenarios**: hypoparathyroidism, an anorexia or RED-S athlete, a teenager building peak bone mass, stopping denosumab (rebound), Paget's disease, multiple myeloma, iron-deficiency anaemia, a hip fracture in an older person.
+- **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8c); the PhD text names its key sources, and three registry rows (blood calcium and PTH, bone turnover, haemoglobin and blood cell production) were added.
 - **Anatomy**: a long bone (epiphysis, growth plate, diaphysis, marrow cavity, periosteum), osteons with Haversian canals, trabecular vs cortical bone, and the marrow niche.
 - **Remodelling**: an animated basic multicellular unit (osteoclasts resorb, osteoblasts refill, osteocytes sense strain), with the RANKL/OPG balance and Wolff's law: load the bone and watch it adapt.
 - **Calcium and phosphate**: PTH, vitamin D (skin → liver → kidney) and calcitonin, linking bone, gut and kidney, with a serum Ca²⁺ readout.
@@ -289,7 +298,7 @@ These span several organs and are best built as their own pages (for example `ex
 4. ~~Mobile view of the body~~ (done).
 5. ~~Liver page~~ (done). ~~Pancreas page~~ (done).
 6. ~~**Immune & lymphatic system on the body**~~: ~~the animated layer~~ (done); ~~the "follow an infection" journey~~ (done); ~~the spleen and lymph nodes as a new organ~~ (done; its deep-dive page is listed under 3.1).
-7. ~~Muscles page~~ (done). Bones page, then the muscles & skeleton system on the body.
+7. ~~Muscles page~~ (done). ~~Bones page~~ (done). The muscles & skeleton system on the body.
 8. Skin page and the skin system on the body (heat balance).
 9. Eyes, ears and throat pages.
 10. Endocrine glands, and blood & vessels as new organs with pages.

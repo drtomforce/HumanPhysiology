@@ -234,6 +234,61 @@ a{ color:inherit; }
 .because-from{ display:block; font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
 .because-from a{ color:var(--ink); text-decoration:none; border-bottom:1px dotted var(--line-strong); text-transform:none; letter-spacing:0; font-size:12.5px; }
 
+/* predict: a question the reader answers before the model runs (content "questions") */
+.q-list{ display:grid; gap:16px; max-width:880px; }
+.q{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; min-width:0; }
+.q-kick{ margin:0 0 4px; font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.q-kick b{ color:var(--accent); font-weight:600; }
+.q .q-title{ font-family:var(--serif); font-size:22px; font-weight:400; letter-spacing:-.01em; line-height:1.2; margin:0 0 8px; }
+.q-bg{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 10px; font-size:12px; color:var(--muted); }
+.q-bg .chip{ padding:3px 10px; font-size:12px; color:var(--ink); }
+.q-ask{ font-weight:600; font-size:15px; margin:12px 0 8px; }
+.q-choices{ display:grid; gap:6px; }
+.q-choices button{ display:flex; gap:10px; align-items:flex-start; text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:9px 12px; cursor:pointer; font-size:14.5px; line-height:1.4; }
+.q-choices button > i{ flex:none; width:16px; height:16px; border-radius:50%; border:1.5px solid var(--line-strong); margin-top:2px; box-sizing:border-box; }
+.q-choices button > span{ flex:1; min-width:0; }
+.q-choices button[aria-checked="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+.q-choices button[aria-checked="true"] > i{ border:5px solid var(--ink); }
+.q-choices button:not(:disabled):hover{ background:var(--surface-2); }
+.q-choices button:disabled{ cursor:default; color:inherit; }
+.q-choices em{ font-style:normal; font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--accent); white-space:nowrap; margin-top:2px; }
+.q-choices em.yours{ color:var(--muted); }
+.q-act{ display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin-top:12px; }
+.q-run{ border:0; background:var(--ink); color:var(--surface); border-radius:999px; padding:7px 18px; font-size:14px; font-weight:600; cursor:pointer; }
+.q-run:disabled{ opacity:.35; cursor:not-allowed; }
+.q-res{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
+.q-res:focus{ outline:none; }
+.q-verdict{ margin:0 0 6px; font-size:14px; font-weight:600; display:flex; gap:8px; align-items:center; }
+.q-verdict i{ width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none; }
+.q-verdict.no i{ background:var(--sel); }
+.q-sub{ margin:12px 0 0; font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.q-ros{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin-top:6px; }
+.q-ro{ text-align:left; border:1px solid var(--line); background:var(--bg); border-radius:10px; padding:7px 10px; cursor:pointer; min-width:0; }
+.q-ro:hover{ border-color:var(--line-strong); }
+.q-ro .l{ display:block; font-size:11px; color:var(--muted); }
+.q-ro .v{ display:block; font-family:var(--serif); font-size:18px; line-height:1.2; font-variant-numeric:tabular-nums; }
+.q-ro .v small{ font-family:var(--sans); font-size:11px; color:var(--muted); margin-left:2px; }
+.q-ro .delta{ display:block; margin:1px 0 0; line-height:1.2; }
+.q-ro.fig .v{ font-family:var(--sans); font-size:13px; font-weight:500; }
+.q-more{ margin-top:12px; border-top:1px dashed var(--line); padding-top:8px; }
+.q-more summary{ cursor:pointer; font-size:13px; font-weight:600; }
+.q-more .prose{ font-size:15px; margin-top:8px; }
+.q-more .q-other{ margin:8px 0 0; font-size:14.5px; line-height:1.5; font-family:var(--serif); }
+.q-more .q-other b{ font-family:var(--sans); font-size:13.5px; display:block; }
+.q-next{ display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+.q-hub{ margin:4px 0 0; font-size:13.5px; }
+.q-lit{ box-shadow:0 0 0 2px var(--sel); }
+.q-flash{ animation:q-flash 1.8s ease-out; }
+@keyframes q-flash{ 0%{ box-shadow:0 0 0 7px color-mix(in srgb, var(--sel) 55%, transparent); } 100%{ box-shadow:0 0 0 2px var(--sel); } }
+@media (max-width: 640px){
+  .q{ padding:14px 14px; }
+  .q .q-title{ font-size:20px; }
+  /* the "what happens" tag goes under the choice, so it doesn't squeeze the text */
+  .q-choices button{ flex-wrap:wrap; }
+  .q-choices em{ width:100%; padding-left:26px; margin-top:0; }
+  .q-ros{ grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); }
+}
+
 /* glossary terms */
 .term{ border-bottom:1px dotted var(--line-strong); cursor:help; }
 .term:hover, .term:focus{ border-bottom-color:var(--ink); outline:none; }
@@ -1356,6 +1411,234 @@ canvas.trace{ display:block; width:100%; }
    "phd": "Hyperemesis gravidarum is linked to GDF15 signalling on the area postrema (Fejzo et al. 2024)."
   }
  },
+ "questions": [
+  {
+   "id": "gut-cholera",
+   "scenario": "cholera",
+   "title": {
+    "ms": "Litres of watery diarrhoea",
+    "college": "Profuse watery diarrhoea after drinking unsafe water"
+   },
+   "background": [
+    "digest",
+    "motility"
+   ],
+   "setting": {
+    "ms": "Amir, 30, drank water from a well after a flood. A day later he has diarrhoea that looks like rice water: many litres of it, much more than he has drunk.",
+    "hs": "Amir, 30, drank unsafe water after a flood. A bacterium in his small intestine releases a toxin into the cells lining it. He now passes several litres of watery stool a day, far more than he drinks.",
+    "college": "A 30-year-old after drinking contaminated water in a flood zone. A toxin-producing bacterium colonises his small intestine. Stool output is many litres a day, painless and watery, and exceeds his intake.",
+    "phd": "A 30-year-old with acute painless ‘rice-water’ diarrhoea after drinking contaminated water, a toxigenic Vibrio infection of the small intestine, stool output several litres a day."
+   },
+   "ask": {
+    "ms": "Where does all that water come from?",
+    "college": "What is the source of the stool water?"
+   },
+   "hypotheses": [
+    {
+     "id": "drink",
+     "text": {
+      "ms": "From the water he drinks: it just isn’t soaked up and runs straight through.",
+      "college": "Ingested fluid that is no longer absorbed: a pure failure of absorption."
+     },
+     "reconcile": {
+      "ms": "He loses far more than he drinks, so it can’t all be his drinks. The extra water comes out of his own body.",
+      "college": "Stool output exceeds intake many times over, so this is not just failed absorption: there is active secretion into the lumen. The water balance readout shows the deficit."
+     }
+    },
+    {
+     "id": "colon",
+     "text": {
+      "ms": "His large bowel has stopped soaking water back up.",
+      "college": "The colon has stopped absorbing water."
+     },
+     "reconcile": {
+      "ms": "The large bowel still works, and can soak up a few litres a day. The trouble is that far more than that arrives from the small intestine above it.",
+      "college": "The colon can salvage several litres a day, but the small intestine is delivering more than that maximum. The colon is overwhelmed, not broken."
+     }
+    },
+    {
+     "id": "secrete",
+     "text": {
+      "ms": "From his blood: the gut lining pumps salt into the gut, and water follows the salt.",
+      "college": "Active chloride secretion by the small intestine, with water following from the blood."
+     },
+     "reconcile": {
+      "ms": "Yes. The toxin switches on a salt pump in the gut lining and keeps it on. Salt pours into the gut, water follows it out of his blood, and he loses litres a day. That is why he can get dehydrated so fast.",
+      "college": "Yes. The toxin keeps cAMP high in enterocytes: CFTR chloride channels stay open (secretion) and NHE3 is inhibited (less sodium absorption). Water follows the salt out of the extracellular fluid, so stool output outruns colonic salvage and the body loses water quickly."
+     }
+    }
+   ],
+   "correct": "secrete",
+   "watch": [
+    "stool",
+    "bal",
+    "bristol"
+   ],
+   "expect": {
+    "stool": "up",
+    "bal": "down",
+    "bristol": "up"
+   },
+   "deeper": "Cholera toxin ADP-ribosylates Gsα, locking adenylyl cyclase on; the rise in cAMP activates PKA, which opens apical CFTR (Cl⁻ secretion from crypts) and inhibits NHE3-mediated Na⁺ absorption in villi. The epithelium is not damaged, so Na⁺–glucose cotransport through SGLT1 still works: the basis of oral rehydration. The stool is isotonic with high Na⁺ and K⁺ and bicarbonate loss, so untreated cases develop hypovolaemic shock, hypokalaemia and a metabolic acidosis. Sources: Boron and Boulpaep, 3rd ed., ch. 44; Guyton and Hall, 14th ed., ch. 66.",
+   "sources": [
+    "boron3",
+    "guyton14"
+   ],
+   "leadsTo": [
+    "cholera-shock"
+   ]
+  },
+  {
+   "id": "gut-ors",
+   "scenario": "ors",
+   "title": {
+    "ms": "A cheap drink that saves lives",
+    "college": "Salt and sugar in clean water"
+   },
+   "background": [
+    "digest"
+   ],
+   "setting": {
+    "ms": "Amir still has the toxin in his gut. The nurse gives him a drink of clean water with a little salt and a little sugar in it, and he sips it all day.",
+    "hs": "Amir still has the toxin in his gut, so the salt pump is still switched on. He is given oral rehydration solution: clean water with sodium and glucose in measured amounts, and he drinks it steadily.",
+    "college": "The same patient, toxin still present, is given oral rehydration solution (sodium and glucose in near-equimolar amounts) and drinks it continuously.",
+    "phd": "The same patient on reduced-osmolarity oral rehydration solution (Na⁺ 75 mmol/L, glucose 75 mmol/L), toxin still active."
+   },
+   "ask": {
+    "ms": "What does the drink do?",
+    "college": "How does oral rehydration change the picture?"
+   },
+   "hypotheses": [
+    {
+     "id": "worse",
+     "text": {
+      "ms": "It makes the diarrhoea worse: more water in means more water out.",
+      "college": "It worsens the diarrhoea: added fluid simply runs through."
+     },
+     "reconcile": {
+      "ms": "Plain water would mostly run through. The salt and sugar together change that: they are taken in by a pump the toxin doesn’t switch off, and water follows them into the body.",
+      "college": "Without solute coupling, much of the fluid would be lost. Na⁺–glucose cotransport is intact, so water is absorbed with the solute and balance turns positive."
+     }
+    },
+    {
+     "id": "stops",
+     "text": {
+      "ms": "It stops the diarrhoea by fixing the gut.",
+      "college": "It stops the secretion and cures the diarrhoea."
+     },
+     "reconcile": {
+      "ms": "The diarrhoea goes on, because the toxin is still there. The drink doesn’t stop the water coming out; it puts more water back in than comes out.",
+      "college": "Secretion continues while the toxin acts: stool output stays high. ORS works by replacing the loss, not by stopping it."
+     }
+    },
+    {
+     "id": "replace",
+     "text": {
+      "ms": "The diarrhoea goes on, but the body takes in more water than it loses.",
+      "college": "Stool output stays high, but absorption outpaces loss: water balance turns positive."
+     },
+     "reconcile": {
+      "ms": "Yes. Sugar and salt are carried into the gut lining together by a pump that still works, and water follows them. He still has diarrhoea, but now he takes in more water than he loses, so he doesn’t dry out.",
+      "college": "Yes. SGLT1 couples Na⁺ and glucose uptake and is untouched by cAMP, so water follows the absorbed solute. Stool output is still raised, but the balance readout turns positive. This is why ORS cut cholera deaths so sharply."
+     }
+    }
+   ],
+   "correct": "replace",
+   "watch": [
+    "stool",
+    "bal",
+    "scfa"
+   ],
+   "expect": {
+    "stool": "up",
+    "bal": "up"
+   },
+   "deeper": "Two glucose-coupled Na⁺ ions per SGLT1 cycle carry water both osmotically and, it has been argued, by cotransport; the transporter is independent of the cAMP pathway that drives secretion. Reduced-osmolarity ORS (245 mOsm/L, WHO 2002) lowers stool output and the need for unscheduled intravenous fluid compared with the older 311 mOsm/L formula. Severe dehydration still needs intravenous fluid first. Sources: Boron and Boulpaep, 3rd ed., ch. 44; Guyton and Hall, 14th ed., ch. 66.",
+   "sources": [
+    "boron3",
+    "guyton14"
+   ],
+   "leadsTo": [
+    "cholera-shock"
+   ]
+  },
+  {
+   "id": "gut-lactose",
+   "scenario": "lactose",
+   "title": {
+    "ms": "A big glass of milk",
+    "college": "A glass of milk without lactase"
+   },
+   "background": [
+    "digest",
+    "axis"
+   ],
+   "setting": {
+    "ms": "Lin, 22, rarely drinks milk. Like most adults in the world, her gut no longer makes much of the enzyme that splits milk sugar. Today she drinks a big glass of milk.",
+    "hs": "Lin, 22, has lactase non-persistence: like most adults worldwide, her small intestine makes little lactase, the enzyme that splits lactose into glucose and galactose. She drinks a large glass of milk.",
+    "college": "A 22-year-old with lactase non-persistence (low brush-border lactase) drinks about 500 mL of milk, roughly 25 g of lactose.",
+    "phd": "A 22-year-old with adult-type hypolactasia ingests ~25 g of lactose in milk; no small-intestinal disease."
+   },
+   "ask": {
+    "ms": "What happens to the milk sugar?",
+    "college": "What happens to the lactose, and what would a breath test show?"
+   },
+   "hypotheses": [
+    {
+     "id": "allergy",
+     "text": {
+      "ms": "Her immune system attacks the milk, like an allergy.",
+      "college": "An immune reaction to milk protein."
+     },
+     "reconcile": {
+      "ms": "That is milk allergy, which is something different. Here nothing is wrong with her immune system: she just can’t split the sugar.",
+      "college": "Cow’s milk protein allergy is immune-mediated. Lactose intolerance is a sugar-handling problem: no immune reaction is involved."
+     }
+    },
+    {
+     "id": "pass",
+     "text": {
+      "ms": "The sugar just passes through and comes out unchanged.",
+      "college": "The lactose passes out in the stool unchanged."
+     },
+     "reconcile": {
+      "ms": "It doesn’t get that far unchanged. When it reaches the large bowel, the bacteria there eat it.",
+      "college": "Colonic bacteria ferment almost all of it before it can be excreted, which is why breath hydrogen rises and stool pH falls."
+     }
+    },
+    {
+     "id": "ferment",
+     "text": {
+      "ms": "It reaches the large bowel, where bacteria eat it and make gas, and stools get looser.",
+      "college": "Unabsorbed lactose reaches the colon: fermentation, hydrogen on the breath, acidic and looser stools."
+     },
+     "reconcile": {
+      "ms": "Yes. The sugar isn’t taken in, so it carries on to the large bowel. Bacteria there eat it and make gas, including hydrogen, which goes into her blood and out in her breath. The sugar also holds water in the gut, so stools get looser.",
+      "college": "Yes. Lactose stays in the lumen, holding water osmotically, and colonic bacteria ferment it to short-chain fatty acids, hydrogen, CO₂ and methane. Breath H₂ rises (> 20 ppm is the usual positive test), stool pH falls and stools loosen."
+     }
+    }
+   ],
+   "correct": "ferment",
+   "watch": [
+    "h2",
+    "scfa",
+    "fph",
+    "stool"
+   ],
+   "expect": {
+    "h2": "up",
+    "scfa": "up",
+    "fph": "down",
+    "stool": "up"
+   },
+   "deeper": "Lactase (LCT) expression falls after weaning in most mammals; persistence into adulthood is due to cis-regulatory variants upstream of LCT (e.g. −13910 C>T in Europeans), under strong recent selection in dairying populations. Symptoms depend on the dose, gastric emptying and colonic adaptation: many people with non-persistence tolerate ~12 g of lactose (a glass of milk) with little trouble. A hydrogen breath test rise of ≥ 20 ppm over baseline is positive; methane producers can give false negatives. Sources: Boron and Boulpaep, 3rd ed., ch. 45; den Besten et al. 2013.",
+   "sources": [
+    "boron3",
+    "denbesten2013"
+   ],
+   "leadsTo": []
+  }
+ ],
  "alter": {
   "title": "Your gut",
   "healthy": "A healthy gut eating a mixed meal: nothing changed yet. Anything you change in a section shows up here, with the other sections it reaches.",
@@ -2201,6 +2484,7 @@ function renderAlter(){
     putHTML(panel, `<p class="alt-scen-h">Start from a ready-made case. It replaces your current changes.</p><div class="alt-scen-list">${scs.map(sc =>
       `<button type="button" data-alt-scen="${esc(sc.id)}" aria-pressed="${!!(on && on.id === sc.id)}"><b>${esc(sc.name)}</b><span>${esc(levelText(sc))}</span></button>`).join("")}</div>`);
   }
+  syncPredict(on);
 }
 /* the address bar carries the reading level, the hour and the changes, so a set-up can be shared */
 function urlParams(){
@@ -2253,7 +2537,7 @@ function shareURL(){
 }
 /* every control in the sections, so a settings file brings back views the URL doesn't carry */
 const ctlRoots = () => $$("[data-section]").map(s => [s.id, s]);
-const ctlSkip = n => n.closest("[data-inspector], [data-because], [data-lens], .op-alter");
+const ctlSkip = n => n.closest("[data-inspector], [data-because], [data-lens], [data-predict], .op-alter");
 const radios = s => $$("[role=radiogroup]", s).filter(n => !ctlSkip(n));
 const tabs = s => $$("[role=tab][aria-selected]", s).filter(n => !ctlSkip(n));
 const toggles = s => $$("button[aria-pressed]", s).filter(n => !ctlSkip(n) && !n.closest("[role=radiogroup]"));
@@ -2349,6 +2633,159 @@ function mountExport(){
   });
 }
 
+/* ---------- predict: commit to a hypothesis, then watch the page's own model ----------
+   Content questions = [{
+     id, scenario,                 an alter.scenarios id: "Run it" applies it like the Scenarios menu
+     title, setting, ask,          levels: a short headline, the case (no diagnosis named), the question
+     background: [section id],     "Read first" links to the sections the question needs
+     hypotheses: [{id, text, reconcile}],   3–4 choices, the common wrong intuition first
+     correct,                      the hypothesis id the model bears out
+     watch: [key],                 readouts to show and light up: a data-ro key, ro-<key> / pro-<key> id,
+                                   a hero data-stat id, or a figure id
+     expect: {key: "up" | "down" | "same"},  how each watched readout moves against the healthy page
+                                   ("same" when a treatment brings it back to normal). Name only
+                                   readouts that settle: a live trace's value (a firing neuron's
+                                   voltage) wanders. tests/questions-check.mjs checks each one.
+     deeper, sources: [id],        the PhD / MD paragraph and its fact-check/sources.json ids
+     leadsTo: [case id]            converging cases on ../explore/questions.html
+   }]
+   The engine adds a "Predict" section before #systems. Answers are kept in localStorage
+   ("humanphysiology.questions": {id: {choice, page, t}}), so the hub can mark them done. */
+const QKEY = "humanphysiology.questions", HUB = "../explore/questions.html";
+const questions = () => get("questions") || [];
+const qState = {};
+let qLast = null, qOn = undefined;
+function qDone(){ try { const d = JSON.parse(storage.get(QKEY) || "{}"); return d && typeof d === "object" ? d : {}; } catch(e){ return {}; } }
+function qSave(id, choice){
+  const d = qDone();
+  if (choice) d[id] = { choice, page: META.id, t: Date.now() }; else delete d[id];
+  storage.set(QKEY, JSON.stringify(d));
+}
+function findWatch(k){
+  const n = document.querySelector(`[data-ro="${CSS.escape(k)}"]`) || document.getElementById("ro-" + k) || document.getElementById("pro-" + k)
+    || document.querySelector(`[data-stat="${CSS.escape(k)}"]`) || document.getElementById(k);
+  if (!n) return null;
+  const tile = n.closest(".ro, .stat");
+  const box = tile || n.closest(".panel") || n;
+  const v = tile ? (n === tile ? $(".v", tile) : n) : null;
+  const label = tile ? ($(".l", tile) || {}).textContent : (n.dataset.exportName || n.getAttribute("aria-label") || k);
+  return { node: n, box, v, label: String(label || k).trim(), section: (n.closest("[data-section]") || {}).id };
+}
+function buildPredict(){
+  if (!questions().length) return;
+  CONTENT.sections ||= {};
+  CONTENT.sections.predict ||= {
+    nav: "Predict", kicker: "Predict, then watch", title: "What do you think will happen?",
+    intro: { ms: "Each question tells you about a person. Pick what you think will happen, then run this page's own model and see if you were right.",
+             college: "Each question sets up a case without naming it. Commit to a prediction, then run the case on this page's models: the dashed healthy traces and the ▲/▼ readouts show what changed, and the explanation says why your choice holds or where it fails." } };
+  let sec = $("#predict");
+  if (!sec){
+    sec = document.createElement("section");
+    sec.className = "sec wrap"; sec.id = "predict"; sec.setAttribute("data-section", "");
+    sec.innerHTML = `<div class="sec-head"><p class="kicker" data-kicker></p><h2 data-title></h2><p class="prose" data-text="sections.predict.intro"></p></div><div class="q-list" data-predict></div>`;
+    const before = $("#systems") || $(".foot");
+    before ? before.before(sec) : $("main").appendChild(sec);
+  }
+  const host = $("[data-predict]", sec) || sec;
+  host.setAttribute("data-predict", "");
+  host.innerHTML = questions().map(q => `<article class="q" id="q-${esc(q.id)}" data-q="${esc(q.id)}"></article>`).join("") + `<p class="q-hub muted" data-q-hub></p>`;
+  const qOf = n => { const c = n.closest("[data-q]"); return c && questions().find(q => q.id === c.dataset.q); };
+  host.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const q = qOf(b); if (!q) return;
+    const st = qState[q.id];
+    if (b.dataset.qPick && !st.ran){ st.choice = b.dataset.qPick; renderPredict(); const n = $(`[data-q-pick="${CSS.escape(st.choice)}"]`, host.querySelector(`[data-q="${CSS.escape(q.id)}"]`)); if (n) n.focus(); }
+    else if (b.hasAttribute("data-q-run") && st.choice){ st.ran = true; qSave(q.id, st.choice); runQuestion(q, true); }
+    else if (b.hasAttribute("data-q-again")) runQuestion(q, false);
+    else if (b.hasAttribute("data-q-over")){ const card = b.closest("[data-q]"); qState[q.id] = { choice: null, ran: false }; qSave(q.id, null); if (qLast === q.id) qLast = null; renderPredict(); const n = $("[data-q-pick]", card); if (n) n.focus(); }
+    else if (b.dataset.qGo){ const w = findWatch(b.dataset.qGo); if (w){ w.box.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" }); flash([w.box]); } }
+  });
+  host.addEventListener("keydown", e => {
+    const b = e.target.closest("[data-q-pick]"); if (!b || b.disabled) return;
+    const k = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]; if (!k) return;
+    e.preventDefault();
+    const all = $$("[data-q-pick]", b.parentNode), n = all[(all.indexOf(b) + k + all.length) % all.length];
+    n.click();
+  });
+}
+function flash(boxes){
+  boxes.forEach(n => { n.classList.remove("q-flash"); void n.getBoundingClientRect(); n.classList.add("q-flash"); setTimeout(() => n.classList.remove("q-flash"), 1900); });
+}
+function runQuestion(q, first){
+  applyScenario(q.scenario); scenOpen = false; qLast = q.id; qOn = undefined;
+  altered();
+  const card = $(`[data-q="${CSS.escape(q.id)}"]`);
+  const res = card && $(".q-res", card);
+  if (res && first) res.focus({ preventScroll: true });
+  flash((q.watch || []).map(findWatch).filter(Boolean).map(w => w.box));
+}
+const qText = v => text(v);
+function cardHTML(q, i, n, st, live){
+  const hs = q.hypotheses || [], chosen = hs.find(h => h.id === st.choice), ok = st.choice === q.correct;
+  const bg = (q.background || []).filter(s => document.getElementById(s));
+  const choices = hs.map(h => {
+    const tags = st.ran ? `${h.id === q.correct ? `<em>What happens</em>` : ""}${h.id === st.choice && h.id !== q.correct ? `<em class="yours">Your prediction</em>` : ""}` : "";
+    const tab = (st.choice ? h.id === st.choice : h === hs[0]) ? 0 : -1;
+    return `<button type="button" role="radio" aria-checked="${h.id === st.choice}" tabindex="${tab}" data-q-pick="${esc(h.id)}"${st.ran ? " disabled" : ""}><i></i><span>${qText(h.text)}</span>${tags}</button>`;
+  }).join("");
+  const act = st.ran
+    ? `<button type="button" class="alt-btn${live ? "" : " strong"}" data-q-again${live ? " disabled" : ""}>${live ? "Running on the page now" : "Run it again"}</button><button type="button" class="alt-btn" data-q-over>Start over</button>`
+    : `<button type="button" class="q-run" data-q-run${st.choice ? "" : " disabled"}>Run it</button><span class="muted small">${st.choice ? "Your choice is locked once it runs." : "Pick what you think will happen first."}</span>`;
+  let res = "";
+  if (st.ran && chosen){
+    const watch = (q.watch || []).filter(k => findWatch(k));
+    const others = hs.filter(h => h !== chosen);
+    const next = questions()[i + 1];
+    const deep = q.deeper ? `<details class="q-more"${state.level === "phd" ? " open" : ""}><summary>Deeper (PhD / MD)</summary><p class="prose">${text(q.deeper)}</p></details>` : "";
+    res = `<div class="q-res" tabindex="-1">
+      <p class="q-verdict ${ok ? "ok" : "no"}"><i></i>${ok ? "Your prediction holds." : "The model shows something else."}</p>
+      <p class="prose">${qText(chosen.reconcile)}</p>
+      ${watch.length ? (live ? `<p class="q-sub">Watch, compared with a healthy one</p><div class="q-ros" data-q-mirror></div>` : `<p class="muted small" style="margin:10px 0 0">The page has changed since. Run it again to see the readouts.</p>`) : ""}
+      ${others.length ? `<details class="q-more"><summary>The other choices</summary>${others.map(h => `<p class="q-other"><b>${qText(h.text)}</b>${qText(h.reconcile)}</p>`).join("")}</details>` : ""}
+      ${deep}
+      <div class="q-next">${next ? `<a class="chip" href="#q-${esc(next.id)}">Next question ›</a>` : ""}${(q.leadsTo || []).map(c => `<a class="chip" href="${esc(HUB)}?level=${esc(state.level)}#case-${esc(c)}">Where this leads: a case across organs ›</a>`).join("")}<a class="chip" href="${esc(HUB)}?level=${esc(state.level)}">All questions ›</a></div>
+    </div>`;
+  }
+  return `<p class="q-kick">Question ${i + 1} of ${n}${st.ran ? " · <b>done</b>" : ""}</p>
+    <h3 class="q-title">${qText(q.title)}</h3>
+    ${bg.length ? `<p class="q-bg"><span>Read first</span>${bg.map(s => `<a class="chip" href="#${esc(s)}">${esc(secName(s))}</a>`).join("")}</p>` : ""}
+    <p class="prose">${qText(q.setting)}</p>
+    <p class="q-ask">${qText(q.ask)}</p>
+    <div class="q-choices" role="radiogroup" aria-label="Your prediction">${choices}</div>
+    <div class="q-act">${act}</div>${res}`;
+}
+function renderPredict(){
+  const host = $("[data-predict]"); if (!host) return;
+  const qs = questions(), done = qDone(), on = qOn || null;
+  qs.forEach((q, i) => {
+    const st = qState[q.id] ||= done[q.id] && (q.hypotheses || []).some(h => h.id === done[q.id].choice) ? { choice: done[q.id].choice, ran: true } : { choice: null, ran: false };
+    const card = $(`[data-q="${CSS.escape(q.id)}"]`, host); if (!card) return;
+    putHTML(card, cardHTML(q, i, qs.length, st, !!(st.ran && on && on.id === q.scenario)));
+  });
+  const hub = $("[data-q-hub]", host);
+  if (hub) putHTML(hub, `More questions, and cases that follow one person across several organs, are on the <a href="${esc(HUB)}?level=${esc(state.level)}">questions page</a>.`);
+  updateMirror();
+}
+/* the watched readouts, mirrored live into the card of the question that is running */
+function updateMirror(){
+  const q = qLast && questions().find(x => x.id === qLast);
+  const box = q && $(`[data-q="${CSS.escape(q.id)}"] [data-q-mirror]`);
+  $$(".q-lit").forEach(n => n.classList.remove("q-lit"));
+  if (!q || !box) return;
+  const ws = (q.watch || []).map(k => [k, findWatch(k)]).filter(([, w]) => w);
+  ws.forEach(([, w]) => w.box.classList.add("q-lit"));
+  putHTML(box, ws.map(([k, w]) => w.v
+    ? `<button type="button" class="q-ro" data-q-go="${esc(k)}" title="Show it in ${esc(secName(w.section))}"><span class="l">${esc(w.label)}</span><span class="v">${w.v.innerHTML}</span></button>`
+    : `<button type="button" class="q-ro fig" data-q-go="${esc(k)}"><span class="l">Figure</span><span class="v">${esc(w.label)} ›</span></button>`).join(""));
+}
+function syncPredict(on){
+  if (!$("[data-predict]")) return;
+  if (on === undefined) on = ALT && changed() ? activeScenario() : null;
+  const id = on ? on.id : null;
+  if (qOn === undefined || (qOn ? qOn.id : null) !== id){ qOn = on; renderPredict(); }
+  else updateMirror();
+}
+
 /* ---------- glossary tooltips ---------- */
 function bindGlossary(){
   const show = n => { const g = GLOSSARY[n.dataset.term]; if (g) showTip(n, `<b>${esc(n.dataset.term)}</b> · ${esc(g.def)}`); };
@@ -2364,9 +2801,9 @@ function start(){
   document.title = `${META.name} · HumanPhysiology`;
   document.body.appendChild(tip);
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
-  buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
+  buildPredict(); buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
   bindParts(); bindGlossary();
-  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); };
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); renderPredict(); };
   subscribe((s, p) => {
     if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
     if (s.level !== p.level || s.hour !== p.hour) writeURL();
@@ -2398,6 +2835,7 @@ return {
   vitals: () => PHASE_BY_ID[state.phase].vitals,
   inspector: (node, extra) => { node.__extra = extra; },
   alter, altered, fill, changed, delta,
+  predict: { questions, find: findWatch, done: qDone },
   hold, step, exportData, exportLengths
 };
 })();

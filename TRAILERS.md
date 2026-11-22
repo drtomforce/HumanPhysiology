@@ -1,104 +1,126 @@
-Six cinematic, trailer-style scripts designed for a deep, resonant voiceover (think Don LaFontaine or modern epic sci-fi/documentary trailers). Each short feature script runs roughly **15–25 seconds** (ideal for YouTube Shorts/Teasers and clean `.webm` screen-capture exports), while the main overview trailer runs **45–60 seconds**.
+# Trailers
 
-*(Note: Because the live GitHub Pages site isn't indexed for direct crawling, the specific interactive modules below are tailored around the core cardiovascular, neurophysiology, experimentation, and verification architecture indicated by your key phrases—you can easily swap in exact module names from your UI if needed.)*
+Six trailer scripts for HumanPhysiology: one overview (~50 s) and five feature spots (~18–20 s each, sized for YouTube Shorts and social teasers). Every shot is a real screen in the app, and every line of narration is true of it.
 
----
-
-## Video 1: The Overview Trailer (All Main Features)
-
-**Target Length:** ~50 seconds
-
-**Pacing:** Slow build, dramatic pauses, rising orchestral/synth tension, sudden silence on key punches.
-
-| Visual Cue (Screen Recording / WebM Export) | Voiceover (Deep, Cinematic Male Voice) |
-| --- | --- |
-| **** Fade in from black. Slow zoom on the landing page title and scientific emblem. Low bass rumble. | **VOICEOVER:** *(Low, gravelly)* Initiated by scientists at Karolinska Institutet... home of the Nobel Prize. |
-| **** Fast cuts of the interactive human body interface—zooming into the beating heart and firing neural pathways. | A new frontier awaits. Dare to... **explore the mysteries of the human body.** |
-| **** Cursor clicks into an interactive simulation. Sliders adjust heart rate and neural impulses; real-time waveforms respond. | Forget passive memorization. Here, you **learn the way scientists do—by experimentation.** |
-| **** Split-screen view: an interactive brain-heart connection model pulses in sync with live physiological graphs. | Unlock a deeper **understanding of the heart, the brain, and their intersection.** |
-| **** Rapid UI showcase: clicking a claim opens the verification badge, revealing peer-reviewed citations and primary literature links. | Every simulation **uses scientific sources.** Backed by an **elaborate fact check system**... and instant **look-up of primary sources.** |
-| **** Dynamic montage of quizzes, interactive challenges, and smooth `.webm` visual feedback. Upbeat percussion kicks in. | Rigorous. Interactive. Undeniably **fun and entertaining.** |
-| **** Hard cut to black. The URL fades in cleanly on screen. Final deep bass hit. | **Human Physiology.** Step inside the lab. *(Pause)* Available now. |
+**Voice:** deep, resonant and unhurried, close to the mic (the gender is your choice). Leave a half-second breath before each **bold** phrase, and let each sentence end on a falling note.
+**Pace:** about 2.3 words a second including pauses. Each spot's word count is listed so the read fits the picture.
+**Footage:** most shots can come straight from the app's own **Export → Animations** (WebM), which renders frame by frame with the clock held, so it comes out smooth. Use a 60 fps screen recording for cursor work (sliders, menus, clicks). The shot list at the end gives the link that opens each shot.
 
 ---
 
-## Video 2: Feature 1 — Interactive Experimentation Lab
+## 1. Overview — "Step inside"
 
-**Target Length:** ~20 seconds
+**Length:** ~50 s · **VO:** ~95 words · **Music:** slow build under a sub-bass drone, a hard stop before the final card.
 
-**Focus:** Hands-on simulations and learning by doing.
-
-| Visual Cue (Screen Recording / WebM Export) | Voiceover (Deep, Cinematic Male Voice) |
-| --- | --- |
-| **** Close-up of a physiological parameter slider being dragged up. Real-time graphs spike dramatically. | **VOICEOVER:** Textbooks give you static answers. Science demands action. |
-| **** Cursor triggers a physiological stressor in the app; variables shift, and the system reacts dynamically. | Step into a virtual laboratory designed to **explore the mysteries of the human body.** |
-| **** Fast montage of tweaking variables, running trials, and observing instant visual outcomes. | Test hypotheses. Push the limits. **Learn the way scientists do—by experimentation.** |
-| **** Clean cut to logo and URL. | Experience **Human Physiology** today. |
-
----
-
-## Video 3: Feature 2 — The Heart, The Brain & Their Intersection
-
-**Target Length:** ~20 seconds
-
-**Focus:** Core physiological modules (cardiovascular + neurophysiology + autonomic control).
-
-| Visual Cue (Screen Recording / WebM Export) | Voiceover (Deep, Cinematic Male Voice) |
-| --- | --- |
-| **** Rhythmic heartbeat sound effect syncs with a glowing ECG waveform on screen. | **VOICEOVER:** Two master systems. One intricate web of life. |
-| **** Camera pans from the cardiac module to neural signaling pathways, highlighting vagal/sympathetic feedback loops. | Dive deep into the mechanics of human survival—and gain a true **understanding of the heart, the brain, and their intersection.** |
-| **** Both systems pulse together in real time as the user toggles autonomic responses. | See how every beat... and every thought... are connected. |
-| **** Clean cut to logo and URL. | **Human Physiology.** Decode the system. |
+| Time | Shot | Voiceover |
+| --- | --- | --- |
+| 0:00–0:06 | Black. Fade up on the see-through body asleep at 03:00. The hypnogram glows above the timeline, and Zzz float. | Twenty-four hours. One human body. |
+| 0:06–0:13 | The clock scrubs from sleep through breakfast to the evening run. The heart speeds up, the ECG races and the legs flush red. | Every beat, every breath, every hormone, **running live.** |
+| 0:13–0:20 | *Follow a nerve impulse*: "Vagus → heart" in bullet time. Transmitter puffs across the synapse, and the next beat comes late. | Ride a single nerve impulse into the heart, and feel it **slow the next beat.** |
+| 0:20–0:28 | Heart page: block the proximal RCA on the 3D heart. The wall darkens, the ST segments rise on the 12-lead and the "Because of …" notes appear. | Block one artery. Watch the whole heart answer. Here you **learn the way scientists do: by experimentation.** |
+| 0:28–0:35 | A Predict card. A choice is picked, *Run it*, and the lit-up readouts move against the dashed healthy trace. | Make a prediction. Run it. See exactly where your intuition held, or broke. |
+| 0:35–0:43 | The shield button opens the fact-check grid: squares fill by page and section. Cut to a selected sentence → *Report this*. | Every claim is checked against sources, with an **elaborate fact check system** you can see for yourself. |
+| 0:43–0:47 | The reading level flips from Middle school to PhD / MD on the same card. | From your first biology class to medical school. |
+| 0:47–0:50 | Hard cut to black. Title and URL. One bass hit. | **Human Physiology.** *(beat)* Step inside. |
 
 ---
 
-## Video 4: Feature 3 — Nobel-Rooted Scientific Rigor & Fact-Checking
+## 2. Feature — Experimentation
 
-**Target Length:** ~20 seconds
+**Length:** ~20 s · **VO:** ~42 words
 
-**Focus:** Credibility, Karolinska heritage, and the built-in fact-check engine.
-
-| Visual Cue (Screen Recording / WebM Export) | Voiceover (Deep, Cinematic Male Voice) |
-| --- | --- |
-| **** Dramatic spotlight reveal on the project's academic roots and scientific framework. | **VOICEOVER:** In a world full of noise... truth is non-negotiable. |
-| **** Cursor hovers over a complex physiological statement; an **elaborate fact check system** overlay illuminates the screen. | **Initiated by scientists at Karolinska Institutet, home of the Nobel Prize**, this platform **uses scientific sources** at every turn. |
-| **** Checkmarks and verification tiers cascade down a module page. | Protected by an **elaborate fact check system** you can trust. |
-| **** Clean cut to logo and URL. | **Human Physiology.** Science, verified. |
+| Time | Shot | Voiceover |
+| --- | --- | --- |
+| 0:00–0:05 | Heart page, close on the pressure–volume loop. Drag the contractility slider, and the loop swells as the Wiggers traces follow. | A textbook shows you the answer. This lets you change the question. |
+| 0:05–0:11 | Lungs page: *Scenarios → Summit of Everest*. PaO₂ falls, ventilation climbs, and the ▼/▲ readouts tick against the dashed healthy reference. | Climb Everest. Hold your breath. Push a system and watch it fight back. |
+| 0:11–0:17 | Liver page: *The same overdose, NAC at 8 hours*. The glutathione store holds and the cells-lost curve flattens. | **Learn the way scientists do: by experimentation.** |
+| 0:17–0:20 | Title and URL. | **Human Physiology.** Change something. |
 
 ---
 
-## Video 5: Feature 4 — Instant Primary Source Look-Up
+## 3. Feature — The heart, the brain and their intersection
 
-**Target Length:** ~18 seconds
+**Length:** ~20 s · **VO:** ~40 words
 
-**Focus:** Transparency, citations, and direct access to foundational research.
-
-| Visual Cue (Screen Recording / WebM Export) | Voiceover (Deep, Cinematic Male Voice) |
-| --- | --- |
-| **** Tight zoom on a data point inside a simulation. A citation icon pulses. | **VOICEOVER:** Don't just take our word for it. Trace the discovery back to its origin. |
-| **** Click! A clean drawer slides open, displaying original peer-reviewed papers, DOIs, and primary study data. | With seamless **look-up of primary sources**, every concept connects directly to the groundbreaking research behind it. |
-| **** Rapid scrolling through verified references and foundational studies. | Built for the curious. Trusted by scholars. |
-| **** Clean cut to logo and URL. | **Human Physiology.** Go straight to the source. |
+| Time | Shot | Voiceover |
+| --- | --- | --- |
+| 0:00–0:05 | Body with the nervous system live, at rest. Vagal volleys fire on each out-breath, and the ECG speeds up and slows down with breathing. | Your heart listens to your brain on every breath. |
+| 0:05–0:11 | *Follow a nerve impulse*: "Sympathetic → heart". The next beat comes early. Then the adrenaline cascade from the adrenal gland. | One nerve slows it. Another speeds it. A hormone takes over. |
+| 0:11–0:17 | Brain page: *Stroke: left middle cerebral artery*. The territory darkens on the circle of Willis, and the deficits are listed. | Gain a real **understanding of the heart, the brain, and their intersection.** |
+| 0:17–0:20 | Title and URL. | **Human Physiology.** |
 
 ---
 
-## Video 6: Feature 5 — Gamified & Entertaining Discovery
+## 4. Feature — Science, verified
 
-**Target Length:** ~18 seconds
+**Length:** ~20 s · **VO:** ~40 words
 
-**Focus:** Engagement, intuitive UI, and making complex science genuinely enjoyable.
-
-| Visual Cue (Screen Recording / WebM Export) | Voiceover (Deep, Cinematic Male Voice) |
-| --- | --- |
-| **** Fast-paced, energetic cuts of interactive puzzles, instant feedback animations, and sleek UI transitions. | **VOICEOVER:** Who said elite science had to be dry? |
-| **** A user solves an interactive physiological challenge; a sleek confirmation animation plays. | Crafted to be **fun and entertaining**, every module turns complex biology into an addictive journey of discovery. |
-| **** Quick montage of exploring different organs, zooming, clicking, and mastering concepts effortlessly. | **Explore the mysteries of the human body**—and enjoy every second of it. |
-| **** Clean cut to logo and URL. | **Human Physiology.** Play. Experiment. Master. |
+| Time | Shot | Voiceover |
+| --- | --- | --- |
+| 0:00–0:05 | The main page header. The cursor finds the shield button and clicks. | Simplified is fine. Wrong is not. |
+| 0:05–0:12 | `fact-check.html`: the grid of squares, one per checked claim, coloured by how it was checked. Zoom in to a "Looked up" row. | An **elaborate fact check system** tracks every claim, page by page, and shows how each one was checked. |
+| 0:12–0:17 | Select a sentence on an organ page → *Report this* → the form, ready to file as a GitHub issue. | Spot a mistake? Flag it in two clicks. |
+| 0:17–0:20 | Title and URL. | **Human Physiology.** Science, in the open. |
 
 ---
 
-### Production & `.webm` Export Tips for Voiceover Sync
+## 5. Feature — Primary sources
 
-* **Recording Frame Rate:** Capture your browser interactions at **60 fps** so slider movements, ECG waves, and `.webm` exports look silky smooth when slowed down slightly (e.g., 85% speed) to match the dramatic trailer pacing.
-* **Voice Direction Notes:** Instruct the voice actor (or TTS prompt) to use **close-mic proximity effect**, deliberate **0.5-second pauses** before the bolded key phrases, and a subtle downward inflection at the end of every sentence.
-* **Audio Mix:** Layer a low sub-bass drone (`40–60 Hz`) underneath the voiceover, punctuated by subtle UI whooshes or a muted heartbeat pulse whenever the screen transitions.
+**Length:** ~18 s · **VO:** ~36 words
+
+| Time | Shot | Voiceover |
+| --- | --- | --- |
+| 0:00–0:05 | Predict card, after answering: open *Deeper*, which ends by naming its sources. | Don't take our word for it. |
+| 0:05–0:13 | The fact-check page: a "Looked up" row with its source link and the verbatim quote it was checked against. | The app **uses scientific sources**, with **look-up of primary sources**: the link, the page, the exact words. |
+| 0:13–0:18 | Title and URL. | **Human Physiology.** Go to the source. |
+
+---
+
+## 6. Feature — Fun and entertaining
+
+**Length:** ~18 s · **VO:** ~38 words · **Music:** brighter and percussive.
+
+| Time | Shot | Voiceover |
+| --- | --- | --- |
+| 0:00–0:05 | Quick cuts of the rides: the camera rides a red cell through the lungs, a bite of toast becomes glucose, a splinter's bacteria meet a neutrophil swarm. | Ride a red blood cell. Follow a bite of breakfast. Fight off a splinter. |
+| 0:05–0:12 | Kidneys page, Predict: "Sam ran for two hours on a hot afternoon…" A choice, *Run it*, and the explanation opens for that answer. | Guess what happens next, then watch it play out. It's **fun and entertaining**, and it's real physiology. |
+| 0:12–0:15 | *Follow a step* in bullet time: the foot lands and the tibia glows with strain. | **Explore the mysteries of the human body.** |
+| 0:15–0:18 | Title and URL. | **Human Physiology.** |
+
+---
+
+## Shot list
+
+Site: `https://drtomforce.github.io/HumanPhysiology/`. Organ-page links are what *Copy link* gives after you pick the scenario. If a link stops working after a nightly build, pick the scenario again and copy the new link.
+
+| Video | Shot | Link / how |
+| --- | --- | --- |
+| 1 | Body asleep | `index.html?hour=3` |
+| 1 | Run | `index.html?hour=18`, or scrub the clock |
+| 1 | Vagus → heart | `index.html?ride=impulse:vagusHeart` |
+| 1 | RCA block | `organs/heart.html?occl=rcaProx` (*Inferior heart attack*) |
+| 1, 6 | Predict cards | Each organ page's *Predict* section, or `explore/questions.html` |
+| 1, 4, 5 | Fact check | Shield button, or `fact-check.html` |
+| 2 | PV loop | `organs/heart.html`, the contractility slider |
+| 2 | Everest | `organs/lungs.html?alt=8848` |
+| 2 | Paracetamol + NAC | `organs/liver.html?para=24&nac=8` |
+| 3 | Vagal volleys | `index.html?live=nervous` at rest |
+| 3 | Sympathetic → heart | `index.html?ride=impulse:sympHeart` |
+| 3 | Adrenaline | `index.html?ride=cascade:adrenaline` |
+| 3 | MCA stroke | `organs/brain.html?stroke=mcaL` |
+| 6 | Red cell | `index.html?ride=follow` |
+| 6 | Bite (starch) | `index.html?ride=bite:carb` |
+| 6 | Splinter | `index.html?ride=infection:splinter` |
+| 6 | Step | `index.html?ride=step:run` |
+
+## Production notes
+
+- **Capture:** use *Export → Animations → WebM*: one heartbeat or one breath for loops, a whole journey for the rides. Turn the caption strip off for trailer footage. Use 2× or 4× PNG for stills and the title card.
+- **Look:** the dark theme reads best on video. For Shorts, record at phone size (portrait): the mobile layout puts the body full screen.
+- **Speed:** if a ride is too quick for its line, lower the page's speed setting before exporting. The export follows that setting.
+- **Audio:** a low drone (40–60 Hz) under the voice, a muted heartbeat on cuts, and soft UI clicks on slider and menu moves. Keep the music below the voice.
+
+## Before publishing
+
+- Re-capture any shot after a nightly build that changes its page, because layouts and labels move.
+- If a fact-check count appears on screen, use the number on the live page that day.

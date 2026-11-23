@@ -103,6 +103,10 @@ h2{ font-family:var(--serif); font-weight:400; font-size:clamp(24px, 3vw, 34px);
 .stops li::before{ content:counter(stop); width:20px; height:20px; border-radius:50%; background:var(--surface-2); font-size:11.5px; font-weight:600; display:grid; place-items:center; }
 .stops b{ font-weight:600; }
 .stops .need{ display:block; font-size:12.5px; color:var(--muted); }
+.case-go{ margin-top:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.case-go a.start{ background:var(--accent); color:#fff; border-radius:999px; padding:7px 16px; font-size:14px; font-weight:600; text-decoration:none; }
+.case-go a.start:hover{ filter:brightness(1.08); }
+.case-go span{ font-size:12.5px; color:var(--muted); }
 .parents{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; font-size:12.5px; align-items:center; }
 .chip{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:3px 10px; font-size:12.5px; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
 .chip:hover{ background:var(--surface-2); }
@@ -608,7 +612,7 @@ h2{ font-family:var(--serif); font-weight:400; font-size:clamp(24px, 3vw, 34px);
    "stops": [
      { "page": "pancreas", "scenario": "t1dka", "label": { "ms": "No insulin: blood sugar and ketones rise", "college": "No insulin: hyperglycaemia and ketogenesis" } },
      { "page": "kidneys", "scenario": "diabetes", "label": { "ms": "Sugar pulls water into the urine; bicarbonate is used up", "college": "Osmotic diuresis, dehydration and a high anion gap acidosis" } },
-     { "page": "lungs", "needs": "a metabolic-acidosis scenario on the lungs page", "label": { "ms": "Deep, fast breathing blows off carbon dioxide", "college": "Kussmaul breathing: respiratory compensation and a low PaCO₂" } },
+     { "page": "lungs", "scenario": "dka", "label": { "ms": "Deep, fast breathing blows off carbon dioxide", "college": "Kussmaul breathing: respiratory compensation and a low PaCO₂" } },
      { "page": "brain", "scenario": "hyperK", "label": { "ms": "Potassium, before and after insulin", "college": "Potassium shifts: high before insulin, falling after it" } }
    ],
    "parents": ["pancreas-t1dka", "brain-hyperK"] },
@@ -677,9 +681,17 @@ const NAME = Object.fromEntries(PAGES.map(p => [p.page, p.name]));
 const pageName = id => NAME[id] || id.charAt(0).toUpperCase() + id.slice(1);
 const qHref = q => `../organs/${q.page}.html?level=${level}#q-${q.id}`;
 const pageHref = id => `../organs/${id}.html?level=${level}`;
+/* a stop of a case that can be run: the page opens on the stop's scenario, with a strip that
+   leads on to the next stop (the case engine in organs/_template.html reads these parameters) */
+const caseRunnable = c => c.stops.every(s => !s.needs);
+const stopHref = (c, i) => {
+  const s = c.stops[i], p = new URLSearchParams({ level, ...(s.scenario ? { scenario: s.scenario } : {}), case: c.id, ctitle: c.title, stop: String(i),
+    route: c.stops.map(x => x.page + (x.scenario ? "." + x.scenario : "")).join("~") });
+  return `../organs/${s.page}.html?${p}`;
+};
 const TEXT = {
   lede: { ms: "Each question tells you about a person and asks what will happen. Make your guess first, then the page runs its own model so you can see if you were right, and why.", college: "Each question sets up a case without naming the diagnosis and asks you to commit to a prediction. The organ page then runs that case on its own models, with the healthy reference beside it, and explains why your choice holds or where it fails." },
-  cases: { ms: "Some cases don’t stay in one organ. They follow one person from organ to organ. Each case opens once you have done the questions it builds on.", college: "Converging cases follow one person across several organ pages, predicting again at every stop. Each builds on single-organ questions, shown linked on the map; a case lights up when those are done." },
+  cases: { ms: "Some cases don’t stay in one organ. They follow one person from organ to organ. Start one and each page opens on that person, with a button to the next organ. The case lights up once you have done the questions it builds on, so do those first if you can.", college: "Converging cases follow one person across several organ pages. Starting a case opens each page on that stop’s scenario, with a strip that leads on to the next stop. Each builds on single-organ questions, shown linked on the map; a case lights up when those are done. Cases with a stop still to build can’t be run yet." },
   organs: { ms: "Two or three questions for each organ. A filled dot means you have done it on this device.", college: "Each organ page has its own Predict section. A filled dot means the question has been answered in this browser." }
 };
 
@@ -705,13 +717,14 @@ function render(){
   /* cases */
   const caseOn = c => c.parents.every(id => d[id]);
   $("[data-cases]").innerHTML = CASES.map(c => {
-    const on = caseOn(c), needs = c.stops.filter(s => s.needs);
-    const state = needs.length ? "Not yet available" : on ? "Open" : "Opens when its questions are done";
+    const on = caseOn(c), needs = c.stops.filter(s => s.needs), run = caseRunnable(c);
+    const state = needs.length ? "Not yet available" : on ? "Open" : "Ready · best after its questions";
     return `<article class="panel case${on ? " on" : ""}" id="case-${esc(c.id)}" data-case="${esc(c.id)}">
       <p class="state"><i></i>${esc(on && needs.length ? "Its questions are done · not yet available" : state)}</p>
       <h3>${esc(c.title)}</h3>
       <p class="prose">${esc(lt(c.blurb))}</p>
-      <ol class="stops">${c.stops.map(s => `<li><div><a href="${esc(pageHref(s.page))}"><b>${esc(pageName(s.page))}</b></a> · ${esc(lt(s.label))}${s.needs ? `<span class="need">Still to build: ${esc(s.needs)}.</span>` : ""}</div></li>`).join("")}</ol>
+      <ol class="stops">${c.stops.map((s, i) => `<li><div><a href="${esc(run ? stopHref(c, i) : pageHref(s.page))}"><b>${esc(pageName(s.page))}</b></a> · ${esc(lt(s.label))}${s.needs ? `<span class="need">Still to build: ${esc(s.needs)}.</span>` : ""}</div></li>`).join("")}</ol>
+      ${run ? `<div class="case-go"><a class="start" data-case-start href="${esc(stopHref(c, 0))}">Start the case →</a>${on ? "" : `<span>Its questions, below, make a good warm-up.</span>`}</div>` : ""}
       <div class="parents"><span class="muted">Builds on</span>${c.parents.filter(id => Q[id]).map(id => `<a class="chip${d[id] ? " done" : ""}" href="${esc(qHref(Q[id]))}"><i aria-hidden="true"></i>${esc(Q[id].pageName)}: ${esc(lt(Q[id].title))}</a>`).join("")}</div>
     </article>`;
   }).join("");

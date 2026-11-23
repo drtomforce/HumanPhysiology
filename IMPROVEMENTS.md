@@ -12,11 +12,12 @@ When a section is done, replace its plan with a one-line pointer to the README a
 | Organ deep-dive pages (`organs/<id>.html`) | 9: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones | 5 existing organs (skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 8: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic, muscles & skeleton | 2: skin, reproductive |
 | Journeys ("follow a …") | 8: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step | One per new system, plus cross-system journeys |
-| Prediction questions | 27: three on each of the 9 deep-dive pages, with the hub | The converging cases, and one per new page: see [Questions](#6-questions-predict-then-watch) |
+| Prediction questions | 27: three on each of the 9 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
+| Converging cases (run across pages) | 1: diabetic ketoacidosis | 4: cholera to shock, heart failure, the marathon wall, altitude over weeks |
 
 ## Next up
 
-Both items below are built; what is listed under them is still open. The prediction questions and their hub are built ([6](#6-questions-predict-then-watch)); next is the skin page and the skin system on the body (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)); next is the skin page and the skin system on the body (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -261,12 +262,16 @@ These span several organs and are best built as their own pages (for example `ex
 - **Tests**: `tests/scenario-check.mjs` now applies, resets and shares every scenario, and `tests/questions-check.mjs` checks the questions. Still to add: a check that `node organs/sync-engine.mjs --check` and `node explore/sync-questions.mjs --check` pass, in one place that runs the whole suite.
 - **Glossary**: add every new term from the pages above, with its match forms.
 
-## 6. Questions: predict, then watch ✅ Done (the questions and the hub; the converging cases still open)
+## 6. Questions: predict, then watch ✅ Done (the questions, the hub and the first converging case; four cases still open)
 
 Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
 
-- **No converging case runs yet** ([6.4](#64-converging-cases)): the five cases are on the hub as cards and as a map linked to their parent questions, and they light up when those are done, but each is a list of stops, not a chain you can ride. Opening one doesn't carry a condition from page to page. The stops that have no scenario are named on the card ("Still to build: a metabolic-acidosis scenario on the lungs page"), and those scenarios are what the first case needs:
-  - **Diabetic ketoacidosis**: a metabolic-acidosis scenario on the lungs page (Kussmaul breathing at a low PaCO₂), and a low-K⁺ ECG on the heart page.
+- **Diabetic ketoacidosis runs** ([6.4](#64-converging-cases)) ✅: see the README. The lungs page has a blood-bicarbonate slider in its control section that moves the chemoreflex set point (Winters’ formula for an acidosis, ~0.7 mmHg per mmol/L for an alkalosis) and a *Diabetic ketoacidosis* scenario at HCO₃⁻ 11 mmol/L, the same patient as the pancreas and kidneys pages (PaCO₂ ~24, pH ~7.29). The hub's *Start the case* opens each stop's page on its scenario through `?scenario=`, and the shared engine draws a case strip (stops, back, next, all stops, leave) from the `case`, `ctitle`, `stop` and `route` parameters. What changed from the plan, and what is still open for it:
+  - **Each stop applies its own scenario**: nothing is carried from one page to the next. The four scenarios were set to agree (glucose, ketones, bicarbonate, pH), and the registry row in `FACTUAL_CHECK.md` holds them together, but changing a slider on one page doesn't reach the next. Carrying state needs "Changes across pages" ([5](#5-shared-and-supporting-work)).
+  - **No question at each stop**: the strip says where you are and leads on; it doesn't ask you to predict again at every stop, as the hub's text once promised. A stop could name one of the page's questions, or carry its own.
+  - **The heart's low-K⁺ ECG is not built**: the plan wanted one after insulin (flattened T waves, U waves); the case ends on the brain page's high potassium instead. A K⁺ control on the heart page's ECG, and a fifth stop after insulin, are still to do.
+  - **Open before its questions**: a runnable case can be started before its parent questions are done; the card says they make a good warm-up, and the case still lights up only when they are done.
+  - **The other cases' stops still to build**:
   - **Cholera to shock**: the gut's water loss carried across to the kidneys, and a low-blood-volume scenario on the heart page.
   - **Heart failure**: a pulmonary-oedema scenario on the lungs page.
   - **The marathon wall**: the liver's fasting model at the pace of a run, and exercise as a test on the pancreas page.
@@ -292,7 +297,7 @@ Built: three on each of the nine pages, on the scenarios the plan named, except 
 
 ### 6.4 Converging cases
 
-Still open: see the list at the top of this section.
+Diabetic ketoacidosis is built and runs; the other four are still open: see the list at the top of this section.
 
 ### 6.5 Hub page (`explore/questions.html`)
 
@@ -310,9 +315,9 @@ Followed. The test, `tests/questions-check.mjs`, checks everything the plan list
 
 ## Suggested order
 
-Done so far: the kidneys, gut, liver, pancreas, muscles and bones pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, and the prediction questions with their hub.
+Done so far: the kidneys, gut, liver, pancreas, muscles and bones pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
 
-1. The first converging case, diabetic ketoacidosis ([6.4](#64-converging-cases)), with the scenarios its stops need.
+1. ~~The first converging case, diabetic ketoacidosis ([6.4](#64-converging-cases)), with the scenarios its stops need.~~ ✅ Done (the heart's low-K⁺ ECG is still open; see [6](#6-questions-predict-then-watch)).
 2. Skin page and the skin system on the body (heat balance).
 3. Eyes, ears and throat pages.
 4. Endocrine glands, and blood & vessels as new organs with pages.

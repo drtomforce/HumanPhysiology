@@ -28,6 +28,12 @@
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation#:~:text=ATP%20binding%20causes%20the%20myosin%20head%20to%20detach": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation",
+  "checked": "2026-11-23"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/12-2-nervous-tissue#:~:text=contributing%20to%20the%20blood-brain%20barrier": {
   "state": "ok",
   "code": 200,
@@ -181,6 +187,12 @@
   "code": 200,
   "checked": "2026-11-19"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases#:~:text=about%2070%20percent": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases",
+  "checked": "2026-11-23"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=These%20two%20nuclei%20then%20send%20back%20parasympathetic%20impulses": {
   "state": "ok",
   "code": 200,
@@ -279,6 +291,24 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-7-calcium-homeostasis-interactions-of-the-skeletal-system-and-other-organ-systems",
   "checked": "2026-11-22"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/7-3-the-vertebral-column#:~:text=Below%20these%20are%20the%2012%20thoracic%20vertebrae": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/7-3-the-vertebral-column",
+  "checked": "2026-11-23"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/7-3-the-vertebral-column#:~:text=a%20gel-like%20center%20called%20the%20nucleus%20pulposus": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/7-3-the-vertebral-column",
+  "checked": "2026-11-23"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/7-4-the-thoracic-cage#:~:text=It%20consists%20of%20the%2012%20pairs%20of%20ribs": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/7-4-the-thoracic-cage",
+  "checked": "2026-11-23"
+ },
  "https://pmc.ncbi.nlm.nih.gov/articles/PMC2826360": {
   "state": "ok",
   "code": 200,
@@ -295,6 +325,21 @@
   "code": 200,
   "final": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5723673/",
   "checked": "2026-11-21"
+ },
+ "https://pmc.ncbi.nlm.nih.gov/articles/PMC6621291/": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-23"
+ },
+ "https://pmc.ncbi.nlm.nih.gov/articles/PMC6674518/": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-23"
+ },
+ "https://pmc.ncbi.nlm.nih.gov/articles/PMC6779475/": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-23"
  },
  "https://pubmed.ncbi.nlm.nih.gov/25668261/#:~:text=shortened%20time%20to%2080%25%20hemoglobin%20recovery": {
   "state": "ok",

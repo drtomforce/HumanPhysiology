@@ -199,6 +199,19 @@ a{ color:inherit; }
 .alt-to a:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 .alt-x{ border:0; background:transparent; cursor:pointer; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; color:var(--muted); padding:0; margin-right:1px; }
 .alt-x:hover{ background:var(--surface-2); color:var(--ink); }
+/* case strip: one stop of a converging case from the questions hub, with the way on */
+.op-case{ background:color-mix(in srgb, var(--accent) 9%, var(--surface)); border-bottom:1px solid var(--line); }
+.op-case-in{ display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap; padding-top:8px; padding-bottom:8px; font-size:13px; }
+.case-where{ display:flex; align-items:center; gap:8px; flex:1; min-width:220px; }
+.case-where b{ font-weight:600; }
+.case-k{ text-transform:uppercase; letter-spacing:.06em; font-size:11px; font-weight:700; color:var(--accent); }
+.case-dots{ display:inline-flex; gap:4px; }
+.case-dots a{ width:9px; height:9px; border-radius:50%; border:1.5px solid var(--accent); display:block; }
+.case-dots a.on, .case-dots a.past{ background:var(--accent); }
+.case-dots a.past{ opacity:.45; }
+.case-nav{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.case-nav a, .case-nav button{ font:inherit; font-size:12.5px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); border-radius:999px; padding:4px 11px; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.case-nav a.next{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
 .alt-act{ display:flex; gap:6px; margin-left:auto; }
 .alt-btn{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:4px 11px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; }
 .alt-btn:hover{ background:var(--surface-2); }
@@ -2491,6 +2504,39 @@ function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: M
    whether anything is altered, and delta(now, ref, digits) gives a "▲ 12" tag for
    readouts compared with the healthy reference. */
 let ALT = null, started = false, urlTimer = 0, scenOpen = false;
+/* a converging case from ../explore/questions.html: the link to each stop carries
+     case=<id>, ctitle=<title>, stop=<0-based index> and route=<page>.<scenario>~<page>.<scenario>…
+   plus scenario=<id> for this stop. The page applies the scenario once, shows a strip with
+   the stops and the way to the next one, and keeps the case in its own address bar. */
+const CASE_PAGES = { heart: "Heart", lungs: "Lungs", brain: "Brain", kidneys: "Kidneys", gut: "Stomach & gut", liver: "Liver", pancreas: "Pancreas", muscles: "Muscles", bones: "Bones" };
+let CASE = (() => {
+  const id = params.get("case"), route = (params.get("route") || "").split("~").filter(Boolean).map(x => { const [page, scenario = ""] = x.split("."); return { page, scenario }; });
+  const i = parseInt(params.get("stop"), 10);
+  if (!id || !/^[\w-]+$/.test(id) || !route.length || !(i >= 0 && i < route.length) || route.some(r => !/^[\w-]+$/.test(r.page) || !/^[\w-]*$/.test(r.scenario))) return null;
+  return { id, title: (params.get("ctitle") || id).slice(0, 80), stop: i, route };
+})();
+function caseParams(c, i){
+  return { case: c.id, ctitle: c.title, stop: String(i), route: c.route.map(r => r.page + (r.scenario ? "." + r.scenario : "")).join("~") };
+}
+function caseHref(i){
+  const c = CASE, r = c.route[i], p = new URLSearchParams({ level: state.level, ...(r.scenario ? { scenario: r.scenario } : {}), ...caseParams(c, i) });
+  return `${encodeURIComponent(r.page)}.html?${p}`;
+}
+const casePage = id => CASE_PAGES[id] || (id.charAt(0).toUpperCase() + id.slice(1));
+function renderCase(){
+  let strip = $(".op-case");
+  if (!CASE){ if (strip) strip.remove(); return; }
+  if (!strip){
+    strip = document.createElement("nav"); strip.className = "op-case"; strip.setAttribute("aria-label", "Case");
+    const after = $(".op-alter") || $(".op-top");
+    if (after) after.after(strip); else document.body.prepend(strip);
+    strip.addEventListener("click", e => { if (e.target.closest("[data-case-leave]")){ CASE = null; renderCase(); writeURL(true); } });
+  }
+  const c = CASE, n = c.route.length, last = c.stop === n - 1, hub = `../explore/questions.html?level=${encodeURIComponent(state.level)}#case-${encodeURIComponent(c.id)}`;
+  const dots = c.route.map((r, i) => `<a href="${esc(caseHref(i))}" class="${i === c.stop ? "on" : i < c.stop ? "past" : ""}" aria-label="Stop ${i + 1}: ${esc(casePage(r.page))}"${i === c.stop ? ` aria-current="step"` : ""}></a>`).join("");
+  putHTML(strip, `<div class="wrap op-case-in"><p class="case-where" style="margin:0"><span class="case-k">Case</span><b>${esc(c.title)}</b><span class="muted">Stop ${c.stop + 1} of ${n}</span><span class="case-dots">${dots}</span></p>
+    <div class="case-nav">${c.stop > 0 ? `<a href="${esc(caseHref(c.stop - 1))}">← ${esc(casePage(c.route[c.stop - 1].page))}</a>` : ""}<a href="${esc(hub)}">All stops</a>${last ? `<a class="next" href="${esc(hub)}">Finish the case</a>` : `<a class="next" href="${esc(caseHref(c.stop + 1))}">Next: ${esc(casePage(c.route[c.stop + 1].page))} →</a>`}<button type="button" data-case-leave>Leave the case</button></div></div>`);
+}
 const altCache = new WeakMap();
 const altVal = v => typeof v === "function" ? v() : levelText(v);
 function fill(v, vars = {}){
@@ -2602,6 +2648,7 @@ function renderAlter(){
 function urlParams(){
   const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString() });
   if (ALT && ALT.toParams) for (const [k, v] of Object.entries(ALT.toParams() || {})) if (v !== undefined && v !== null && v !== "") p.set(k, v);
+  if (CASE) for (const [k, v] of Object.entries(caseParams(CASE, CASE.stop))) p.set(k, v);
   return p;
 }
 function writeURL(now){
@@ -2915,7 +2962,7 @@ function start(){
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
   buildPredict(); buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
   bindParts(); bindGlossary();
-  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); renderPredict(); };
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); renderPredict(); renderCase(); };
   subscribe((s, p) => {
     if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
     if (s.level !== p.level || s.hour !== p.hour) writeURL();
@@ -2934,6 +2981,9 @@ function start(){
       query: urlParams().toString()
     };
   });
+  /* ?scenario=<id> (a case stop, or any link) starts the page from that ready-made case */
+  const sc0 = params.get("scenario");
+  if (ALT && sc0 && scenarios().some(x => x.id === sc0)){ applyScenario(sc0); altered(); writeURL(true); }
   all();
   loop();
   if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }

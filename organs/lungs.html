@@ -196,6 +196,19 @@ a{ color:inherit; }
 .alt-to a:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 .alt-x{ border:0; background:transparent; cursor:pointer; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; color:var(--muted); padding:0; margin-right:1px; }
 .alt-x:hover{ background:var(--surface-2); color:var(--ink); }
+/* case strip: one stop of a converging case from the questions hub, with the way on */
+.op-case{ background:color-mix(in srgb, var(--accent) 9%, var(--surface)); border-bottom:1px solid var(--line); }
+.op-case-in{ display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap; padding-top:8px; padding-bottom:8px; font-size:13px; }
+.case-where{ display:flex; align-items:center; gap:8px; flex:1; min-width:220px; }
+.case-where b{ font-weight:600; }
+.case-k{ text-transform:uppercase; letter-spacing:.06em; font-size:11px; font-weight:700; color:var(--accent); }
+.case-dots{ display:inline-flex; gap:4px; }
+.case-dots a{ width:9px; height:9px; border-radius:50%; border:1.5px solid var(--accent); display:block; }
+.case-dots a.on, .case-dots a.past{ background:var(--accent); }
+.case-dots a.past{ opacity:.45; }
+.case-nav{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.case-nav a, .case-nav button{ font:inherit; font-size:12.5px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); border-radius:999px; padding:4px 11px; text-decoration:none; cursor:pointer; white-space:nowrap; }
+.case-nav a.next{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
 .alt-act{ display:flex; gap:6px; margin-left:auto; }
 .alt-btn{ border:1px solid var(--line-strong); background:transparent; border-radius:999px; padding:4px 11px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; }
 .alt-btn:hover{ background:var(--surface-2); }
@@ -672,6 +685,7 @@ canvas.trace{ display:block; width:100%; }
           <div class="btn-row" id="ctlBtns" style="margin-top:0"></div>
           <div id="ctlMsg"></div>
           <div class="sliders" style="margin-top:14px" data-altitude></div>
+          <div class="sliders" id="acidSliders"></div>
           <div class="btn-row"><button type="button" class="btn ghost" id="ffBtn" aria-pressed="false">Speed up the blood gases ×10</button></div>
           <div class="readouts" id="ctlRO"></div>
         </div>
@@ -803,9 +817,9 @@ canvas.trace{ display:block; width:100%; }
       "nav": "Control", "kicker": "Who decides how hard to breathe", "title": "Control of breathing: the brainstem’s autopilot",
       "intro": {
         "ms": "You don’t have to remember to breathe. A part of your brain called the brainstem does it for you, all day and all night. It mostly listens for carbon dioxide: when there’s too much, you breathe harder.",
-        "hs": "A rhythm generator in the medulla sends bursts down the phrenic nerves to the diaphragm. Chemoreceptors tell it how you’re doing: central ones in the brainstem sense CO₂ (via acidity), and the carotid bodies in the neck sense low O₂. Hold your breath, hyperventilate or go up a mountain and watch the loop respond.",
+        "hs": "A rhythm generator in the medulla sends bursts down the phrenic nerves to the diaphragm. Chemoreceptors tell it how you’re doing: central ones in the brainstem sense CO₂ (via acidity), and the carotid bodies in the neck sense low O₂. Hold your breath, hyperventilate or go up a mountain and watch the loop respond. Or add acid to the blood with the bicarbonate slider: the loop answers acid from the body as well as CO₂.",
         "college": "The preBötzinger complex generates the rhythm; dorsal and ventral respiratory groups shape it; pontine centres smooth the switch between in and out. Central chemoreceptors provide ~70% of the CO₂ drive; the carotid bodies add a fast CO₂ response and the hypoxic drive, which increases steeply below ~60 mmHg and multiplies the CO₂ response.",
-        "phd": "The model: ventilation = central command (∝ CO₂ output) + G·(PaCO₂ − set point)·(1 + hypoxia) + hypoxic drive, with the set point ~40 awake and higher asleep, and only a weak brake below it, with CO₂ and O₂ body stores giving slow and fast time constants. Loop gain = controller gain × plant gain; high loop gain (altitude, heart failure) causes periodic breathing."
+        "phd": "The model: ventilation = central command (∝ CO₂ output) + G·(PaCO₂ − set point)·(1 + hypoxia) + hypoxic drive, with the set point ~40 awake and higher asleep, moved by a metabolic acid or base load along Winters’ formula (expected PaCO₂ = 1.5·HCO₃⁻ + 8 ± 2; ~0.7 mmHg per mmol/L for an alkalosis), and only a weak brake below it, with CO₂ and O₂ body stores giving slow and fast time constants. Loop gain = controller gain × plant gain; high loop gain (altitude, heart failure) causes periodic breathing."
       }
     },
     "systems": {
@@ -1404,6 +1418,15 @@ canvas.trace{ display:block; width:100%; }
         "college": "Acclimatisation raises red-cell 2,3-BPG: a right shift (higher P50) that aids unloading but costs some loading at a low PAO₂; at altitude the alkalosis’s left shift partly offsets it."
       },
       {
+        "id": "dka",
+        "name": "Diabetic ketoacidosis",
+        "params": {
+          "hco3": "11"
+        },
+        "ms": "With no insulin, the liver makes acids called ketones and the blood turns acidic. The brainstem answers with deep, sighing breaths that blow off carbon dioxide.",
+        "college": "Ketoacids titrate bicarbonate to ~11 mmol/L (the same patient as on the pancreas and kidneys pages). The chemoreflex drives Kussmaul breathing (deep more than fast) and PaCO₂ falls to about 24 mmHg, inside Winters’ expected 24.5 ± 2: partial respiratory compensation, with pH still below 7.3."
+      },
+      {
         "id": "fever",
         "name": "Fever",
         "params": {
@@ -1476,6 +1499,29 @@ canvas.trace{ display:block; width:100%; }
         "ms": "Blowing off CO₂ makes the blood less acidic (pH {ph}), so haemoglobin holds on to oxygen more tightly: the curve shifts left (P50 {p50} mmHg).",
         "college": "Respiratory alkalosis (PaCO₂ {paco2}, pH {ph}) left-shifts the curve (P50 {p50} mmHg), impairing O₂ unloading in the tissues."
       },
+      "ctlAcid": {
+        "ms": "There is acid in the blood that didn’t come from carbon dioxide (bicarbonate {hco3} mmol/L). The brainstem senses the acid and makes you breathe more ({ve} L/min), blowing off CO₂ ({paco2} mmHg) to make up for it.",
+        "hs": "A metabolic acid uses up bicarbonate ({hco3} mmol/L). The chemoreceptors sense the extra H⁺, so the brainstem drives ventilation to {ve} L/min and lets PaCO₂ fall to {paco2} mmHg. That brings pH back towards normal (pH {ph}), but not all the way.",
+        "college": "Metabolic acidosis (HCO₃⁻ {hco3} mmol/L): the chemoreflex now defends a PaCO₂ of ~{sp} mmHg, so ventilation rises to {ve} L/min and PaCO₂ settles at {paco2} mmHg, close to Winters’ expected {winter} ± 2. Respiratory compensation is partial: pH {ph}.",
+        "phd": "Respiratory compensation for metabolic acidosis begins within minutes through the carotid bodies and builds over 12–24 h as CSF bicarbonate and pH follow the blood. Winters’ formula (PaCO₂ = 1.5·HCO₃⁻ + 8 ± 2) here gives {winter} mmHg against a model PaCO₂ of {paco2}; a PaCO₂ above the range means a second, respiratory acidosis (tiring, sedation, lung disease), and one below it a primary respiratory alkalosis. PaCO₂ rarely falls below ~10–15 mmHg. Sources: Albert, Dell and Winters 1967; West and Luks, 11th ed.; Guyton and Hall, 14th ed., ch. 31."
+      },
+      "ctlBase": {
+        "ms": "There is extra bicarbonate in the blood ({hco3} mmol/L), so it is less acidic than it should be. The brainstem lets you breathe a little less, so CO₂ builds up ({paco2} mmHg) to balance it.",
+        "college": "Metabolic alkalosis (HCO₃⁻ {hco3} mmol/L): the chemoreflex allows hypoventilation, raising PaCO₂ to {paco2} mmHg (~0.7 mmHg per mmol/L of bicarbonate). Compensation is limited, because hypoventilation lowers PaO₂ ({pao2} mmHg) and the hypoxic drive pushes back."
+      },
+      "mechAcid": {
+        "ms": "The acid in the blood makes the breaths deep and a bit faster ({vt} mL, {rr} a minute): this sighing pattern is called Kussmaul breathing.",
+        "college": "Kussmaul breathing: ventilation rises to {ve} L/min mostly through tidal volume ({vt} mL) rather than rate ({rr}/min), which keeps dead-space ventilation low and raises alveolar ventilation efficiently."
+      },
+      "exAcid": {
+        "ms": "Acid in the blood (pH {ph}) makes haemoglobin let go of oxygen more easily: the curve shifts right (P50 {p50} mmHg). Blowing off CO₂ also leaves more room for oxygen in the alveoli (PaO₂ {pao2} mmHg).",
+        "college": "The acidaemia (pH {ph}) right-shifts the dissociation curve by the Bohr effect (P50 {p50} mmHg), and the low alveolar PCO₂ raises PAO₂ by the alveolar gas equation (PaO₂ {pao2} mmHg). Over a day or two, red-cell 2,3-BPG falls in ketoacidosis and offsets the right shift; it is set separately here.",
+        "phd": "Acidaemia slows red-cell glycolysis and, with the phosphate depletion of ketoacidosis, 2,3-BPG falls over 1–2 days; when insulin and fluids correct the pH faster than 2,3-BPG recovers, the curve shifts left, one argument against giving bicarbonate (try the 2,3-BPG slider after the scenario)."
+      },
+      "exBase": {
+        "ms": "The blood is less acidic (pH {ph}), so haemoglobin holds on to oxygen more tightly: the curve shifts left (P50 {p50} mmHg).",
+        "college": "Alkalaemia (pH {ph}) left-shifts the curve (P50 {p50} mmHg), and the compensating hypoventilation lowers PaO₂ to {pao2} mmHg."
+      },
       "exHold": {
         "ms": "While you hold your breath, oxygen in the blood falls ({pao2} mmHg) and CO₂ rises ({paco2} mmHg).",
         "college": "Apnoea: PaO₂ {pao2} and PaCO₂ {paco2} mmHg; O₂ falls faster than CO₂ rises because the body's CO₂ store is larger."
@@ -1504,6 +1550,10 @@ canvas.trace{ display:block; width:100%; }
   "shunt": { "def": "Blood that passes through the lungs without meeting any air.", "match": ["shunt"] },
   "V/Q": { "def": "Ventilation/perfusion ratio: how much air an area gets compared with how much blood.", "match": ["V/Q"] },
   "chemoreceptors": { "def": "Sensors that detect chemicals: here O₂, CO₂ and acid in the blood or brain fluid.", "match": ["chemoreceptors", "chemoreflex"] },
+  "Kussmaul breathing": { "def": "Deep, sighing breaths driven by a metabolic acidosis, as in diabetic ketoacidosis: the body blows off CO₂ to make the blood less acidic.", "match": ["Kussmaul breathing", "Kussmaul"] },
+  "metabolic acidosis": { "def": "Too much acid in the blood that does not come from CO₂ (ketones, lactate, kidney failure), seen as a low bicarbonate.", "match": ["metabolic acidosis"] },
+  "bicarbonate": { "def": "HCO₃⁻, the blood's main buffer of acid, normally ~24 mmol/L. The kidneys reclaim and make it; acids use it up.", "match": ["bicarbonate"] },
+  "Winters’ formula": { "def": "The PaCO₂ expected when the lungs compensate for a metabolic acidosis: 1.5 × bicarbonate + 8, ± 2 mmHg.", "match": ["Winters’ formula", "Winter’s formula", "Winter's formula"] },
   "phrenic nerves": { "def": "Nerves from C3–C5 in the neck that drive the diaphragm.", "match": ["phrenic nerves", "phrenic"] },
   "brainstem": { "def": "The base of the brain (midbrain, pons, medulla) that runs automatic functions like breathing.", "match": ["brainstem"] },
   "carotid bodies": { "def": "Tiny O₂ sensors at the fork of each carotid artery in the neck.", "match": ["carotid bodies"] },
@@ -2108,6 +2158,39 @@ function renderBack(){ $$("[data-back]").forEach(a => { a.href = href({ topic: M
    whether anything is altered, and delta(now, ref, digits) gives a "▲ 12" tag for
    readouts compared with the healthy reference. */
 let ALT = null, started = false, urlTimer = 0, scenOpen = false;
+/* a converging case from ../explore/questions.html: the link to each stop carries
+     case=<id>, ctitle=<title>, stop=<0-based index> and route=<page>.<scenario>~<page>.<scenario>…
+   plus scenario=<id> for this stop. The page applies the scenario once, shows a strip with
+   the stops and the way to the next one, and keeps the case in its own address bar. */
+const CASE_PAGES = { heart: "Heart", lungs: "Lungs", brain: "Brain", kidneys: "Kidneys", gut: "Stomach & gut", liver: "Liver", pancreas: "Pancreas", muscles: "Muscles", bones: "Bones" };
+let CASE = (() => {
+  const id = params.get("case"), route = (params.get("route") || "").split("~").filter(Boolean).map(x => { const [page, scenario = ""] = x.split("."); return { page, scenario }; });
+  const i = parseInt(params.get("stop"), 10);
+  if (!id || !/^[\w-]+$/.test(id) || !route.length || !(i >= 0 && i < route.length) || route.some(r => !/^[\w-]+$/.test(r.page) || !/^[\w-]*$/.test(r.scenario))) return null;
+  return { id, title: (params.get("ctitle") || id).slice(0, 80), stop: i, route };
+})();
+function caseParams(c, i){
+  return { case: c.id, ctitle: c.title, stop: String(i), route: c.route.map(r => r.page + (r.scenario ? "." + r.scenario : "")).join("~") };
+}
+function caseHref(i){
+  const c = CASE, r = c.route[i], p = new URLSearchParams({ level: state.level, ...(r.scenario ? { scenario: r.scenario } : {}), ...caseParams(c, i) });
+  return `${encodeURIComponent(r.page)}.html?${p}`;
+}
+const casePage = id => CASE_PAGES[id] || (id.charAt(0).toUpperCase() + id.slice(1));
+function renderCase(){
+  let strip = $(".op-case");
+  if (!CASE){ if (strip) strip.remove(); return; }
+  if (!strip){
+    strip = document.createElement("nav"); strip.className = "op-case"; strip.setAttribute("aria-label", "Case");
+    const after = $(".op-alter") || $(".op-top");
+    if (after) after.after(strip); else document.body.prepend(strip);
+    strip.addEventListener("click", e => { if (e.target.closest("[data-case-leave]")){ CASE = null; renderCase(); writeURL(true); } });
+  }
+  const c = CASE, n = c.route.length, last = c.stop === n - 1, hub = `../explore/questions.html?level=${encodeURIComponent(state.level)}#case-${encodeURIComponent(c.id)}`;
+  const dots = c.route.map((r, i) => `<a href="${esc(caseHref(i))}" class="${i === c.stop ? "on" : i < c.stop ? "past" : ""}" aria-label="Stop ${i + 1}: ${esc(casePage(r.page))}"${i === c.stop ? ` aria-current="step"` : ""}></a>`).join("");
+  putHTML(strip, `<div class="wrap op-case-in"><p class="case-where" style="margin:0"><span class="case-k">Case</span><b>${esc(c.title)}</b><span class="muted">Stop ${c.stop + 1} of ${n}</span><span class="case-dots">${dots}</span></p>
+    <div class="case-nav">${c.stop > 0 ? `<a href="${esc(caseHref(c.stop - 1))}">← ${esc(casePage(c.route[c.stop - 1].page))}</a>` : ""}<a href="${esc(hub)}">All stops</a>${last ? `<a class="next" href="${esc(hub)}">Finish the case</a>` : `<a class="next" href="${esc(caseHref(c.stop + 1))}">Next: ${esc(casePage(c.route[c.stop + 1].page))} →</a>`}<button type="button" data-case-leave>Leave the case</button></div></div>`);
+}
 const altCache = new WeakMap();
 const altVal = v => typeof v === "function" ? v() : levelText(v);
 function fill(v, vars = {}){
@@ -2219,6 +2302,7 @@ function renderAlter(){
 function urlParams(){
   const p = new URLSearchParams({ level: state.level, hour: (Math.round(state.hour * 100) / 100).toString() });
   if (ALT && ALT.toParams) for (const [k, v] of Object.entries(ALT.toParams() || {})) if (v !== undefined && v !== null && v !== "") p.set(k, v);
+  if (CASE) for (const [k, v] of Object.entries(caseParams(CASE, CASE.stop))) p.set(k, v);
   return p;
 }
 function writeURL(now){
@@ -2532,7 +2616,7 @@ function start(){
   $$("[data-organ-name]").forEach(n => n.textContent = META.name);
   buildPredict(); buildControls(); buildNav(); buildNow(); renderSee(); buildAlter(); mountExport();
   bindParts(); bindGlossary();
-  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); renderPredict(); };
+  const all = () => { renderText(); renderNow(); renderInspectors(); renderLens(); renderBack(); markSelected(); renderAlter(); renderPredict(); renderCase(); };
   subscribe((s, p) => {
     if (s.level !== p.level) storage.set("humanphysiology.level", s.level);
     if (s.level !== p.level || s.hour !== p.hour) writeURL();
@@ -2551,6 +2635,9 @@ function start(){
       query: urlParams().toString()
     };
   });
+  /* ?scenario=<id> (a case stop, or any link) starts the page from that ready-made case */
+  const sc0 = params.get("scenario");
+  if (ALT && sc0 && scenarios().some(x => x.id === sc0)){ applyScenario(sc0); altered(); writeURL(true); }
   all();
   loop();
   if (location.hash){ const t = document.getElementById(location.hash.slice(1)); if (t) requestAnimationFrame(() => t.scrollIntoView()); }
@@ -3453,7 +3540,7 @@ const MDT = .002, REC_N = 3000, CHEM_N = 800;
 const makeLung = () => {
   const S = {
     t: 0, cond: "healthy", user: { C: 1, R: 1 }, alt: 0, co2: false, mode: null, modeT: 0, ff: false, msg: "",
-    temp: 37, bpg: 5, fetal: false, tempTouched: false,
+    temp: 37, bpg: 5, fetal: false, tempTouched: false, hco3m: 24, hco3: 24,
     PACO2: 40, PAO2: 100, VE: 7, PaO2: 95, PaCO2: 40, SaO2: .97, PvO2: 40, SvO2: .75, pH: 7.4, p50: 26.8, Aa: 6, diff: 0, vqParts: null,
     /* mechanics */
     V: 0, flow: 0, tb: 0, T: 4.3, Ti: 1.7, A: 4, VTt: .5, f: 14, vmax: 0, vmin: 0, vtLast: .5, Pmus: 0, Ppl: -5, Palv: 0, airS: 0,
@@ -3476,8 +3563,15 @@ const makeLung = () => {
   /* --- control: what ventilation the brainstem asks for (L/min) --- */
   function hypoxia(){ return clamp(14 / Math.max(1, S.PaO2 - 25) - .19, 0, 3); }
   /* the PaCO₂ the chemoreflex defends: ~40 awake, a few mmHg higher in sleep (the
-     wakefulness drive is gone) and with the chronic CO₂ retention of severe COPD */
-  const setPoint = () => 40 + (O.state().phase === "sleep" ? 4 : 0) + (S.cond === "copd" ? 7 : 0);
+     wakefulness drive is gone) and with the chronic CO₂ retention of severe COPD.
+     A metabolic acid or base load moves it too, because the chemoreceptors sense H⁺, not CO₂
+     itself: with less bicarbonate the same PaCO₂ means more acid, so breathing rises until
+     the set point falls by ~1.4 mmHg per mmol/L of bicarbonate lost, so that PaCO₂ settles near
+     Winters’ formula (expected
+     PaCO₂ = 1.5·HCO₃⁻ + 8 ± 2, gives ~20 mmHg at a bicarbonate of 8), and with extra
+     bicarbonate it rises by ~0.7 mmHg per mmol/L. Compensation never fully restores pH. */
+  const metShift = () => S.hco3m < 24 ? -1.4 * (24 - S.hco3m) : .7 * (S.hco3m - 24);
+  const setPoint = () => Math.max(12, 40 + (O.state().phase === "sleep" ? 4 : 0) + (S.cond === "copd" ? 7 : 0) + metShift());
   function command(){
     const ph = O.state().phase, G = 2 * (ph === "sleep" ? .6 : 1) * (S.cond === "copd" ? .6 : 1), hyp = hypoxia();
     /* above the set point, CO₂ drives breathing (~2 L/min per mmHg, steeper when hypoxic); below
@@ -3514,9 +3608,10 @@ const makeLung = () => {
     /* bicarbonate, mmol/L: a little lactate near the ventilatory threshold; at altitude the kidneys
        shed bicarbonate (~0.45 per mmHg of hypocapnia, as after days there), and in COPD they keep it
        (~0.35 per mmHg of chronic hypercapnia), so pH stays near normal */
-    const hco3 = 24 - (ph === "exercise" ? 1.5 : 0) - (S.alt > 0 ? .45 * Math.max(0, 40 - S.PaCO2) : 0)
+    const hco3 = S.hco3m - (ph === "exercise" ? 1.5 : 0) - (S.alt > 0 ? .45 * Math.max(0, 40 - S.PaCO2) : 0)
       + (S.cond === "copd" ? .35 * Math.max(0, S.PaCO2 - 40) : 0);
-    S.pH = 6.1 + Math.log10(hco3 / (.03 * S.PaCO2));
+    S.hco3 = Math.max(2, hco3);
+    S.pH = 6.1 + Math.log10(S.hco3 / (.03 * S.PaCO2));
     if (!S.tempTouched) S.temp = body().temp;
     S.p50 = 26.8 * Math.pow(10, .48 * (7.4 - S.pH)) * Math.exp(.024 * (S.temp - 37)) * Math.pow(S.bpg / 5, .3) * (S.fetal ? .71 : 1);
     const VA = Math.max(1, S.VE - S.f * vdNow()), Q = body().co, vo2 = body().vo2, pio2 = PIO2();
@@ -3638,7 +3733,7 @@ const makeLung = () => {
     chem.n = 0; chem.i = 0; for (let k = 720; k > 0; k--){ const tt = S.t - k * .25; chem.t[chem.i] = tt; chem.o2[chem.i] = S.PaO2; chem.co2[chem.i] = S.PaCO2; chem.ve[chem.i] = S.VE; chem.i = (chem.i + 1) % CHEM_N; chem.n++; }
   }
   FORCED = forcedCurve(CONDITIONS.healthy);
-  return { S, rec, chem, cond, body, PB, PIO2, advance, setCond, settle, exchange, forced: () => FORCED, hypoxia,
+  return { S, rec, chem, cond, body, PB, PIO2, advance, setCond, settle, exchange, forced: () => FORCED, hypoxia, setPoint,
     startSpiro(){ if (S.man || S.mode === "hold") return; S.man = { stage: 0, t: 0, v0: S.V }; } };
 };
 const Lung = makeLung(), RefLung = makeLung();
@@ -3904,7 +3999,7 @@ readouts("#mechRO", [["rr", "Rate"], ["vt", "Tidal volume"], ["ve", "Ventilation
 readouts("#spiroRO", [["fev1", "FEV₁"], ["fvc", "FVC"], ["ratio", "FEV₁/FVC"], ["pef", "Peak flow"], ["tlc", "Total capacity"], ["rv", "Residual vol."]]);
 readouts("#odcRO", [["p50", "P50"], ["ph", "pH"], ["sa", "Arterial sat."], ["sv", "Venous sat."], ["unload", "O₂ unloaded"]]);
 readouts("#abgRO", [["pao2", "PaO₂"], ["paco2", "PaCO₂"], ["aa", "A–a gradient"], ["sao2", "SaO₂"], ["ph2", "pH"], ["shunt", "Shunt"]]);
-readouts("#ctlRO", [["ve2", "Ventilation"], ["pao2b", "PaO₂"], ["paco2b", "PaCO₂"], ["drive", "Hypoxic drive"]]);
+readouts("#ctlRO", [["ve2", "Ventilation"], ["pao2b", "PaO₂"], ["paco2b", "PaCO₂"], ["drive", "Hypoxic drive"], ["ph3", "pH"], ["hco3", "Bicarbonate"]]);
 function ro(k, v, u, d = ""){ $$(`[data-ro="${k}"]`).forEach(n => { const h = `${v}${u ? `<small>${u}</small>` : ""}${d}`; if (n.__h !== h){ n.innerHTML = h; n.__h = h; } }); }
 /* altitude sliders (two, kept in step) */
 $$("[data-altitude]").forEach((host, i) => {
@@ -3917,6 +4012,10 @@ $("#odcSliders").innerHTML = `<div class="sl"><label for="tempIn">Temperature <o
   <div class="sl"><label for="bpgIn">2,3-BPG in red cells <output id="bpgOut"></output></label><input id="bpgIn" type="range" min="2" max="9" step="0.1" value="5"><div class="ends"><span>Low (stored blood)</span><span>High (altitude, anaemia)</span></div></div>`;
 $("#tempIn").addEventListener("input", e => { Lung.S.temp = +e.target.value; Lung.S.tempTouched = true; O.altered(); });
 $("#bpgIn").addEventListener("input", e => { Lung.S.bpg = +e.target.value; O.altered(); });
+/* metabolic acid or base: blood bicarbonate, which moves the PaCO₂ the chemoreflex defends */
+$("#acidSliders").innerHTML = `<div class="sl"><label for="hco3In">Blood bicarbonate <output id="hco3Out"></output></label><input id="hco3In" type="range" min="6" max="40" step="0.5" value="24"><div class="ends"><span>Acid load (ketoacidosis)</span><span>Base load (vomiting)</span></div></div>`;
+$("#hco3In").addEventListener("input", e => { Lung.S.hco3m = +e.target.value; O.altered(); });
+const acidText = () => { const b = Lung.S.hco3m; return Math.abs(b - 24) < .25 ? "normal" : b < 24 ? "metabolic acidosis" : "metabolic alkalosis"; };
 $("#fetalBtn").addEventListener("click", e => { Lung.S.fetal = !Lung.S.fetal; e.currentTarget.setAttribute("aria-pressed", String(Lung.S.fetal)); O.altered(); });
 /* control buttons */
 const CTL = [["hold", "Hold your breath"], ["hyper", "Hyperventilate (1 min)"], ["co2", "Breathe 5% CO₂"], ["reset", "Back to normal"]];
@@ -3927,7 +4026,7 @@ $("#ctlBtns").addEventListener("click", e => {
   if (k === "hold"){ if (S.mode === "hold"){ S.mode = null; S.msg = `You breathed again after ${Math.round(S.modeT)} s.`; S.vmax = S.vmin = S.V; S.tb = S.T; } else { S.mode = "hold"; S.modeT = 0; S.man = null; $("#spiroBtn").disabled = false; } }
   else if (k === "hyper"){ S.mode = S.mode === "hyper" ? null : "hyper"; S.modeT = 0; }
   else if (k === "co2"){ S.co2 = !S.co2; }
-  else { S.mode = null; S.co2 = false; S.alt = 0; $$("[data-alt]").forEach(x => x.value = 0); Lung.settle(); }
+  else { S.mode = null; S.co2 = false; S.alt = 0; S.hco3m = 24; $$("[data-alt]").forEach(x => x.value = 0); $("#hco3In").value = 24; Lung.settle(); }
   renderCtl(); O.altered();
 });
 $("#ffBtn").addEventListener("click", e => { Lung.S.ff = !Lung.S.ff; e.currentTarget.setAttribute("aria-pressed", String(Lung.S.ff)); });
@@ -4250,6 +4349,8 @@ O.onTick((dt, real) => {
     ro("pao2", Math.round(S.PaO2), "mmHg", D(S.PaO2, Q.PaO2)); ro("paco2", Math.round(S.PaCO2), "mmHg", D(S.PaCO2, Q.PaCO2)); ro("aa", Math.round(S.Aa + S.diff), "mmHg", D(S.Aa + S.diff, Q.Aa + Q.diff));
     ro("sao2", Math.round(S.SaO2 * 100), "%", D(S.SaO2 * 100, Q.SaO2 * 100)); ro("ph2", S.pH.toFixed(2), "", D(S.pH, Q.pH, 2)); ro("shunt", Math.round(c.shunt * 100), "%");
     ro("ve2", S.VE.toFixed(1), "L/min", D(S.VE, Q.VE, 1)); ro("pao2b", Math.round(S.PaO2), "mmHg", D(S.PaO2, Q.PaO2)); ro("paco2b", Math.round(S.PaCO2), "mmHg", D(S.PaCO2, Q.PaCO2)); ro("drive", Lung.hypoxia() > .05 ? "×" + (1 + Lung.hypoxia()).toFixed(1) : "none");
+    ro("ph3", S.pH.toFixed(2), "", D(S.pH, Q.pH, 2)); ro("hco3", S.hco3.toFixed(1), "mmol/L", D(S.hco3, Q.hco3, 1));
+    $("#hco3Out").textContent = `${S.hco3m.toFixed(1)} mmol/L · ${acidText()}`;
     $$("[data-alt-out]").forEach(n => n.textContent = `${Lung.S.alt.toLocaleString()} m · ${Math.round(Lung.PB())} mmHg`);
     $("#tempOut").textContent = S.temp.toFixed(1) + " °C"; $("#tempIn").value = S.temp; $("#bpgOut").textContent = S.bpg.toFixed(1) + " mM";
     renderCtl();
@@ -4271,7 +4372,7 @@ function syncLungUI(){
   $$("[data-cond]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cond === S.cond)));
   renderAnatomyCondition(); renderCondText(); syncMech();
   $$("[data-alt]").forEach(x => x.value = S.alt);
-  $("#tempIn").value = S.temp; $("#bpgIn").value = S.bpg;
+  $("#tempIn").value = S.temp; $("#bpgIn").value = S.bpg; $("#hco3In").value = S.hco3m;
   $("#fetalBtn").setAttribute("aria-pressed", String(S.fetal));
   renderCtl();
 }
@@ -4282,12 +4383,13 @@ function clearChange(id){
   else if (id === "alt") S.alt = 0;
   else if (id === "temp"){ S.tempTouched = false; S.temp = Lung.body().temp; }
   else if (id === "bpg") S.bpg = 5;
+  else if (id === "hco3") S.hco3m = 24;
   else if (id === "fetal") S.fetal = false;
   else if (id === "co2") S.co2 = false;
   else if (id === "mode"){ S.mode = null; S.vmax = S.vmin = S.V; S.tb = S.T; }
   S.msg = "";
 }
-const ALL_CHANGES = ["cond", "C", "R", "alt", "temp", "bpg", "fetal", "co2", "mode"];
+const ALL_CHANGES = ["cond", "C", "R", "alt", "temp", "bpg", "hco3", "fetal", "co2", "mode"];
 O.alter({
   title: () => O.get("alter.title"),
   healthy: () => O.levelText(O.get("alter.healthy")),
@@ -4298,19 +4400,22 @@ O.alter({
     if (S.alt > 0) out.push({ id: "alt", section: "exchange", label: `Altitude ${S.alt.toLocaleString()} m` });
     if (tempChanged()) out.push({ id: "temp", section: "exchange", label: `Blood at ${S.temp.toFixed(1)} °C` });
     if (Math.abs(S.bpg - 5) > .05) out.push({ id: "bpg", section: "exchange", label: `2,3-BPG ${S.bpg.toFixed(1)} mM` });
+    if (Math.abs(S.hco3m - 24) > .25) out.push({ id: "hco3", section: "control", label: `Bicarbonate ${S.hco3m.toFixed(1)} mmol/L (${acidText()})` });
     if (S.fetal) out.push({ id: "fetal", section: "exchange", label: "Fetal haemoglobin" });
     if (S.co2) out.push({ id: "co2", section: "control", label: "Breathing 5% CO₂" });
     if (S.mode === "hold") out.push({ id: "mode", section: "control", label: "Holding your breath" });
     if (S.mode === "hyper") out.push({ id: "mode", section: "control", label: "Hyperventilating" });
     return out;
   },
-  clear(id){ clearChange(id); if (id === "alt" || id === "co2") Lung.settle(); syncLungUI(); },
+  clear(id){ clearChange(id); if (id === "alt" || id === "co2" || id === "hco3") Lung.settle(); syncLungUI(); },
   reset(){ ALL_CHANGES.forEach(clearChange); Lung.settle(); RefLung.settle(); syncLungUI(); },
   sync(){ Lung.settle(); RefLung.settle(); syncLungUI(); },
   notes(sec){
     const S = Lung.S, c = Lung.cond(), out = [], hyp = Lung.hypoxia();
     const v = { cond: condName(), pao2: Math.round(S.PaO2), paco2: Math.round(S.PaCO2), aa: Math.round(S.Aa + S.diff), ve: S.VE.toFixed(1),
-      ph: S.pH.toFixed(2), p50: S.p50.toFixed(1), alt: S.alt.toLocaleString(), pio2: Math.round(Lung.PIO2()), hyp: (1 + hyp).toFixed(1) };
+      ph: S.pH.toFixed(2), p50: S.p50.toFixed(1), alt: S.alt.toLocaleString(), pio2: Math.round(Lung.PIO2()), hyp: (1 + hyp).toFixed(1),
+      hco3: S.hco3m.toFixed(1), winter: (1.5 * S.hco3m + 8).toFixed(0), sp: Math.round(Lung.setPoint()), vt: Math.round((S.vtLast || S.VTt) * 1000), rr: S.f.toFixed(0) };
+    const acid = S.hco3m < 23.75, base = S.hco3m > 24.25;
     const N = (cause, key) => out.push({ cause, html: O.fill(O.get(`alter.notes.${key}`), v) });
     const EX = { asthma: "exAsthma", copd: "exCopd", fibrosis: "exFibrosis", pneumonia: "exPneumonia", pe: "exPe" };
     if (sec === "anatomy"){
@@ -4322,6 +4427,7 @@ O.alter({
       else {
         if (S.alt >= 1500 && hyp > .05) N("alt", "mechAlt");
         if (S.co2) N("co2", "mechCo2");
+        if (acid) N("hco3", "mechAcid");
       }
     }
     if (sec === "exchange"){
@@ -4329,11 +4435,15 @@ O.alter({
       if (S.mode === "hold") N("mode", "exHold");
       else if (S.mode === "hyper") N("mode", "exHyper");
       else if (S.co2) N("co2", "exCo2");
+      if (acid && S.mode !== "hold") N("hco3", "exAcid");
+      else if (base && S.mode !== "hold") N("hco3", "exBase");
     }
     if (sec === "control"){
       if (S.cond === "copd") N("cond", "ctlCopd");
       else if (c.drive > 0) N("cond", "ctlCond");
       if (S.alt >= 1500 && hyp > .05) N("alt", "ctlAlt");
+      if (acid) N("hco3", "ctlAcid");
+      else if (base) N("hco3", "ctlBase");
     }
     return out;
   },
@@ -4342,6 +4452,7 @@ O.alter({
     return { cond: S.cond !== "healthy" ? S.cond : "",
       compliance: Math.abs(S.user.C - 1) > .005 ? f(S.user.C) : "", resistance: Math.abs(S.user.R - 1) > .005 ? f(S.user.R) : "",
       alt: S.alt > 0 ? String(S.alt) : "", temp: tempChanged() ? S.temp.toFixed(1) : "", bpg: Math.abs(S.bpg - 5) > .05 ? S.bpg.toFixed(1) : "",
+      hco3: Math.abs(S.hco3m - 24) > .25 ? S.hco3m.toFixed(1) : "",
       fetal: S.fetal ? "1" : "", co2: S.co2 ? "1" : "" };
   },
   fromParams(P){
@@ -4351,6 +4462,7 @@ O.alter({
     const a = num("alt", 0, 8848); if (a !== null) S.alt = Math.min(8848, Math.round(a / 50) * 50);
     const t = num("temp", 34, 41); if (t !== null){ S.temp = t; S.tempTouched = true; }
     const b = num("bpg", 2, 9); if (b !== null) S.bpg = b;
+    const h = num("hco3", 6, 40); if (h !== null) S.hco3m = Math.round(h * 2) / 2;
     S.fetal = P.get("fetal") === "1"; S.co2 = P.get("co2") === "1";
   }
 });

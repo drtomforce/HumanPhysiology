@@ -9,15 +9,15 @@ When a section is done, replace its plan with a one-line pointer to the README a
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#3-new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 9: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones | 5 existing organs (skin, eyes, ears, throat, spleen & lymph nodes) + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 10: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin | 4 existing organs (eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 8: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic, muscles & skeleton | 2: skin, reproductive |
 | Journeys ("follow a …") | 8: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step | One per new system, plus cross-system journeys |
-| Prediction questions | 27: three on each of the 9 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
+| Prediction questions | 30: three on each of the 10 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
 | Converging cases (run across pages) | 1: diabetic ketoacidosis | 4: cholera to shock, heart failure, the marathon wall, altitude over weeks |
 
 ## Next up
 
-Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)); next is the skin page and the skin system on the body (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so is the skin page ([1.7](#17-skin-organsskinhtml--done)); next is the skin system on the body, with its heat flows and the “follow the heat” journey (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -102,12 +102,16 @@ Built; see the README for what it covers. What changed from the plan, and what i
 - **More scenarios**: hypoparathyroidism, an anorexia or RED-S athlete, a teenager building peak bone mass, stopping denosumab (rebound), Paget's disease, multiple myeloma, iron-deficiency anaemia, a hip fracture in an older person.
 - **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8c); the PhD text names its key sources, and three registry rows (blood calcium and PTH, bone turnover, haemoglobin and blood cell production) were added.
 
-### 1.7 Skin (`organs/skin.html`)
-- **Anatomy**: epidermis layers (basale → corneum), melanocytes, Langerhans cells, dermis, hair follicle, sebaceous and sweat glands (eccrine, apocrine), receptors (Meissner, Merkel, Pacinian, Ruffini, free nerve endings) and the dermal blood vessels.
-- **Temperature control**: the hypothalamic set-point, sweating, vasodilation and vasoconstriction, arteriovenous anastomoses and shivering. Heat balance (conduction, convection, radiation, evaporation) with sliders for air temperature, humidity and wind, tied to the core temperature that already rises in the run.
-- **Touch and pain**: receptive fields and two-point discrimination on a body map, adaptation (fast vs slow receptors), dermatomes, and gate control of pain.
-- **Barrier, sun and wound healing**: UV → vitamin D vs DNA damage, melanin and skin type, and wound healing (haemostasis → inflammation → proliferation → remodelling).
-- **Scenarios**: heat stroke, hypothermia, a sunburn, a burn (by depth, with a rule-of-nines fluid estimate), fever, eczema.
+### 1.7 Skin (`organs/skin.html`) ✅ Done
+Built; see the README for what it covers. What changed from the plan, and what is still open for this page:
+- **The heat model is two nodes**: a core and a skin shell (after Gagge 1971) with a fixed shell of 10% of body mass, one mean skin temperature and no hands, feet or limbs of their own, so the arteriovenous anastomoses are drawn and explained but not modelled, and sleep-onset distal warming is in the anatomy figure (from the body's day) but not in the heat model. Sun is a mean radiant temperature 18 °C above the air; there is no wet clothing, wind chill on exposed skin, altitude, body size, age or fat thickness. Cold water uses h_c ≈ 230 W/m²/K and a shell conductance that rises with shivering, calibrated to ~1.7 °C/h of core cooling at 10 °C; cold shock is text only. Dehydration is a rule (sweat and skin flow fall beyond ~1% body-mass loss) and nobody drinks. After the run the resting controller takes over at once (the exercise skin-flow ceiling lifts over ~5 min), without post-exercise baroreflex limits on skin flow and sweating. Acclimatisation is a lower threshold and a higher gain and ceiling for sweating, without the plasma-volume or sweat-sodium changes. The run is the page's own model calibrated to the body view's ~38.2 °C; the body does not read from it, nor the reverse.
+- **Touch and pain**: the four receptor responses are rules (rates from depth, velocity, Pacinian bursts at each edge and tuning curves for vibration), not a mechanical model of the skin or the corpuscle; C-tactile afferents and thermoreceptors are text only. The dermatome map and the body map of receptive fields from the plan are not built: two-point discrimination uses seven sites on a small figure with Weinstein's thresholds, scaled up by neuropathy. The pain gate is qualitative arithmetic (its numbers are illustrative), with stress, morphine and ketamine as single factors; no wind-up over time and no chronic pain.
+- **Sun**: the dose is UV index × minutes; there is no latitude, date or hour picker (the UV index stands in for them), no tanning over days, and the MED by skin type (I ~2.5 to VI ~10 SED) is one value per type although they overlap widely. Vitamin D is a single saturating curve (289 µg × area × (1 − e^(−MED/0.5))) times a ramp that removes it below a UV index of ~3; sunscreen divides the dose by the labelled SPF. DNA damage is shown relative to the reference, with no repair or cancer risk model.
+- **Wound healing** is a staged curve (scaled by diabetes, smoking, infection, age and neuropathy) for a stitched cut, not a cell model; there is no open wound healing by secondary intention, no chronic ulcer, no keloid or hypertrophic scar, and no dressing or pressure-offloading choice.
+- **Burns** use the adult rule of nines only (no Lund & Browder chart for children, no palm method), the Parkland formula without a model of the fluid response (urine output, oedema, fluid creep), and the burn's evaporative water loss ((25 + %TBSA) × BSA mL/h) feeds the heat balance; inhalation injury, escharotomy and grafting are not covered.
+- **More scenarios**: frostbite and non-freezing cold injury, Raynaud's phenomenon, urticaria, psoriasis, a pressure ulcer, melanoma, hyperhidrosis treated with botulinum toxin, cystic fibrosis sweat (shared with the pancreas page), a child's burn by Lund & Browder, and heat exhaustion versus heat stroke in an older person on diuretics.
+- **Not yet built**: the skin system on the body ([2.3](#23-skin-integumentary)) and its journeys, carrying a condition across to other pages (sweat loss → the kidneys page's dehydration, a large burn → the kidneys and heart, vitamin D → the bones page's calcium model, a diabetic foot ↔ the pancreas page), and the integumentary lens card linking to the body once the skin system is animated.
+- **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8e); the PhD texts name their key sources, 19 sources were added to `fact-check/sources.json`, and two registry rows (thermoregulation, UV dose and vitamin D) were added.
 
 ### 1.8 Eyes (`organs/eyes.html`)
 - **Anatomy**: cornea, iris, lens, ciliary body, aqueous and vitreous, retina layers, fovea, optic disc, extraocular muscles.
@@ -164,6 +168,7 @@ The layer and the "follow a step" journey are built: see the README for what the
 - **Draw**: a skin layer over the whole body with sweat glands, dermal vessels and hair.
 - **Animate**: skin blood flow and colour (flushed in the run, pale in cold), sweat rate tied to core temperature, goosebumps, and heat flow arrows (radiation, convection, evaporation). The sweat drips already in the scene become this system's particles.
 - **Physiology channels**: skin temperature, sweat rate, skin blood flow, insensible water loss (feeds the urinary system's water balance).
+- **A model to share**: the skin page's two-node heat balance (`thermo()` in `organs/skin.html`) already reaches the body's ~38.2 °C on the run; the body's `coreTemp`, `sweat` and a new skin-blood-flow channel could be sampled from it, as the liver's glycogen is sampled from the liver page.
 - **Journey: follow the heat**: heat made in a working muscle → carried by blood → hypothalamus senses it → sympathetic cholinergic nerves → sweat gland → evaporation from the skin. Also a sunlight → vitamin D journey (skin → liver → kidney → gut calcium uptake) that links to bones.
 
 ### 2.4 Reproductive
@@ -264,7 +269,7 @@ These span several organs and are best built as their own pages (for example `ex
 
 ## 6. Questions: predict, then watch ✅ Done (the questions, the hub and the first converging case; four cases still open)
 
-Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
+Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all; the skin page has since added three more) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
 
 - **Diabetic ketoacidosis runs** ([6.4](#64-converging-cases)) ✅: see the README. The lungs page has a blood-bicarbonate slider in its control section that moves the chemoreflex set point (Winters’ formula for an acidosis, ~0.7 mmHg per mmol/L for an alkalosis) and a *Diabetic ketoacidosis* scenario at HCO₃⁻ 11 mmol/L, the same patient as the pancreas and kidneys pages (PaCO₂ ~24, pH ~7.29). The hub's *Start the case* opens each stop's page on its scenario through `?scenario=`, and the shared engine draws a case strip (stops, back, next, all stops, leave) from the `case`, `ctitle`, `stop` and `route` parameters. What changed from the plan, and what is still open for it:
   - **Each stop applies its own scenario**: nothing is carried from one page to the next. The four scenarios were set to agree (glucose, ketones, bicarbonate, pH), and the registry row in `FACTUAL_CHECK.md` holds them together, but changing a slider on one page doesn't reach the next. Carrying state needs "Changes across pages" ([5](#5-shared-and-supporting-work)).
@@ -311,15 +316,16 @@ Followed. The test, `tests/questions-check.mjs`, checks everything the plan list
 
 - **Predicting a number**: a slider ("GFR will fall to about … mL/min"), judged against the model's result within a margin, with an explanation for each of too high, too low and close.
 - **On the body**: questions on the body view once "Body view scenarios" ([5](#5-shared-and-supporting-work)) exists, so a converging case can end on the whole body with every vital responding.
-- **New pages**: skin, eyes, ears, throat and spleen each get a Predict section as they are built (convention 13), and each new page opens the converging cases that were waiting for it.
+- **New pages**: eyes, ears, throat and spleen each get a Predict section as they are built (convention 13; the skin page has three), and each new page opens the converging cases that were waiting for it.
 
 ## Suggested order
 
-Done so far: the kidneys, gut, liver, pancreas, muscles and bones pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
+Done so far: the kidneys, gut, liver, pancreas, muscles, bones and skin pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
 
 1. ~~The first converging case, diabetic ketoacidosis ([6.4](#64-converging-cases)), with the scenarios its stops need.~~ ✅ Done (the heart's low-K⁺ ECG is still open; see [6](#6-questions-predict-then-watch)).
-2. Skin page and the skin system on the body (heat balance).
-3. Eyes, ears and throat pages.
-4. Endocrine glands, and blood & vessels as new organs with pages.
-5. Reproductive system and organs.
-6. Cross-organ explorations and the extra sections on the heart, lungs and brain.
+2. ~~Skin page~~ ✅ Done (see [1.7](#17-skin-organsskinhtml--done) for what is still open on it).
+3. The skin system on the body (heat balance, sweat and skin blood flow, “follow the heat”; [2.3](#23-skin-integumentary)).
+4. Eyes, ears and throat pages.
+5. Endocrine glands, and blood & vessels as new organs with pages.
+6. Reproductive system and organs.
+7. Cross-organ explorations and the extra sections on the heart, lungs and brain.

@@ -183,5 +183,6 @@
  "baxter1968": {"kind": "primary", "access": "subscription", "cite": "Baxter CR, Shires T. Physiological response to crystalloid resuscitation of severe burns. Ann N Y Acad Sci. 1968;150(3):874–894."},
  "nnbc2012": {"kind": "guideline", "access": "open", "cite": "National Network for Burn Care. National Burn Care Referral Guidance. Version 1. London: NNBC; 2012."},
  "palmer2006": {"kind": "primary", "access": "subscription", "cite": "Palmer CNA, Irvine AD, Terron-Kwiatkowski A, et al. Common loss-of-function variants of the epidermal barrier protein filaggrin are a major predisposing factor for atopic dermatitis. Nat Genet. 2006;38(4):441–446."},
- "clark2006": {"kind": "primary", "access": "subscription", "cite": "Clark RA, Chong B, Mirchandani N, et al. The vast majority of CLA+ T cells are resident in normal skin. J Immunol. 2006;176(7):4431–4439."}
+ "clark2006": {"kind": "primary", "access": "subscription", "cite": "Clark RA, Chong B, Mirchandani N, et al. The vast majority of CLA+ T cells are resident in normal skin. J Immunol. 2006;176(7):4431–4439."},
+ "geyfman2012": {"kind": "primary", "access": "open", "cite": "Geyfman M, Kumar V, Liu Q, et al. Brain and muscle Arnt-like protein-1 (BMAL1) controls circadian cell proliferation and susceptibility to UVB-induced DNA damage in the epidermis. Proc Natl Acad Sci U S A. 2012;109(29):11758-11763. doi:10.1073/pnas.1209592109"}
 }

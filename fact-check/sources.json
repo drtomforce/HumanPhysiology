@@ -164,6 +164,7 @@
  "magnusson2019": {"kind":"review","cite":"Magnusson SP, Kjaer M. The impact of loading, unloading, ageing and injury on the human tendon. J Physiol. 2019;597(5):1283-1298. doi:10.1113/JP275450"},
  "turner1998": {"kind":"review","cite":"Turner CH. Three rules for bone adaptation to mechanical stimuli. Bone. 1998;23(5):399-407. doi:10.1016/S8756-3282(98)00118-5"},
  "li2019": {"kind":"primary","access":"open","cite":"Li X, Han L, Nookaew I, et al. Stimulation of Piezo1 by mechanical signals promotes bone anabolism. eLife. 2019;8:e49631. doi:10.7554/eLife.49631"},
+ "levartovsky2016": {"kind": "primary", "access": "open", "cite": "Levartovsky A, Dafna E, Zigel Y, Tarasiuk A. Breathing and snoring sound characteristics during sleep in adults. J Clin Sleep Med. 2016;12(3):375-384. doi:10.5664/jcsm.5588"},
  "gagge1971": {"kind": "primary", "access": "print", "cite": "Gagge AP, Stolwijk JAJ, Nishi Y. An effective temperature scale based on a simple model of human physiological regulatory response. ASHRAE Trans. 1971;77(1):247–262."},
  "casa2007": {"kind": "review", "access": "subscription", "cite": "Casa DJ, McDermott BP, Lee EC, Yeargin SW, Armstrong LE, Maresh CM. Cold water immersion: the gold standard for exertional heatstroke treatment. Exerc Sport Sci Rev. 2007;35(3):141–149."},
  "vecellio2022": {"kind": "primary", "access": "subscription", "cite": "Vecellio DJ, Wolf ST, Cottle RM, Kenney WL. Evaluating the 35°C wet-bulb temperature adaptability threshold for young, healthy subjects (PSU HEAT Project). J Appl Physiol. 2022;132(2):340–345."},
@@ -182,5 +183,6 @@
  "baxter1968": {"kind": "primary", "access": "subscription", "cite": "Baxter CR, Shires T. Physiological response to crystalloid resuscitation of severe burns. Ann N Y Acad Sci. 1968;150(3):874–894."},
  "nnbc2012": {"kind": "guideline", "access": "open", "cite": "National Network for Burn Care. National Burn Care Referral Guidance. Version 1. London: NNBC; 2012."},
  "palmer2006": {"kind": "primary", "access": "subscription", "cite": "Palmer CNA, Irvine AD, Terron-Kwiatkowski A, et al. Common loss-of-function variants of the epidermal barrier protein filaggrin are a major predisposing factor for atopic dermatitis. Nat Genet. 2006;38(4):441–446."},
- "clark2006": {"kind": "primary", "access": "subscription", "cite": "Clark RA, Chong B, Mirchandani N, et al. The vast majority of CLA+ T cells are resident in normal skin. J Immunol. 2006;176(7):4431–4439."}
+ "clark2006": {"kind": "primary", "access": "subscription", "cite": "Clark RA, Chong B, Mirchandani N, et al. The vast majority of CLA+ T cells are resident in normal skin. J Immunol. 2006;176(7):4431–4439."},
+ "geyfman2012": {"kind": "primary", "access": "open", "cite": "Geyfman M, Kumar V, Liu Q, et al. Brain and muscle Arnt-like protein-1 (BMAL1) controls circadian cell proliferation and susceptibility to UVB-induced DNA damage in the epidermis. Proc Natl Acad Sci U S A. 2012;109(29):11758-11763. doi:10.1073/pnas.1209592109"}
 }

@@ -34,6 +34,12 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation",
   "checked": "2026-11-23"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation#:~:text=Troponin%20also%20has%20a%20binding%20site": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation",
+  "checked": "2026-11-24"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/12-2-nervous-tissue#:~:text=contributing%20to%20the%20blood-brain%20barrier": {
   "state": "ok",
   "code": 200,
@@ -187,11 +193,35 @@
   "code": 200,
   "checked": "2026-11-19"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-3-the-process-of-breathing#:~:text=The%20process%20of%20normal%20expiration%20is%20passive": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-3-the-process-of-breathing",
+  "checked": "2026-11-24"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases#:~:text=About%2020%20percent%20of%20carbon%20dioxide": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases",
+  "checked": "2026-11-24"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases#:~:text=Hemoglobin%20that%20is%20saturated%20with%20oxygen": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases",
+  "checked": "2026-11-24"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases#:~:text=about%2070%20percent": {
   "state": "ok",
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases",
   "checked": "2026-11-23"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases#:~:text=only%20about%201.5%25%20of%20the%20total": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases",
+  "checked": "2026-11-24"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=These%20two%20nuclei%20then%20send%20back%20parasympathetic%20impulses": {
   "state": "ok",
@@ -230,6 +260,24 @@
   "state": "ok",
   "code": 200,
   "checked": "2026-11-20"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=The%20entire%20layer%20is%20replaced": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-24"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=The%20melanin%20is%20transferred%20into%20the%20keratinocytes": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-24"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=There%20are%20usually%2015%20to%2030%20layers": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-24"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=branch%20off%20at%20right%20angles": {
   "state": "ok",
@@ -319,6 +367,16 @@
   "state": "ok",
   "code": 200,
   "checked": "2026-11-20"
+ },
+ "https://pmc.ncbi.nlm.nih.gov/articles/PMC3406811/": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-24"
+ },
+ "https://pmc.ncbi.nlm.nih.gov/articles/PMC4773633/": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-24"
  },
  "https://pmc.ncbi.nlm.nih.gov/articles/PMC5723673": {
   "state": "ok",

@@ -163,5 +163,6 @@
  "morton2006": {"kind":"primary","access":"open","cite":"Morton SM, Bastian AJ. Cerebellar contributions to locomotor adaptations during splitbelt treadmill walking. J Neurosci. 2006;26(36):9107-9116. doi:10.1523/JNEUROSCI.2622-06.2006"},
  "magnusson2019": {"kind":"review","cite":"Magnusson SP, Kjaer M. The impact of loading, unloading, ageing and injury on the human tendon. J Physiol. 2019;597(5):1283-1298. doi:10.1113/JP275450"},
  "turner1998": {"kind":"review","cite":"Turner CH. Three rules for bone adaptation to mechanical stimuli. Bone. 1998;23(5):399-407. doi:10.1016/S8756-3282(98)00118-5"},
- "li2019": {"kind":"primary","access":"open","cite":"Li X, Han L, Nookaew I, et al. Stimulation of Piezo1 by mechanical signals promotes bone anabolism. eLife. 2019;8:e49631. doi:10.7554/eLife.49631"}
+ "li2019": {"kind":"primary","access":"open","cite":"Li X, Han L, Nookaew I, et al. Stimulation of Piezo1 by mechanical signals promotes bone anabolism. eLife. 2019;8:e49631. doi:10.7554/eLife.49631"},
+ "levartovsky2016": {"kind": "primary", "access": "open", "cite": "Levartovsky A, Dafna E, Zigel Y, Tarasiuk A. Breathing and snoring sound characteristics during sleep in adults. J Clin Sleep Med. 2016;12(3):375-384. doi:10.5664/jcsm.5588"}
 }

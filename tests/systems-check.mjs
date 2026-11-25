@@ -22,7 +22,10 @@
    the run evaporation > convection > radiation, heat lost within 10% of heat made at noon and
    at the end of the run, skin cooler and skin blood flow ~4× higher in the run than at noon,
    and that the layer draws it: pores swollen with sweat and the heat arrows out in the run,
-   dry pores at noon, and the rim cooler (bluer) in the run.
+   dry pores at noon, and the rim cooler (bluer) in the run. Then it plays the heat journey
+   (?ride=heat:<id>) stop by stop from an hour outside the run (the clock must jump to the
+   run), checks its text at four levels, that the rider reaches the hypothalamus, a sweat
+   pore and the air above it, Replay, the skin panel's chip, and that tapping a pore starts it.
    It serves the repository on a local port itself. Needs the playwright package. */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -115,7 +118,7 @@ for (const id of ids.filter(x => x.includes(only))){
 
   if (id === "immune") await infections(page, fail);
   if (id === "musculoskeletal") await steps(page, fail);
-  if (id === "integumentary") await skin(page, fail);
+  if (id === "integumentary"){ await skin(page, fail); await heats(page, fail); }
 
   /* the organ pages' lens link */
   await page.goto(base + `?live=${id}&hour=17.5`);
@@ -209,6 +212,82 @@ async function skin(page, fail){
   const blue = c => parseInt(c.slice(5, 7), 16) - parseInt(c.slice(1, 3), 16);
   if (!(blue(b.rim) > blue(a.rim))) fail(`the rim is ${b.rim} in the run and ${a.rim} at noon: it should be cooler (bluer) in the run`);
   console.log(`  ✓ heat balance at rest (${rest.M.toFixed(0)} W) and in the run (${run.M.toFixed(0)} W), skin cooler and flushed, pores, arrows and rim`);
+}
+/* the heat journey, stop by stop: where the rider goes, Replay, the skin panel's chip and a tap on a pore */
+async function heats(page, fail){
+  const C = await page.evaluate(() => CONTENT.heat);
+  for (const [k, st] of Object.entries(C.stops))
+    for (const lv of ["name", "ms", "hs", "college", "phd"]) if (!st[lv] || st[lv].length < (lv === "name" ? 3 : 40)) fail(`heat stop ${k} has no ${lv} text`);
+  const rider = () => page.evaluate(() => { const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(document.querySelector("#s-heatRide .cas-dot").getAttribute("transform")); return [+m[1], +m[2]]; });
+  const pores = await page.evaluate(() => [...document.querySelectorAll("#s-skin .sk-pore")].map(e => [+e.getAttribute("cx"), +e.getAttribute("cy")]));
+  for (const j of Object.keys(C.journeys)){
+    for (const lv of ["ms", "phd"]){
+      await page.goto(base + `?hour=10&level=${lv}&ride=heat:${j}`);
+      await page.waitForTimeout(900);
+      await page.evaluate(() => { window.store = HumanPhysiology.store; });
+      const st = await page.evaluate(() => ({ id: store.get().heat, live: store.get().live, hour: store.get().hour, n: document.querySelectorAll(".journey-steps li").length,
+        card: document.querySelector("#heatCard").classList.contains("on") }));
+      if (st.id !== j || st.live !== "integumentary" || !st.card){ fail(`?ride=heat:${j} did not start it (${JSON.stringify(st)})`); continue; }
+      if (st.hour < 17.1 || st.hour > 18) fail(`started at 10:00, the heat ride left the clock at ${st.hour.toFixed(2)} h, not in the run`);
+      const at = {};
+      for (let i = 0; i < st.n; i++){
+        await page.evaluate(() => store.set({ ridePaused: false })); await page.waitForTimeout(400);
+        await page.evaluate(() => store.set({ ridePaused: true })); await page.waitForTimeout(80);
+        const r = await page.evaluate(() => ({ seg: store.get().heatSeg, where: document.querySelector("#heatCard .j-where").textContent,
+          on: (document.querySelector(".journey-steps li.on") || {}).textContent, text: (document.querySelector("#panel .reading .text") || {}).textContent || "",
+          meta: document.querySelector("#heatCard .j-meta").textContent }));
+        if (r.where !== r.on) fail(`${j} (${lv}), stop ${i + 1}: the card says "${r.where}" but the panel marks "${r.on}"`);
+        if (r.text.length < 40) fail(`${j} (${lv}), stop ${i + 1}: no text in the panel`);
+        if (/undefined|NaN/.test(r.meta)) fail(`${j} (${lv}), stop ${i + 1}: the card's meta reads "${r.meta}"`);
+        if (r.seg !== i) fail(`${j} (${lv}): stop ${i + 1} shows as stop ${r.seg + 1}`);
+        at[r.where] = await rider();
+        await page.click("#heatCard [data-j=next]");
+        await page.waitForTimeout(120);
+      }
+      await page.waitForTimeout(300);
+      const end = await page.evaluate(() => ({ toast: document.querySelector("#heatCard .j-toast").textContent, meta: document.querySelector("#heatCard .j-meta").textContent, hour: store.get().hour }));
+      if (end.toast !== C.journeys[j].effect) fail(`${j}: arrival says "${end.toast}", not "${C.journeys[j].effect}"`);
+      if (!/of real time/.test(end.meta)) fail(`${j}: the end says "${end.meta}", without the time it took`);
+      /* the rider goes where the text says: the hypothalamus, a sweat pore, then up into the air */
+      const near = (p, q, d) => p && Math.hypot(p[0] - q[0], p[1] - q[1]) < d;
+      if (!near(at[C.stops.preoptic.name], [600, 152], 4)) fail(`${j}: at the thermostat the rider is at ${at[C.stops.preoptic.name]}, not the hypothalamus`);
+      const gland = at[C.stops.sweatGland.name];
+      if (!pores.some(q => near(gland, q, 3))) fail(`${j}: at the sweat gland the rider is at ${gland}, not on a sweat pore`);
+      const air = at[C.stops.evaporation.name];
+      if (!air || !(air[1] < gland[1])) fail(`${j}: the vapour (${air}) doesn't rise above the pore (${gland})`);
+      /* Replay starts again from the same hour */
+      await page.click("#heatCard [data-j=next]"); await page.waitForTimeout(300);
+      const again = await page.evaluate(() => ({ seg: store.get().heatSeg, id: store.get().heat, hour: store.get().hour }));
+      if (again.id !== j || again.seg !== 0 || Math.abs(again.hour - st.hour) > .02) fail(`${j}: Replay didn't start again from ${st.hour.toFixed(2)} h (${JSON.stringify(again)})`);
+    }
+  }
+  await page.click("#heatCard [data-j=stop]"); await page.waitForTimeout(500);
+  if (await page.evaluate(() => store.get().heat != null || document.querySelector("#heatCard").classList.contains("on"))) fail("Stop didn't end the heat ride");
+  /* the skin's organ panel offers it */
+  await page.evaluate(() => store.set({ topic: "skin" })); await page.waitForTimeout(500);
+  if (!(await page.$("#panel [data-heat]"))) fail("the skin panel has no heat-ride chip");
+  else {
+    await page.click("#panel [data-heat]"); await page.waitForTimeout(500);
+    if ((await page.evaluate(() => store.get().heat)) !== "run") fail("the skin panel's chip didn't start the heat ride");
+    await page.click("#heatCard [data-j=stop]"); await page.waitForTimeout(700);
+  }
+  /* a tap on a sweat pore (one that isn't covered) starts it */
+  await page.evaluate(() => store.set({ hour: 12 })); await page.waitForTimeout(800);
+  const box = await page.evaluate(() => {
+    for (const e of document.querySelectorAll("#s-skin .sk-pore")){
+      const r = e.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2, hit = document.elementFromPoint(x, y);
+      if (hit && hit.closest("#scene") && !hit.closest(".mk")) return { x, y };
+    }
+    return null;
+  });
+  if (!box) fail("every sweat pore is covered, so none can be tapped");
+  else {
+    await page.mouse.click(box.x, box.y); await page.waitForTimeout(500);
+    const t = await page.evaluate(() => ({ id: store.get().heat, hour: store.get().hour }));
+    if (t.id !== "run") fail(`tapping a sweat pore didn't start the heat ride (${JSON.stringify(t)})`);
+    else if (t.hour < 17.1 || t.hour > 18) fail(`a tap at noon left the clock at ${t.hour.toFixed(2)} h, not in the run`);
+  }
+  console.log(`  ✓ ${Object.keys(C.journeys).length} heat journey(s) at two levels, the rider at the hypothalamus, a pore and the air, Replay, the skin chip, tap a pore`);
 }
 /* the step journey, stop by stop, with the stride pinned to it, "Other leg" and a tap on a thigh */
 async function steps(page, fail){

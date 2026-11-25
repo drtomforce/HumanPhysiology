@@ -79,11 +79,16 @@
                    body's stride), the stretch report to the cerebellum, the tendon,
                    the bone and its osteocytes; text in CONTENT.step (and, for the
                    motor command, CONTENT.impulse).
+                   HEATS lists the heat journeys (heat ride), timed like CASCADES:
+                   heat from a running thigh rides the blood to the hypothalamus,
+                   a sudomotor signal runs to a forearm sweat gland, and the heat,
+                   back round the body, leaves the forearm as the sweat evaporates;
+                   text in CONTENT.heat.
 
  3. STORE           Single source of truth {hour, level, topic, playing, shown, live,
                    follow, followSeg, impulse, impulseSeg, cascade, cascadeSeg, breath,
                    breathSeg, bite, biteSeg, drop, dropSeg, infection, infectionSeg,
-                   step, stepSeg, ridePaused}. shown = which body systems
+                   step, stepSeg, heat, heatSeg, ridePaused}. shown = which body systems
                    are drawn; live = the one that is animated (setSystem / setLive keep
                    the two consistent). follow = the red cell the camera tracks
                    (startFollow / stopFollow); followSeg = the leg of its journey.
@@ -93,8 +98,9 @@
                    for a breath journey (startBreath / stopBreath), bite / biteSeg
                    for a bite journey (startBite / stopBite) and drop / dropSeg for a
                    urinary journey (startDrop / stopDrop), infection / infectionSeg
-                   for an infection journey (startInfection / stopInfection) and step / stepSeg
-                   for a step journey (startStep / stopStep); one ride at a time
+                   for an infection journey (startInfection / stopInfection), step / stepSeg
+                   for a step journey (startStep / stopStep) and heat / heatSeg for a
+                   heat journey (startHeat / stopHeat); one ride at a time
                    (stopRides), and riding(s) says whether one is on.
 
  4. SCENE           Stylised see-through body plus a window showing the sky.
@@ -153,6 +159,10 @@
                    body's stride to it (Msk.pin), so the foot lands, the ground
                    pushes back and the bones bend when the ride says; STEP CARD
                    shows the stop, the fibre or the load, real ms and an Other leg button.
+                   HEAT RIDE follows heat from a running thigh to the air (lapseRide,
+                   time-lapse in the blood and at the hypothalamus, slow motion on the
+                   nerve); HEAT CARD shows the stop, what carries the heat, a reading
+                   of the hour (heat made, core, sweat, skin blood flow, evaporation).
 
  5. TOPICS          App.registerTopic({id, focus, side, ring, illustrate, simulate}).
                    Illustrations are pure functions ctx → SVG string;
@@ -166,7 +176,7 @@
 
  7. UI              Panel (intro with the live-system and sleep-stage cards, organ
                    view with "Part of" chips, red-cell, nerve-impulse, hormone-cascade,
-                   breath, bite, drop, infection and step journey views), timeline with
+                   breath, bite, drop, infection, step and heat journey views), timeline with
                    the hypnogram strip, level switch, system switches, glossary tooltips.
 
  7b. REPORT        The REPORTER blocks (synced from organs/_template.html by
@@ -561,9 +571,9 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .sk-rad{ fill:none; stroke:#f08a3c; stroke-linecap:round; stroke-linejoin:round; }
 .sk-conv{ fill:none; stroke:#d9b44a; stroke-linecap:round; stroke-linejoin:round; }
 .sk-dot{ stroke:#ffffff80; stroke-width:.3; }
-#s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo, #s-infectionRide .imp-halo{ opacity:.28; }
-#s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot, #s-infectionRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
-#s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail, #s-infectionRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
+#s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo, #s-infectionRide .imp-halo, #s-heatRide .imp-halo{ opacity:.28; }
+#s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot, #s-infectionRide .cas-dot, #s-heatRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
+#s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail, #s-infectionRide .imp-trail, #s-heatRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
 #s-pins .mk{ cursor:pointer; outline:none; }
 #s-pins .mk circle{ fill:var(--pc, var(--ink)); stroke:var(--bg); stroke-width:2.4; }
 #s-pins .mk text{ fill:#fff; font:600 12px var(--sans); text-anchor:middle; pointer-events:none; }
@@ -844,6 +854,7 @@ figure.ill svg{ display:block; width:100%; height:auto; }
       <div class="journey" id="dropCard" aria-live="polite"></div>
       <div class="journey" id="infectionCard" aria-live="polite"></div>
       <div class="journey" id="stepCard" aria-live="polite"></div>
+      <div class="journey" id="heatCard" aria-live="polite"></div>
       <div class="hotspots" id="hotspots"></div>
       <button class="zoom-reset" id="zoomReset" type="button">Whole body</button>
       <div class="mk-tip pin-tip" id="pinTip" role="tooltip"></div>
@@ -3973,6 +3984,99 @@ figure.ill svg{ display:block; width:100%; height:auto; }
         "phd": "The human skeleton holds about 42 billion osteocytes with about 3.7 trillion connections (Buenzli & Sims 2015). Removing Piezo1 from osteoblasts and osteocytes in mice makes bone thin and blunts its response to loading (Li et al. 2019). Romosozumab, an antibody against sclerostin, builds bone by taking away the same brake, as on the bones page. The body here keeps one peak strain a day, which the bones page’s mechanostat uses."
       }
     }
+  },
+  "heat": {
+    "journeys": {
+      "run": { "name": "Heat from a running thigh", "group": "Skin",
+        "blurb": "Heat made in a working thigh in the evening run, followed until it leaves the body. It rides the blood through the heart and lungs to the brain, where the hypothalamus senses the warmer blood and sends a sympathetic signal down to a sweat gland in the forearm. Then the same heat, back round the body, rides out to the widened vessels of the forearm’s skin, crosses the skin and leaves as the sweat evaporates.",
+        "effect": "Gone into the air: the sweat has evaporated and taken the heat with it, about 2,400 kJ for every litre" }
+    },
+    "stops": {
+      "muscleHeat": {
+        "name": "A running thigh makes heat",
+        "ms": "Your thigh muscles turn fuel into movement, but most of the energy comes out as heat instead. In the run your whole body makes about eight times as much heat as when you sit still, and most of it is made in your leg muscles. They warm up to about 39–40 °C, warmer than the rest of you.",
+        "hs": "Muscles are only about 20–25% efficient: of the energy in the fuel they burn, a fifth to a quarter becomes work and the rest becomes heat, in the mitochondria as they make ATP and in the myosin heads as they use it. In the run the body makes nearly 700 W of heat, most of it in the leg muscles, which warm to about 39–40 °C. On level ground even the work is turned back into heat inside the body, as the legs brake at each landing.",
+        "college": "Gross mechanical efficiency in running and cycling is ~20–25%. Roughly half of the energy in the fuel is released as heat before it is caught as ATP, and more when the cross-bridges and the SR Ca²⁺ pump split the ATP. On level ground almost no work is done on the surroundings, so nearly all of the metabolic rate ends up as heat: in the body’s run ~690 W (O₂ uptake ~2 L/min × ~20.5 J/mL), ~85% of it in the working muscles. Muscle warms ahead of the core, to ~39–40 °C (Saltin et al. 1968).",
+        "phd": "At the onset of intense exercise most of the muscle’s heat is first stored in the muscle itself; the share carried off by the blood grows over the first minutes as the muscle warms and its venous blood becomes warmer than the arterial blood coming in (González-Alonso et al. 2000, who measured leg heat production as blood flow × the femoral venous–arterial temperature difference). Warmer muscle contracts and relaxes faster, which is part of why a warm-up helps, but over long exercise the stored heat must leave or the core keeps rising."
+      },
+      "warmVein": {
+        "name": "Into the blood",
+        "ms": "Blood flowing through the hot muscle picks up its heat, like the coolant in a car engine. The warm blood leaves in the veins and heads up to the heart.",
+        "hs": "Heat moves only a few millimetres through tissue by conduction, so the body moves it with blood flow instead: convection. Blood leaving a working muscle is a few tenths of a degree warmer than the blood that went in. More than 10 L of blood a minute flow through the working legs in the run, and each litre carries about 3.8 kJ for every degree, so that small difference takes hundreds of watts away from the legs.",
+        "college": "Heat carried by blood = flow × ρc × (T_venous − T_arterial), with ρc ≈ 3.8 kJ/L/K. The working legs take up ~1.7 L/min of O₂ at an arteriovenous O₂ difference of ~150 mL/L, so ~11 L/min of blood flows through them; a venous–arterial difference of ~0.5 °C then carries ~350 W. In the heat, limb veins drain more through the superficial veins, which bypasses the countercurrent exchange between deep arteries and their paired veins that saves heat in the cold.",
+        "phd": "Deep limb arteries are flanked by paired veins (venae comitantes), and in the cold the venous blood returning beside them takes up heat from the arterial blood on its way out, so the hands and feet are cooled by blood that is already cool. When heat must be lost, venous return shifts to the superficial veins under the skin, so heat is not handed back to the arteries. The body here doesn’t model these routes: its ride uses the leg’s one drawn vein, timed for a cardiac output of 5 L/min and sped up as output rises in the run."
+      },
+      "heartLungs": {
+        "name": "Through the heart and lungs",
+        "ms": "In the heart, the warm blood from your legs mixes with blood from everywhere else. The heart pumps it through the lungs, where a little heat leaves in your breath, and back out to the body.",
+        "hs": "In the right heart, blood from every part of the body mixes, so blood in the pulmonary artery has the temperature of the core: in intensive care it is the most exact place to measure it. Each breath out is warm and moist, and in the run breathing carries away about 70 W, a tenth of the heat made. The rest of the heat goes on to the left heart and out in the arteries.",
+        "college": "Respiratory heat loss has a dry part (warming the inspired air) and a larger wet part (humidifying it): ASHRAE gives it as heat made × [0.0014 × (34 − T_air) + 0.0173 × (5.87 − P_a)], with P_a the air’s vapour pressure in kPa. That is ~8 W at rest and ~70 W in the run, about a tenth of heat production. Humans lose little heat this way; dogs and other animals that pant use their airways as their main route for evaporation.",
+        "phd": "Rectal temperature lags behind blood and oesophageal temperature by several minutes when heat balance changes, because the pelvis is well insulated and slow to equilibrate. Oesophageal temperature, measured behind the heart, follows pulmonary artery blood closely, and for that reason exercise physiologists use it as the stand-in for the blood that reaches the hypothalamus."
+      },
+      "toHypothalamus": {
+        "name": "Up to the brain",
+        "ms": "Some of the warm blood goes up your neck to the brain. Deep in the brain sits the hypothalamus, which works like a thermostat. It can feel how warm the blood is.",
+        "hs": "The carotid arteries carry blood up the neck to the brain, including the hypothalamus at its base. The brain makes heat of its own and is cooled by its blood, so it runs a few tenths of a degree warmer than the blood arriving. Over the run the blood reaching it warms from about 37.1 to 38.2 °C.",
+        "college": "The preoptic area and anterior hypothalamus are supplied by small perforating branches from the circle of Willis. The brain’s ~15–20 W are carried off by its ~0.75 L/min of blood, so brain temperature runs ~0.2–0.5 °C above arterial blood and follows it closely. Selective brain cooling by cool venous blood from the face works in animals with a carotid rete, such as sheep, goats and cats, but there is little evidence for it in humans (Nybo et al. 2002).",
+        "phd": "In prolonged exercise with hyperthermia, brain temperature rises with the core, and a core near 40 °C is accompanied by less voluntary activation of the muscles, a central fatigue that may protect the body from overheating (Nybo & Nielsen 2001). How much of this comes from the brain’s own temperature and how much from signals from the hot skin and body is still debated."
+      },
+      "preoptic": {
+        "name": "The thermostat senses it",
+        "ms": "Nerve cells in the hypothalamus fire faster when the blood is warmer. When you are getting too warm, they send out orders to lose heat: widen the skin’s blood vessels and start sweating. The warmer you get, the stronger the orders.",
+        "hs": "In the preoptic area of the hypothalamus, warm-sensitive neurons fire faster as the blood warms. They also hear from temperature sensors in the skin. Once the core passes about 37 °C, sweating begins, and the warmer the core gets, the more you sweat. In the run, sweating starts within a few minutes and climbs to about half a litre an hour. The ride lets about a minute pass here.",
+        "college": "Sweat rate and skin blood flow rise roughly in proportion to core temperature above a threshold, and core temperature counts about nine times as much as mean skin temperature (Nadel et al. 1971). The threshold is higher in the evening than early in the morning, in the luteal phase of the menstrual cycle, in fever and with dehydration, and lower after heat acclimatisation. In exercise, non-thermal signals (central command and muscle metaboreceptors) add to the drive and start sweating early (Shibasaki & Crandall 2010).",
+        "phd": "Which neurons do the sensing was argued about for decades. In mice, warm-sensitive neurons in the ventromedial preoptic area drive heat loss when they are switched on (Tan et al. 2016), and the heat-activated channel TRPM2 in preoptic neurons helps limit fever and can drive hypothermia (Song et al. 2016). The pathways onwards to brown fat and to the skin’s vasoconstrictors are well mapped in rodents (Morrison & Nakamura 2019), but the pathway to human sweat glands is much less known: rodents have sweat glands only on their paw pads."
+      },
+      "sudomotorCentral": {
+        "name": "Down the spinal cord",
+        "ms": "The order to sweat runs down from the hypothalamus, through the brainstem and down the spinal cord to the level of your chest. It takes a few hundredths of a second, so the ride slows time right down.",
+        "hs": "Nerve fibres from the hypothalamus run through relays in the brainstem and down the spinal cord. At chest level they reach the sympathetic nerve cells in the cord’s small side horn, the lateral horn: the same system that speeds the heart. This part of the trip takes a few hundredths of a second, so the ride runs it in slow motion.",
+        "college": "Sympathetic preganglionic neurons lie in the intermediolateral cell column from T1 to L2. Those driving the arm’s sweat glands lie roughly between T2 and T8 (the range varies between people), and separate groups serve sweat glands, skin vessels and muscle vessels, so they can be driven independently. Descending pathways from the hypothalamus reach them through the brainstem, with several synapses on the way.",
+        "phd": "After a complete spinal cord injury, the skin below the lesion can no longer sweat or widen its vessels in response to the brain, so people with high injuries overheat easily in exercise or a hot room, and are often cooled with water sprays and fans. Mapping the skin that fails to sweat in a thermoregulatory sweat test shows where the sudomotor pathway is damaged: a pattern that follows nerves, roots or segments points to the level of the lesion."
+      },
+      "sympChain": {
+        "name": "Out to the sympathetic chain",
+        "ms": "The signal leaves the spinal cord and jumps to a new nerve cell in a chain of little knots beside your spine, the sympathetic chain.",
+        "hs": "The signal leaves the cord through its front root and crosses to the sympathetic chain, a string of ganglia beside the spine. Many fibres for the arm climb the chain to the ganglia near the base of the neck, the largest of which is the stellate ganglion. There the signal crosses a synapse, with acetylcholine, onto the nerve cell that will reach the skin.",
+        "college": "Preganglionic B fibres (thinly myelinated, ~3–15 m/s) leave by the ventral root and the white ramus; those for the arm ascend in the chain to synapse in the upper thoracic and stellate (cervicothoracic) ganglia, on nicotinic acetylcholine receptors. Each preganglionic fibre diverges onto many postganglionic neurons, whose axons return to the spinal nerves through the grey rami and run with the brachial plexus to the arm.",
+        "phd": "A stellate ganglion block (local anaesthetic beside the ganglion at the base of the neck) leaves the arm on that side warm and dry, and also causes Horner’s syndrome, because the sympathetic fibres to the head pass through the same ganglion. Cutting or clipping the chain at T2–T3 (endoscopic thoracic sympathectomy) stops the palms sweating in primary hyperhidrosis, but most people then sweat more on the trunk and legs (compensatory sweating), so creams, iontophoresis and botulinum toxin are tried first."
+      },
+      "sudomotorNerve": {
+        "name": "A sympathetic nerve that uses acetylcholine",
+        "ms": "A long, thin nerve fibre runs down the arm to a sweat gland in the skin of the forearm. It is slow, about a metre a second, so the trip takes nearly a second. It belongs to the ‘fight or flight’ system, but unlike most of those nerves it talks to the gland with acetylcholine, not noradrenaline.",
+        "hs": "Postganglionic sympathetic fibres are C fibres, without myelin, so the signal crawls at about 1 m/s: the 0.8 m to the forearm takes nearly a second. Most sympathetic fibres release noradrenaline, but those to sweat glands release acetylcholine: they are sympathetic cholinergic. Nerves of the same kind make the skin’s vessels widen in the heat, which is called active vasodilation.",
+        "college": "Sudomotor C fibres conduct at ~1 m/s. Their acetylcholine acts on M3 muscarinic receptors on the secretory coil. Active vasodilation in hairy skin is driven by sympathetic cholinergic nerves through co-transmitters (VIP among them) and nitric oxide made in the skin; it gives 80–90% of the rise in skin blood flow in heat stress, and botulinum toxin, which stops acetylcholine release, abolishes both sweating and active vasodilation where it is injected (Kellogg et al. 1995).",
+        "phd": "The sweat glands’ sympathetic neurons start out making noradrenaline in development and are switched to acetylcholine by signals from the gland itself, a classic case of a target setting its nerve’s transmitter. In the clinic, the QSART drives acetylcholine into the skin to fire the sudomotor nerve endings, which make nearby glands sweat by an axon reflex; less sweat is an early sign of small-fibre neuropathy, as in diabetes. Antimuscarinic drugs (atropine, oxybutynin, many antidepressants and antihistamines) cause hot, dry skin and raise the risk of heat illness."
+      },
+      "sweatGland": {
+        "name": "The sweat gland pumps",
+        "ms": "At the bottom of a sweat gland is a coiled tube. When the nerve tells it to, its cells pump salt into the tube and water follows. The sweat runs up a narrow duct to a pore on the skin, and on the way the duct takes back much of the salt. You have 2–4 million of these glands.",
+        "hs": "Acetylcholine binds to M3 receptors on the secretory coil, deep in the dermis. Calcium rises inside the cells and opens chloride channels; sodium and water follow, making a fluid much like plasma. As it flows up the duct to the pore, the duct takes back sodium and chloride but not water, so sweat ends up much less salty than blood. Watch the pores swell with beads of sweat.",
+        "college": "In the coil’s clear cells, M3 → IP₃ → Ca²⁺ opens apical Ca²⁺-activated Cl⁻ channels (TMEM16A) and basolateral K⁺ channels; NKCC1 loads the cells with Cl⁻, Na⁺ follows between the cells and water through aquaporin channels. The duct reabsorbs Na⁺ through ENaC and Cl⁻ through CFTR without water, so sweat Na⁺ is ~20–80 mmol/L (plasma ~140), rising as flow outpaces reabsorption. In the run the body sweats ~0.5 L/h; acclimatised athletes in the heat can sweat 2 L/h or more.",
+        "phd": "In cystic fibrosis the duct can’t take back Cl⁻ (and so Na⁺), and a sweat chloride of 60 mmol/L or more, collected after pilocarpine iontophoresis, is the diagnostic sweat test. The ion transport of the gland was worked out largely by Sato and colleagues (Sato et al. 1989). Botulinum toxin injected into the skin of the armpits stops sweating there for about half a year or longer, a standard treatment for axillary hyperhidrosis."
+      },
+      "warmBlood": {
+        "name": "Warm blood out to the skin",
+        "ms": "Meanwhile the heat from your thigh has gone round the body again. Now the blood vessels in the skin are wide open, so lots of warm blood flows just under the surface. That’s why your face goes red when you run.",
+        "hs": "The same orders from the hypothalamus have widened the skin’s blood vessels, so skin blood flow rises about fourfold in the run, to about 1 L a minute. The heat, back from the brain through the heart and lungs, rides an artery down the arm into the skin of the forearm. In exercise the skin and the muscles compete for blood, so skin flow stops rising once the core passes about 38 °C.",
+        "college": "Skin blood flow follows core temperature above a threshold. In hairy skin most of the rise is active vasodilation; in the hands, feet, lips, ears and nose it comes from switching off noradrenergic vasoconstrictor tone. In heat stress at rest skin blood flow can reach 6–8 L/min, but in exercise vasodilation starts at a higher core temperature and levels off at about half of its maximum near a core of 38 °C (Kenney & Johnson 1992). In the run here it rises from ~0.25 to ~1 L/min.",
+        "phd": "Blood pooled in the warm skin’s veins lowers central blood volume and stroke volume, one explanation of cardiovascular drift: at a steady pace heart rate creeps up and stroke volume falls over the first hour (Rowell 1974). Coyle and González-Alonso (2001) argued that much of the fall in stroke volume is instead caused by the rising heart rate itself, which leaves less time to fill. Either way, skin and muscle compete for the cardiac output, and dehydration makes the competition worse."
+      },
+      "throughSkin": {
+        "name": "Across the skin to the surface",
+        "ms": "The heat seeps out of the warm blood, through a thin layer of skin to the surface, where the sweat is waiting.",
+        "hs": "Warm blood in the dermal plexus and the capillary loops just under the epidermis gives up its heat, which crosses the last fraction of a millimetre to the surface. The sweat keeps the skin at about 31 °C, while the blood arriving is at about 38 °C, so heat flows outwards fast.",
+        "college": "Each litre a minute of skin blood flow carries ~63 W for every degree between core and skin (3.8 kJ/L/K ÷ 60 s). With ~1 L/min and a core–skin gradient of ~7 °C that is ~450 W, plus ~70 W conducted through the tissue (Gagge’s minimum conductance, ~5 W/m²/K over 1.8 m²). The wide gradient that cool, wet skin keeps open is what lets a modest skin blood flow carry so much heat.",
+        "phd": "In hot, humid air the skin warms towards the core, the gradient narrows, and the skin needs far more blood for the same heat flow, blood that the muscles and the brain also need. High skin temperature, especially with dehydration, is one reason aerobic performance falls in the heat (Sawka et al. 2012). The body here has one mean skin temperature for the whole skin; on the skin page the same heat balance is a two-node model (Gagge et al. 1971)."
+      },
+      "evaporation": {
+        "name": "The sweat evaporates",
+        "ms": "As the sweat dries, it turns into water vapour, and that takes a lot of heat from your skin. That’s what cools you. Sweat that just drips off doesn’t cool you at all.",
+        "hs": "Turning water into vapour takes energy, its latent heat: about 2,400 kJ for each litre of sweat. In the run you sweat about half a litre an hour, which removes about 350 W, half of the heat you make. Evaporation needs air that can take up the water: in humid weather sweat drips off instead, and wind speeds it up.",
+        "college": "Evaporative heat loss = sweat evaporated × ~2,426 kJ/kg at skin temperature: 0.52 L/h gives ~350 W, plus ~10 W from water diffusing through the skin. The most the air can take, E_max, is set by the gap in water vapour pressure between wet skin (~4.5 kPa at 31 °C) and the air, and by air speed (through the Lewis relation, the evaporative coefficient ≈ 16.5 K/kPa × the convective one). In the body’s cool run nearly all the sweat evaporates.",
+        "phd": "When the evaporation needed is more than the air allows, the core keeps rising: the idea behind heat-stress indices such as the wet-bulb globe temperature. The long-quoted limit of survivable heat, a wet-bulb temperature of 35 °C, assumed a resting body with perfect sweating; in young adults at light activity in humid air, core temperature could no longer level off above a wet-bulb temperature of about 31 °C (Vecellio et al. 2022)."
+      }
+    }
   }
 }
 </script>
@@ -4304,7 +4408,30 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "CFTR": { "def": "A chloride channel in the membranes of sweat ducts, airways and the pancreas. Faulty CFTR causes cystic fibrosis, with very salty sweat.", "match": ["CFTR"] },
   "nitric oxide": { "def": "A gas made by the lining of blood vessels and by some nerves that relaxes smooth muscle and widens vessels.", "match": ["nitric oxide"] },
   "Frey syndrome": { "def": "Sweating and flushing of the cheek while eating, after nerves to the parotid gland regrow into the skin after surgery.", "match": ["Frey syndrome"] },
-  "M3 receptors": { "def": "A type of acetylcholine receptor on sweat glands and smooth muscle.", "match": ["M3 receptors", "M3"] }
+  "M3 receptors": { "def": "A type of acetylcholine receptor on sweat glands and smooth muscle.", "match": ["M3 receptors", "M3"] },
+  "sudomotor": { "def": "To do with sweating: sudomotor nerves are the sympathetic nerve fibres that drive the sweat glands.", "match": ["sudomotor"] },
+  "sympathetic cholinergic": { "def": "Sympathetic nerve fibres that release acetylcholine instead of noradrenaline, as those to the sweat glands do.", "match": ["sympathetic cholinergic"] },
+  "sympathetic chain": { "def": "A string of sympathetic ganglia down each side of the spine, where signals from the spinal cord pass to the nerve cells that reach the organs.", "match": ["sympathetic chain", "sympathetic chains"] },
+  "stellate ganglion": { "def": "The large sympathetic ganglion at the base of the neck, through which the sympathetic supply to the arm, the heart and the head passes.", "match": ["stellate ganglion", "stellate ganglia"] },
+  "lateral horn": { "def": "The small side horn of the spinal cord’s grey matter from T1 to L2, where the sympathetic nerve cells sit.", "match": ["lateral horn", "intermediolateral cell column"] },
+  "C fibres": { "def": "The thinnest nerve fibres, without myelin. They conduct slowly, about 0.5–2 m/s, and carry pain, warmth and itch, and most autonomic signals to the organs.", "match": ["C fibres", "C fibre"] },
+  "secretory coil": { "def": "The coiled tube at the bottom of a sweat gland, deep in the skin, whose cells make the sweat.", "match": ["secretory coil"] },
+  "NKCC1": { "def": "A transporter that carries one sodium, one potassium and two chloride ions into a cell together. In secreting cells it loads them with chloride.", "match": ["NKCC1"] },
+  "TMEM16A": { "def": "A chloride channel opened by calcium, in sweat glands, airways and other secreting cells. Also called anoctamin 1.", "match": ["TMEM16A", "anoctamin 1"] },
+  "VIP": { "def": "Vasoactive intestinal peptide: a signal released by some nerve cells, often together with acetylcholine. It widens blood vessels, relaxes smooth muscle and drives secretion, and in the body clock it links the SCN’s cells.", "match": ["VIP"] },
+  "botulinum toxin": { "def": "A bacterial toxin that stops nerves releasing acetylcholine. Tiny doses are injected to relax overactive muscles or to stop sweating for months.", "match": ["botulinum toxin"] },
+  "QSART": { "def": "The quantitative sudomotor axon reflex test: acetylcholine is driven into the skin to fire the sweat nerves, and the sweat they make is measured.", "match": ["QSART"] },
+  "hyperhidrosis": { "def": "Sweating far more than the body needs to cool, most often of the palms, soles or armpits.", "match": ["hyperhidrosis"] },
+  "sympathectomy": { "def": "An operation that cuts or clips part of the sympathetic chain, for example to stop the palms sweating.", "match": ["sympathectomy", "thoracic sympathectomy"] },
+  "Horner’s syndrome": { "def": "A drooping eyelid, a small pupil and less sweating of the face on one side, from damage to that side’s sympathetic supply to the head.", "match": ["Horner’s syndrome"] },
+  "pulmonary artery": { "def": "The artery that carries blood from the right ventricle to the lungs.", "match": ["pulmonary artery", "pulmonary arteries"] },
+  "carotid arteries": { "def": "The two big arteries up the neck that supply most of the brain, the face and the scalp.", "match": ["carotid arteries", "carotid artery"] },
+  "cardiovascular drift": { "def": "The slow rise in heart rate and fall in stroke volume over a long bout of exercise at the same pace.", "match": ["cardiovascular drift"] },
+  "mechanical efficiency": { "def": "The share of the energy muscles use that becomes work; the rest becomes heat. About 20–25% in running and cycling.", "match": ["mechanical efficiency", "gross mechanical efficiency"] },
+  "TRPM2": { "def": "A heat-sensitive ion channel. In preoptic neurons it helps sense the brain’s temperature and limits fever.", "match": ["TRPM2"] },
+  "selective brain cooling": { "def": "Keeping the brain cooler than the core with cool venous blood from the face, as sheep, goats and cats can; there is little evidence that humans can.", "match": ["selective brain cooling"] },
+  "central command": { "def": "Signals from the brain’s motor areas that drive the heart, breathing and sweating from the start of exercise, before feedback from the body arrives.", "match": ["central command"] },
+  "metaboreceptors": { "def": "Sensors in working muscle that respond to the chemical products of exercise and drive breathing, blood pressure and sweating.", "match": ["metaboreceptors", "metaboreceptor", "muscle metaboreceptors"] }
 }
 </script>
 
@@ -5722,7 +5849,21 @@ const STRINGS = {
   stepDone: t => `Done after ${t} of real time`,
   stepKind: { muscle: "Muscle at work", force: "Force through the leg", bone: "Bone at work", sensory: "Brain at work" },
   stepGrf: v => `the ground pushes back at up to ${v} × body weight`,
-  stepStrain: v => `bending by about ${v} microstrain`
+  stepStrain: v => `bending by about ${v} microstrain`,
+  followHeat: "Follow the heat",
+  followingHeat: "Heat ride · time-lapse",
+  heatTitle: "Journey of heat",
+  heatLede: "Follow heat made in a running thigh until it leaves the body. It rides the blood in seconds, warms the brain’s thermostat over about a minute, races down a nerve to a sweat gland in under a second, then crosses the skin of the forearm and goes off into the air as the sweat evaporates. Time is sped up or slowed down to suit each stop, and the day clock really moves. Started at another time of day, the clock jumps to the run.",
+  heatHint: "Tip: with the skin live, tap a sweat pore, the skin’s edge or a heat arrow to follow the heat.",
+  heatDone: t => `Done after ${t} of real time`,
+  heatKind: { step: "cells at work", blood: "riding the blood", nerve: "along a nerve", skin: "through the skin", air: "into the air" },
+  heatRead: {
+    made: p => `the body makes ${Math.round(p.heatMade / 10) * 10} W of heat`,
+    core: p => `core ${p.coreTemp.toFixed(1)} °C`,
+    sweat: p => `sweat ${p.sweatRate.toFixed(2)} L/h`,
+    flow: p => `skin blood flow ${p.skinFlow.toFixed(1)} L/min, skin ${p.skinTemp.toFixed(1)} °C`,
+    evap: p => `${Math.round(p.heatEvap / 10) * 10} W leave by evaporation`
+  }
 };
 
 /* Physiology keyframes: [hour, value] pairs, smoothly interpolated, wrapping at midnight.
@@ -6047,11 +6188,13 @@ const store = createStore({
   infectionSeg: null, /* which leg of that journey the infection is on */
   step: null,       /* id of the step journey being followed, or null */
   stepSeg: null,    /* which leg of that journey the step is on */
+  heat: null,       /* id of the heat journey being followed, or null */
+  heatSeg: null,    /* which leg of that journey the heat is on */
   ridePaused: false, /* the ride (and the whole body with it) is frozen so you can read */
   ...loadSystems()
 });
-/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath, a bite, a drop, an infection or a step)? */
-const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null || s.drop != null || s.infection != null || s.step != null;
+/* is the camera riding along with something (a red cell, an impulse, a cascade, a breath, a bite, a drop, an infection, a step or heat)? */
+const riding = s => s.follow != null || s.impulse != null || s.cascade != null || s.breath != null || s.bite != null || s.drop != null || s.infection != null || s.step != null || s.heat != null;
 /* System switches. Switching a system on makes it live; switching off the
    live one hands "live" to another shown system (or to none). */
 function setSystem(id, on){
@@ -6882,6 +7025,45 @@ function tapInfection(id, h){
 }
 function defaultInfection(h){ return phaseAt(h) === "exercise" ? "splinter" : "flu"; }
 
+/* Heat journeys (HEAT RIDE), timed like CASCADES and on the same engine
+   (lapseRide): stop (text in CONTENT.heat.stops), m (what carries the story:
+   heat, the nerve signal, sweat or vapour, in MOLECULES), t real seconds, step =
+   cells at work in one place, b = a blood ride scaled by cardiac output, k = the
+   kind of leg (nerve, skin, air), jump = start the path afresh, read = which of
+   the hour's channels the card shows (made, core, sweat, flow, evap). The heat
+   made in a working thigh rides the veins to the heart and lungs and the
+   arteries to the brain, where the preoptic area senses the warmer blood. Its
+   command runs down the cord, out to the sympathetic chain and along a
+   postganglionic C fibre (~0.8 m at ~1 m/s) to a sweat gland in the viewer's
+   left forearm. Then the same heat, back from the brain, rides out to the
+   forearm's widened skin vessels, crosses the skin and leaves as sweat
+   evaporates. The ride runs in the evening run (HEAT_HOUR otherwise), and the
+   ~2 minutes it takes move the day clock with it. */
+const FOREARM_PORE = bodyPt(...SKIN_PORES[6]);
+const FOREARM_AIR = [FOREARM_PORE[0] - 9, FOREARM_PORE[1] - 34];
+Object.assign(MOLECULES, {
+  heat: ["#e8663a", "Heat"], sudomotor: [NERVE_COLOR.symp, "Sympathetic nerve signal"], sweat: ["#3fa7c9", "Sweat"], vapour: ["#8fbfe0", "Water vapour"]
+});
+const HEATS = [
+  { id: "run", effect: "cool", legs: [
+    { stop: "muscleHeat", m: "heat", t: 3, step: true, at: QUAD, read: "made" },
+    { stop: "warmVein", m: "heat", t: 12, b: 1, path: [cV(RT.legL, QUAD)], read: "core" },
+    { stop: "heartLungs", m: "heat", t: 6, b: 1, path: [...LUNGS], read: "core" },
+    { stop: "toHypothalamus", m: "heat", t: 6, b: 1, path: [cA(RT.brain, 0, HYPO)], read: "core" },
+    { stop: "preoptic", m: "heat", t: 60, step: true, at: HYPO, read: "core" },
+    { stop: "sudomotorCentral", m: "sudomotor", t: .03, k: "nerve", path: [cD("M600 152 L600 312")] },
+    { stop: "sympChain", m: "sudomotor", t: .012, k: "nerve", path: [cD("M600 312 L588 318 L588 290")] },
+    { stop: "sudomotorNerve", m: "sudomotor", t: .8, k: "nerve", path: [cD("M588 290 C560 280 500 280 476 296 C446 318 432 380 428 470")] },
+    { stop: "sweatGland", m: "sweat", t: 4, step: true, at: FOREARM_PORE, read: "sweat" },
+    { stop: "warmBlood", m: "heat", t: 18, b: 1, jump: true, path: [cV(RT.brain), ...LUNGS, cA(RT_ARM, 0, FOREARM_PORE)], read: "flow" },
+    { stop: "throughSkin", m: "heat", t: 2, k: "skin", path: [cP(FOREARM_PORE)], read: "flow" },
+    { stop: "evaporation", m: "vapour", t: 30, k: "air", path: [cP(FOREARM_AIR)], read: "evap" }
+  ] }
+];
+const HEAT_BY_ID = Object.fromEntries(HEATS.map(x => [x.id, x]));
+/* organ panels that offer the heat ride */
+const HEAT_FOR_TOPIC = { skin: "run", muscles: "run" };
+
 function branchTree(rng, x, y, a, len, w, d, maxD){
   const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
   let out = `<path d="M${f1(x)} ${f1(y)}L${f1(x2)} ${f1(y2)}" stroke-width="${f1(w)}"/>`;
@@ -7141,7 +7323,7 @@ const Scene = (() => {
       .concat([fr(2, .25, 1), fr(3, .25, 1), fr(2, .62, 1), fr(3, .62, 1), fr(0, .3, 1), fr(1, .3, 1), fr(0, .7, 1), fr(1, .7, 1)]);
     skinGeo.conv = [[600, 86], [494, 262], [706, 262]].map(([x, y]) => ({ x, y }));
     const arrows = skinGeo.rad.map(() => `<path class="sk-rad" opacity="0"/>`).join("") + skinGeo.conv.map(() => `<path class="sk-conv" opacity="0"/>`).join("");
-    return rim + plexus + loops + pores + hairs + arrows + `<g id="s-skinDots"></g>`;
+    return rim + plexus + loops + pores + hairs + arrows + `<g id="s-skinDots"></g><g id="s-heatRide"></g>`;
   }
   function build(){
     const limb = d => `<path d="${d}" class="skin"/>`;
@@ -7284,7 +7466,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide", "mskDots", "stepRide", "skinDots"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide", "mskDots", "stepRide", "skinDots", "heatRide"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -7493,7 +7675,13 @@ const Integ = (() => {
     arrows(p, 0);
     for (const d of pool) if (d.on){ d.on = false; d.c.setAttribute("opacity", 0); }
   }
-  return { init, tick, setRates };
+  /* was a sweat pore, the skin's edge or where a heat arrow leaves tapped? */
+  function nearest(x, y, maxD){
+    const near = (px, py, k) => Math.hypot(x - px, y - py) < maxD * k;
+    return geo.pores.some(([px, py]) => near(px, py, 1.4)) || geo.edge.some(a => near(a.x, a.y, 1))
+      || geo.rad.some(a => near(a.x, a.y, 1.2)) || geo.conv.some(a => near(a.x, a.y, 1.2));
+  }
+  return { init, tick, setRates, nearest };
 })();
 
 /* =========================================================================
@@ -8141,14 +8329,14 @@ function piece(p){
 }
 
 /* =========================================================================
-   TIME-LAPSE RIDES — CASCADE, BITE RIDE, DROP RIDE and INFECTION RIDE share this engine. One signal (a
+   TIME-LAPSE RIDES — CASCADE, BITE RIDE, DROP RIDE, INFECTION RIDE and HEAT RIDE share this engine. One signal (a
    hormone, a bite of food) is followed leg by leg, and each leg plays for a
    few seconds on screen, so the speed-up changes from leg to leg. The options
    say where to draw (ref), which ride is which (byId), a leg's colour (col),
    what kind of leg it is (kindOf), how long a leg plays (screen, optional),
    how to replay (restart) and what happens on arrival (effect). A leg's t
    may be a function of the hour the leg starts (the drop ride's bladder wait),
-   and jump starts a leg's path afresh instead of from where the last leg ended.
+   and jump starts a leg's path (and the trail) afresh instead of from where the last leg ended.
    timeScale() drives the day clock and (capped) the body, so the hour and the
    vitals move on.
    ========================================================================= */
@@ -8253,7 +8441,10 @@ function lapseRide(o){
     if (!C) return;
     if (!done && !reducedMotion){
       u += dt / legs[li].screen;
-      if (u >= 1){ if (li < legs.length - 1){ li++; u = 0; } else arrive(); }
+      if (u >= 1){
+        if (li < legs.length - 1){ li++; u = 0; if (legs[li].jump){ pts = []; trail.setAttribute("points", ""); } }
+        else arrive();
+      }
       acc += dt;
       if (acc > .03 && legs[li].S){ acc = 0; const p = pos(); pts.push(`${f1(p.x)},${f1(p.y)}`); if (pts.length > 60) pts.shift(); trail.setAttribute("points", pts.join(" ")); }
     }
@@ -8368,6 +8559,20 @@ const InfectionRide = lapseRide({
   restart: id => startInfection(id, true),
   effect(e, p, col, { ring, dots }){
     if (e === "memory"){ ring(p.x, p.y, MOLECULES.memory[0], 22, .3); ring(p.x, p.y, MOLECULES.memory[0], 38, .7); dots(p.x, p.y, MOLECULES.antibody[0], 12, false); }
+  }
+});
+
+/* HEAT RIDE — heat from a working thigh to the air, in time-lapse and slow
+   motion: seconds in the blood, a minute while the hypothalamus warms, slowed
+   hundreds of times on the nerve to the sweat gland, then the heat leaves the
+   forearm as the sweat evaporates. */
+const HeatRide = lapseRide({
+  ref: "heatRide", byId: HEAT_BY_ID,
+  col: l => MOLECULES[l.m][0],
+  kindOf: l => l.k || "nerve",
+  restart: id => startHeat(id, true),
+  effect(e, p, col, { ring, dots }){
+    if (e === "cool"){ ring(p.x, p.y, MOLECULES.vapour[0], 26, .3); dots(p.x, p.y, MOLECULES.vapour[0], 14, false); dots(p.x, p.y + 30, MOLECULES.heat[0], 8, false); }
   }
 });
 
@@ -11418,6 +11623,7 @@ const Panel = (() => {
         ${id === "urinary" ? `<button type="button" class="chip primary follow-btn" data-drop="">${esc(STRINGS.followUrine)}</button>` : ""}
         ${id === "immune" ? `<button type="button" class="chip primary follow-btn" data-infection="">${esc(STRINGS.followInfection)}</button>` : ""}
         ${id === "musculoskeletal" ? `<button type="button" class="chip primary follow-btn" data-step="">${esc(STRINGS.followStep)}</button>` : ""}
+        ${id === "integumentary" ? `<button type="button" class="chip primary follow-btn" data-heat="">${esc(STRINGS.followHeat)}</button>` : ""}
         <div class="reading">
           <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
           <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
@@ -11455,6 +11661,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
     root.querySelectorAll("[data-infection]").forEach(b => b.addEventListener("click", () => startInfection(b.dataset.infection || null)));
     root.querySelectorAll("[data-step]").forEach(b => b.addEventListener("click", () => startStep(b.dataset.step || null)));
+    root.querySelectorAll("[data-heat]").forEach(b => b.addEventListener("click", () => startHeat(b.dataset.heat || null)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -11501,7 +11708,8 @@ const Panel = (() => {
       ${BITE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.biteTitle)}</p><div class="depth"><button type="button" class="chip" data-bite="${BITE_FOR_TOPIC[id]}">${esc(STRINGS.followBite)}: ${esc(CONTENT.bite.journeys[BITE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${URINE_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.urineTitle)}</p><div class="depth"><button type="button" class="chip" data-drop="${URINE_FOR_TOPIC[id]}">${esc(STRINGS.followUrine)}: ${esc(CONTENT.urine.journeys[URINE_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
       ${INFECTION_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.infectionTitle)}</p><div class="depth"><button type="button" class="chip" data-infection="${INFECTION_FOR_TOPIC[id]}">${esc(STRINGS.followInfection)}: ${esc(CONTENT.infection.journeys[INFECTION_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
-      ${STEP_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.stepTitle)}</p><div class="depth"><button type="button" class="chip" data-step="${STEP_FOR_TOPIC[id]}">${esc(STRINGS.followStep)}: ${esc(CONTENT.step.journeys[STEP_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
+      ${STEP_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.stepTitle)}</p><div class="depth"><button type="button" class="chip" data-step="${STEP_FOR_TOPIC[id]}">${esc(STRINGS.followStep)}: ${esc(CONTENT.step.journeys[STEP_FOR_TOPIC[id]].name)}</button></div></div>` : ""}
+      ${HEAT_FOR_TOPIC[id] ? `<div class="related"><p>${esc(STRINGS.heatTitle)}</p><div class="depth"><button type="button" class="chip" data-heat="${HEAT_FOR_TOPIC[id]}">${esc(STRINGS.followHeat)}: ${esc(CONTENT.heat.journeys[HEAT_FOR_TOPIC[id]].name)}</button></div></div>` : ""}`;
     root.querySelector("[data-home]").addEventListener("click", () => store.set({ topic: null }));
     const fig = root.querySelector("figure.ill");
     const restore = bindMarks(fig, fig.querySelector(".mk-tip"), i => esc(ctx.labels[i - 1]), pinned);
@@ -11521,6 +11729,7 @@ const Panel = (() => {
     root.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => startDrop(b.dataset.drop || null)));
     root.querySelectorAll("[data-infection]").forEach(b => b.addEventListener("click", () => startInfection(b.dataset.infection || null)));
     root.querySelectorAll("[data-step]").forEach(b => b.addEventListener("click", () => startStep(b.dataset.step || null)));
+    root.querySelectorAll("[data-heat]").forEach(b => b.addEventListener("click", () => startHeat(b.dataset.heat || null)));
   }
 
   /* while following a red cell: its route as numbered stops, with the current one explained */
@@ -11635,6 +11844,45 @@ const Panel = (() => {
     root.querySelector("[data-home]").addEventListener("click", stopStep);
     root.querySelector("[data-stop]").addEventListener("click", stopStep);
     root.querySelectorAll("[data-impulse]").forEach(b => b.addEventListener("click", () => startImpulse(b.dataset.impulse)));
+    root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
+  }
+
+  /* while following heat: its legs as numbered stops, the current one explained */
+  function renderHeat(s){
+    const C = CONTENT.heat, j = HEAT_BY_ID[s.heat], jc = C.journeys[j.id], seg = s.heatSeg || 0, li = LEVEL_INDEX[s.level];
+    const text = levelText(C.stops[j.legs[seg].stop], s.level);
+    const steps = j.legs.map((l, i) => `<li style="--c:${MOLECULES[l.m][0]}"${i === seg ? ` class="on" aria-current="step"` : ""}>${esc(C.stops[l.stop].name)}</li>`).join("");
+    sim = null;
+    root.className = "panel-inner enter";
+    root.innerHTML = `
+      <div class="crumb">
+        <button type="button" class="link" data-home>
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2 4 7l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(STRINGS.wholeBody)}
+        </button>
+        <span class="when">${fmtTime(s.hour)} · ${PHASE_BY_ID[phaseAt(s.hour)].label}</span>
+      </div>
+      <h2>${esc(STRINGS.heatTitle)}</h2>
+      <p class="lede">${esc(STRINGS.heatLede)}</p>
+      <section class="sys-card" style="--sc:${SYSTEM_BY_ID.integumentary.color}">
+        <div class="sys-head"><span class="sys-dot" aria-hidden="true"></span><h3>${esc(jc.name)}</h3><span class="when">${esc(jc.group)}</span></div>
+        <p class="sys-blurb">${esc(jc.blurb)}</p>
+      </section>
+      <ol class="journey-steps">${steps}</ol>
+      <div class="reading">
+        <p class="reading-level">${pips(li)}${esc(LEVELS[li].label)}</p>
+        <p class="text">${text ? Glossary.linkify(text) : esc(STRINGS.missing)}</p>
+        <div class="depth">${depthChips(li)}</div>
+      </div>
+      <div class="related"><p>${esc(STRINGS.stepTitle)}</p><div class="depth">
+        <button type="button" class="chip" data-step="run">${esc(STRINGS.followStep)}: ${esc(CONTENT.step.journeys.run.name)}</button>
+      </div></div>
+      <div class="related"><div class="depth">
+        <button type="button" class="chip" data-stop>${esc(STRINGS.stopFollowing)}</button>
+      </div></div>
+      <p class="hint">${esc(STRINGS.heatHint)}</p>`;
+    root.querySelector("[data-home]").addEventListener("click", stopHeat);
+    root.querySelector("[data-stop]").addEventListener("click", stopHeat);
+    root.querySelectorAll("[data-step]").forEach(b => b.addEventListener("click", () => startStep(b.dataset.step)));
     root.querySelectorAll("[data-level]").forEach(b => b.addEventListener("click", () => store.set({ level: b.dataset.level })));
   }
 
@@ -11852,8 +12100,9 @@ const Panel = (() => {
 
   function render(s, force){
     const stage = sleepMinute(s.hour) >= 0 ? sleepAt(s.hour).stage + HYPNO.segs.findIndex(g => sleepMinute(s.hour) < g.to) : "";
-    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic, peeing = s.drop != null && !s.topic, fighting = s.infection != null && !s.topic, stepping = s.step != null && !s.topic;
-    const key = stepping ? `step:${s.step}|${s.level}|${s.stepSeg}`
+    const following = s.follow != null && !s.topic, riding = s.impulse != null && !s.topic, lapse = s.cascade != null && !s.topic, breathing = s.breath != null && !s.topic, eating = s.bite != null && !s.topic, peeing = s.drop != null && !s.topic, fighting = s.infection != null && !s.topic, stepping = s.step != null && !s.topic, cooling = s.heat != null && !s.topic;
+    const key = cooling ? `heat:${s.heat}|${s.level}|${s.heatSeg}`
+              : stepping ? `step:${s.step}|${s.level}|${s.stepSeg}`
               : fighting ? `infection:${s.infection}|${s.level}|${s.infectionSeg}`
               : peeing ? `drop:${s.drop}|${s.level}|${s.dropSeg}`
               : eating ? `bite:${s.bite}|${s.level}|${s.biteSeg}`
@@ -11866,7 +12115,7 @@ const Panel = (() => {
     const animate = key.split("|")[0] !== lastKey.split("|")[0];
     lastKey = key;
     Glossary.hide();
-    stepping ? renderStep(s) : fighting ? renderInfection(s) : peeing ? renderDrop(s) : eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
+    cooling ? renderHeat(s) : stepping ? renderStep(s) : fighting ? renderInfection(s) : peeing ? renderDrop(s) : eating ? renderBite(s) : breathing ? renderBreath(s) : lapse ? renderCascade(s) : riding ? renderImpulse(s) : following ? renderJourney(s) : s.topic ? renderTopic(s) : renderIntro(s);
     if (!animate) root.classList.remove("enter");
     if (animate) $("#panel").scrollTop = 0;
   }
@@ -12719,9 +12968,93 @@ function stopStep(){
   StepRide.stop();
   store.set({ step: null, stepSeg: null, ridePaused: false });
 }
+
+/* =========================================================================
+   HEAT CARD — over the body while heat is followed: where it is, what carries
+   it, a reading of the hour that goes with the stop (heat made, core
+   temperature, sweat rate, skin blood flow, evaporation), real time elapsed and
+   the time-lapse or slow motion
+   ========================================================================= */
+const HeatCard = (() => {
+  const box = $("#heatCard");
+  let els = null, last = {}, li = -1, arrived = false, scrub = null;
+  function build(){
+    box.innerHTML = `
+      <p class="j-kicker">${esc(STRINGS.followingHeat)}</p>
+      <p class="j-where"></p>
+      <div class="j-sat"><span>${esc(STRINGS.realTime)}</span><div class="j-bar"><i></i></div><b></b></div>
+      <p class="j-meta"></p>
+      <p class="j-toast"></p>
+      <div class="j-btns">
+        <button type="button" class="chip" data-j="next">${esc(STRINGS.nextStop)}</button>
+        <button type="button" class="chip primary" data-j="stop">${esc(STRINGS.stopFollow)}</button>
+      </div>`;
+    els = { where: box.querySelector(".j-where"), bar: box.querySelector(".j-bar i"), time: box.querySelector(".j-sat b"),
+            meta: box.querySelector(".j-meta"), toast: box.querySelector(".j-toast"), next: box.querySelector("[data-j=next]") };
+    scrub = rideScrub(box, HeatRide, STRINGS.scrubRide, lapseClock(HeatRide));
+    box.addEventListener("click", e => {
+      const b = e.target.closest("[data-j]"); if (!b) return;
+      if (b.dataset.j === "stop") stopHeat();
+      else { HeatRide.next(); tick(); }
+    });
+  }
+  const set = (k, v, f) => { if (last[k] !== v){ last[k] = v; f(v); } };
+  function tick(){
+    const s = store.get(); if (s.heat == null) return;
+    const q = HeatRide.info(); if (!q) return;
+    if (q.li !== li){ li = q.li; if (s.heatSeg !== li) store.set({ heatSeg: li }); }
+    const L = q.leg, col = MOLECULES[L.m][0];
+    set("col", col, v => { box.style.setProperty("--jc", v); els.bar.style.background = v; });
+    set("where", CONTENT.heat.stops[L.stop].name, v => els.where.textContent = v);
+    set("time", fmtDur(q.real), v => els.time.textContent = v);
+    set("bar", Math.round(q.real / q.total * 200), v => els.bar.style.width = v / 2 + "%");
+    const f = q.factor, speed = f < 1 ? STRINGS.slowed(1 / f) : STRINGS.sped(f);
+    const read = L.read ? STRINGS.heatRead[L.read](Physio.at(s.hour)) + " · " : "";
+    const meta = q.done ? STRINGS.heatDone(fmtDur(q.total)) : `${MOLECULES[L.m][1]} · ${STRINGS.heatKind[L.kind]} · ${read}${speed}`;
+    set("meta", meta, v => els.meta.textContent = v);
+    if (q.done !== arrived){
+      arrived = q.done;
+      els.toast.textContent = arrived ? CONTENT.heat.journeys[q.id].effect : "";
+      els.toast.classList.toggle("on", arrived);
+      els.next.textContent = arrived ? STRINGS.replay : STRINGS.nextStop;
+    }
+    scrub.sync();
+  }
+  function reset(){ last = {}; li = -1; arrived = false; if (scrub) scrub.reset(); if (els){ els.toast.classList.remove("on"); els.next.textContent = STRINGS.nextStop; } }
+  function sync(s){
+    const on = s.heat != null && !s.topic;
+    if (on !== box.classList.contains("on")){
+      box.classList.toggle("on", on);
+      if (on){ reset(); tick(); }
+    }
+  }
+  return { build, tick, sync, reset };
+})();
+
+/* Start following the heat. It starts in a working thigh and ends in sweat, so
+   unless the body is running and sweating the clock jumps to the run; replay =
+   start again from the same hour. */
+const HEAT_HOUR = 17.75;
+function startHeat(id, replay = false){
+  stopRides("heat");
+  if (store.get().live !== "integumentary") setLive("integumentary");
+  id = HEAT_BY_ID[id] ? id : HEATS[0].id;
+  let hour = replay ? HeatRide.startHour() : store.get().hour;
+  if (!replay){ const p = Physio.at(hour); if (p.muscle < .9 || p.sweatRate < .2) hour = HEAT_HOUR; }
+  store.set({ hour, playing: false });
+  HeatRide.start(id, hour); HeatCard.reset();
+  store.set({ heat: id, heatSeg: 0, topic: null, ridePaused: false });
+  HeatCard.tick();
+  showScene();
+}
+function stopHeat(){
+  if (store.get().heat == null) return;
+  HeatRide.stop();
+  store.set({ heat: null, heatSeg: null, ridePaused: false });
+}
 /* end every ride except one (a new ride starting, or Back / Escape ending them all) */
 function stopRides(except){
-  const stops = { follow: stopFollow, impulse: stopImpulse, cascade: stopCascade, breath: stopBreath, bite: stopBite, drop: stopDrop, infection: stopInfection, step: stopStep };
+  const stops = { follow: stopFollow, impulse: stopImpulse, cascade: stopCascade, breath: stopBreath, bite: stopBite, drop: stopDrop, infection: stopInfection, step: stopStep, heat: stopHeat };
   for (const k in stops) if (k !== except) stops[k]();
 }
 
@@ -12736,6 +13069,7 @@ const BITE_W = 250;    /* … and a bite */
 const DROP_W = 200;    /* … and a drop */
 const INFECTION_W = 240; /* … and an infection */
 const STEP_W = 220;    /* … and a step */
+const HEAT_W = 240;    /* … and heat */
 const BODY_MAX = 4;     /* in time-lapse, the heart, breath and blood run at most this much faster… */
 const CLOCK_MAX = 3 * 3600; /* …and the day clock at most 3 h per second, so the sky doesn't strobe */
 function cameraFor(s){
@@ -12747,6 +13081,7 @@ function cameraFor(s){
   if (s.drop != null && !s.topic) return Camera.focusView(Scene.toView(DropRide.pos()), DROP_W);
   if (s.infection != null && !s.topic) return Camera.focusView(Scene.toView(InfectionRide.pos()), INFECTION_W);
   if (s.step != null && !s.topic) return Camera.focusView(Scene.toView(StepRide.pos()), STEP_W);
+  if (s.heat != null && !s.topic) return Camera.focusView(Scene.toView(HeatRide.pos()), HEAT_W);
   if (!s.topic) return Camera.homeView();
   const t = Topics.get(s.topic), p = Scene.toView(Scene.focusPoints[s.topic]), k = t.pull || 0, c = CONFIG.focusCenter;
   return Camera.focusView({ x: lerp(p.x, c.x, k), y: lerp(p.y, c.y, k) }, t.zoom || 300);
@@ -12761,7 +13096,7 @@ store.subscribe((s, prev) => {
   }
   Pins.render(s);
   const free = !s.topic && !riding(s);
-  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop || s.infection !== prev.infection || s.step !== prev.step){ if (riding(s)) Camera.resetZoom(); Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
+  if (s.follow !== prev.follow || s.impulse !== prev.impulse || s.cascade !== prev.cascade || s.breath !== prev.breath || s.bite !== prev.bite || s.drop !== prev.drop || s.infection !== prev.infection || s.step !== prev.step || s.heat !== prev.heat){ if (riding(s)) Camera.resetZoom(); Camera.go(cameraFor(s)); Hotspots.setVisible(free); }
   /* opening an organ, or animating another system, ends the ride */
   if (s.follow != null && (s.topic || s.live !== "circulatory")) queueMicrotask(stopFollow);
   if (s.impulse != null && (s.topic || s.live !== "nervous")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "nervous") stopImpulse(); });
@@ -12771,6 +13106,7 @@ store.subscribe((s, prev) => {
   if (s.drop != null && (s.topic || s.live !== "urinary")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "urinary") stopDrop(); });
   if (s.infection != null && (s.topic || s.live !== "immune")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "immune") stopInfection(); });
   if (s.step != null && (s.topic || s.live !== "musculoskeletal")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "musculoskeletal") stopStep(); });
+  if (s.heat != null && (s.topic || s.live !== "integumentary")) queueMicrotask(() => { const t = store.get(); if (t.topic || t.live !== "integumentary") stopHeat(); });
   Journey.sync(s);
   ImpulseCard.sync(s);
   CascadeCard.sync(s);
@@ -12779,6 +13115,7 @@ store.subscribe((s, prev) => {
   DropCard.sync(s);
   InfectionCard.sync(s);
   StepCard.sync(s);
+  HeatCard.sync(s);
   if (s.topic !== prev.topic){
     if (s.topic) Camera.resetZoom();
     Sheet.sync(s);
@@ -12803,7 +13140,7 @@ function applySystems(s){
    EXPORT — the adapter for the shared Export menu (EXPORT ENGINE, synced from
    organs/_template.html): figures, caption, link, settings, data and the clock
    ========================================================================= */
-const RIDE_KINDS = ["follow", "impulse", "cascade", "breath", "bite", "drop", "infection", "step"];
+const RIDE_KINDS = ["follow", "impulse", "cascade", "breath", "bite", "drop", "infection", "step", "heat"];
 function rideEngines(){
   return {
     follow: { eng: { progress: Particles.lapProgress, seek: Particles.lapSeek }, start: id => startFollow(id), label: "One lap of the red cell" },
@@ -12813,7 +13150,8 @@ function rideEngines(){
     bite: { eng: BiteRide, start: id => startBite(id), label: "The whole bite" },
     drop: { eng: DropRide, start: id => startDrop(id), label: "The whole journey of the drop" },
     infection: { eng: InfectionRide, start: id => startInfection(id), label: "The whole infection" },
-    step: { eng: StepRide, start: id => startStep(id), label: "The whole step" }
+    step: { eng: StepRide, start: id => startStep(id), label: "The whole step" },
+    heat: { eng: HeatRide, start: id => startHeat(id), label: "The whole journey of the heat" }
   };
 }
 const rideKind = s => RIDE_KINDS.find(k => s[k] != null) || null;
@@ -12943,6 +13281,7 @@ function init(){
   Integ.init();
   InfectionRide.init();
   StepRide.init();
+  HeatRide.init();
   Hotspots.build();
   Controls.build();
   Journey.build();
@@ -12953,6 +13292,7 @@ function init(){
   DropCard.build();
   InfectionCard.build();
   StepCard.build();
+  HeatCard.build();
   /* tap a red cell on the body to follow it */
   $("#scene").addEventListener("click", e => {
     const s = store.get();
@@ -12994,6 +13334,8 @@ function init(){
       const side = Msk.nearest(pt.x, pt.y, tol);
       if (side){ startStep(null, side < 0); return; }
     }
+    /* skin live: tap a sweat pore, the skin's edge or a heat arrow to follow the heat */
+    if (s.live === "integumentary" && Integ.nearest(pt.x, pt.y, tol)){ startHeat(null); return; }
     if (!s.shown.circulatory) return;
     const i = Particles.nearestCell(pt.x, pt.y, tol);
     if (i != null) startFollow(i);
@@ -13028,7 +13370,7 @@ function init(){
     /* bullet time: while an impulse is followed the body (and the clock) run slowed down.
        Time-lapse: while a hormone cascade is followed the clock runs at the real
        time of the signal (capped), and the body faster (capped harder) */
-    const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : st.drop != null ? DropRide : st.infection != null ? InfectionRide : null;
+    const lapse = st.cascade != null ? Cascade : st.bite != null ? BiteRide : st.drop != null ? DropRide : st.infection != null ? InfectionRide : st.heat != null ? HeatRide : null;
     const k = st.impulse != null ? Impulse.timeScale() : st.step != null ? StepRide.timeScale() : lapse ? lapse.timeScale() : st.breath != null ? BreathRide.timeScale() : 1;
     /* a paused ride freezes everything: the rider, the body and the clock */
     const paused = st.ridePaused && riding(st) && !st.topic;
@@ -13085,6 +13427,8 @@ function init(){
     InfectionCard.tick();
     StepRide.tick(brdt);
     StepCard.tick();
+    HeatRide.tick(brdt);
+    HeatCard.tick();
   }
   requestAnimationFrame(frame);
   /* the Export menu holds the loop and steps the body frame by frame */
@@ -13111,7 +13455,7 @@ function init(){
 }
 /* the view as URL parameters (read back by the store on start and by startRideFromURL):
    ?level=&hour=&topic=&shown=&live=&ride=<kind>:<id> */
-const RIDES = { follow: null, impulse: IMPULSE_BY_ID, cascade: CASCADE_BY_ID, breath: BREATH_BY_ID, bite: BITE_BY_ID, drop: URINE_BY_ID, infection: INFECTION_BY_ID, step: STEP_BY_ID };
+const RIDES = { follow: null, impulse: IMPULSE_BY_ID, cascade: CASCADE_BY_ID, breath: BREATH_BY_ID, bite: BITE_BY_ID, drop: URINE_BY_ID, infection: INFECTION_BY_ID, step: STEP_BY_ID, heat: HEAT_BY_ID };
 function rideOf(s){
   for (const kind of Object.keys(RIDES)) if (s[kind] != null)
     return { kind, id: kind === "follow" ? null : s[kind], seg: s[kind + "Seg"] ?? null };
@@ -13131,7 +13475,7 @@ function startRideFromURL(){
   const v = URLP.get("ride"); if (!v) return;
   const [kind, id] = v.split(":");
   if (!(kind in RIDES) || (RIDES[kind] && !RIDES[kind][id])) return;
-  const start = { follow: () => startFollow(), impulse: () => startImpulse(id), cascade: () => startCascade(id), breath: () => startBreath(id), bite: () => startBite(id), drop: () => startDrop(id), infection: () => startInfection(id), step: () => startStep(id) };
+  const start = { follow: () => startFollow(), impulse: () => startImpulse(id), cascade: () => startCascade(id), breath: () => startBreath(id), bite: () => startBite(id), drop: () => startDrop(id), infection: () => startInfection(id), step: () => startStep(id), heat: () => startHeat(id) };
   requestAnimationFrame(() => start[kind]());
 }
 init();

@@ -11,13 +11,13 @@ When a section is done, replace its plan with a one-line pointer to the README a
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#3-new-organs-for-the-body) |
 | Organ deep-dive pages (`organs/<id>.html`) | 10: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin | 4 existing organs (eyes, ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 9: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic, muscles & skeleton, skin | 1: reproductive |
-| Journeys ("follow a …") | 8: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step | One per new system, plus cross-system journeys |
+| Journeys ("follow a …") | 9: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step, heat | One per new system, plus cross-system journeys |
 | Prediction questions | 30: three on each of the 10 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
 | Converging cases (run across pages) | 1: diabetic ketoacidosis | 4: cholera to shock, heart failure, the marathon wall, altitude over weeks |
 
 ## Next up
 
-Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows ([2.3](#23-skin-integumentary--done-the-layer-follow-the-heat-still-open)); next is the “follow the heat” journey (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows and its “follow the heat” journey ([2.3](#23-skin-integumentary--done)); next are the eyes, ears and throat pages (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -110,7 +110,7 @@ Built; see the README for what it covers. What changed from the plan, and what i
 - **Wound healing** is a staged curve (scaled by diabetes, smoking, infection, age and neuropathy) for a stitched cut, not a cell model; there is no open wound healing by secondary intention, no chronic ulcer, no keloid or hypertrophic scar, and no dressing or pressure-offloading choice.
 - **Burns** use the adult rule of nines only (no Lund & Browder chart for children, no palm method), the Parkland formula without a model of the fluid response (urine output, oedema, fluid creep), and the burn's evaporative water loss ((25 + %TBSA) × BSA mL/h) feeds the heat balance; inhalation injury, escharotomy and grafting are not covered.
 - **More scenarios**: frostbite and non-freezing cold injury, Raynaud's phenomenon, urticaria, psoriasis, a pressure ulcer, melanoma, hyperhidrosis treated with botulinum toxin, cystic fibrosis sweat (shared with the pancreas page), a child's burn by Lund & Browder, and heat exhaustion versus heat stroke in an older person on diuretics.
-- **Not yet built**: the skin system's journeys on the body ([2.3](#23-skin-integumentary--done-the-layer-follow-the-heat-still-open)), and carrying a condition across to other pages (sweat loss → the kidneys page's dehydration, a large burn → the kidneys and heart, vitamin D → the bones page's calcium model, a diabetic foot ↔ the pancreas page). The skin system is now on the body, so the integumentary lens cards link there (`main: true`); the body's `skinTemp` and `skinFlow` are copied from this page's `DAY` keyframes, but the page still doesn't read the body, nor the body run `thermo()`.
+- **Not yet built**: the sunlight → vitamin D journey on the body ([2.3](#23-skin-integumentary--done)), and carrying a condition across to other pages (sweat loss → the kidneys page's dehydration, a large burn → the kidneys and heart, vitamin D → the bones page's calcium model, a diabetic foot ↔ the pancreas page). The skin system is now on the body, so the integumentary lens cards link there (`main: true`); the body's `skinTemp` and `skinFlow` are copied from this page's `DAY` keyframes, but the page still doesn't read the body, nor the body run `thermo()`.
 - **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8e); the PhD texts name their key sources, 19 sources were added to `fact-check/sources.json`, and two registry rows (thermoregulation, UV dose and vitamin D) were added.
 
 ### 1.8 Eyes (`organs/eyes.html`)
@@ -164,9 +164,14 @@ The layer and the "follow a step" journey are built: see the README for what the
 - **Channels are simplified**: `muscleVO2` (45 / 60 / ~1,700 mL/min) is a rule on the `muscle` channel; `muscleGlycogen` and `lactate` are keyframes sampled from the muscles page's `dayAt`; `cadence`, `grf` and `boneStrain` are rules (lying, standing, walking, running), with strain on the bones page's scale. The body doesn't yet drive the muscles page's run or the bones page's loading choice from these, and the vitals panel doesn't show them.
 - **Not drawn**: the abdominal wall and the hip flexors, the scapulae, hands and feet, the joints' cartilage, and the tibialis anterior on the front of the shin.
 
-### 2.3 Skin (integumentary) ✅ Done (the layer; “follow the heat” still open)
-The layer is built: see the README for what it covers, and `node tests/systems-check.mjs integ` for its check (it also checks the heat balance at rest and in the run). What changed from the plan, and what is still open:
-- **Journey: follow the heat** (next): heat made in a working muscle → carried by blood → hypothalamus senses it → sympathetic cholinergic nerves → sweat gland → evaporation from the skin. Use the bullet-time / time-lapse ride engine; the layer's `skinGeo` (pores, edge points, arrow anchors) and the `heat*` channels are ready for it. Also a sunlight → vitamin D journey (skin → liver → kidney → gut calcium uptake) that links to bones.
+### 2.3 Skin (integumentary) ✅ Done
+The layer and the "follow the heat" journey are built: see the README for what they cover, and `node tests/systems-check.mjs integ` for their check (it also checks the heat balance at rest and in the run, and plays the heat journey to the end). What changed from the plan, and what is still open:
+- **Follow the heat**:
+  - **Engine**: it runs on the time-lapse engine (`lapseRide`), like the hormone cascade: a few times faster in the blood, ~25 times at the hypothalamus and evaporation, and slowed down ~3–120 times on the nerve legs. A leg that jumps somewhere new now starts a fresh trail on every ride on that engine.
+  - **Two threads in one ride**: the heat goes to the hypothalamus, the sudomotor signal runs to a forearm sweat gland, then the ride jumps back to the brain and the same heat rides round the body again out to the forearm's skin. In the body the heat is mixed through the blood long before then; following one "packet" is a teaching device, and the text says the heat has been round the body again.
+  - **Nothing is driven by the ride**: the hypothalamus stop is a minute of time-lapse, not a model of the threshold and gain; the sweat rate, skin blood flow, core and skin temperatures on the card are the hour's channels, and the forearm's pore doesn't swell when the ride's signal arrives. The descending pathway from the hypothalamus to the lateral horn is one leg, because its relays in humans are not known.
+  - **One journey**: the run only (from another hour the clock jumps to 17:45). Not built: heat at rest (made by the liver and brain, lost mostly by radiation, with the hands and feet opening at sleep onset), a hot humid day where sweat drips instead of evaporating (needs body-view scenarios), and the forehead or back, which sweat more per square centimetre than the forearm.
+  - **Sunlight → vitamin D** (skin → liver → kidney → gut calcium uptake, linking to bones) is still to build.
 - **Sampled, not simulated**: `skinTemp` and `skinFlow` are keyframes copied from the skin page's `DAY` (which follows its `thermo()` model), and `coreTemp` and `sweat` are the body's own keyframes, as before. The heat flows in `Physio.at()` are rules calibrated to `thermo()` (dry loss = k × (skin − air), with k ~4.8 W/K under the bedclothes, ~7.2 sitting, ~24 running; air 23 °C indoors, 20 °C on the run; ASHRAE breathing loss; evaporation = TEWL + sweat × 2,426 kJ/L). They balance heat made within a few watts at rest and at the run's plateau, but not on the way up or down: early in the run heat is stored, and in the hour after it the core cools while the rules don't show the stored heat leaving (no `heatStore` channel is exported for that reason). Running `thermo()` itself over the day would fix both.
 - **Goosebumps** come only from cool skin while the core is near its morning low (faint, ~7:00–8:30), because the day has no cold. Shivering, pale skin in the cold and a cold or hot day need body-view scenarios ([5](#5-shared-and-supporting-work)): the skin page's heat stroke, cold water and fever cases are the obvious ones.
 - **One skin**: the rim, plexus and pores are the same everywhere; there are no regional differences (the hands and feet warming most at sleep onset are told in the text and pins, not drawn), no apocrine glands, no sebaceous glands and no nails.
@@ -251,7 +256,7 @@ These span several organs and are best built as their own pages (for example `ex
 - **Pharmacology**: one drug taken by mouth and followed through absorption, first-pass metabolism, distribution, effect and clearance by the liver or kidney, with a plasma-concentration curve and dosing intervals.
 
 ### 4.3 New journeys on the body
-- Follow the heat (next), and sunlight → vitamin D (skin, see 2.3).
+- Sunlight → vitamin D (skin, see 2.3).
 - Follow a cycle (reproductive, see 2.4).
 - Follow a drug (see Pharmacology in 4.2).
 - Follow a calcium ion: gut → blood → bone, controlled by PTH and vitamin D, with the kidney deciding what to keep.
@@ -322,12 +327,12 @@ Followed. The test, `tests/questions-check.mjs`, checks everything the plan list
 
 ## Suggested order
 
-Done so far: the kidneys, gut, liver, pancreas, muscles, bones and skin pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
+Done so far: the kidneys, gut, liver, pancreas, muscles, bones and skin pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body with its "follow the heat" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
 
 1. ~~The first converging case, diabetic ketoacidosis ([6.4](#64-converging-cases)), with the scenarios its stops need.~~ ✅ Done (the heart's low-K⁺ ECG is still open; see [6](#6-questions-predict-then-watch)).
 2. ~~Skin page~~ ✅ Done (see [1.7](#17-skin-organsskinhtml--done) for what is still open on it).
-3. ~~The skin system on the body (heat balance, sweat and skin blood flow; [2.3](#23-skin-integumentary--done-the-layer-follow-the-heat-still-open))~~ ✅ Done (see 2.3 for what is still open on it).
-4. “Follow the heat” on the body ([2.3](#23-skin-integumentary--done-the-layer-follow-the-heat-still-open)).
+3. ~~The skin system on the body (heat balance, sweat and skin blood flow; [2.3](#23-skin-integumentary--done))~~ ✅ Done (see 2.3 for what is still open on it).
+4. ~~“Follow the heat” on the body ([2.3](#23-skin-integumentary--done))~~ ✅ Done (see 2.3 for what is still open on it).
 5. Eyes, ears and throat pages.
 6. Endocrine glands, and blood & vessels as new organs with pages.
 7. Reproductive system and organs.

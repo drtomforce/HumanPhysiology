@@ -261,6 +261,30 @@
   "code": 200,
   "checked": "2026-11-20"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=Collagen%20fibers%20provide%20structure": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=Dark-skinned%20individuals%20produce%20more%20melanin": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=Interspersed%20among%20the%20keratinocytes": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=It%20requires%20about%2010%20days": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-25"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=The%20entire%20layer%20is%20replaced": {
   "state": "ok",
   "code": 200,
@@ -278,6 +302,54 @@
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
   "checked": "2026-11-24"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=touch%20receptors%20called%20the%20Meissner": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin#:~:text=0.3%20mm%20per%20day": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin#:~:text=These%20glands%20are%20found%20all%20over": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin#:~:text=and%20dermcidin": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin#:~:text=contracts%20in%20response%20to%20nerve%20signals": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin#:~:text=do%20not%20become%20active%20until%20puberty": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin#:~:text=emptying%20into%20the%20hair%20follicle": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin",
+  "checked": "2026-11-25"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin#:~:text=typically%20from%202%20to%207%20years": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-2-accessory-structures-of-the-skin",
+  "checked": "2026-11-25"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/6-3-bone-structure#:~:text=branch%20off%20at%20right%20angles": {
   "state": "ok",
@@ -356,6 +428,11 @@
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/7-4-the-thoracic-cage",
   "checked": "2026-11-23"
+ },
+ "https://pmc.ncbi.nlm.nih.gov/articles/PMC1123459/": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-25"
  },
  "https://pmc.ncbi.nlm.nih.gov/articles/PMC2826360": {
   "state": "ok",

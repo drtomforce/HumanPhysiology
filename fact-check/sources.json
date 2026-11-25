@@ -184,5 +184,10 @@
  "nnbc2012": {"kind": "guideline", "access": "open", "cite": "National Network for Burn Care. National Burn Care Referral Guidance. Version 1. London: NNBC; 2012."},
  "palmer2006": {"kind": "primary", "access": "subscription", "cite": "Palmer CNA, Irvine AD, Terron-Kwiatkowski A, et al. Common loss-of-function variants of the epidermal barrier protein filaggrin are a major predisposing factor for atopic dermatitis. Nat Genet. 2006;38(4):441–446."},
  "clark2006": {"kind": "primary", "access": "subscription", "cite": "Clark RA, Chong B, Mirchandani N, et al. The vast majority of CLA+ T cells are resident in normal skin. J Immunol. 2006;176(7):4431–4439."},
- "geyfman2012": {"kind": "primary", "access": "open", "cite": "Geyfman M, Kumar V, Liu Q, et al. Brain and muscle Arnt-like protein-1 (BMAL1) controls circadian cell proliferation and susceptibility to UVB-induced DNA damage in the epidermis. Proc Natl Acad Sci U S A. 2012;109(29):11758-11763. doi:10.1073/pnas.1209592109"}
+ "geyfman2012": {"kind": "primary", "access": "open", "cite": "Geyfman M, Kumar V, Liu Q, et al. Brain and muscle Arnt-like protein-1 (BMAL1) controls circadian cell proliferation and susceptibility to UVB-induced DNA damage in the epidermis. Proc Natl Acad Sci U S A. 2012;109(29):11758-11763. doi:10.1073/pnas.1209592109"},
+ "taylor2002": {"kind": "primary", "access": "open", "cite": "Taylor S, Diffey B. Simple dosage guide for suncreams will help users. BMJ. 2002;324(7352):1526. doi:10.1136/bmj.324.7352.1526/a"},
+ "knapik1995": {"kind": "review", "cite": "Knapik JJ, Reynolds KL, Duplantis KL, Jones BH. Friction blisters: pathophysiology, prevention and treatment. Sports Med. 1995;20(3):136-147. doi:10.2165/00007256-199520030-00002"},
+ "hirsch2017": {"kind": "primary", "cite": "Hirsch T, Rothoeft T, Teig N, et al. Regeneration of the entire human epidermis using transgenic stem cells. Nature. 2017;551(7680):327-332. doi:10.1038/nature24487"},
+ "bolognia4": {"kind": "textbook", "access": "subscription", "cite": "Bolognia JL, Schaffer JV, Cerroni L, eds. Dermatology. 4th ed. Elsevier; 2018."},
+ "rook9": {"kind": "textbook", "access": "subscription", "cite": "Griffiths C, Barker J, Bleiker T, Chalmers R, Creamer D, eds. Rook's Textbook of Dermatology. 9th ed. Wiley-Blackwell; 2016."}
 }

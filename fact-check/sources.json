@@ -189,5 +189,17 @@
  "knapik1995": {"kind": "review", "cite": "Knapik JJ, Reynolds KL, Duplantis KL, Jones BH. Friction blisters: pathophysiology, prevention and treatment. Sports Med. 1995;20(3):136-147. doi:10.2165/00007256-199520030-00002"},
  "hirsch2017": {"kind": "primary", "cite": "Hirsch T, Rothoeft T, Teig N, et al. Regeneration of the entire human epidermis using transgenic stem cells. Nature. 2017;551(7680):327-332. doi:10.1038/nature24487"},
  "bolognia4": {"kind": "textbook", "access": "subscription", "cite": "Bolognia JL, Schaffer JV, Cerroni L, eds. Dermatology. 4th ed. Elsevier; 2018."},
- "rook9": {"kind": "textbook", "access": "subscription", "cite": "Griffiths C, Barker J, Bleiker T, Chalmers R, Creamer D, eds. Rook's Textbook of Dermatology. 9th ed. Wiley-Blackwell; 2016."}
+ "rook9": {"kind": "textbook", "access": "subscription", "cite": "Griffiths C, Barker J, Bleiker T, Chalmers R, Creamer D, eds. Rook's Textbook of Dermatology. 9th ed. Wiley-Blackwell; 2016."},
+ "parmeggiani2003": {"kind": "review", "cite": "Parmeggiani PL. Thermoregulation and sleep. Front Biosci. 2003;8:s557-567. doi:10.2741/1054"},
+ "raymann2008": {"kind": "primary", "cite": "Raymann RJEM, Swaab DF, Van Someren EJW. Skin deep: enhanced sleep depth by cutaneous temperature manipulation. Brain. 2008;131(2):500-513. doi:10.1093/brain/awm315"},
+ "nadel1971": {"kind": "primary", "cite": "Nadel ER, Bullard RW, Stolwijk JAJ. Importance of skin temperature in the regulation of sweating. J Appl Physiol. 1971;31(1):80-87. doi:10.1152/jappl.1971.31.1.80"},
+ "kellogg1995": {"kind": "primary", "cite": "Kellogg DL Jr, Pérgola PE, Piest KL, et al. Cutaneous active vasodilation in humans is mediated by cholinergic nerve cotransmission. Circ Res. 1995;77(6):1222-1228. doi:10.1161/01.res.77.6.1222"},
+ "westerterp2004": {"kind": "review", "cite": "Westerterp KR. Diet induced thermogenesis. Nutr Metab (Lond). 2004;1(1):5. doi:10.1186/1743-7075-1-5"},
+ "nakamura2008": {"kind": "primary", "cite": "Nakamura K, Morrison SF. A thermosensory pathway that controls body temperature. Nat Neurosci. 2008;11(1):62-71. doi:10.1038/nn2027"},
+ "minson2001": {"kind": "primary", "cite": "Minson CT, Berry LT, Joyner MJ. Nitric oxide and neurally mediated regulation of skin blood flow during local heating. J Appl Physiol. 2001;91(4):1619-1626. doi:10.1152/jappl.2001.91.4.1619"},
+ "kenney2003": {"kind": "review", "cite": "Kenney WL, Munce TA. Invited review: aging and human temperature regulation. J Appl Physiol. 2003;95(6):2598-2603. doi:10.1152/japplphysiol.00202.2003"},
+ "kenney1992": {"kind": "review", "cite": "Kenney WL, Johnson JM. Control of skin blood flow during exercise. Med Sci Sports Exerc. 1992;24(3):303-312. doi:10.1249/00005768-199203000-00005"},
+ "sherwood2010": {"kind": "primary", "cite": "Sherwood SC, Huber M. An adaptability limit to climate change due to heat stress. Proc Natl Acad Sci U S A. 2010;107(21):9552-9555. doi:10.1073/pnas.0913352107"},
+ "blood2001": {"kind": "primary", "cite": "Blood AJ, Zatorre RJ. Intensely pleasurable responses to music correlate with activity in brain regions implicated in reward and emotion. Proc Natl Acad Sci U S A. 2001;98(20):11818-11823. doi:10.1073/pnas.191355898"},
+ "rutter1996": {"kind": "review", "cite": "Rutter N. The immature skin. Eur J Pediatr. 1996;155(Suppl 2):S18-S20. doi:10.1007/bf01958075"}
 }

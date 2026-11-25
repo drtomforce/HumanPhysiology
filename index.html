@@ -35,7 +35,7 @@
  1. DATA (JSON blocks in <script type="application/json">)
     #body-content  topics → phases → levels → text, and systems (circulatory,
                    nervous, endocrine, respiratory, digestive, urinary, immune,
-                   musculoskeletal) → phases → levels
+                   musculoskeletal, integumentary) → phases → levels
                    → text plus fact pins
                    {title, x, y, levels…}. The schema is the contract.
     #body-glossary term → definition + match forms. Terms are auto-linked.
@@ -119,7 +119,11 @@
                    skeleton and the big muscle groups, lit by the posture of the hour
                    (limp in REM sleep) and, in the run, in turn with each stride, with
                    motor units firing, the ground pushing back and the leg bones
-                   bending at each footstep, and lactate leaving working muscle (MSK).
+                   bending at each footstep, and lactate leaving working muscle (MSK),
+                   and the skin, its rim coloured by skin temperature, its dermal
+                   plexus running with skin blood flow, its pores beading with sweat
+                   in the run, and the heat leaving by radiation, convection and
+                   evaporation, each sized in watts (INTEG).
                    PINS draws the live system's level-aware fact pins.
                    CAMERA tweens between views, or eases after a followed cell
                    (track), and JOURNEY is the card that narrates that cell's trip.
@@ -549,6 +553,14 @@ figure.ill svg{ display:block; width:100%; height:auto; }
 .ms-ocy{ fill:#a68c6a; }
 .ms-grf{ fill:none; stroke:#4a6fd1; stroke-width:3.2; stroke-linecap:round; stroke-linejoin:round; }
 .ms-dot{ stroke:#ffffff80; stroke-width:.4; }
+.sk-rim{ fill:none; stroke-width:4.5; stroke-linejoin:round; opacity:.55; }
+.sk-plexus{ fill:none; stroke:#e05a4f; stroke-width:1.4; stroke-dasharray:5 4; stroke-linecap:round; }
+.sk-loop{ fill:none; stroke:#e05a4f; stroke-width:1.1; stroke-linecap:round; }
+.sk-pore{ fill:#4aa3df; }
+.sk-hair{ stroke:#6b4a3a; stroke-width:.9; stroke-linecap:round; opacity:.75; }
+.sk-rad{ fill:none; stroke:#f08a3c; stroke-linecap:round; stroke-linejoin:round; }
+.sk-conv{ fill:none; stroke:#d9b44a; stroke-linecap:round; stroke-linejoin:round; }
+.sk-dot{ stroke:#ffffff80; stroke-width:.3; }
 #s-breathRide .imp-halo, #s-biteRide .imp-halo, #s-dropRide .imp-halo, #s-infectionRide .imp-halo{ opacity:.28; }
 #s-breathRide .cas-dot, #s-biteRide .cas-dot, #s-dropRide .cas-dot, #s-infectionRide .cas-dot{ stroke:#fff; stroke-width:1.4; vector-effect:non-scaling-stroke; }
 #s-breathRide .imp-trail, #s-biteRide .imp-trail, #s-dropRide .imp-trail, #s-infectionRide .imp-trail{ fill:none; stroke-width:3; stroke-opacity:.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:.1 6; vector-effect:non-scaling-stroke; }
@@ -2076,6 +2088,118 @@ figure.ill svg{ display:block; width:100%; height:auto; }
           "hs": "Bone strain is measured in microstrain: 1,000 microstrain is a change in length of 0.1%. Running loads the shin bone (tibia) to about 1,000 microstrain, about 30 times more than lying in bed. Osteocytes sense the fluid squeezed through their tiny channels and steer bone building and breakdown.",
           "college": "Frost’s mechanostat: below ~100 microstrain bone is removed, above ~1,500 it is added, and in between it is kept. Dynamic loads matter more than static ones, which is why standing still builds little bone. Repeated loads without enough rest cause stress fractures, most often of the tibia in runners.",
           "phd": "Strain gauges fixed to the tibia of volunteers record several hundred microstrain in walking and around 1,000–2,000 in running and jumping (Burr et al., 1996). Osteocytes answer through sclerostin: loading lowers it, freeing Wnt signalling in osteoblasts, and romosozumab, an antibody against sclerostin, mimics this."
+        }
+      ]
+    },
+    "integumentary": {
+      "name": "Skin",
+      "blurb": "The body’s wrapper and radiator: skin blood flow, sweat, and the heat leaving the body",
+      "phases": {
+        "sleep": {
+          "ms": "As you fall asleep, the blood vessels in your hands and feet open up. Warm blood flows close to the surface, and heat escapes into your bed. That lets the inside of your body cool down by about half a degree, which helps you sleep. You don’t sweat, but a little water still slips out through your skin all night.",
+          "hs": "Your skin is the body’s radiator, and the hypothalamus decides how much warm blood flows through it. At sleep onset it relaxes the nerves that keep the skin’s vessels narrow, most of all in the hands and feet. Your skin warms to about 34–35 °C while your core cools to its lowest, around 36.4 °C, in the early morning. Even without sweating, about 15 mL of water an hour diffuses out through the skin and evaporates: insensible water loss.",
+          "college": "At sleep onset, sympathetic vasoconstrictor tone to the arteriovenous anastomoses of the hands and feet falls, so distal skin warms while the core cools; skin blood flow is ~0.3 L/min, a little above the daytime level. Under the bedclothes the body makes ~70 W and loses most of it as dry heat; evaporation through the skin (transepidermal water loss, ~16 mL/h over the whole skin, ~0.4 L a day) carries away about a seventh of it. In REM sleep thermoregulation is largely switched off: sweating is weaker and shivering does not occur.",
+          "phd": "In REM sleep the preoptic hypothalamus largely stops defending body temperature: in cats, shivering, panting and vasomotor responses disappear, and in humans sweating falls (Parmeggiani 2003). Warm-sensitive preoptic neurons that drive heat loss also promote sleep, which ties the two together. Raising skin temperature by about 0.4 °C, without changing core temperature, deepened sleep and cut night-time waking, most in older people (Raymann et al. 2008)."
+        },
+        "rest": {
+          "ms": "Your body makes heat all the time, about as much as an old 90-watt light bulb. Most of it leaves through your skin. It glows away as invisible infrared light, and it warms the air touching you. If you get cold, your skin goes pale and you get goosebumps. If you get hot, it goes pink and sweaty.",
+          "hs": "Sitting indoors, your body makes about 90 W of heat. About half of it leaves your skin as infrared radiation, about a third warms the air around you (convection), and the rest goes with water evaporating from your skin and your breath. The hypothalamus holds the core near 37 °C by changing how much blood flows through the skin, and so how warm the skin is: around 33 °C. Climbing out of a warm bed, your skin cools, which can give you goosebumps.",
+          "college": "Heat balance: heat made = radiation + convection + conduction + evaporation + heat stored. Sitting indoors at 23 °C in ordinary clothes, the skin page’s two-node model loses ~90 W as radiation ~44 W, convection ~30 W, evaporation from the skin ~8–11 W and breathing ~8 W. Within the thermoneutral zone the core is held by skin blood flow alone: sympathetic noradrenaline on α-receptors narrows skin arterioles and the arteriovenous anastomoses. Skin blood flow is ~0.25 L/min and mean skin temperature ~33 °C.",
+          "phd": "The preoptic area weighs core temperature about nine times more than mean skin temperature in its drive to sweat (Nadel et al. 1971), so the skin gives early warning but the core decides. Active vasodilation in heat comes from sympathetic cholinergic nerves, yet it works mostly through co-transmitters and nitric oxide rather than acetylcholine itself (Kellogg et al. 1995). Cold is sensed by TRPM8 channels in skin nerve endings."
+        },
+        "meal": {
+          "ms": "After a meal your body makes a little more heat while it digests the food, so you may feel a bit warmer. Your skin stays calm, though: the extra blood goes to your gut, not your skin. Hot, spicy food is different. Chilli tricks the heat sensors in your mouth, so your face can go red and sweaty.",
+          "hs": "Digesting a meal raises the heat you make by about a tenth of the energy in the food: the thermic effect of food. That extra heat is small, so the skin hardly changes. Skin blood flow stays around a quarter of a litre a minute, and the gut gets the extra blood instead. Chilli’s capsaicin switches on heat-sensing nerves (TRPV1), which can make your face flush and sweat.",
+          "college": "Diet-induced thermogenesis adds ~10% of the meal’s energy over a few hours, a load the skin clears without sweating or much change in skin blood flow: in the body view skin flow stays ~0.24–0.27 L/min and mean skin ~33 °C through breakfast and lunch, while splanchnic flow roughly doubles. Core temperature drifts up through the day on its circadian rhythm, from its early-morning low to a late-afternoon high, quite apart from meals.",
+          "phd": "Most of the thermic effect is the cost of processing and storing nutrients: about 20–30% of protein energy, 5–10% of carbohydrate and 0–3% of fat (Westerterp 2004). Whether brown fat adds much to meal-induced heat in adults is still debated. Facial sweating with spicy food is normal; sweating with any food, as in Frey syndrome or diabetic autonomic neuropathy, points to damaged or miswired autonomic fibres."
+        },
+        "exercise": {
+          "ms": "When you run, your body makes seven or eight times as much heat as at rest. Your skin gets rid of it. Warm blood rushes into your skin, so you go red. Millions of sweat glands pour out sweat, and as it dries it takes heat away with it. Your core still warms up, to about 38 °C, and then stays there.",
+          "hs": "In the run your body makes nearly 700 W of heat. The hypothalamus opens the skin’s vessels, and skin blood flow rises about fourfold, to around 1 L a minute. Sweat glands put out about half a litre an hour. Each litre that evaporates carries away 2,400 kJ, so once sweating is in full flow, evaporation removes about half of the heat. The wet skin is cooled so well that it falls to about 31 °C, even while the core rises to about 38.2 °C.",
+          "college": "Heat balance in the run (~690 W, 20 °C, light kit): evaporation ~360 W, convection ~200 W, radiation ~55 W, breathing ~70 W. Heat is stored early in the run, while sweating builds up and the core climbs to a plateau of ~38.2 °C; then heat lost matches heat made. Sympathetic cholinergic fibres drive eccrine sweating (M3 receptors) and active vasodilation. In exercise, skin blood flow stops rising once the core passes ~38 °C, as skin and working muscle compete for the cardiac output. After the run, sweating fades within about 45 minutes and the skin warms back up.",
+          "phd": "Over a wide range of air temperatures, the core plateau in exercise is set by the work rate, not the weather (Nielsen 1938); Lind (1963) called this range the prescriptive zone. Beyond it, evaporation can’t keep up and the core keeps rising. The ceiling on skin blood flow at a core of ~38 °C in exercise protects central blood volume and cardiac output (Kenney and Johnson 1992). Losing more than ~2% of body mass as sweat reduces sweating and skin flow and lets the core drift up."
+        }
+      },
+      "pins": [
+        {
+          "id": "thermostat",
+          "title": "The body’s thermostat",
+          "x": 614,
+          "y": 152,
+          "ms": "Deep in your brain, the hypothalamus works like a thermostat. It feels the temperature of your blood, gets messages from your skin, and tells your skin’s vessels and sweat glands what to do.",
+          "hs": "The preoptic area of the hypothalamus compares your core temperature with a set point near 37 °C. Too warm: it widens the skin’s vessels and starts sweating. Too cold: it narrows them, raises goosebumps and, if needed, starts shivering. A fever raises the set point, which is why you shiver while a fever is rising.",
+          "college": "Warm-sensitive neurons in the preoptic area fire faster as the blood around them warms, and drive heat loss. Skin temperature, sensed by TRPM8 (cool) and other TRP channels (warm), reaches the preoptic area through the spinal cord and the parabrachial nucleus and gives early warning. In fever, prostaglandin E₂ acting on EP3 receptors in the preoptic area raises the set point.",
+          "phd": "The skin-to-hypothalamus pathway runs from dorsal-horn lamina I neurons to the lateral parabrachial nucleus and on to the median preoptic nucleus (Nakamura and Morrison 2008), separate from the route to the cortex that makes you feel warm or cold. Sweating and vasoconstriction have separate thresholds, with a narrow interthreshold zone between them (about 0.2 °C in humans) where only skin blood flow changes."
+        },
+        {
+          "id": "forehead",
+          "title": "Sweat glands",
+          "x": 575,
+          "y": 104,
+          "ms": "You have 2–4 million sweat glands, most closely packed on your palms, soles and forehead. Each is a tiny coiled tube that squeezes out salty water through a pore.",
+          "hs": "Eccrine glands make the watery sweat that cools you. Apocrine glands, in the armpits and groin, make an oilier sweat that bacteria turn into body odour; they switch on at puberty and don’t help with cooling. Sweat cools you only when it evaporates: drips that roll off take almost no heat with them.",
+          "college": "The coil secretes a fluid much like plasma; the duct then takes back Na⁺ and Cl⁻ (through ENaC and CFTR), so at low rates sweat is far more dilute than plasma, and it gets saltier as flow outpaces reabsorption. In exercise the forehead and the middle of the back sweat most per square centimetre; regional rates differ several-fold.",
+          "phd": "Sweat glands are supplied by sympathetic nerves that release acetylcholine onto M3 receptors, which is why anticholinergic drugs cause hot, dry skin and botulinum toxin injections treat excessive sweating. Training and heat acclimatisation raise each gland’s output; the number of active glands is thought to be set in the first years of life (Kuno 1956)."
+        },
+        {
+          "id": "radiation",
+          "title": "Glowing in the infrared",
+          "x": 786,
+          "y": 396,
+          "ms": "You glow! Not with light you can see, but with infrared, the kind a heat camera picks up. At rest, about half of your heat leaves this way.",
+          "hs": "Everything warm radiates heat. Your skin, at about 33 °C, radiates to walls and objects that are cooler than you. In the infrared, skin is almost a perfect radiator, whatever its colour. Radiation needs no air, and it can work backwards: in strong sun you gain heat by radiation.",
+          "college": "Net radiation depends on the gap between skin and surroundings (εσ(T_skin⁴ − T_surroundings⁴), skin emissivity ~0.98); near room temperature it is linearised as h_r ≈ 4.7 W/m²/K. In the run radiation stays near 55 W while convection grows with air speed, so radiation’s share of the heat falls from about half to under a tenth.",
+          "phd": "Thermal cameras read skin temperature from this emission: at ~10 µm, human skin is close to a black body regardless of melanin. Sunlight on a body in the open can add more heat than it makes at rest; the skin page models sun as a mean radiant temperature ~18 °C above the air."
+        },
+        {
+          "id": "hands",
+          "title": "Hands and feet as radiators",
+          "x": 778,
+          "y": 606,
+          "ms": "Your hands, feet, ears and nose have shortcuts between arteries and veins. When they open, warm blood rushes through and heat pours out. When they shut, your fingers go cold to keep the heat inside.",
+          "hs": "These shortcuts are arteriovenous anastomoses (AVAs). They are found in hairless skin: palms, soles, lips, ears and nose. Nerves keep them shut most of the time. Opening them can raise the blood flow through a hand many times over, which is why cold hands are a sign that your body is saving heat.",
+          "college": "AVAs are thick-walled shunts ~10–150 µm wide with a dense sympathetic noradrenergic supply; they bypass the capillaries and fill the venous plexus. Hairless (glabrous) skin has no active vasodilator nerves: its flow rises only when vasoconstrictor tone is released. Opening the AVAs at sleep onset warms the hands and feet and helps the core cool at night.",
+          "phd": "AVA flow switches on and off with bursts of sympathetic activity, so finger temperature can change by several degrees within minutes (Walløe 2016). Cooling the hands or feet in cool water uses these shunts to remove heat after exercise. In Raynaud’s phenomenon, cold or stress shuts the finger arteries entirely: the fingers go white, then blue, then red."
+        },
+        {
+          "id": "goose",
+          "title": "Hair and goosebumps",
+          "x": 780,
+          "y": 500,
+          "ms": "Each hair has a tiny muscle attached to it. When you are cold or scared, these muscles pull the hairs upright and make little bumps on your skin: goosebumps.",
+          "hs": "The muscle is the arrector pili, switched on by sympathetic nerves. In furry animals, raised hair traps a thicker layer of still air and keeps the animal warm. Humans have too little body hair for this to help much. In this day they show only faintly, for an hour or so after you climb out of a warm bed, while your core is still near its morning low.",
+          "college": "Noradrenaline on α₁-receptors contracts the arrector pili. Its thermal value in humans is small, but the same cold reflex narrows the skin’s vessels, and that is what really saves heat: the skin cools and the shell insulates the core. Emotions such as fear, or music that moves you, trigger goosebumps through the same sympathetic outflow.",
+          "phd": "In mice the arrector pili and the sympathetic nerve that drives it form a niche for hair-follicle stem cells: cold, through this nerve, activates the stem cells and grows hair (Shwartz et al. 2020). Chills from music come with activity in reward circuits, including the ventral striatum (Blood and Zatorre 2001)."
+        },
+        {
+          "id": "barrier",
+          "title": "Water through the skin",
+          "x": 512,
+          "y": 640,
+          "ms": "Your skin is nearly waterproof, but not quite. All day and night, a little water seeps out through it and dries away without you noticing: about two glasses a day.",
+          "hs": "This is insensible water loss: water that diffuses through the top layer of the skin and evaporates before you can feel it. It is about 0.3–0.5 L a day from the skin, with about as much again from your breath, and it is part of the water you need to drink each day. Burns and eczema, which break the barrier, let much more out.",
+          "college": "Transepidermal water loss (TEWL) is ~6 g/m²/h on healthy forearm skin and higher on the palms, soles and face; averaged over the whole ~1.8 m² (~9 g/m²/h) that is ~16 mL/h, ~0.4 L a day, carrying away ~10 W of heat. The barrier is the lipid layers of the stratum corneum. In eczema TEWL rises 2–3-fold, and a large burn can lose litres a day.",
+          "phd": "TEWL is measured with an evaporimeter over the skin and is the standard measure of barrier function in skin research. Very premature babies, born before the stratum corneum has matured (at around 34 weeks), can lose ten times as much water through the skin as babies born at term, which is why they are nursed in humid incubators (Rutter 1996)."
+        },
+        {
+          "id": "vessels",
+          "title": "Blood flow in the skin",
+          "x": 676,
+          "y": 648,
+          "ms": "Under your skin is a mesh of tiny blood vessels. When you are hot, they open and your skin goes pink. When you are cold, they close and your skin goes pale.",
+          "hs": "The skin gets far more blood than its cells need: at rest about a quarter of a litre a minute, about 5% of what the heart pumps. In the run it rises to about 1 litre a minute, and in severe heat it can reach 6–8 litres a minute, which strains the heart.",
+          "college": "Two networks: a deep plexus where the dermis meets the fat and a superficial one just under the epidermis, joined by vertical vessels, with a capillary loop rising into each dermal papilla. Hairy skin has two sympathetic systems: noradrenergic vasoconstrictor fibres (tone at rest, and in the cold) and cholinergic active vasodilator fibres, which do ~80–95% of the vasodilation in heat stress.",
+          "phd": "Laser-Doppler flowmetry tracks skin blood flow continuously. Local heating to 42 °C gives a near-maximal plateau that depends largely on nitric oxide (Minson et al. 2001), a standard test of microvascular function. Ageing blunts active vasodilation and sweating, one reason older people are more at risk in heat waves (Kenney and Munce 2003)."
+        },
+        {
+          "id": "evap",
+          "title": "Sweat that dries",
+          "x": 538,
+          "y": 790,
+          "ms": "Sweat cools you only when it dries. Turning water into vapour takes a lot of heat, and that heat comes from your skin. On a humid day sweat can’t dry, so it drips off without cooling you.",
+          "hs": "Evaporating 1 g of sweat takes about 2.4 kJ of heat. In the run about half a litre an hour evaporates, removing about 350 W, half of the heat the muscles make. Wind helps by carrying the damp air away. Humid air slows evaporation, because it already holds a lot of water vapour.",
+          "college": "Evaporation is driven by the difference in water vapour pressure between wet skin (~4.5 kPa at 31 °C) and the air (~1.2 kPa at 20 °C and 50% humidity), not by temperature. Evaporation and convection both depend on air movement, so wind speeds up both. When the evaporation needed is more than the air allows, sweat drips and the core keeps rising.",
+          "phd": "The latent heat of vaporisation of water is ~2,426 kJ/kg at skin temperature (2,257 kJ/kg at 100 °C). A wet-bulb temperature of 35 °C was proposed as the theoretical limit of human survival (Sherwood and Huber 2010), but in young adults heat balance failed at wet-bulb temperatures near 31 °C (Vecellio et al. 2022)."
         }
       ]
     }
@@ -4149,7 +4273,38 @@ figure.ill svg{ display:block; width:100%; height:auto; }
   "PIEZO2": { "def": "A stretch-gated channel in touch sensors and in muscle spindles. Without it, touch and the sense of limb position are lost.", "match": ["PIEZO2"] },
   "prostaglandin E2": { "def": "A short-lived signalling lipid. In bone, osteocytes release it when loaded, and it helps start bone building.", "match": ["prostaglandin E2"] },
   "Wnt/β-catenin": { "def": "A signalling pathway that tells osteoblasts to build bone. Sclerostin blocks it.", "match": ["Wnt/β-catenin", "Wnt"] },
-  "romosozumab": { "def": "An antibody drug against sclerostin, given as a monthly injection for a year to build bone in severe osteoporosis.", "match": ["romosozumab"] }
+  "romosozumab": { "def": "An antibody drug against sclerostin, given as a monthly injection for a year to build bone in severe osteoporosis.", "match": ["romosozumab"] },
+  "thermoregulation": { "def": "Keeping the body’s core temperature near 37 °C by balancing the heat it makes against the heat it loses.", "match": ["thermoregulation"] },
+  "vasodilation": { "def": "The widening of blood vessels, which lets more blood through. In the skin it sends warm blood to the surface to lose heat.", "match": ["vasodilation", "active vasodilation", "vasodilator"] },
+  "vasoconstriction": { "def": "The narrowing of blood vessels, which lets less blood through. In the skin it keeps heat in.", "match": ["vasoconstriction", "vasoconstrictor"] },
+  "radiation": { "def": "Heat given off by anything warm as infrared light. It needs no air: at rest, about half of the body’s heat leaves this way.", "match": ["radiation", "infrared radiation"] },
+  "convection": { "def": "Heat carried away by air (or water) moving past the skin. Wind and running speed it up.", "match": ["convection"] },
+  "evaporation": { "def": "Water turning into vapour. It takes heat with it, so sweat that dries cools the skin.", "match": ["evaporation"] },
+  "insensible water loss": { "def": "Water lost without you noticing: through the skin and in the breath, about 0.3–0.5 L a day from each.", "match": ["insensible water loss", "transepidermal water loss", "TEWL"] },
+  "arteriovenous anastomoses": { "def": "Short cuts between small arteries and veins in the hands, feet, ears, nose and lips. When they open, warm blood rushes through the skin and heat pours out.", "match": ["arteriovenous anastomoses", "AVAs"] },
+  "arrector pili": { "def": "The tiny muscle attached to each hair. When it contracts, the hair stands up and the skin bumps up around it.", "match": ["arrector pili"] },
+  "goosebumps": { "def": "Little bumps on the skin when the arrector pili muscles pull the hairs upright, from cold or strong emotion.", "match": ["goosebumps", "piloerection"] },
+  "apocrine glands": { "def": "Sweat glands in the armpits and groin that make an oily sweat, which skin bacteria turn into body odour. They don’t help with cooling.", "match": ["apocrine glands", "apocrine"] },
+  "stratum corneum": { "def": "The outermost layer of the skin: flat, dead cells set in layers of fat, which keep water in.", "match": ["stratum corneum"] },
+  "preoptic area": { "def": "A part of the hypothalamus that senses the blood’s temperature, hears from the skin and steers heat loss and heat gain: the body’s thermostat.", "match": ["preoptic area", "preoptic", "median preoptic nucleus"] },
+  "thermic effect of food": { "def": "The extra heat the body makes while it digests, absorbs and stores a meal: about a tenth of the meal’s energy.", "match": ["thermic effect of food", "diet-induced thermogenesis"] },
+  "TRPM8": { "def": "An ion channel in sensory nerve endings that opens with cool temperatures (and menthol), signalling cold.", "match": ["TRPM8"] },
+  "TRPV1": { "def": "An ion channel in sensory nerve endings that opens with painful heat and with capsaicin from chilli.", "match": ["TRPV1", "capsaicin"] },
+  "thermoneutral zone": { "def": "The range of air temperatures in which the body can keep its core temperature by changing skin blood flow alone, without sweating or shivering.", "match": ["thermoneutral zone"] },
+  "prescriptive zone": { "def": "The range of weather in which the core temperature reached in exercise depends on how hard you work, not on the air temperature.", "match": ["prescriptive zone"] },
+  "wet-bulb temperature": { "def": "The temperature of a thermometer wrapped in wet cloth, which combines heat and humidity: the higher it is, the less sweat can evaporate.", "match": ["wet-bulb temperature", "wet-bulb temperatures", "wet-bulb"] },
+  "latent heat": { "def": "The heat taken up when water turns into vapour, about 2,400 kJ for every litre of sweat that evaporates.", "match": ["latent heat", "latent heat of vaporisation"] },
+  "emissivity": { "def": "How well a surface gives off infrared radiation compared with a perfect radiator. Skin’s is about 0.98, whatever its colour.", "match": ["emissivity"] },
+  "heat acclimatisation": { "def": "The changes over 1–2 weeks of exercise in the heat: earlier and heavier sweating, more dilute sweat and more blood plasma.", "match": ["heat acclimatisation", "heat acclimatization"] },
+  "dermal papillae": { "def": "Small bumps of the dermis that push up into the epidermis, each with a loop of capillaries.", "match": ["dermal papilla", "dermal papillae"] },
+  "Raynaud’s phenomenon": { "def": "Fingers or toes that go white, then blue, then red when the small arteries clamp shut in the cold or with stress.", "match": ["Raynaud’s phenomenon", "Raynaud’s"] },
+  "laser-Doppler flowmetry": { "def": "Measuring skin blood flow by shining a laser into the skin and reading the shift in the light scattered by moving red cells.", "match": ["laser-Doppler flowmetry"] },
+  "parabrachial nucleus": { "def": "A group of neurons in the pons that relays signals from the body, including skin temperature, to the hypothalamus.", "match": ["parabrachial nucleus", "lateral parabrachial nucleus"] },
+  "brown fat": { "def": "Fat tissue with many mitochondria that burns fuel to make heat instead of ATP.", "match": ["brown fat"] },
+  "CFTR": { "def": "A chloride channel in the membranes of sweat ducts, airways and the pancreas. Faulty CFTR causes cystic fibrosis, with very salty sweat.", "match": ["CFTR"] },
+  "nitric oxide": { "def": "A gas made by the lining of blood vessels and by some nerves that relaxes smooth muscle and widens vessels.", "match": ["nitric oxide"] },
+  "Frey syndrome": { "def": "Sweating and flushing of the cheek while eating, after nerves to the parotid gland regrow into the skin after surgery.", "match": ["Frey syndrome"] },
+  "M3 receptors": { "def": "A type of acetylcholine receptor on sweat glands and smooth muscle.", "match": ["M3 receptors", "M3"] }
 }
 </script>
 
@@ -5409,7 +5564,10 @@ const SYSTEMS = [
              ["#c9a0dc", "Neutrophils leaving the marrow"], ["#e56b3d", "IL-6 from working muscle"]] },
   { id: "musculoskeletal", short: "Muscles", color: "#b0603a",
     legend: [["#e0473c", "Muscles at work"], ["#f2c230", "Motor units firing"], ["#4a6fd1", "Ground pushing back at each footstep"],
-             ["#2fb3a3", "Bones bending under the load"], ["#8e6bd1", "Lactate leaving working muscle"]] }
+             ["#2fb3a3", "Bones bending under the load"], ["#8e6bd1", "Lactate leaving working muscle"]] },
+  { id: "integumentary", short: "Skin", color: "#c98a6b",
+    legend: [["#5f8fd0", "Skin temperature: blue cooler, red warmer"], ["#e05a4f", "Blood flowing through the skin"], ["#4aa3df", "Sweat glands and their pores"],
+             ["#9fc9e8", "Water evaporating from the skin"], ["#f08a3c", "Heat radiating away (infrared)"], ["#d9b44a", "Heat carried off by the air (convection)"]] }
 ];
 const SYSTEM_BY_ID = Object.fromEntries(SYSTEMS.map(s => [s.id, s]));
 /* which systems each organ topic belongs to (shown as "Part of" chips) */
@@ -5435,7 +5593,7 @@ const ORGAN_SYSTEMS = {
   brain: ["nervous", "endocrine", "respiratory"], heart: ["circulatory", "nervous"], lungs: ["respiratory", "circulatory"],
   gut: ["digestive", "nervous", "endocrine", "circulatory", "immune"], liver: ["digestive", "circulatory", "endocrine", "immune"],
   pancreas: ["endocrine", "digestive"], kidneys: ["urinary", "endocrine", "circulatory"], muscles: ["musculoskeletal", "nervous", "circulatory", "respiratory"],
-  skin: ["circulatory", "nervous", "immune"], bones: ["musculoskeletal", "circulatory", "endocrine", "immune"],
+  skin: ["integumentary", "circulatory", "nervous", "immune"], bones: ["musculoskeletal", "circulatory", "endocrine", "immune"],
   eyes: ["nervous", "endocrine"], ears: ["nervous"], throat: ["respiratory", "digestive", "nervous", "endocrine", "immune"],
   spleen: ["immune", "circulatory"]
 };
@@ -5453,7 +5611,7 @@ function phaseAt(h){ h = wrapH(h); for (const e of SCHEDULE) if (inRange(h, e.fr
 
 const STRINGS = {
   introTitle: "A day in the life of your body",
-  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air, food, urine, immune cells, and muscles and bones. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
+  introLede: "Scrub through the day, or press play. Watch heart rate, breathing and blood sugar rise and fall from sleep to breakfast to an evening run. Switch body systems on and off: blood, nerves, hormones, air, food, urine, immune cells, muscles and bones, and the skin. Then pick an organ to look closer. Everything is explained at four depths, from first curiosity to current research.",
   schedule: "Today’s plan: tap to jump",
   explore: "Look closer",
   hint: "Tip: dotted words have short definitions. Hover or tap them. Values are typical for a healthy adult.",
@@ -5630,6 +5788,13 @@ const PHYSIO = {
      doesn't drain it as it drains the liver's. */
   muscleGlycogen: [[0,389],[2.5,400],[6.5,410],[12,416],[16.8,418],[17.05,417],[17.5,385],[17.95,350],[18.3,347],[19,349],[20.25,363],[22,377],[23,384]],
   lactate:    [[0,.8],[6.4,.8],[6.6,1],[16.8,1],[17.15,1.8],[17.5,1.94],[17.95,1.94],[18.3,1.2],[18.6,1],[22.9,1],[23.1,.8]],
+  /* skin: mean skin temperature, °C, and skin blood flow, L/min, sampled from the skin
+     page's day (its DAY keyframes, from its two-node heat-balance model thermo()):
+     warm skin and open hand and foot shunts in bed at night, ~33 °C and ~0.24 L/min
+     awake at rest, and in the run skin flow up ~4× to ~1 L/min while evaporating
+     sweat cools the skin to ~31 °C as the core climbs to ~38.2 °C */
+  skinTemp:   [[0,34.6],[6.5,34.4],[7,33.2],[16.8,33.1],[17.15,31.8],[17.5,30.8],[17.95,30.6],[18.3,32.2],[18.8,33],[22.5,33.2],[23.2,34.4],[23.99,34.6]],
+  skinFlow:   [[0,.32],[4,.28],[6.5,.24],[7,.22],[12.5,.24],[13.5,.27],[16.8,.24],[17.15,.6],[17.5,.9],[17.95,1.03],[18.3,.7],[18.8,.4],[19.5,.28],[22.5,.26],[23.2,.36],[23.99,.33]],
   /* thyroid hormone: steady through the day */
   thyroid:    [[0,.35],[12,.35]],
   /* stomach contents, 0–1: filled at each meal and emptied over 3–4 h (dinner
@@ -5799,6 +5964,29 @@ const Physio = {
     out.cadence = stepping * (110 + 58 * pace);
     out.grf = out.awake * (stepping ? 1.2 + 1.3 * pace : 1);
     out.boneStrain = stepping ? 700 + 300 * pace : 30 + 420 * out.awake;
+    /* skin and heat balance, W, after the skin page's thermo() (70 kg, 1.8 m²).
+       Heat made = O₂ uptake × ~20.5 J/mL (on level ground nearly all of it ends up as
+       heat). Sweat ~0.52 L/h at the run's peak. Water through the skin (TEWL) ~6 g/m²/h,
+       ×1.5 as a body average: ~16 mL/h, ~0.4 L a day. Indoors at 23 °C in ordinary
+       clothes, out at 20 °C in running kit; dry heat loss = k × (skin − air), with k
+       ~7.2 W/K sitting (radiation ~60% of it, still air), ~4.8 under the bedclothes,
+       ~24 running (radiation ~22%, the rest convection as the air rushes past).
+       Breathing: ASHRAE's respiratory loss. Evaporation from the skin = TEWL + sweat ×
+       2,426 kJ/L (in the cool run nearly all of it evaporates). This gives ~90 W made
+       at rest (radiation ~44, convection ~29, evaporation ~11, breath ~8) and ~690 W
+       in the run (evaporation ~360, convection ~200, radiation ~55, breath ~70).
+       Goosebumps need cool skin while the core is still near its morning low: faint,
+       for the first hour or two after getting out of a warm bed. */
+    const run = clamp((out.muscle - .2) / .8), air = 23 - 3 * run, Pa = .5 * .6108 * Math.exp(17.27 * air / (air + 237.3));
+    out.sweatRate = .52 * out.sweat;
+    out.tewl = 16;
+    out.heatMade = out.vo2 * .342;
+    out.heatResp = out.heatMade * (.0014 * (34 - air) + .0173 * (5.87 - Pa));
+    const dry = (4.8 + 2.4 * out.awake + 16.9 * run) * (out.skinTemp - air), radShare = .6 - .38 * run;
+    out.heatRad = dry * radShare;
+    out.heatConv = dry * (1 - radShare);
+    out.heatEvap = (out.tewl + 1000 * out.sweatRate) * 2.426 / 3.6;
+    out.goose = clamp((33.6 - out.skinTemp) / .8) * clamp((36.7 - out.coreTemp) / .2) * out.awake;
     return out;
   }
 };
@@ -5821,7 +6009,7 @@ const URLP = new URLSearchParams(location.search);
 const urlHour = parseFloat(URLP.get("hour"));
 const savedLevel = LEVEL_INDEX[URLP.get("level")] !== undefined ? URLP.get("level") : storage.get("humanphysiology.level");
 function loadSystems(){
-  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false, urinary: false, immune: false, musculoskeletal: false };
+  const shown = { circulatory: true, nervous: false, endocrine: false, respiratory: false, digestive: false, urinary: false, immune: false, musculoskeletal: false, integumentary: false };
   let live = "circulatory";
   try {
     const s = JSON.parse(storage.get("humanphysiology.shown") || "null");
@@ -6483,6 +6671,14 @@ const MANDIBLE_D = "M552 186 C556 214 578 232 600 232 C622 232 644 214 648 186";
    femur and tibia, for the viewer's left leg; FOOT_AT = where each foot meets the ground */
 const LEG_STRAIN = [[551, legY(622), 543, legY(758)], [542, legY(784), 537, legY(838)]];
 const FOOT_AT = [[524, legY(ANKLE_Y) + 31], [676, legY(ANKLE_Y) + 31]];
+/* Skin (integumentary). SKIN_PORES: sweat pores in design coordinates (forehead,
+   chest, belly, upper arm, forearm, thigh, shin), drawn for the viewer's left side and
+   mirrored. SKIN_HAIR: where hairs stand on the limbs, as [limb, t from, t to] along
+   the limbs' centre lines (2 = the viewer's left arm, 0 = the left leg; mirrored to
+   1 and 3). The heat-flow arrows and the skin's rim are built from the body's own
+   outline in Scene. */
+const SKIN_PORES = [[582, 100], [594, 92], [540, 330], [522, 420], [560, 505], [436, 380], [428, 470], [530, 690], [538, 800]];
+const SKIN_HAIR = [[2, .6, .96], [0, .72, .96]];
 /* Step journeys (STEP RIDE), in bullet time like IMPULSES and on the same
    engine (bulletRide): fibre and synapse legs as there, plus legs with a real
    duration ms, either along a path d or waiting at a point (at, world
@@ -6844,12 +7040,27 @@ const Scene = (() => {
      drawn as a tapered outline (thigh → knee → calf → ankle, shoulder → elbow → wrist) */
   const LEG_W = [[600, 104], [650, 90], [740, 60], [771, 50], [784, 54], [800, 56], [846, 30]];
   const ARM_W = [[292, 50], [330, 48], [410, 38], [440, 35], [470, 40], [570, 26], [588, 25]];
-  const LIMBS = [["M550 600 C546 690 540 770 536 846", LEG_W], ["M650 600 C654 690 660 770 664 846", LEG_W],
-                 ["M472 292 C436 330 424 450 420 588", ARM_W], ["M728 292 C764 330 776 450 780 588", ARM_W]].map(([d, W]) => taper(d, W));
-  function taper(d, W){
-    const [x0, y0, x1, y1, x2, y2, x3, y3] = d.match(/-?[\d.]+/g).map(Number), N = 36;
+  const LIMB_DEFS = [["M550 600 C546 690 540 770 536 846", LEG_W], ["M650 600 C654 690 660 770 664 846", LEG_W],
+                 ["M472 292 C436 330 424 450 420 588", ARM_W], ["M728 292 C764 330 776 450 780 588", ARM_W]];
+  const LIMBS = LIMB_DEFS.map(([d, W]) => taper(d, W));
+  /* a limb's centre cubic (design coordinates) and its width at design y */
+  function limbCurve(d, W){
+    const [x0, y0, x1, y1, x2, y2, x3, y3] = d.match(/-?[\d.]+/g).map(Number);
     const at = t => { const u = 1 - t; return [u*u*u*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x3, u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3]; };
     const wAt = y => { let i = 0; while (i < W.length - 2 && y > W[i + 1][0]) i++; const [ya, wa] = W[i], [yb, wb] = W[i + 1], u = clamp((y - ya) / (yb - ya)); return wa + (wb - wa) * u * u * (3 - 2 * u); };
+    return { at, wAt };
+  }
+  /* a point on limb i in body coordinates: t along it, k across it (−1…1, +1 = the
+     outer edge, away from the midline), with the outward normal and the direction down the limb */
+  function limbFrame(i, t, k){
+    const { at, wAt } = limbCurve(...LIMB_DEFS[i]);
+    const P = u => bodyPt(...at(clamp(u))), [x, y] = P(t), [ax, ay] = P(t - .01), [bx, by] = P(t + .01);
+    const len = Math.hypot(bx - ax, by - ay) || 1, dx = (bx - ax) / len, dy = (by - ay) / len;
+    const out = x < 600 ? 1 : -1, nx = -dy * out, ny = dx * out, h = wAt(at(clamp(t))[1]) / 2;
+    return { x: x + nx * h * k, y: y + ny * h * k, nx, ny, dx, dy };
+  }
+  function taper(d, W){
+    const N = 36, { at, wAt } = limbCurve(d, W);
     const pts = Array.from({ length: N + 1 }, (_, i) => { const [x, y] = at(i / N); return [...bodyPt(x, y), wAt(y) / 2]; });
     const L = [], R = [];
     pts.forEach(([x, y, h], i) => {
@@ -6897,6 +7108,40 @@ const Scene = (() => {
       + `<path d="${mapD(DIAPHRAGM_D)}" class="ms-dia"/>`
       + FOOT_AT.map(() => `<path d="" class="ms-grf" opacity="0"/>`).join("")
       + `<g id="s-mskDots"></g><g id="s-stepRide"></g>`;
+  }
+  /* skin: the body's rim, coloured by skin temperature; just inside it the dermal
+     plexus (its dashes run with skin blood flow) with capillary loops up to the
+     surface; the sweat pores; hairs on the forearms and shins; and the heat-flow
+     arrows, radiation out sideways and convection rising off the head and shoulders,
+     which Integ draws each frame. geo keeps the points Integ needs (body coordinates) */
+  const skinGeo = { rad: [], conv: [], hair: [], pores: [], edge: [] };
+  function skinLayer(){
+    const P = ([x, y]) => `${f1(x)} ${f1(y)}`, fr = (i, t, k) => limbFrame(i, t, k), xy = f => [f.x, f.y];
+    const rim = LIMBS.map(d => `<path d="${d}" class="sk-rim"/>`).join("")
+      + `<path d="${TORSO_D}" class="sk-rim"/><ellipse cx="600" cy="160" rx="60" ry="70" class="sk-rim"/>`
+      + [handLx, 1200 - handLx].map(x => `<ellipse cx="${f1(x)}" cy="${f1(handY)}" rx="15" ry="25" class="sk-rim"/>`).join("");
+    const ts = (a, b, n) => Array.from({ length: n + 1 }, (_, j) => a + (b - a) * j / n);
+    let plexus = `<path d="${TORSO_D}" transform="translate(600 440) scale(.94 .96) translate(-600 -440)" class="sk-plexus"/><ellipse cx="600" cy="160" rx="54" ry="64" class="sk-plexus"/>`;
+    let loops = "";
+    for (let i = 0; i < 4; i++) for (const k of [1, -1]){
+      plexus += `<path d="M${ts(.03, .97, 32).map(t => P(xy(fr(i, t, .8 * k)))).join(" L")}" class="sk-plexus"/>`;
+      for (const t of ts(.08, .92, 8)){
+        loops += `<path d="M${P(xy(fr(i, t - .015, .8 * k)))} Q${P(xy(fr(i, t, 1.15 * k)))} ${P(xy(fr(i, t + .015, .8 * k)))}" class="sk-loop"/>`;
+        skinGeo.edge.push(fr(i, t, k));
+      }
+    }
+    skinGeo.edge.push(...[[458, 350, -1, 0], [480, 445, -1, 0], [742, 350, 1, 0], [720, 445, 1, 0], [544, 130, -.9, -.4], [656, 130, .9, -.4]]
+      .map(([x, y, nx, ny]) => ({ x, y, nx, ny })));
+    skinGeo.pores = SKIN_PORES.flatMap(([x, y]) => x === 600 ? [[x, y]] : [[x, y], [1200 - x, y]]).map(([x, y]) => bodyPt(x, y));
+    const pores = skinGeo.pores.map(([x, y], j) => `<circle cx="${f1(x)}" cy="${f1(y)}" r="1.1" class="sk-pore" data-j="${j}"/>`).join("");
+    for (const [i, t0, t1] of SKIN_HAIR) for (const li of [i, i + 1]) for (const t of ts(t0, t1, 6)) for (const k of [.97, -.97]) skinGeo.hair.push(fr(li, t, k));
+    const hairs = skinGeo.hair.map(() => `<line class="sk-hair"/>`).join("");
+    /* radiation leaves sideways from the torso, arms, thighs and head; warm air rises off the head and shoulders */
+    skinGeo.rad = [[540, 150, -1, -.15], [660, 150, 1, -.15]].map(([x, y, nx, ny]) => ({ x, y, nx, ny }))
+      .concat([fr(2, .25, 1), fr(3, .25, 1), fr(2, .62, 1), fr(3, .62, 1), fr(0, .3, 1), fr(1, .3, 1), fr(0, .7, 1), fr(1, .7, 1)]);
+    skinGeo.conv = [[600, 86], [494, 262], [706, 262]].map(([x, y]) => ({ x, y }));
+    const arrows = skinGeo.rad.map(() => `<path class="sk-rad" opacity="0"/>`).join("") + skinGeo.conv.map(() => `<path class="sk-conv" opacity="0"/>`).join("");
+    return rim + plexus + loops + pores + hairs + arrows + `<g id="s-skinDots"></g>`;
   }
   function build(){
     const limb = d => `<path d="${d}" class="skin"/>`;
@@ -7026,6 +7271,7 @@ const Scene = (() => {
         <g id="s-infectionRide"></g>
       </g>
       <g id="s-mskFront" class="sys sys-musculoskeletal">${mskFront()}</g>
+      <g id="s-skin" class="sys sys-integumentary">${skinLayer()}</g>
       <ellipse id="s-cheekL" cx="566" cy="204" rx="10" ry="6" fill="#e2707a"/><ellipse id="s-cheekR" cx="634" cy="204" rx="10" ry="6" fill="#e2707a"/>
       <g id="s-eyesOpen" fill="var(--ink)"><ellipse cx="578" cy="188" rx="5.5" ry="6.5"/><ellipse cx="622" cy="188" rx="5.5" ry="6.5"/></g>
       <g id="s-eyesShut" class="face"><path d="M571 189 Q578 194 585 189"/><path d="M615 189 Q622 194 629 189"/></g>
@@ -7038,7 +7284,7 @@ const Scene = (() => {
     <g id="s-pins"></g>`;
     svg.innerHTML = s;
     ["sky", "stars", "sun", "moon", "moonShade", "hills", "flush", "quadL", "quadR", "lungs", "heart", "gutGlow", "cheekL", "cheekR", "eyesOpen", "eyesShut", "mouth", "mouthO", "ring", "blood", "fx", "eso",
-     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide", "mskDots", "stepRide"]
+     "brainGlow", "sparks", "npulse", "impulse", "hormones", "cascade", "pins", "ribs", "abs", "diaphragm", "air", "breathRide", "gb", "food", "biteRide", "bladder", "sphincter", "urine", "dropRide", "spleen", "spleenBody", "immuneDots", "infectionRide", "mskDots", "stepRide", "skinDots"]
       .forEach(k => r[k] = svg.querySelector("#s-" + k));
   }
 
@@ -7128,7 +7374,126 @@ const Scene = (() => {
   }
   /* a design-coordinate point (as in CONTENT pins) → scene coordinates */
   const place = (x, y) => { const [X, Y] = bodyPt(x, y); return toView({ x: X, y: Y }); };
-  return { build, update, animate, focus, setSystems, svg, focusPoints, toView, place, refs: r, get bbox(){ return CONFIG.bbox; } };
+  return { build, update, animate, focus, setSystems, svg, focusPoints, toView, place, refs: r, skinGeo, get bbox(){ return CONFIG.bbox; } };
+})();
+
+/* =========================================================================
+   INTEG — the skin holding the core near 37 °C. The body's rim takes the colour
+   of the skin's temperature (cooler blue, warmer red); the dashes of the dermal
+   plexus run, and its capillary loops redden, with skin blood flow. Heat leaves
+   as radiation (wavy arrows, and dots going out sideways), convection (warm air
+   rising off the head, the shoulders and the sides of the body) and evaporation
+   (vapour rising from the sweat pores, and a faint mist from all over: the water
+   that diffuses through the skin). Arrows and streams are sized by their share in
+   watts, on one scale, so you can compare them. The pores swell with beads of
+   sweat in the run, and the hairs on the forearms and shins stand up with
+   goosebumps (in this day, faintly, after getting out of a warm bed). Runs only while
+   the system is live.
+   ========================================================================= */
+const Integ = (() => {
+  const NP = 170, RAD = "#f08a3c", CONV = "#d9b44a", VAP = "#9fc9e8";
+  const pool = [], acc = {};
+  let rim = [], plex = [], loops = [], pores = [], hairs = [], rad = [], conv = [], geo = null, t = 0, dash = 0, still = "", lastGoose = -1, lastSkin = "";
+  function init(){
+    const q = s => [...Scene.svg.querySelectorAll("#s-skin " + s)];
+    geo = Scene.skinGeo;
+    rim = q(".sk-rim"); plex = q(".sk-plexus"); loops = q(".sk-loop"); pores = q(".sk-pore"); hairs = q(".sk-hair"); rad = q(".sk-rad"); conv = q(".sk-conv");
+    for (let i = 0; i < NP; i++) pool.push({ c: el("circle", { r: 1.4, class: "sk-dot", opacity: 0 }, Scene.refs.skinDots), on: false });
+    paintHair(0);
+  }
+  /* skin temperature → colour: 28 °C blue, 33 °C a pale warm tone, 36 °C red */
+  const tempCol = T => T < 33 ? mix("#5f8fd0", "#e8b48f", clamp((T - 28) / 5)) : mix("#e8b48f", "#d9483b", clamp((T - 33) / 3));
+  /* one scale for every heat flow, 0–1 (square root, so the small resting flows still show) */
+  const S = W => clamp(Math.sqrt(Math.max(0, W) / 400));
+  function paintSkin(p){
+    const key = `${p.skinTemp.toFixed(1)}|${p.skinFlow.toFixed(2)}|${p.sweatRate.toFixed(2)}`;
+    if (key === lastSkin) return;
+    lastSkin = key;
+    const tc = tempCol(p.skinTemp), fk = clamp(Math.sqrt(p.skinFlow / 1.1)), sw = clamp(p.sweatRate / .52);
+    rim.forEach(e => e.setAttribute("stroke", tc));
+    plex.forEach(e => e.setAttribute("opacity", f1((.2 + .7 * fk) * 100) / 100));
+    loops.forEach(e => e.setAttribute("opacity", f1((.15 + .8 * fk) * 100) / 100));
+    pores.forEach(e => { e.setAttribute("r", f1(1.1 + 1.8 * sw)); e.setAttribute("opacity", f1((.45 + .5 * sw) * 100) / 100); });
+  }
+  /* hairs lie close along the limb and stand out from it with goosebumps */
+  function paintHair(g){
+    if (Math.abs(g - lastGoose) < .02) return;
+    lastGoose = g;
+    const a = (.15 + .7 * g) * Math.PI / 2, L = 5 + 1.5 * g;
+    hairs.forEach((e, i) => {
+      const h = geo.hair[i], ux = h.dx * Math.cos(a) + h.nx * Math.sin(a), uy = h.dy * Math.cos(a) + h.ny * Math.sin(a);
+      e.setAttribute("x1", f1(h.x)); e.setAttribute("y1", f1(h.y)); e.setAttribute("x2", f1(h.x + ux * L)); e.setAttribute("y2", f1(h.y + uy * L));
+    });
+  }
+  const head = (x, y, ux, uy, w) => ` M${f1(x - ux * w - uy * w * .8)} ${f1(y - uy * w + ux * w * .8)} L${f1(x)} ${f1(y)} L${f1(x - ux * w + uy * w * .8)} ${f1(y - uy * w - ux * w * .8)}`;
+  /* radiation: wavy arrows straight out; convection: arrows curling up */
+  function arrows(p, ph){
+    const sr = S(p.heatRad), sc = S(p.heatConv);
+    rad.forEach((e, i) => {
+      const a = geo.rad[i], n = Math.hypot(a.nx, a.ny) || 1, nx = a.nx / n, ny = a.ny / n, L = 12 + 50 * sr;
+      const pts = Array.from({ length: 13 }, (_, j) => { const u = j / 12, w = 2.2 * Math.sin(6 * Math.PI * u - ph) * Math.min(1, 4 * (1 - u));
+        return [a.x + nx * (4 + L * u) - ny * w, a.y + ny * (4 + L * u) + nx * w]; });
+      const [ex, ey] = pts[12];
+      e.setAttribute("d", "M" + pts.map(([x, y]) => `${f1(x)} ${f1(y)}`).join(" L") + head(ex, ey, nx, ny, 3 + 2 * sr));
+      e.setAttribute("stroke-width", f1(1.2 + 3.5 * sr));
+      e.setAttribute("opacity", sr > .05 ? .85 : 0);
+    });
+    conv.forEach((e, i) => {
+      const a = geo.conv[i], L = 12 + 56 * sc;
+      const pts = Array.from({ length: 11 }, (_, j) => { const u = j / 10; return [a.x + 5 * u * Math.sin(3 * u + ph * .25 + i), a.y - 4 - L * u]; });
+      const [ex, ey] = pts[10], [px, py] = pts[9], d = Math.hypot(ex - px, ey - py) || 1;
+      e.setAttribute("d", "M" + pts.map(([x, y]) => `${f1(x)} ${f1(y)}`).join(" L") + head(ex, ey, (ex - px) / d, (ey - py) / d, 3 + 2 * sc));
+      e.setAttribute("stroke-width", f1(1.2 + 3.5 * sc));
+      e.setAttribute("opacity", sc > .05 ? .85 : 0);
+    });
+  }
+  function spawn(col, r, extra){
+    const d = pool.find(q => !q.on); if (!d) return null;
+    Object.assign(d, { on: true, u: 0 }, extra);
+    d.c.setAttribute("fill", col); d.c.setAttribute("r", r);
+    return d;
+  }
+  function emit(key, rate, dt, f){ acc[key] = (acc[key] || 0) + dt * rate; while (acc[key] >= 1){ acc[key]--; f(); } }
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  function tick(dt, p){
+    t += dt;
+    still = "";
+    paintSkin(p);
+    paintHair(p.goose);
+    /* blood runs through the dermal plexus as fast as skin blood flow allows */
+    dash = (dash + dt * 28 * p.skinFlow) % 900;
+    plex.forEach(e => e.setAttribute("stroke-dashoffset", f1(-dash)));
+    arrows(p, t * 5);
+    const sr = S(p.heatRad), sc = S(p.heatConv);
+    emit("rad", p.heatRad / 6, dt, () => { const a = pick(geo.rad), n = Math.hypot(a.nx, a.ny) || 1;
+      spawn(RAD, 1.2, { from: [a.x + a.nx / n * 3, a.y + a.ny / n * 3], to: [a.x + a.nx / n * (16 + 40 * sr), a.y + a.ny / n * (16 + 40 * sr)], T: .6, op: .9 }); });
+    emit("conv", p.heatConv / 6, dt, () => { const a = Math.random() < .25 ? { ...pick(geo.conv), nx: 0, ny: -1 } : pick(geo.edge);
+      spawn(CONV, 1.3, { from: [a.x, a.y], to: [a.x + (a.nx || 0) * 6 + (Math.random() - .5) * 6, a.y - 16 - 30 * sc], T: 1.6, op: .8 }); });
+    /* vapour: from the sweat pores in the run, and a faint mist from all over the skin all the time */
+    emit("vap", 60 * p.sweatRate, dt, () => { const [x, y] = pick(geo.pores);
+      spawn(VAP, 1.4, { from: [x, y], to: [x + (Math.random() - .5) * 10, y - 18 - 10 * Math.random()], T: 1.4, op: .9 }); });
+    emit("mist", p.tewl / 8, dt, () => { const a = pick(geo.edge);
+      spawn(VAP, .9, { from: [a.x, a.y], to: [a.x + (a.nx || 0) * 3, a.y - 10], T: 1.2, op: .5 }); });
+    for (const d of pool){
+      if (!d.on) continue;
+      d.u += dt / d.T;
+      if (d.u >= 1){ d.on = false; d.c.setAttribute("opacity", 0); continue; }
+      const e = ease.out(d.u);
+      d.c.setAttribute("cx", f1(lerp(d.from[0], d.to[0], e))); d.c.setAttribute("cy", f1(lerp(d.from[1], d.to[1], e)));
+      d.c.setAttribute("opacity", f1(d.op * Math.sin(Math.PI * d.u) * 100) / 100);
+    }
+  }
+  /* a still picture (reduced motion, or not live): the skin's colours, the hairs and the arrows, no dots */
+  function setRates(p){
+    const k = `${p.skinTemp.toFixed(1)}|${p.skinFlow.toFixed(2)}|${p.sweatRate.toFixed(2)}|${p.goose.toFixed(2)}|${Math.round(p.heatRad)}|${Math.round(p.heatConv)}`;
+    if (k === still) return;
+    still = k;
+    paintSkin(p);
+    paintHair(p.goose);
+    arrows(p, 0);
+    for (const d of pool) if (d.on){ d.on = false; d.c.setAttribute("opacity", 0); }
+  }
+  return { init, tick, setRates };
 })();
 
 /* =========================================================================
@@ -12501,7 +12866,10 @@ const EXPORT_VITALS = [
   ["lymphFlow", "Thoracic duct lymph flow", "mL/min", 2], ["neutrophils", "Blood neutrophils", "10^9/L", 2],
   ["lymphocytes", "Blood lymphocytes", "10^9/L", 2], ["il6", "IL-6", "relative 0-1", 2],
   ["muscleVO2", "Muscle O2 use", "mL/min", 0], ["muscleGlycogen", "Muscle glycogen", "g", 0], ["lactate", "Blood lactate", "mmol/L", 2],
-  ["cadence", "Cadence", "steps/min", 0], ["grf", "Peak ground-reaction force", "x body weight", 2], ["boneStrain", "Peak leg-bone strain", "microstrain", 0]
+  ["cadence", "Cadence", "steps/min", 0], ["grf", "Peak ground-reaction force", "x body weight", 2], ["boneStrain", "Peak leg-bone strain", "microstrain", 0],
+  ["skinTemp", "Mean skin temperature", "°C", 1], ["skinFlow", "Skin blood flow", "L/min", 2], ["sweatRate", "Sweat rate", "L/h", 2],
+  ["tewl", "Water through the skin (insensible)", "mL/h", 0], ["heatMade", "Heat made", "W", 0], ["heatRad", "Heat lost by radiation", "W", 0],
+  ["heatConv", "Heat lost by convection", "W", 0], ["heatEvap", "Heat lost by evaporation from the skin", "W", 0], ["heatResp", "Heat lost in the breath", "W", 0]
 ];
 function bodyData(){
   const probe = Physio.at(12), cols = EXPORT_VITALS.filter(([k]) => Number.isFinite(probe[k]));
@@ -12572,6 +12940,7 @@ function init(){
   DropRide.init();
   Immune.init();
   Msk.init();
+  Integ.init();
   InfectionRide.init();
   StepRide.init();
   Hotspots.build();
@@ -12700,6 +13069,7 @@ function init(){
     if (!reducedMotion && live === "immune") Immune.tick(bdt, ph); else Immune.setRates(ph);
     Msk.pin(st.step != null && !st.topic ? StepRide.landing() : null);
     if (!reducedMotion && live === "musculoskeletal") Msk.tick(bdt, ph); else Msk.setRates(ph);
+    if (!reducedMotion && live === "integumentary") Integ.tick(bdt, ph); else Integ.setRates(ph);
     Journey.tick(bdt);
     Impulse.tick(brdt);
     ImpulseCard.tick();

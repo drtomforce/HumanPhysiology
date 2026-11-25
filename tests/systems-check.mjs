@@ -18,6 +18,11 @@
    an hour outside the run (the clock must jump to the run), checks its text at four levels,
    that the foot lands and the bone bends when the ride says (the stride is pinned to it),
    "Other leg", and that tapping a shin starts a step on that side.
+   For the skin it checks the heat balance: at rest radiation > convection > evaporation, in
+   the run evaporation > convection > radiation, heat lost within 10% of heat made at noon and
+   at the end of the run, skin cooler and skin blood flow ~4× higher in the run than at noon,
+   and that the layer draws it: pores swollen with sweat and the heat arrows out in the run,
+   dry pores at noon, and the rim cooler (bluer) in the run.
    It serves the repository on a local port itself. Needs the playwright package. */
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -40,7 +45,8 @@ const base = `http://127.0.0.1:${server.address().port}/index.html`;
 const HOURS = [3, 7.75, 12, 17.5, 18.6, 19.6];
 /* channels each system's animator reads (beyond the shared ones) */
 const CHANNELS = { urinary: ["gfr", "urineFlow", "urineOsm", "renin", "bladder"], immune: ["lymphFlow", "chyle", "nodeTraffic", "spleen", "neutrophils", "lymphocytes", "il6"],
-  musculoskeletal: ["muscleVO2", "muscleGlycogen", "lactate", "cadence", "grf", "boneStrain"] };
+  musculoskeletal: ["muscleVO2", "muscleGlycogen", "lactate", "cadence", "grf", "boneStrain"],
+  integumentary: ["skinTemp", "skinFlow", "sweatRate", "tewl", "heatMade", "heatRad", "heatConv", "heatEvap", "heatResp", "goose"] };
 
 const browser = await chromium.launch();
 let failed = 0;
@@ -109,6 +115,7 @@ for (const id of ids.filter(x => x.includes(only))){
 
   if (id === "immune") await infections(page, fail);
   if (id === "musculoskeletal") await steps(page, fail);
+  if (id === "integumentary") await skin(page, fail);
 
   /* the organ pages' lens link */
   await page.goto(base + `?live=${id}&hour=17.5`);
@@ -177,6 +184,31 @@ async function infections(page, fail){
   const tapped = await page.evaluate(() => store.get().infection);
   if (tapped !== "splinter") fail(`tapping an armpit node started ${tapped}, not the splinter`);
   console.log(`  ✓ ${Object.keys(C.journeys).length} infection journeys, Vaccinated, Another germ, tap a node`);
+}
+/* the skin's heat balance at rest and in the run, and what the layer draws */
+async function skin(page, fail){
+  const [rest, run] = await page.evaluate(() => [12, 17.9].map(h => { const p = Physio.at(h);
+    return { R: p.heatRad, C: p.heatConv, E: p.heatEvap, B: p.heatResp, M: p.heatMade, T: p.skinTemp, F: p.skinFlow, S: p.sweatRate }; }));
+  if (!(rest.R > rest.C && rest.C > rest.E)) fail(`at rest radiation ${rest.R.toFixed(0)}, convection ${rest.C.toFixed(0)}, evaporation ${rest.E.toFixed(0)} W are not in that order`);
+  if (!(run.E > run.C && run.C > run.R)) fail(`in the run evaporation ${run.E.toFixed(0)}, convection ${run.C.toFixed(0)}, radiation ${run.R.toFixed(0)} W are not in that order`);
+  for (const [k, v] of [["noon", rest], ["the run", run]]){
+    const lost = v.R + v.C + v.E + v.B;
+    if (Math.abs(lost - v.M) > .1 * v.M) fail(`at ${k} ${lost.toFixed(0)} W are lost but ${v.M.toFixed(0)} W made`);
+  }
+  if (!(run.T < rest.T - 1.5)) fail(`skin is ${run.T.toFixed(1)} °C in the run and ${rest.T.toFixed(1)} °C at noon: it should be cooled by sweat`);
+  if (!(run.F > 3 * rest.F)) fail(`skin blood flow is ${run.F.toFixed(2)} L/min in the run, ${rest.F.toFixed(2)} at noon`);
+  const look = h => page.evaluate(async hh => { store.set({ hour: hh }); await new Promise(r => setTimeout(r, 1200));
+    const q = s => [...document.querySelectorAll("#s-skin " + s)];
+    return { pore: Math.max(...q(".sk-pore").map(e => +e.getAttribute("r"))), arrows: q(".sk-rad, .sk-conv").filter(e => +e.getAttribute("opacity") > 0).length,
+      rim: q(".sk-rim")[0].getAttribute("stroke"), dots: q("#s-skinDots circle").filter(e => +e.getAttribute("opacity") > 0).length }; }, h);
+  const a = await look(12), b = await look(17.9);
+  if (a.pore > 1.5) fail(`the pores are swollen (r ${a.pore}) at noon, with no sweat`);
+  if (b.pore < 2.5) fail(`the pores are not swollen (r ${b.pore}) in the run`);
+  if (b.arrows < 10) fail(`only ${b.arrows} heat arrows are drawn in the run`);
+  if (!b.dots) fail("no heat or vapour dots move in the run");
+  const blue = c => parseInt(c.slice(5, 7), 16) - parseInt(c.slice(1, 3), 16);
+  if (!(blue(b.rim) > blue(a.rim))) fail(`the rim is ${b.rim} in the run and ${a.rim} at noon: it should be cooler (bluer) in the run`);
+  console.log(`  ✓ heat balance at rest (${rest.M.toFixed(0)} W) and in the run (${run.M.toFixed(0)} W), skin cooler and flushed, pores, arrows and rim`);
 }
 /* the step journey, stop by stop, with the stride pinned to it, "Other leg" and a tap on a thigh */
 async function steps(page, fail){

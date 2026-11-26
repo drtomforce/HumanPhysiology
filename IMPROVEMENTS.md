@@ -9,15 +9,15 @@ When a section is done, replace its plan with a one-line pointer to the README a
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#3-new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 10: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin | 4 existing organs (eyes, ears, throat, spleen & lymph nodes) + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 11: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin, eyes | 3 existing organs (ears, throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 9: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic, muscles & skeleton, skin | 1: reproductive |
 | Journeys ("follow a …") | 9: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step, heat | One per new system, plus cross-system journeys |
-| Prediction questions | 30: three on each of the 10 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
+| Prediction questions | 33: three on each of the 11 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
 | Converging cases (run across pages) | 1: diabetic ketoacidosis | 4: cholera to shock, heart failure, the marathon wall, altitude over weeks |
 
 ## Next up
 
-Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows and its “follow the heat” journey ([2.3](#23-skin-integumentary--done)); next are the eyes, ears and throat pages (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows and its “follow the heat” journey ([2.3](#23-skin-integumentary--done)), and the eyes page ([1.8](#18-eyes-organseyeshtml--done)); next are the ears and throat pages (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -113,12 +113,17 @@ Built; see the README for what it covers. What changed from the plan, and what i
 - **Not yet built**: the sunlight → vitamin D journey on the body ([2.3](#23-skin-integumentary--done)), and carrying a condition across to other pages (sweat loss → the kidneys page's dehydration, a large burn → the kidneys and heart, vitamin D → the bones page's calcium model, a diabetic foot ↔ the pancreas page). The skin system is now on the body, so the integumentary lens cards link there (`main: true`); the body's `skinTemp` and `skinFlow` are copied from this page's `DAY` keyframes, but the page still doesn't read the body, nor the body run `thermo()`.
 - **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8e); the PhD texts name their key sources, 19 sources were added to `fact-check/sources.json`, and two registry rows (thermoregulation, UV dose and vitamin D) were added.
 
-### 1.8 Eyes (`organs/eyes.html`)
-- **Anatomy**: cornea, iris, lens, ciliary body, aqueous and vitreous, retina layers, fovea, optic disc, extraocular muscles.
-- **Optics**: an interactive ray diagram with accommodation, and myopia, hyperopia, presbyopia and astigmatism corrected with lenses. Pupil size vs depth of field.
-- **Phototransduction and the retina**: rhodopsin → transducin → cGMP → the channel closes (light hyperpolarises), dark adaptation over time, rods vs cones, colour matching with three cone types, and centre–surround receptive fields.
-- **Visual pathways**: optic nerve → chiasm → LGN → V1, with visual field defects from a lesion you place. Pupillary light reflex and the ipRGCs that set the body clock (link to the melatonin cascade).
-- **Scenarios**: glaucoma, cataract, colour blindness, macular degeneration, a pituitary tumour (bitemporal hemianopia), night blindness.
+### 1.8 Eyes (`organs/eyes.html`) ✅ Done
+Built; see the README for what it covers. What changed from the plan, and what is still open for this page:
+- **Optics is a reduced eye**: one refracting surface of 60 D (n′ 1.336, 22.3 mm long), axial refractive error only, a spectacle lens at 12 mm, and Hofstetter's mean amplitude of accommodation, with no lag of accommodation, depth-of-focus asymmetry, spherical aberration or Stiles–Crawford effect; acuity is a rule (blur × 0.25 in quadrature with a 1 arcmin floor and diffraction, then factors for luminance, cataract and a 6/60 floor for AMD), calibrated to the clinical rule of thumb rather than computed from a point-spread function. Contact lenses, refractive surgery, anisometropia and binocular vision (convergence, stereopsis, squint, amblyopia) are not built. The ray diagram draws focus errors 4× larger than to scale.
+- **Phototransduction** is a Lamb & Pugh cascade with one Ca²⁺ feedback (GCAPs on cyclase) and a cubic cGMP–current relation, tuned to primate rods; there is no rhodopsin kinase/arrestin shut-off as its own step, no recoverin, no Na⁺/Ca²⁺-K⁺ exchanger current, no noise or single-photon variability, and the membrane potential is a linear map of the current. Cones are the same scheme, faster and less sensitive; there is no cone bleaching.
+- **Dark adaptation is a rule** (two exponential branches calibrated to Hecht et al. 1937, with factors for age, vitamin A, retinitis pigmentosa, AMD and cataract), not a model of the visual cycle (rate-limited 11-cis-retinal delivery, Lamb & Pugh 2004).
+- **Not yet built from the plan**: centre–surround receptive fields as an interactive retina section (horizontal and amacrine cells are drawn and explained only), and the ipRGC → SCN → melatonin link as a model (the melanopsin cell glows with the day's light in the anatomy figure; the melatonin cascade on the body is linked from the text, not driven).
+- **Colour** uses the Govardovskii alpha-band template without the lens and macular pigment or the beta band, single hybrid pigments at 538 and 551 nm for anomalous trichromacy, and an anomaloscope match normalised to 50% red; there is no colour-confusion simulation of a picture and no Ishihara plates.
+- **The visual field** is a binary 4° grid to 60° per eye; lesions are all-or-nothing (no partial chiasmal compression starting in the upper temporal quadrants, no incongruity in the tract), glaucoma loses cells in a fixed illustrative order, and the hero stat averages the two eyes. There is no perimetry threshold map, no binocular field and no neglect.
+- **Eye pressure** is the steady-state Goldmann equation with one daytime set of values; no circadian aqueous flow, no posture (episcleral venous pressure lying down), no acetazolamide, α-agonists or Rho-kinase inhibitors, no ocular perfusion pressure, and glaucoma damage is a slider rather than years of pressure.
+- **More scenarios**: diabetic retinopathy (shared with the pancreas page), retinal detachment, central retinal artery occlusion, papilloedema (shared with the brain page), a third nerve palsy and Horner's syndrome (pupils), amblyopia, keratoconus, thyroid eye disease and retinopathy of prematurity.
+- **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8f); the PhD and question texts name their key sources, 15 sources were added to `fact-check/sources.json`, and one registry row (pupil, eye pressure, accommodation) was added. The four phase texts are the body view's checked eye texts.
 
 ### 1.9 Ears (`organs/ears.html`)
 - **Anatomy**: outer, middle (ossicles, eardrum, Eustachian tube) and inner ear (cochlea, vestibule, semicircular canals), and the organ of Corti.
@@ -276,7 +281,7 @@ These span several organs and are best built as their own pages (for example `ex
 
 ## 6. Questions: predict, then watch ✅ Done (the questions, the hub and the first converging case; four cases still open)
 
-Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all; the skin page has since added three more) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
+Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all; the skin and eyes pages have since added three more each) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
 
 - **Diabetic ketoacidosis runs** ([6.4](#64-converging-cases)) ✅: see the README. The lungs page has a blood-bicarbonate slider in its control section that moves the chemoreflex set point (Winters’ formula for an acidosis, ~0.7 mmHg per mmol/L for an alkalosis) and a *Diabetic ketoacidosis* scenario at HCO₃⁻ 11 mmol/L, the same patient as the pancreas and kidneys pages (PaCO₂ ~24, pH ~7.29). The hub's *Start the case* opens each stop's page on its scenario through `?scenario=`, and the shared engine draws a case strip (stops, back, next, all stops, leave) from the `case`, `ctitle`, `stop` and `route` parameters. What changed from the plan, and what is still open for it:
   - **Each stop applies its own scenario**: nothing is carried from one page to the next. The four scenarios were set to agree (glucose, ketones, bicarbonate, pH), and the registry row in `FACTUAL_CHECK.md` holds them together, but changing a slider on one page doesn't reach the next. Carrying state needs "Changes across pages" ([5](#5-shared-and-supporting-work)).
@@ -323,17 +328,18 @@ Followed. The test, `tests/questions-check.mjs`, checks everything the plan list
 
 - **Predicting a number**: a slider ("GFR will fall to about … mL/min"), judged against the model's result within a margin, with an explanation for each of too high, too low and close.
 - **On the body**: questions on the body view once "Body view scenarios" ([5](#5-shared-and-supporting-work)) exists, so a converging case can end on the whole body with every vital responding.
-- **New pages**: eyes, ears, throat and spleen each get a Predict section as they are built (convention 13; the skin page has three), and each new page opens the converging cases that were waiting for it.
+- **New pages**: ears, throat and spleen each get a Predict section as they are built (convention 13; the skin and eyes pages have three each), and each new page opens the converging cases that were waiting for it.
 
 ## Suggested order
 
-Done so far: the kidneys, gut, liver, pancreas, muscles, bones and skin pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body with its "follow the heat" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
+Done so far: the kidneys, gut, liver, pancreas, muscles, bones, skin and eyes pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body with its "follow the heat" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
 
 1. ~~The first converging case, diabetic ketoacidosis ([6.4](#64-converging-cases)), with the scenarios its stops need.~~ ✅ Done (the heart's low-K⁺ ECG is still open; see [6](#6-questions-predict-then-watch)).
 2. ~~Skin page~~ ✅ Done (see [1.7](#17-skin-organsskinhtml--done) for what is still open on it).
 3. ~~The skin system on the body (heat balance, sweat and skin blood flow; [2.3](#23-skin-integumentary--done))~~ ✅ Done (see 2.3 for what is still open on it).
 4. ~~“Follow the heat” on the body ([2.3](#23-skin-integumentary--done))~~ ✅ Done (see 2.3 for what is still open on it).
-5. Eyes, ears and throat pages.
-6. Endocrine glands, and blood & vessels as new organs with pages.
-7. Reproductive system and organs.
-8. Cross-organ explorations and the extra sections on the heart, lungs and brain.
+5. ~~Eyes page~~ ✅ Done (see [1.8](#18-eyes-organseyeshtml--done) for what is still open on it).
+6. Ears and throat pages (each page its own task: the ears first).
+7. Endocrine glands, and blood & vessels as new organs with pages.
+8. Reproductive system and organs.
+9. Cross-organ explorations and the extra sections on the heart, lungs and brain.

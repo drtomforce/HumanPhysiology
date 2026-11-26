@@ -201,5 +201,20 @@
  "kenney1992": {"kind": "review", "cite": "Kenney WL, Johnson JM. Control of skin blood flow during exercise. Med Sci Sports Exerc. 1992;24(3):303-312. doi:10.1249/00005768-199203000-00005"},
  "sherwood2010": {"kind": "primary", "cite": "Sherwood SC, Huber M. An adaptability limit to climate change due to heat stress. Proc Natl Acad Sci U S A. 2010;107(21):9552-9555. doi:10.1073/pnas.0913352107"},
  "blood2001": {"kind": "primary", "cite": "Blood AJ, Zatorre RJ. Intensely pleasurable responses to music correlate with activity in brain regions implicated in reward and emotion. Proc Natl Acad Sci U S A. 2001;98(20):11818-11823. doi:10.1073/pnas.191355898"},
- "rutter1996": {"kind": "review", "cite": "Rutter N. The immature skin. Eur J Pediatr. 1996;155(Suppl 2):S18-S20. doi:10.1007/bf01958075"}
+ "rutter1996": {"kind": "review", "cite": "Rutter N. The immature skin. Eur J Pediatr. 1996;155(Suppl 2):S18-S20. doi:10.1007/bf01958075"},
+ "moon1944": {"kind": "primary", "access": "print", "cite": "Moon P, Spencer DE. On the Stiles-Crawford effect. J Opt Soc Am. 1944;34(6):319-329."},
+ "watson2012": {"kind": "primary", "access": "open", "cite": "Watson AB, Yellott JI. A unified formula for light-adapted pupil size. J Vis. 2012;12(10):12."},
+ "hofstetter1950": {"kind": "primary", "access": "print", "cite": "Hofstetter HW. Useful age-amplitude formula. Optom World. 1950;38:42-45."},
+ "atchison2000": {"kind": "textbook", "access": "print", "cite": "Atchison DA, Smith G. Optics of the Human Eye. Oxford: Butterworth-Heinemann; 2000."},
+ "lamb1992": {"kind": "primary", "cite": "Lamb TD, Pugh EN Jr. A quantitative account of the activation steps involved in phototransduction in amphibian photoreceptors. J Physiol. 1992;449:719-758."},
+ "baylor1984": {"kind": "primary", "cite": "Baylor DA, Nunn BJ, Schnapf JL. The photocurrent, noise and spectral sensitivity of rods of the monkey Macaca fascicularis. J Physiol. 1984;357:575-607."},
+ "hecht1937": {"kind": "primary", "access": "open", "cite": "Hecht S, Haig C, Chase AM. The influence of light adaptation on subsequent dark adaptation of the eye. J Gen Physiol. 1937;20(6):831-850."},
+ "jackson1999": {"kind": "primary", "cite": "Jackson GR, Owsley C, McGwin G Jr. Aging and dark adaptation. Vision Res. 1999;39(23):3975-3982."},
+ "owsley2001": {"kind": "primary", "cite": "Owsley C, Jackson GR, White M, Feist R, Edwards D. Delays in rod-mediated dark adaptation in early age-related maculopathy. Ophthalmology. 2001;108(7):1196-1202."},
+ "govardovskii2000": {"kind": "primary", "cite": "Govardovskii VI, Fyhrquist N, Reuter T, Kuzmin DG, Donner K. In search of the visual pigment template. Vis Neurosci. 2000;17(4):509-528."},
+ "neitz2011": {"kind": "review", "cite": "Neitz J, Neitz M. The genetics of normal and defective color vision. Vision Res. 2011;51(7):633-651."},
+ "brubaker1991": {"kind": "review", "cite": "Brubaker RF. Flow of aqueous humor in humans [The Friedenwald Lecture]. Invest Ophthalmol Vis Sci. 1991;32(13):3145-3166."},
+ "heijl2002": {"kind": "primary", "cite": "Heijl A, Leske MC, Bengtsson B, Hyman L, Bengtsson B, Hussein M; Early Manifest Glaucoma Trial Group. Reduction of intraocular pressure and glaucoma progression: results from the Early Manifest Glaucoma Trial. Arch Ophthalmol. 2002;120(10):1268-1279."},
+ "quigley1989": {"kind": "primary", "cite": "Quigley HA, Dunkelberger GR, Green WR. Retinal ganglion cell atrophy correlated with automated perimetry in human eyes with glaucoma. Am J Ophthalmol. 1989;107(5):453-464."},
+ "berson2002": {"kind": "primary", "cite": "Berson DM, Dunn FA, Takao M. Phototransduction by retinal ganglion cells that set the circadian clock. Science. 2002;295(5557):1070-1073."}
 }

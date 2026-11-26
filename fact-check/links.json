@@ -40,6 +40,18 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation",
   "checked": "2026-11-24"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation#:~:text=covers%20the%20myosin-binding%20sites": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation",
+  "checked": "2026-11-26"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation#:~:text=for%20Ca%2B%2B%20to%20bind%20to%20troponin": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/10-3-muscle-fiber-contraction-and-relaxation",
+  "checked": "2026-11-26"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/12-2-nervous-tissue#:~:text=contributing%20to%20the%20blood-brain%20barrier": {
   "state": "ok",
   "code": 200,
@@ -51,6 +63,11 @@
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/12-4-the-action-potential",
   "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-26"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/15-1-divisions-of-the-autonomic-nervous-system#:~:text=A%20central%20neuron%20in%20the%20lateral%20horn": {
   "state": "ok",
@@ -228,6 +245,11 @@
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
   "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-4-the-stomach": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-26"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-5-the-small-and-large-intestines#:~:text=hairlike%20vascularized%20projections%20called%20villi": {
   "state": "ok",

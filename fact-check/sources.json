@@ -236,5 +236,9 @@
  "morgan2012": {"kind":"review","cite":"Morgan IG, Ohno-Matsui K, Saw SM. Myopia. Lancet. 2012;379(9827):1739-1748. doi:10.1016/s0140-6736(12)60272-4"},
  "kanow2017": {"kind":"primary","cite":"Kanow MA, Giarmarco MM, Jankowski CS, et al. Biochemical adaptations of the retina and retinal pigment epithelium support a metabolic ecosystem in the vertebrate eye. eLife. 2017;6:e28899. doi:10.7554/elife.28899"},
  "aitali2015": {"kind":"primary","cite":"Aït-Ali N, Fridlich R, Millet-Puel G, et al. Rod-derived cone viability factor promotes cone survival by stimulating aerobic glycolysis. Cell. 2015;161(4):817-832. doi:10.1016/j.cell.2015.03.023"},
- "kanski9": {"kind":"textbook","access":"subscription","cite":"Salmon JF. Kanski’s Clinical Ophthalmology: A Systematic Approach. 9th ed. Edinburgh: Elsevier; 2020."}
+ "kanski9": {"kind":"textbook","access":"subscription","cite":"Salmon JF. Kanski’s Clinical Ophthalmology: A Systematic Approach. 9th ed. Edinburgh: Elsevier; 2020."},
+ "lephart2022": {"kind":"review","access":"open","cite":"Lephart ED, Naftolin F. Factors influencing skin aging and the important role of estrogens and selective estrogen receptor modulators (SERMs). Clin Cosmet Investig Dermatol. 2022;15:1695-1709. doi:10.2147/CCID.S333663"},
+ "slominski2000": {"kind":"review","cite":"Slominski A, Wortsman J. Neuroendocrinology of the skin. Endocr Rev. 2000;21(5):457-487. doi:10.1210/edrv.21.5.0410"},
+ "dutoit2015": {"kind":"primary","cite":"Du Toit G, Roberts G, Sayre PH, et al. Randomized trial of peanut consumption in infants at risk for peanut allergy. N Engl J Med. 2015;372(9):803-813. doi:10.1056/NEJMoa1414850"},
+ "clemens1982": {"kind":"primary","cite":"Clemens TL, Adams JS, Henderson SL, Holick MF. Increased skin pigment reduces the capacity of skin to synthesise vitamin D3. Lancet. 1982;1(8263):74-76. doi:10.1016/S0140-6736(82)90214-8"}
 }

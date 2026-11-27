@@ -32,6 +32,9 @@
                                                   it and a short verbatim excerpt (repeatable: the n-th --url and
                                                   --quote go with the n-th --lookup). Each link is fetched first,
                                                   and a dead one is refused (--no-link-check to skip, offline).
+                                                  A link to a paper in Europe PMC, PubMed or PMC must be to the
+                                                  paper the source id names, and its --quote must be in that
+                                                  paper's text (fact-check/epmc.mjs); --no-quote-check to skip
          [--memory <id>[:<locator>]]              … citing a source recalled from memory, not opened (repeatable)
                                                   ok, fixed and "issue #n" need at least one of the two; the row
                                                   gets "via": "lookup" only if every source was looked up
@@ -46,6 +49,8 @@
          --by <verifier>                          (never one the verifier made themselves)
      node fact-check/scan.mjs --verify <result>   record a verification: confirmed, link-broken, wrong-locator or
          --page --key --cite <id> --by <verifier> not-supported, logged to fact-check/verifications.jsonl
+     node fact-check/scan.mjs --check-quotes      for every look-up linked to a paper in Europe PMC, PubMed or PMC: is its
+                                                  quote in that paper's text, and is it the paper its source id names?
      node fact-check/scan.mjs --check-links       fetch every look-up link in the selection and report dead ones
          [--max-age <days>]                       (only links not checked in the last 30 days; results in
                                                   fact-check/links.json)
@@ -66,6 +71,7 @@ import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { useEnvProxy, whyFailed } from "./net.mjs";
+import { checkQuote, citeDoi } from "./epmc.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LEDGER = join(root, "fact-check", "ledger.json");
@@ -92,7 +98,7 @@ const seed = one("--seed") || new Date().toISOString().slice(0, 10);
 const minAge = Number(one("--min-age") ?? 60);
 if (markStatus && !STATUSES.test(markStatus)) die(`--mark: status must be unchecked, ok, fixed, n/a or "issue #<n>"`);
 /* commands that fetch links: behind an HTTPS proxy, re-run with Node using it (fact-check/net.mjs) */
-if ((urlArgs.length && markStatus && !flag("--no-link-check")) || flag("--check-links")) useEnvProxy();
+if ((urlArgs.length && markStatus && !flag("--no-link-check")) || flag("--check-links") || flag("--check-quotes")) useEnvProxy();
 
 /* the source registry: every --lookup / --memory must name an id in it */
 const sources = existsSync(SOURCES) ? JSON.parse(readFileSync(SOURCES, "utf8")) : {};
@@ -162,6 +168,29 @@ if (urlArgs.length && markStatus && !flag("--no-link-check")){
   if (dead.length) die("These links don't work, so nothing was marked:\n  " + dead.map(([u, r]) => `${u}  (${r.code || r.error})`).join("\n  "));
   for (const [u, r] of Object.entries(res)) if (r.state === "blocked")
     console.error(`Not link-checked: this environment's network doesn't allow ${new URL(u).hostname} (${r.error}). Marking anyway; run --check-links from an environment that allows it.`);
+}
+
+/* ---------- quotes: a look-up linked to a paper in Europe PMC, PubMed or PMC must quote its text ---------- */
+const paperIds = id => { const s = sources[id] || {}; return { pmid: s.pmid, pmcid: s.pmcid, doi: s.doi || citeDoi(s.cite || "") }; };
+function quoteProblem(r){
+  if (!r || r.state === "ok") return null;
+  if (r.state === "not-verbatim") return `not verbatim (case, spacing or punctuation differ) in ${r.where}; the source has: ${JSON.stringify(r.found)}`;
+  if (r.state === "missing") return `not found in ${r.searched}`;
+  if (r.state === "wrong-paper") return `wrong paper: ${r.why}`;
+  if (r.state === "retracted") return `the paper is retracted or under an expression of concern: ${r.why}`;
+  if (r.state === "error") return `couldn't reach Europe PMC to check it (${r.why}); try again, or --no-quote-check and run --check-quotes later`;
+  return null;
+}
+if (lookArgs.length && markStatus && !flag("--no-link-check") && !flag("--no-quote-check")){
+  const bad = [];
+  for (let i = 0; i < lookArgs.length; i++){
+    const r = await checkQuote(urlArgs[i], squashArg(quoteArgs[i]), paperIds(srcId(lookArgs[i])));
+    const why = quoteProblem(r);
+    if (why) bad.push(`--lookup ${lookArgs[i]}: ${why}`);
+    else if (r?.state === "unchecked") console.error(`Quote not checked for --lookup ${lookArgs[i]}: ${r.why}. Marking anyway: the excerpt must be from the page you read.`);
+  }
+  if (bad.length) die("These quotes don't check out against the paper they link to, so nothing was marked:\n  " + bad.join("\n  ") +
+    "\n(read the paper with node fact-check/fetch.mjs <id>, and copy the excerpt from what it prints)");
 }
 
 /* ---------- reading the pages ---------- */
@@ -527,6 +556,27 @@ if (verifyN != null){
     console.log(`    record:  node fact-check/scan.mjs --page ${page} --key '${key}' --cite ${c.id} --by ${by} --verify <confirmed|link-broken|wrong-locator|not-supported> [--note "…"]\n`);
   }
   process.exit(0);
+}
+
+/* ---------- quote check: does every look-up linked to a paper quote that paper? ---------- */
+if (flag("--check-quotes")){
+  const todo = [];
+  for (const [page, rows] of Object.entries(ledger.pages)) if (selected(page)) for (const [key, row] of Object.entries(rows))
+    for (const c of row.src || []) if (typeof c === "object" && keyed(key) && rowOk(row)) todo.push({ page, key, c });
+  let checked = 0, other = 0;
+  const bad = [], unchecked = [];
+  for (const t of todo){
+    const r = await checkQuote(t.c.url, t.c.quote, paperIds(t.c.id));
+    if (!r){ other++; continue; }
+    checked++;
+    const why = quoteProblem(r);
+    if (why) bad.push(`${t.page} ${t.key} (${t.c.id}:${t.c.at}): ${why}\n      quote: ${JSON.stringify(t.c.quote)}\n      url:   ${t.c.url}`);
+    else if (r.state === "unchecked") unchecked.push(`${t.page} ${t.key} (${t.c.id}): ${r.why}`);
+  }
+  console.log(`Quotes: ${todo.length} look-up citation(s) in the selection; ${checked} link to a paper in Europe PMC, PubMed or PMC and were checked, ${other} link elsewhere. ${bad.length} problem(s).`);
+  if (bad.length) console.log("\n" + bad.join("\n\n"));
+  if (unchecked.length) console.log(`\n${unchecked.length} couldn't be checked (closed full text):\n  ` + unchecked.join("\n  "));
+  process.exit(bad.length ? 1 : 0);
 }
 
 /* ---------- link check: is every look-up link still alive? ---------- */

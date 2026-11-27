@@ -107,7 +107,7 @@ A small Node script, `fact-check/scan.mjs`, keeps the ledger up to date. Like `t
 2. Check the unchecked items, using the [method](#method) below. Work through new pages and systems first, then the edited strings.
 3. Fix or file each finding (see [Recording findings](#recording-findings)), and set each row's status, date and sources.
 4. Re-check 10 approved items: `node fact-check/scan.mjs --sample 10 --seed <today>` (see [Random re-checks](#random-re-checks)).
-5. Run `node fact-check/scan.mjs --sources` and `--check-links`, and deal with anything they flag.
+5. Run `node fact-check/scan.mjs --sources`, `--check-links` and `--check-quotes`, and deal with anything they flag. Once a month, also run `node fact-check/fetch.mjs --audit --cites-only` for new retractions and corrections of cited papers.
 6. Separately, and not by whoever did steps 2–4: verify 10 look-up citations (see [Independent verification](#independent-verification)).
 7. Update the [status table](#status).
 
@@ -134,7 +134,8 @@ For each item:
    - the timing of the six voids;
    - sleep cycles of about 90 min, with N3 early in the night and more REM toward morning;
    - conduction speeds per fibre type.
-6. **Record the source** in the ledger row, with `--lookup` or `--memory` as it actually happened, and add a "Key sources" line to the `phd` text of a section when it has none. See [Sources](#sources).
+6. **Don't rest a claim on a retracted paper.** Before approving or fixing a row that cites a paper, look at what `node fact-check/fetch.mjs <id>` says about it: a retraction, withdrawal or expression of concern means finding another source, and a correction means checking that it doesn't touch the claim. (`--mark` refuses a look-up of a retracted paper by itself; a `--memory` citation it can't check.)
+7. **Record the source** in the ledger row, with `--lookup` or `--memory` as it actually happened, and add a "Key sources" line to the `phd` text of a section when it has none. See [Sources](#sources).
 
 ## Sources
 
@@ -180,7 +181,8 @@ The standard textbooks (Guyton, Boron, Ganong, West, Kandel) are behind subscrip
 | Blood glucose and diabetes thresholds | `ada2026` |
 
 - The NCBI Bookshelf books (`purves2`, `janeway5`, `endotext` and the Colloquium Series) are free but some are "searchable, not browsable": find the passage with the Bookshelf search, and give the section's own `NBK…` page as the `--url`.
-- NCBI and several publishers show scripts a robot check. The link check accepts that (see [Links](#links)), but a WebFetch may get the check page instead of the text. Then try the publisher's page or the PMC copy. If none opens, cite the source with `--memory`.
+- **Papers: use the APIs, not the publisher's page.** For a paper with a PMID, DOI or PMCID in `sources.json`, run `node fact-check/fetch.mjs <id>` and read the abstract it prints (`--full` adds the full text when the paper is in Europe PMC's open-access subset). Don't WebFetch `doi.org`, journal sites, `pubmed.ncbi.nlm.nih.gov` or `pmc.ncbi.nlm.nih.gov` to check a paper: they serve robot checks and cookie walls to scripts. Confirm the excerpt with `--find "<excerpt>"`, which prints the `--lookup`, `--url` and `--quote` to give `scan.mjs`, and cite that Europe PMC link. **An abstract supports only what it says**: if the claim needs a number, dose or sub-group from inside a paper whose full text isn't open, cite the paper with `--memory`. A paper not yet in `sources.json` can be read as `PMID:<n>`, `DOI:<doi>` or `PMC<n>`; add it, then run `node fact-check/ids.mjs --write --id <id>`.
+- NCBI Bookshelf pages and several publishers show scripts a robot check. The link check accepts that (see [Links](#links)), but a WebFetch may get the check page instead of the text. Then try the publisher's page. If none opens, cite the source with `--memory`.
 - StatPearls is open too, but its quality varies by chapter. Use it to find a primary source or guideline, not as the source.
 
 ### Looked up or from memory
@@ -192,7 +194,7 @@ A check made from memory is worth something, but much less than one made with th
 
 Rules:
 - **When in doubt, it is memory.** Never upgrade a recall to a look-up because you are sure. A row is `via: lookup` only if every source it cites was looked up.
-- **AI checkers**, including the nightly build, record a source as `--lookup` only if they fetched and read the passage during the session, give that page as the `--url`, and copy the `--quote` from the fetched text. Everything else they cite is `--memory`. An AI must never write a quote it did not just read.
+- **AI checkers**, including the nightly build, record a source as `--lookup` only if they fetched and read the passage during the session, give that page as the `--url`, and copy the `--quote` from the fetched text. Everything else they cite is `--memory`. An AI must never write a quote it did not just read. For a paper, the fetched text is what `fetch.mjs` printed, and the `--url` is the Europe PMC link it gave.
 - **A memory check can approve a row** (`ok`) or fix it (`fixed`), so the backlog can move without a library. But it is the first thing a re-check looks at: re-check `memory` rows by look-up when a copy becomes available (`--via memory --cites <id> --list --all`), and a confirming look-up turns the row into `lookup`.
 - **Fixes on clinical thresholds** (guideline cut-offs, drug doses, diagnostic criteria) should be looked up. If the guideline can't be opened, file an issue rather than fixing it from memory.
 - **Rows approved before this was recorded** have no `via` and count as `unknown`. Treat them like `memory`.
@@ -210,6 +212,7 @@ A look-up is only as good as the next person's ability to repeat it. So every `-
 - **The excerpt** (`--quote`) is 8–300 characters copied verbatim from the passage, enough to find it with Ctrl-F. For a table or figure, quote its title and the value. Don't paraphrase it.
 - **Checked when recorded.** `--mark` fetches each link and refuses a dead one (a 404, a DNS failure, a timeout). A link that answers with a login or a robot block (401, 403, 429) is accepted, because a verifier with access can still follow it. Many publishers block scripts, so check those once by hand. `--no-link-check` skips the fetch for offline work; run `--check-links` afterwards.
 - **Behind a proxy.** In a cloud session, outbound requests go through an HTTPS proxy that Node's built-in `fetch` ignores by default. `scan.mjs` re-runs itself with `NODE_USE_ENV_PROXY=1` when it needs the network (Node 22.21+ or 24.5+). If the environment's network policy doesn't allow a link's host, the link is reported as **not checked**, not as dead: the mark goes ahead with a warning, and `--check-links` leaves the link due until it runs from an environment that allows the host. This matters because WebFetch runs outside the container, so a checker can read a page the container itself can't reach.
+- **Quotes checked against the paper.** When a `--lookup` links to a paper in Europe PMC, PubMed or PMC, `--mark` fetches that paper's text from Europe PMC and refuses the mark if the `--quote` isn't in it (after folding dashes, quotes and spaces), if it is there only with different case or punctuation (copy the source's wording, which the message shows), if the link is to a different paper than the source id names, or if the paper is retracted. For an abstract link, the quote must be in the abstract; for a full-text link, in the abstract or the open full text. When the full text isn't open, the quote can't be checked and the mark goes ahead with a warning. `--no-quote-check` skips this (as `--no-link-check` does); `--check-quotes` runs it over the ledger's existing look-ups.
 - **Checked again later.** Links rot. `--check-links` re-fetches them. Fix a dead link by re-citing the row (`--mark … --lookup … --url <new link>`); if the source is gone, move it to `--memory`.
 
 ### Independent verification
@@ -218,7 +221,7 @@ Random [re-checks](#random-re-checks) ask "is this claim right?". Verification a
 
 - **Independent** means the verifier is not whoever made the look-up or set the row's status: the script refuses a `--by` that matches either. An AI verifier must run in a fresh session, with no access to the checker's conversation, and record itself under its own run name (for example `claude-verify-2027-01-09`). The person or agent who checks content is never the only one who verifies it.
 - **Every run**, verify 10 citations: `node fact-check/scan.mjs --verify-sample 10 --by <verifier> --seed <today>`. The pick is uniform over look-up citations on current, approved rows that the verifier didn't make and that haven't been verified in the last 60 days. For each one it prints the claim, the full citation, the locator, the link (with its last link check) and the excerpt.
-- **For each citation**, open the link (don't search for the source some other way first), find the excerpt at the locator, and decide whether it supports the claim as written. Then record the result:
+- **For each citation**, open the link (don't search for the source some other way first), find the excerpt at the locator, and decide whether it supports the claim as written. For a link to a paper in Europe PMC, PubMed or PMC, `node fact-check/fetch.mjs <id> --find "<excerpt>"` counts as opening it: it reads the same record and says where the excerpt is. Read the passage around it before deciding. Then record the result:
   `node fact-check/scan.mjs --page <page> --key <key> --cite <id> --by <verifier> --verify <result> [--note "…"]`.
 
 | Result | Meaning | What happens to the row |

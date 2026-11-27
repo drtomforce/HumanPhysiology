@@ -201,7 +201,8 @@ function loose(s){
 }
 /* every place the quote is, best match first: { how: "exact" | "loose", where, found (the source's own wording), context } */
 export function locate(units, quote){
-  const q = canon(quote), lq = loose(q).out, hits = [];
+  /* a full stop, comma, semicolon or colon closing the excerpt may be the checker's, not the source's */
+  const q = canon(quote).replace(/\s*[.,;:]+$/, ""), lq = loose(q).out, hits = [];
   if (!lq) return hits;
   for (const u of units){
     const t = canon(u.text);
@@ -213,3 +214,55 @@ export function locate(units, quote){
   return hits.sort((a, b) => (a.how === "exact" ? 0 : 1) - (b.how === "exact" ? 0 : 1));
 }
 const ctx = (t, i, n) => (i > 60 ? "…" + t.slice(i - 60, i) : t.slice(0, i)) + "«" + t.slice(i, i + n) + "»" + (t.length > i + n + 60 ? t.slice(i + n, i + n + 60) + "…" : t.slice(i + n));
+
+/* ---------- checking a look-up's quote against the paper it links to (scan.mjs --mark, --check-quotes) ---------- */
+/* which paper a link points to, and which text it shows: "abstract" (the record, PubMed) or "full" (full text, PMC);
+   null for links that aren't to a paper in Europe PMC, PubMed or PMC */
+export function paperFromUrl(u){
+  let url; try { url = new URL(u); } catch { return null; }
+  const h = url.hostname.replace(/^www\./, ""), p = decodeURIComponent(url.pathname), q = decodeURIComponent(url.search);
+  let m;
+  if (h === "ebi.ac.uk" && /\/europepmc\/webservices\/rest\/search$/.test(p) && (m = q.match(/EXT_ID:\s*(\d+)/i))) return { pmid: m[1], shows: "abstract" };
+  if (h === "ebi.ac.uk" && (m = p.match(/\/europepmc\/webservices\/rest\/(PMC\d+)\/fullTextXML$/i))) return { pmcid: m[1].toUpperCase(), shows: "full" };
+  if (h === "europepmc.org" && (m = p.match(/^\/(?:article|abstract)\/MED\/(\d+)/i))) return { pmid: m[1], shows: "full" };
+  if (h === "europepmc.org" && (m = p.match(/^\/(?:article\/PMC|articles)\/(PMC\d+)/i))) return { pmcid: m[1].toUpperCase(), shows: "full" };
+  if (h === "pubmed.ncbi.nlm.nih.gov" && (m = p.match(/^\/(\d+)/))) return { pmid: m[1], shows: "abstract" };
+  if ((h === "pmc.ncbi.nlm.nih.gov" && (m = p.match(/^\/articles\/(PMC\d+)/i))) || (h === "ncbi.nlm.nih.gov" && (m = p.match(/^\/pmc\/articles\/(PMC\d+)/i))))
+    return { pmcid: m[1].toUpperCase(), shows: "full" };
+  return null;
+}
+
+/* Is the quote in the paper the link points to?
+     { state: "ok", how, where }                    found verbatim (after folding dashes, quotes and spaces)
+     { state: "not-verbatim", where, found }        only ignoring case, spacing or punctuation: copy `found`
+     { state: "missing", searched }                 not in the text that was searched
+     { state: "unchecked", why }                    the text the link shows isn't available here (closed full text)
+     { state: "wrong-paper", why }                  the link is to a different paper than the source id
+     { state: "retracted", why }                    the paper is retracted or under an expression of concern
+     { state: "error", why }                        Europe PMC couldn't be reached
+   `source` is the sources.json entry (its pmid / pmcid / doi are compared with the link's paper). */
+export async function checkQuote(url, quote, source = {}, maxAgeDays = 30){
+  const ref = paperFromUrl(url);
+  if (!ref) return null;
+  let r;
+  try { r = await recordFor(ref, maxAgeDays); } catch (e){ return { state: "error", why: e.message }; }
+  if (!r) return { state: "missing", searched: `nothing: Europe PMC has no record for ${ref.pmid ? "PMID " + ref.pmid : ref.pmcid}` };
+  const same = (a, b) => !a || !b || String(a).toLowerCase() === String(b).toLowerCase();
+  if (!same(source.pmid, r.pmid) || !same(source.pmcid, r.pmcid) || !same(source.doi, r.doi))
+    return { state: "wrong-paper", why: `the link is to PMID ${r.pmid || "–"} / ${r.pmcid || "no PMCID"} / DOI ${r.doi || "–"} (${(r.title || "").slice(0, 80)}), but sources.json has ${[source.pmid && "PMID " + source.pmid, source.pmcid, source.doi && "DOI " + source.doi].filter(Boolean).join(" / ")}` };
+  try {
+    const n = await notices(r, r.doi, maxAgeDays);
+    const bad = n.find(x => x.serious);
+    if (bad) return { state: "retracted", why: `${bad.kind}${bad.ref ? " " + bad.ref : ""} [${bad.from}]` };
+  } catch (e){ return { state: "error", why: e.message }; }
+  const abs = abstractUnits(r);
+  let hit = locate(abs, quote)[0], searched = abs.length ? "the abstract" : "nothing (no abstract)";
+  if (!hit && ref.shows === "full"){
+    if (access(r).openSubset && r.pmcid){
+      let xml; try { xml = await fullTextXML(r.pmcid, maxAgeDays); } catch (e){ return { state: "error", why: e.message }; }
+      hit = locate(fullTextUnits(xml), quote)[0]; searched = "the abstract and the open full text";
+    } else return { state: "unchecked", why: "not in the abstract, and the full text isn't in Europe PMC's open-access subset, so it can't be read here" };
+  }
+  if (!hit) return { state: "missing", searched };
+  return hit.how === "exact" ? { state: "ok", how: hit.how, where: hit.where } : { state: "not-verbatim", where: hit.where, found: hit.found };
+}

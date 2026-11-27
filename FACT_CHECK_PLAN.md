@@ -110,15 +110,27 @@ How it works, and where it differs from the plan above:
 - **No record contradicts its cite.** `moon1944` isn't in Europe PMC (J Opt Soc Am isn't in PubMed).
 - **148 `access` values to set**: 49 papers free to read in Europe PMC (10 of them currently marked `subscription`) and 99 not free there. Left for step 8, because a paper that isn't free in Europe PMC may still be free on the publisher's site.
 
-### 4. Check excerpts against the fetched text in `scan.mjs`
-When a `--lookup` link is a Europe PMC REST URL or a PMC article, `--mark` looks for the `--quote` in the cached text (via `fetch.mjs --find`) and refuses the mark if the excerpt isn't there. That catches an invented quote at the moment it's written, not weeks later in a verification sample. Other sites keep today's rule (the link must answer).
+### 4. Check excerpts against the fetched text in `scan.mjs` ✅ done 2026-11-27
+When a `--lookup` links to a paper in Europe PMC, PubMed or PMC, `--mark` reads that paper's text from Europe PMC (`checkQuote` in `fact-check/epmc.mjs`) and refuses the mark:
+- if the `--quote` isn't in the text: for an abstract link (the Europe PMC record, PubMed), in the abstract; for a full-text link (`fullTextXML`, PMC, europepmc.org), in the abstract or the open full text;
+- if the quote is there only with different case, spacing or punctuation, showing the source's wording to copy instead;
+- if the link is to a different paper than the source id's `pmid`, `pmcid` or `doi` (checked as well as the plan asked for: a right quote from the wrong paper is the same failure);
+- if the paper is retracted, withdrawn or under an expression of concern (also beyond the plan: it was meant to be a rule for the checker, step 5, but the check is free once the record is fetched).
 
-### 5. Rules for the checker, in FACTUAL_CHECK.md
-Add to [Open sources to look up first](FACTUAL_CHECK.md#open-sources-to-look-up-first):
+When the full text isn't open, the quote can't be checked: the mark goes ahead with a warning. `--no-quote-check` skips the check, and `--no-link-check` (offline) does too. Other sites keep the old rule: the link must answer.
 
-> **Papers: use the APIs, not the publisher's page.** For a source with a DOI or PMID, run `node fact-check/fetch.mjs <id>` and read the abstract (or the full text, if open access) it prints. Don't WebFetch `doi.org`, journal sites or `pubmed.ncbi.nlm.nih.gov` to check a paper: they serve robot checks and cookie walls to scripts. Cite the Europe PMC link the script prints, and quote from the text it fetched. If the claim isn't in the abstract and the paper isn't open access, cite the paper with `--memory`.
+`--check-quotes` runs the same check over the ledger's existing look-ups. **First run**: 251 look-up citations, 32 linked to a paper and checked. No invented or misplaced quotes. 2 couldn't be checked (`llewellyn2008`, `taylor2002`: closed full text). 2 failed only because the checker had added a full stop after a sentence the source carries on (`jones2017`). `locate` now ignores a trailing `.`, `,`, `;` or `:`, and both pass.
 
-And to the Method: before approving a row that cites a paper, check that `fetch.mjs` doesn't flag it as retracted.
+Tested on a copy of the repo: a real Beck 1992 quote marks; an invented one, a non-verbatim one, Beck's id with another paper's link, and a retracted paper are all refused, and nothing is written. `tests/factcheck-fetch-check.mjs` adds offline checks of which links count as a paper link.
+
+### 5. Rules for the checker, in FACTUAL_CHECK.md ✅ done 2026-11-27
+Added to FACTUAL_CHECK.md:
+- **[Open sources to look up first](FACTUAL_CHECK.md#open-sources-to-look-up-first)**: papers are read with `fetch.mjs`, not WebFetch of `doi.org`, journal sites, PubMed or PMC; confirm the excerpt with `--find`, and cite the link it prints. An abstract supports only what it says; a number from inside a closed paper is `--memory`.
+- **[Method](FACTUAL_CHECK.md#method)**, new step 6: don't rest a claim on a retracted paper; look at what `fetch.mjs` says about each cited paper, including corrections.
+- **[The routine](FACTUAL_CHECK.md#the-routine)**, step 5: `--check-quotes` next to `--check-links`, and a monthly `fetch.mjs --audit --cites-only`.
+- **[Looked up or from memory](FACTUAL_CHECK.md#looked-up-or-from-memory)**: for an AI checker, the fetched text of a paper is what `fetch.mjs` printed.
+- **[Links](FACTUAL_CHECK.md#links)**: how the quote check at `--mark` works.
+- **[Independent verification](FACTUAL_CHECK.md#independent-verification)**: for a paper link, `fetch.mjs <id> --find` counts as opening the link.
 
 ### 6. Turn recalled paper citations into look-ups
 Use the same approach as step 1 of `improving-lookups.md`, but for papers.
@@ -163,9 +175,9 @@ These steps need no new hosts: `www.ebi.ac.uk`, `api.crossref.org` and `pmc.ncbi
 | 1 ✅ | Node proxy fix, and blocked hosts told apart from dead links | done | Link checks that don't lie in this container |
 | 2 ✅ | `doi` / `pmid` in `sources.json` | done | Everything below; 1,917 more citations fetchable |
 | 3 ✅ | `fetch.mjs` with cache, retries, `--find` and `--audit` | done | Paper look-ups in one command |
-| 5 | The rule in FACTUAL_CHECK.md | minutes | The nightly checker uses it |
+| 5 ✅ | The rule in FACTUAL_CHECK.md | done | The nightly checker uses it |
 | 8 | `--audit` (retractions, metadata, `access`) | an hour | Catches wrong and retracted citations |
-| 4 | Excerpt check in `scan.mjs --mark` | an hour | Invented quotes refused when written |
+| 4 ✅ | Excerpt check in `scan.mjs --mark`, and `--check-quotes` | done | Invented quotes refused when written |
 | 6 | Re-cite recalled papers, most-cited first | ongoing, nightly quota | The look-up count rises |
 | 7 | Stricter verification prompt, maybe a `partial` result | an hour | Fewer excerpts approved for rows they don't support |
 

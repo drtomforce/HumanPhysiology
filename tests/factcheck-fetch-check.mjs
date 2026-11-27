@@ -6,12 +6,13 @@
    - abstractUnits: an abstract split at its headings
    - locate: exact after folding dashes, quotes and spaces; "loose" when only case, spacing or punctuation
      differ (with the source's own wording); nothing for an excerpt that isn't there
-   - agrees: a record matches its cite when the cite drops the subtitle, and not when it is another paper */
+   - agrees: a record matches its cite when the cite drops the subtitle, and not when it is another paper
+   - paperFromUrl: which paper (and which text) a Europe PMC, PubMed or PMC link points to; null for other links */
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const lib = await import(pathToFileURL(join(dirname(fileURLToPath(import.meta.url)), "..", "fact-check", "epmc.mjs")).href);
-const { fullTextUnits, abstractUnits, locate, agrees, canon, citeDoi } = lib;
+const { fullTextUnits, abstractUnits, locate, agrees, canon, citeDoi, paperFromUrl } = lib;
 let failed = 0;
 const check = (ok, what, got) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}${ok || got === undefined ? "" : "\n     got: " + JSON.stringify(got)}`); if (!ok) failed++; };
 
@@ -47,6 +48,7 @@ check(h[0]?.how === "exact", "curly quotes and a non-breaking space fold to plai
 h = locate(units, "sweat rates reached 1 2 l h 1 in trained");
 check(h[0]?.how === "loose" && h[0].found === "Sweat rates reached 1-2 L·h-1 in trained", "case and punctuation differ: loose, with the source's wording (dashes folded)", h[0]);
 check(locate(units, "Sweat rates reached 3 L per hour").length === 0, "an excerpt that isn't there: no match");
+check(locate(units, "Sweat rates reached 1-2 L·h−1.")[0]?.how === "exact", "a full stop the checker added after a partial sentence: still exact");
 check(locate(units, "Reference text, left out").length === 0, "references can't be quoted as the paper's own text");
 
 const abs = abstractUnits({ abstractText: "<h4>Background</h4>Steroids are <i>controversial</i>.<h4>Results</h4>Recovery was faster (P&nbsp;=&nbsp;0.0001)." });
@@ -61,6 +63,14 @@ check(!agrees({ title: "Low-dose atropine for myopia: five-year outcomes", pubYe
 check(!agrees({ title: "Low-Concentration Atropine for Myopia Progression (LAMP) Study", pubYear: "2012" }, cite).ok, "the right title in the wrong year doesn't match");
 check(citeDoi(cite) === "10.1016/j.ophtha.2018.05.029" && citeDoi("X. Lancet. 1998. doi:10.1016/S0140-6736(97)11096-0") === "10.1016/S0140-6736(97)11096-0", "DOIs parsed from a cite, brackets included");
 check(canon("a b c–d­e") === "a b c-de", "canon: spaces, dashes and soft hyphens");
+
+const P = u => JSON.stringify(paperFromUrl(u));
+check(P("https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:1734247%20AND%20SRC:MED&resultType=core&format=json") === '{"pmid":"1734247","shows":"abstract"}', "Europe PMC REST record → PMID, abstract");
+check(P("https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8929548/fullTextXML") === '{"pmcid":"PMC8929548","shows":"full"}', "Europe PMC full text → PMCID, full text");
+check(P("https://pubmed.ncbi.nlm.nih.gov/9500320/") === '{"pmid":"9500320","shows":"abstract"}', "PubMed page → PMID, abstract");
+check(P("https://pmc.ncbi.nlm.nih.gov/articles/PMC5723673#sec2") === '{"pmcid":"PMC5723673","shows":"full"}' && P("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5723673/") === '{"pmcid":"PMC5723673","shows":"full"}', "PMC pages, old and new → PMCID, full text");
+check(P("https://europepmc.org/article/MED/1734247") === '{"pmid":"1734247","shows":"full"}', "europepmc.org article page → PMID");
+check(paperFromUrl("https://openstax.org/books/anatomy-and-physiology-2e/pages/10-2-skeletal-muscle") === null && paperFromUrl("https://www.ncbi.nlm.nih.gov/books/NBK279388/") === null, "other links (OpenStax, Bookshelf): not a paper link");
 
 console.log(failed ? `\n${failed} check(s) failed` : "\nAll checks passed");
 process.exit(failed ? 1 : 0);

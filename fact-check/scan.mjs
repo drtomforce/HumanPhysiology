@@ -32,6 +32,9 @@
                                                   it and a short verbatim excerpt (repeatable: the n-th --url and
                                                   --quote go with the n-th --lookup). Each link is fetched first,
                                                   and a dead one is refused (--no-link-check to skip, offline).
+                                                  A link to a paper in Europe PMC, PubMed or PMC must be to the
+                                                  paper the source id names, and its --quote must be in that
+                                                  paper's text (fact-check/epmc.mjs); --no-quote-check to skip
          [--memory <id>[:<locator>]]              … citing a source recalled from memory, not opened (repeatable)
                                                   ok, fixed and "issue #n" need at least one of the two; the row
                                                   gets "via": "lookup" only if every source was looked up
@@ -44,8 +47,15 @@
                                                   last 60 days
      node fact-check/scan.mjs --verify-sample <n> pick n look-up citations at random for independent verification
          --by <verifier>                          (never one the verifier made themselves)
-     node fact-check/scan.mjs --verify <result>   record a verification: confirmed, link-broken, wrong-locator or
-         --page --key --cite <id> --by <verifier> not-supported, logged to fact-check/verifications.jsonl
+     node fact-check/scan.mjs --verify <result>   record a verification: confirmed, partial (supports only part of the
+         --page --key --cite <id> --by <verifier> row: --note names what it doesn't support), link-broken,
+                                                  wrong-locator or not-supported, logged to fact-check/verifications.jsonl
+     node fact-check/scan.mjs --uncite <id>       take a recalled source off the selected rows, where it doesn't bear on
+         --by <who> --note "<why>"                their claim (a blanket citation set applied with --prefix). Status,
+         --key / --keys-from <file> / --prefix    checked date and checker stay; the row's note and narrowed.jsonl record it.
+                                                  Never removes a look-up, never leaves a row citing nothing
+     node fact-check/scan.mjs --check-quotes      for every look-up linked to a paper in Europe PMC, PubMed or PMC: is its
+                                                  quote in that paper's text, and is it the paper its source id names?
      node fact-check/scan.mjs --check-links       fetch every look-up link in the selection and report dead ones
          [--max-age <days>]                       (only links not checked in the last 30 days; results in
                                                   fact-check/links.json)
@@ -57,17 +67,23 @@
    --via <lookup|memory|unknown> (how the row was checked; "unknown" = approved before this was recorded);
    --all with --list lists every item, not just the unchecked ones. --mark only touches items whose
    hash is current; add --unchecked to leave rows that already have a status (ok, fixed, an issue) alone.
+   Behind an HTTPS proxy, the link-fetching commands re-run themselves with NODE_USE_ENV_PROXY=1, and a
+   link whose host the environment's network doesn't allow is reported as not checked, not as dead
+   (fact-check/net.mjs).
    No dependencies. */
 import { readFileSync, writeFileSync, readdirSync, existsSync, appendFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { useEnvProxy, whyFailed } from "./net.mjs";
+import { checkQuote, citeDoi, paperFromUrl } from "./epmc.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LEDGER = join(root, "fact-check", "ledger.json");
 const SOURCES = join(root, "fact-check", "sources.json");
 const RECHECKS = join(root, "fact-check", "rechecks.jsonl");
 const VERIFICATIONS = join(root, "fact-check", "verifications.jsonl");
+const NARROWED = join(root, "fact-check", "narrowed.jsonl");
 const LINKS = join(root, "fact-check", "links.json");
 const STATUSES = /^(unchecked|ok|fixed|n\/a|issue #\d+)$/;
 
@@ -77,20 +93,25 @@ const flag = f => argv.includes(f);
 const many = f => argv.flatMap((a, i) => a === f && argv[i + 1] != null ? [argv[i + 1]] : []);
 const one = f => many(f)[0];
 const pagesWanted = many("--page"), prefixes = many("--prefix"), keys = many("--key");
+/* --keys-from <file>: exact keys, one per line (blank lines and # comments ignored), added to --key */
+for (const f of many("--keys-from")) keys.push(...readFileSync(f, "utf8").split("\n").map(l => l.replace(/#.*/, "").trim()).filter(Boolean));
+const uncite = one("--uncite");
 const batch = one("--batch"), cites = one("--cites");
 const markStatus = one("--mark"), note = one("--note"), lookArgs = many("--lookup"), memArgs = many("--memory"), viaWanted = one("--via");
 const urlArgs = many("--url"), quoteArgs = many("--quote"), by = one("--by") || process.env.FACT_CHECK_BY;
 const verifyN = one("--verify-sample") != null ? Number(one("--verify-sample")) : null, verifyResult = one("--verify"), citeArg = one("--cite");
 const squashArg = s => s.replace(/\s+/g, " ").trim();
-const VERIFY_RESULTS = /^(confirmed|link-broken|wrong-locator|not-supported)$/;
+const VERIFY_RESULTS = /^(confirmed|partial|link-broken|wrong-locator|not-supported)$/;
 const sampleN = one("--sample") != null ? Number(one("--sample")) : null;
 const seed = one("--seed") || new Date().toISOString().slice(0, 10);
 const minAge = Number(one("--min-age") ?? 60);
 if (markStatus && !STATUSES.test(markStatus)) die(`--mark: status must be unchecked, ok, fixed, n/a or "issue #<n>"`);
+/* commands that fetch links: behind an HTTPS proxy, re-run with Node using it (fact-check/net.mjs) */
+if ((urlArgs.length && markStatus && !flag("--no-link-check")) || flag("--check-links") || flag("--check-quotes")) useEnvProxy();
 
 /* the source registry: every --lookup / --memory must name an id in it */
 const sources = existsSync(SOURCES) ? JSON.parse(readFileSync(SOURCES, "utf8")) : {};
-/* a look-up citation is { id, at, url, quote, by, verified?, verifiedBy? }; a memory citation is "<id>[:<locator>]" */
+/* a look-up citation is { id, at, url, quote, by, verified?, verifiedBy?, partial? }; a memory citation is "<id>[:<locator>]" */
 const srcId = s => typeof s === "string" ? s.split(":")[0] : s.id;
 const srcText = s => typeof s === "string" ? s : `${s.id}:${s.at}`;
 if (many("--source").length) die("--source is gone: use --lookup <id>:<locator> for a source you opened, --memory <id> for one you recalled");
@@ -113,7 +134,8 @@ for (const u of urlArgs){
 }
 for (const q of quoteArgs) if (squashArg(q).length < 8 || squashArg(q).length > 300) die(`--quote: give 8-300 characters copied verbatim from the passage (got ${squashArg(q).length})`);
 if (markStatus && /^(ok|fixed|issue)/.test(markStatus) && !by) die(`--mark ${markStatus} needs --by <who> (or FACT_CHECK_BY): a person's handle or an agent run, e.g. claude-nightly-${new Date().toISOString().slice(0, 10)}`);
-if (verifyResult && !VERIFY_RESULTS.test(verifyResult)) die("--verify: confirmed, link-broken, wrong-locator or not-supported");
+if (verifyResult && !VERIFY_RESULTS.test(verifyResult)) die("--verify: confirmed, partial, link-broken, wrong-locator or not-supported");
+if (verifyResult === "partial" && !note) die(`--verify partial needs --note "<what the excerpt doesn't support>"`);
 if (verifyResult && (!by || !citeArg || keys.length !== 1 || pagesWanted.length !== 1)) die("--verify needs --page <page> --key <key> --cite <source id> --by <verifier>");
 if (verifyN != null && (!(verifyN > 0) || !by)) die("--verify-sample needs a positive number and --by <verifier>, so it can leave out the verifier's own look-ups");
 const cited = lookArgs.length + memArgs.length;
@@ -122,6 +144,10 @@ if (cited && /^(unchecked|n\/a)$/.test(markStatus)) die(`--mark ${markStatus} ta
 if (markStatus && /^(ok|fixed|issue)/.test(markStatus) && !cited)
   die(`--mark ${markStatus} needs --lookup <id>:<locator> (a source you opened) or --memory <id> (one you recalled); internal:<registry row or key> for a consistency check`);
 if (viaWanted && !/^(lookup|memory|unknown)$/.test(viaWanted)) die("--via: lookup, memory or unknown");
+if (uncite && (markStatus || verifyResult)) die("--uncite goes on its own, not with --mark or --verify");
+if (uncite && !sources[uncite]) die(`--uncite ${uncite}: not in fact-check/sources.json`);
+if (uncite && (!by || !note || (!keys.length && !prefixes.length)))
+  die(`--uncite <id> needs --by <who>, --note "<why it doesn't bear on these rows>" and a selection (--key, --keys-from or --prefix): narrowing is row by row, never a whole page`);
 if (flag("--recheck") && (!markStatus || !keys.length || prefixes.length))
   die("--recheck goes with --mark and --key <exact key> (one or more), not --prefix: re-check items one at a time");
 if (sampleN != null && !(sampleN > 0)) die("--sample: give a positive number");
@@ -138,12 +164,15 @@ async function probe(url){
     /* 401 / 403 / 429: the server answered but wants a login or blocks robots; a person can still follow it */
     const state = res.ok ? "ok" : [401, 402, 403, 429].includes(res.status) ? "login" : "broken";
     return { state, code: res.status, final: res.url !== url ? res.url : undefined };
-  } catch (e){ return { state: "broken", code: 0, error: String(e.cause?.code || e.name || e.message) }; }
+  } catch (e){ return { code: 0, ...(await whyFailed(url, e)) }; } /* "blocked": the proxy won't let this environment reach the host */
   finally { clearTimeout(timer); }
 }
 async function probeAll(urls){
   const out = {};
-  for (let i = 0; i < urls.length; i += 6) await Promise.all(urls.slice(i, i + 6).map(async u => { out[u] = links[u] = { ...(await probe(u)), checked: new Date().toISOString().slice(0, 10) }; }));
+  for (let i = 0; i < urls.length; i += 6) await Promise.all(urls.slice(i, i + 6).map(async u => {
+    out[u] = { ...(await probe(u)), checked: new Date().toISOString().slice(0, 10) };
+    if (out[u].state !== "blocked") links[u] = out[u]; /* not recorded: still due for a check from an environment that allows the host */
+  }));
   writeFileSync(LINKS, JSON.stringify(Object.fromEntries(Object.entries(links).sort()), null, 1) + "\n");
   return out;
 }
@@ -151,6 +180,31 @@ if (urlArgs.length && markStatus && !flag("--no-link-check")){
   const res = await probeAll([...new Set(urlArgs)]);
   const dead = Object.entries(res).filter(([, r]) => r.state === "broken");
   if (dead.length) die("These links don't work, so nothing was marked:\n  " + dead.map(([u, r]) => `${u}  (${r.code || r.error})`).join("\n  "));
+  for (const [u, r] of Object.entries(res)) if (r.state === "blocked")
+    console.error(`Not link-checked: this environment's network doesn't allow ${new URL(u).hostname} (${r.error}). Marking anyway; run --check-links from an environment that allows it.`);
+}
+
+/* ---------- quotes: a look-up linked to a paper in Europe PMC, PubMed or PMC must quote its text ---------- */
+const paperIds = id => { const s = sources[id] || {}; return { pmid: s.pmid, pmcid: s.pmcid, doi: s.doi || citeDoi(s.cite || "") }; };
+function quoteProblem(r){
+  if (!r || r.state === "ok") return null;
+  if (r.state === "not-verbatim") return `not verbatim (case, spacing or punctuation differ) in ${r.where}; the source has: ${JSON.stringify(r.found)}`;
+  if (r.state === "missing") return `not found in ${r.searched}`;
+  if (r.state === "wrong-paper") return `wrong paper: ${r.why}`;
+  if (r.state === "retracted") return `the paper is retracted or under an expression of concern: ${r.why}`;
+  if (r.state === "error") return `couldn't reach Europe PMC to check it (${r.why}); try again, or --no-quote-check and run --check-quotes later`;
+  return null;
+}
+if (lookArgs.length && markStatus && !flag("--no-link-check") && !flag("--no-quote-check")){
+  const bad = [];
+  for (let i = 0; i < lookArgs.length; i++){
+    const r = await checkQuote(urlArgs[i], squashArg(quoteArgs[i]), paperIds(srcId(lookArgs[i])));
+    const why = quoteProblem(r);
+    if (why) bad.push(`--lookup ${lookArgs[i]}: ${why}`);
+    else if (r?.state === "unchecked") console.error(`Quote not checked for --lookup ${lookArgs[i]}: ${r.why}. Marking anyway: the excerpt must be from the page you read.`);
+  }
+  if (bad.length) die("These quotes don't check out against the paper they link to, so nothing was marked:\n  " + bad.join("\n  ") +
+    "\n(read the paper with node fact-check/fetch.mjs <id>, and copy the excerpt from what it prints)");
 }
 
 /* ---------- reading the pages ---------- */
@@ -285,7 +339,7 @@ function cite(row, keepOld){
 }
 const prefixed = (key, row) => keyed(key) && rowOk(row);
 const days = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5;
-const recheckLog = [], pool = [], verifyLog = [], vpool = [];
+const recheckLog = [], pool = [], verifyLog = [], vpool = [], narrowLog = [], narrowSkipped = [];
 const recheckedToday = new Set();   /* "<page> <key>" already in rechecks.jsonl with today's date */
 let verified = 0;
 
@@ -294,7 +348,7 @@ if (existsSync(RECHECKS)) for (const l of readFileSync(RECHECKS, "utf8").split("
   const e = JSON.parse(l); if (e.date === today) recheckedToday.add(`${e.page} ${e.key}`);
 }
 const report = [];
-let dirty = false, unchecked = 0, marked = 0;
+let dirty = false, unchecked = 0, marked = 0, narrowed = 0;
 
 for (const { id: page, path, engine } of pageFiles()){
   if (!selected(page)) continue;
@@ -353,6 +407,28 @@ for (const { id: page, path, engine } of pageFiles()){
     }
   }
 
+  /* --uncite: take a recalled source off rows it doesn't bear on (a blanket citation set applied with --prefix).
+     A provenance fix, not a re-check: status, checked and by stay; the row's note and fact-check/narrowed.jsonl
+     say who removed what, when and why. A looked-up citation is never removed this way (verification handles
+     those), and a row is never left citing nothing. */
+  if (uncite){
+    for (const [key, row] of Object.entries(ledger.pages[page] || {})){
+      if (!prefixed(key, row) || !items.has(key) || row.hash !== hash(squash(items.get(key)))) continue;
+      const gone = (row.mem || []).filter(m => srcId(m) === uncite);
+      if (!gone.length) continue;
+      if ((row.src || []).some(c => srcId(c) === uncite)){ narrowSkipped.push(`${page} ${key}: ${uncite} is also a look-up citation here; left alone`); continue; }
+      const mem = row.mem.filter(m => srcId(m) !== uncite);
+      if (!mem.length && !(row.src || []).length){ narrowSkipped.push(`${page} ${key}: ${uncite} is its only source; cite a source that bears on it first (--mark … --memory <id>)`); continue; }
+      if (mem.length) row.mem = mem; else delete row.mem;
+      if (row.via) row.via = !mem.length && (row.src || []).length ? "lookup" : "memory";
+      /* one note per checker and day, however many sources they take off */
+      const head = `citation narrowed by ${by}, ${today}: `, item = `${uncite} removed (${note})`;
+      row.note = row.note?.startsWith(head) ? row.note.replace(head, `${head}${item}; `) : head + item + (row.note ? ` | ${row.note}` : "");
+      narrowLog.push({ date: today, page, key, removed: gone, by, note, status: row.status, via: row.via || null });
+      narrowed++;
+    }
+  }
+
   /* ---------- independent verification of look-up citations ---------- */
   for (const [key, row] of Object.entries(ledger.pages[page] || {})){
     if (!items.has(key) || row.hash !== hash(squash(items.get(key))) || !/^(ok|fixed|issue)/.test(row.status)) continue;
@@ -363,7 +439,12 @@ for (const { id: page, path, engine } of pageFiles()){
       if (verifyResult && keyed(key) && c.id === citeArg){
         if (c.by === by || row.by === by) die(`--verify: ${by} made this check, so can't verify it; verification has to be independent`);
         verifyLog.push({ date: today, page, key, cite: c.id, at: c.at, url: c.url, checkedBy: c.by || row.by || null, by, result: verifyResult, ...(note ? { note } : {}) });
-        if (verifyResult === "confirmed"){ c.verified = today; c.verifiedBy = by; }
+        if (verifyResult === "confirmed" || verifyResult === "partial"){
+          c.verified = today; c.verifiedBy = by;
+          /* partial: the look-up is real and backs part of the row; say which part it doesn't back */
+          if (verifyResult === "partial"){ c.partial = note; row.note = `partial on verification by ${by}, ${today}: ${note}` + (row.note ? ` | ${row.note}` : ""); }
+          else delete c.partial;
+        }
         else {
           /* the look-up can't be reproduced: keep it only as a recollection */
           row.src = row.src.filter(x => x !== c);
@@ -402,10 +483,11 @@ function format(l){
     Object.entries(rows).map(([k, r]) => `   ${JSON.stringify(k)}: ${JSON.stringify(r)}`).join(",\n") + "\n  }").join(",\n");
   return `{\n "version": ${l.version},\n "ignore": {\n${ig}\n },\n "pages": {\n${pg}\n }\n}\n`;
 }
-if ((markStatus || verifyResult) && dirty && !flag("--update"))
+if ((markStatus || verifyResult || uncite) && dirty && !flag("--update"))
   die("The ledger is out of date for the selected pages: run with --update first. Nothing was marked or logged.");
 if (verifyResult && !verified) die(`--verify: no current look-up citation "${citeArg}" on that key (or the row isn't approved)`);
-if (flag("--update") || markStatus || verified) writeFileSync(LEDGER, format(ledger));
+if (flag("--update") || markStatus || verified || narrowed) writeFileSync(LEDGER, format(ledger));
+if (narrowLog.length) appendFileSync(NARROWED, narrowLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 if (verifyLog.length) appendFileSync(VERIFICATIONS, verifyLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 if (recheckLog.length) appendFileSync(RECHECKS, recheckLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 
@@ -475,7 +557,7 @@ function statusJs(){
 }
 const STATUS = join(root, "fact-check", "status.js");
 const statusStale = () => !existsSync(STATUS) || readFileSync(STATUS, "utf8") !== statusJs();
-if ((flag("--update") || markStatus || verified || flag("--status")) && statusStale()) writeFileSync(STATUS, statusJs());
+if ((flag("--update") || markStatus || verified || narrowed || flag("--status")) && statusStale()) writeFileSync(STATUS, statusJs());
 if (flag("--status")){ console.log(`wrote ${STATUS.slice(root.length + 1)}`); process.exit(0); }
 
 /* ---------- random re-check: a uniform sample, so the failure rate estimates the error rate of approvals ---------- */
@@ -505,6 +587,11 @@ if (verifyN != null){
   for (let i = pick.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
   const chosen = pick.slice(0, verifyN);
   console.log(`Verification sample: ${chosen.length} of ${vpool.length} look-up citations not made by ${by} (seed "${seed}", not verified in the last ${minAge} days)\n`);
+  console.log(`For each: open the link, find the excerpt at the locator, read the passage around it, and judge with only the claim and the passage in front of you:
+    List the factual claims in the row. For each, answer SUPPORTED, CONTRADICTED or NOT IN PASSAGE, quoting the sentence
+    that decides it. Flag any mismatch of drug, dose, number, unit, population, direction of effect or structure name.
+  Any CONTRADICTED → not-supported. All SUPPORTED → confirmed. SUPPORTED and NOT IN PASSAGE → partial, with a --note naming
+  the claims the passage doesn't cover. A dead link → link-broken; an excerpt that isn't where the locator says → wrong-locator.\n`);
   for (const { page, key, row, c, text } of chosen){
     const l = links[c.url];
     console.log(`${page} ${key} [${row.status}, checked by ${c.by || row.by || "?"} on ${row.checked}]`);
@@ -513,9 +600,31 @@ if (verifyN != null){
     console.log(`    at:      ${c.at}`);
     console.log(`    link:    ${c.url}${l ? `  (link check ${l.checked}: ${l.state}${l.code ? " " + l.code : ""})` : ""}`);
     console.log(`    excerpt: "${c.quote}"`);
-    console.log(`    record:  node fact-check/scan.mjs --page ${page} --key '${key}' --cite ${c.id} --by ${by} --verify <confirmed|link-broken|wrong-locator|not-supported> [--note "…"]\n`);
+    if (paperFromUrl(c.url)) console.log(`    read:    node fact-check/fetch.mjs ${c.id} --find ${JSON.stringify(c.quote)}   (counts as opening the link)`);
+    console.log(`    record:  node fact-check/scan.mjs --page ${page} --key '${key}' --cite ${c.id} --by ${by} --verify <confirmed|partial|link-broken|wrong-locator|not-supported> [--note "…"]\n`);
   }
   process.exit(0);
+}
+
+/* ---------- quote check: does every look-up linked to a paper quote that paper? ---------- */
+if (flag("--check-quotes")){
+  const todo = [];
+  for (const [page, rows] of Object.entries(ledger.pages)) if (selected(page)) for (const [key, row] of Object.entries(rows))
+    for (const c of row.src || []) if (typeof c === "object" && keyed(key) && rowOk(row)) todo.push({ page, key, c });
+  let checked = 0, other = 0;
+  const bad = [], unchecked = [];
+  for (const t of todo){
+    const r = await checkQuote(t.c.url, t.c.quote, paperIds(t.c.id));
+    if (!r){ other++; continue; }
+    checked++;
+    const why = quoteProblem(r);
+    if (why) bad.push(`${t.page} ${t.key} (${t.c.id}:${t.c.at}): ${why}\n      quote: ${JSON.stringify(t.c.quote)}\n      url:   ${t.c.url}`);
+    else if (r.state === "unchecked") unchecked.push(`${t.page} ${t.key} (${t.c.id}): ${r.why}`);
+  }
+  console.log(`Quotes: ${todo.length} look-up citation(s) in the selection; ${checked} link to a paper in Europe PMC, PubMed or PMC and were checked, ${other} link elsewhere. ${bad.length} problem(s).`);
+  if (bad.length) console.log("\n" + bad.join("\n\n"));
+  if (unchecked.length) console.log(`\n${unchecked.length} couldn't be checked (closed full text):\n  ` + unchecked.join("\n  "));
+  process.exit(bad.length ? 1 : 0);
 }
 
 /* ---------- link check: is every look-up link still alive? ---------- */
@@ -526,8 +635,10 @@ if (flag("--check-links")){
   const due = Object.keys(uses).filter(u => !(links[u] && days(links[u].checked, today) < maxAge));
   const res = await probeAll(due);
   const bad = Object.entries(uses).filter(([u]) => (res[u] || links[u])?.state === "broken");
-  console.log(`Links: ${Object.keys(uses).length} in the selection, ${due.length} checked now, ${bad.length} broken.`);
-  for (const [u, at] of bad) console.log(`\n${u}  (${links[u].code || links[u].error})\n  ` + at.join("\n  "));
+  const blocked = due.filter(u => res[u]?.state === "blocked");
+  console.log(`Links: ${Object.keys(uses).length} in the selection, ${due.length - blocked.length} checked now, ${bad.length} broken.`);
+  if (blocked.length) console.log(`\n${blocked.length} link(s) not checked: this environment's network doesn't allow their hosts (${[...new Set(blocked.map(u => new URL(u).hostname))].sort().join(", ")}). They stay due; check them from an environment that allows those hosts.`);
+  for (const [u, at] of bad) console.log(`\n${u}  (${(res[u] || links[u]).code || (res[u] || links[u]).error})\n  ` + at.join("\n  "));
   const login = Object.keys(uses).filter(u => links[u]?.state === "login").length;
   if (login) console.log(`\n${login} link(s) answer with a login or robot block (401/403/429): fine for a verifier with access, but confirm by hand once.`);
   process.exit(bad.length ? 1 : 0);
@@ -549,8 +660,9 @@ if (flag("--recheck-stats")){
   if (!vlog.length) console.log("  none logged yet.");
   for (const [title, f] of [["checker", e => e.checkedBy || "?"], ["page", e => e.page], ["result", e => e.result]]){
     const g = {};
-    for (const e of vlog){ const k = f(e); (g[k] ||= { n: 0, failed: 0 }).n++; if (e.result !== "confirmed") g[k].failed++; }
-    if (vlog.length) console.log(`  by ${title}:\n` + Object.entries(g).sort().map(([k, v]) => `    ${k.padEnd(28)} ${String(v.n).padStart(4)} verified  ${String(v.failed).padStart(3)} failed  ${(100 * v.failed / v.n).toFixed(0).padStart(3)}%`).join("\n"));
+    /* partial is not a failure: the look-up is real, it just backs less than the whole row */
+    for (const e of vlog){ const k = f(e); const x = (g[k] ||= { n: 0, failed: 0, partial: 0 }); x.n++; if (e.result === "partial") x.partial++; else if (e.result !== "confirmed") x.failed++; }
+    if (vlog.length) console.log(`  by ${title}:\n` + Object.entries(g).sort().map(([k, v]) => `    ${k.padEnd(28)} ${String(v.n).padStart(4)} verified  ${String(v.failed).padStart(3)} failed  ${(100 * v.failed / v.n).toFixed(0).padStart(3)}%${v.partial ? `  (${v.partial} partial)` : ""}`).join("\n"));
   }
   process.exit(0);
 }
@@ -585,6 +697,10 @@ if (!flag("--list")){
   report.forEach(r => console.log(line(r)));
   if (verified) console.log(`\nrecorded ${verified} verification(s) "${verifyResult}" (logged to fact-check/verifications.jsonl)`);
   if (markStatus) console.log(`\nmarked ${marked} item(s) "${markStatus}"${flag("--recheck") ? " as a re-check (logged to fact-check/rechecks.jsonl)" : ""}`);
+  if (uncite){
+    console.log(`\nnarrowed ${narrowed} row(s): ${uncite} removed (logged to fact-check/narrowed.jsonl)`);
+    if (narrowSkipped.length) console.log(`${narrowSkipped.length} left alone:\n  ` + narrowSkipped.join("\n  "));
+  }
   if (dirty && !flag("--update")) console.log("\nThe ledger is out of date: run with --update.");
 }
 if (flag("--check") && !flag("--update") && statusStale()){ console.log("\nfact-check/status.js is out of date: run with --status."); process.exit(1); }

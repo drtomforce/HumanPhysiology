@@ -78,6 +78,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { useEnvProxy, whyFailed } from "./net.mjs";
 import { checkQuote, citeDoi, paperFromUrl } from "./epmc.mjs";
+import { checkPageQuote } from "./pages.mjs";
+/* a look-up's quote against what its link shows: a paper (Europe PMC, PubMed, PMC) or an open textbook page */
+const checkLookup = async (url, quote, id) => (await checkQuote(url, quote, paperIds(id))) ?? (await checkPageQuote(url, quote, sources[id] || {}));
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LEDGER = join(root, "fact-check", "ledger.json");
@@ -192,6 +195,7 @@ function quoteProblem(r){
   if (r.state === "not-verbatim") return `not verbatim (case, spacing or punctuation differ) in ${r.where}; the source has: ${JSON.stringify(r.found)}`;
   if (r.state === "missing") return `not found in ${r.searched}`;
   if (r.state === "wrong-paper") return `wrong paper: ${r.why}`;
+  if (r.state === "wrong-source") return `wrong source: ${r.why}`;
   if (r.state === "retracted") return `the paper is retracted or under an expression of concern: ${r.why}`;
   if (r.state === "error") return `couldn't reach Europe PMC to check it (${r.why}); try again, or --no-quote-check and run --check-quotes later`;
   return null;
@@ -199,7 +203,7 @@ function quoteProblem(r){
 if (lookArgs.length && markStatus && !flag("--no-link-check") && !flag("--no-quote-check")){
   const bad = [];
   for (let i = 0; i < lookArgs.length; i++){
-    const r = await checkQuote(urlArgs[i], squashArg(quoteArgs[i]), paperIds(srcId(lookArgs[i])));
+    const r = await checkLookup(urlArgs[i], squashArg(quoteArgs[i]), srcId(lookArgs[i]));
     const why = quoteProblem(r);
     if (why) bad.push(`--lookup ${lookArgs[i]}: ${why}`);
     else if (r?.state === "unchecked") console.error(`Quote not checked for --lookup ${lookArgs[i]}: ${r.why}. Marking anyway: the excerpt must be from the page you read.`);
@@ -620,18 +624,21 @@ if (flag("--check-quotes")){
   for (const [page, rows] of Object.entries(ledger.pages)) if (selected(page)) for (const [key, row] of Object.entries(rows))
     for (const c of row.src || []) if (typeof c === "object" && keyed(key) && rowOk(row)) todo.push({ page, key, c });
   let checked = 0, other = 0;
-  const bad = [], unchecked = [];
+  const bad = [], unchecked = [], loose = [];
   for (const t of todo){
-    const r = await checkQuote(t.c.url, t.c.quote, paperIds(t.c.id));
+    const r = await checkLookup(t.c.url, t.c.quote, t.c.id);
     if (!r){ other++; continue; }
     checked++;
     const why = quoteProblem(r);
-    if (why) bad.push(`${t.page} ${t.key} (${t.c.id}:${t.c.at}): ${why}\n      quote: ${JSON.stringify(t.c.quote)}\n      url:   ${t.c.url}`);
+    /* not verbatim (case or punctuation only) is a warning here: the passage is there; --mark refuses it for new quotes */
+    if (r.state === "not-verbatim") loose.push(`${t.page} ${t.key} (${t.c.id}): ${why}`);
+    else if (why) bad.push(`${t.page} ${t.key} (${t.c.id}:${t.c.at}): ${why}\n      quote: ${JSON.stringify(t.c.quote)}\n      url:   ${t.c.url}`);
     else if (r.state === "unchecked") unchecked.push(`${t.page} ${t.key} (${t.c.id}): ${r.why}`);
   }
-  console.log(`Quotes: ${todo.length} look-up citation(s) in the selection; ${checked} link to a paper in Europe PMC, PubMed or PMC and were checked, ${other} link elsewhere. ${bad.length} problem(s).`);
+  console.log(`Quotes: ${todo.length} look-up citation(s) in the selection; ${checked} link to a paper (Europe PMC, PubMed, PMC) or an open textbook page (OpenStax, Klabunde, Neuroscience Online) and were checked, ${other} link elsewhere. ${bad.length} problem(s).`);
   if (bad.length) console.log("\n" + bad.join("\n\n"));
-  if (unchecked.length) console.log(`\n${unchecked.length} couldn't be checked (closed full text):\n  ` + unchecked.join("\n  "));
+  if (loose.length) console.log(`\n${loose.length} quote(s) differ from the source only in case, spacing or punctuation (re-cite with the source's wording when the row is next checked):\n  ` + loose.join("\n  "));
+  if (unchecked.length) console.log(`\n${unchecked.length} couldn't be checked (closed full text, or a robot check):\n  ` + unchecked.join("\n  "));
   process.exit(bad.length ? 1 : 0);
 }
 

@@ -7,7 +7,9 @@
    - locate: exact after folding dashes, quotes and spaces; "loose" when only case, spacing or punctuation
      differ (with the source's own wording); nothing for an excerpt that isn't there
    - agrees: a record matches its cite when the cite drops the subtitle, and not when it is another paper
-   - paperFromUrl: which paper (and which text) a Europe PMC, PubMed or PMC link points to; null for other links */
+   - paperFromUrl: which paper (and which text) a Europe PMC, PubMed or PMC link points to; null for other links
+   - pages.mjs: open textbook pages as units (headings, entities, inline tags), quotes across a line break, and a
+     link filed under the wrong source refused before anything is fetched */
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -71,6 +73,28 @@ check(P("https://pubmed.ncbi.nlm.nih.gov/9500320/") === '{"pmid":"9500320","show
 check(P("https://pmc.ncbi.nlm.nih.gov/articles/PMC5723673#sec2") === '{"pmcid":"PMC5723673","shows":"full"}' && P("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5723673/") === '{"pmcid":"PMC5723673","shows":"full"}', "PMC pages, old and new → PMCID, full text");
 check(P("https://europepmc.org/article/MED/1734247") === '{"pmid":"1734247","shows":"full"}', "europepmc.org article page → PMID");
 check(paperFromUrl("https://openstax.org/books/anatomy-and-physiology-2e/pages/10-2-skeletal-muscle") === null && paperFromUrl("https://www.ncbi.nlm.nih.gov/books/NBK279388/") === null, "other links (OpenStax, Bookshelf): not a paper link");
+
+/* open textbook pages (fact-check/pages.mjs) */
+const pg = await import(pathToFileURL(join(dirname(fileURLToPath(import.meta.url)), "..", "fact-check", "pages.mjs")).href);
+const html = `<html><head><script>var x = "not text";</script><style>.a{}</style></head><body><nav><a href="/">Home</a></nav>
+<h2>Cardiac Cycle</h2><p>The SA node fires at 100-110 action potentials (&ldquo;beats&rdquo;) per minute, about 10<sup>5</sup> times a day.</p>
+<p>Extravascular compression during systole affects coronary flow.<br>Therefore, most of the coronary flow occurs during diastole.</p>
+<h3>Phases</h3><ul><li>Diastole: the ventricles are <em>relaxed</em>.</li></ul></body></html>`;
+const pu = pg.pageUnits(html), ptext = pu.map(u => u.text).join(" | ");
+check(!/not text|\.a\{/.test(ptext), "scripts and styles left out of a page", ptext);
+check(pu.some(u => u.where === "Cardiac Cycle" && u.text.includes("(“beats”)")), "named entities (&ldquo;) decoded, units named by their heading", pu);
+check(pu.some(u => u.text.includes("about 105 times")), "inline tags add no space (10<sup>5</sup> → 105)", ptext);
+check(pu.some(u => u.where === "Phases" && u.text === "Diastole: the ventricles are relaxed."), "list items under a later heading", pu);
+check(locate(pu, "during systole affects coronary flow. Therefore, most of the coronary flow").length === 0 &&
+  locate([{ where: "page", text: pu.map(u => u.text).join(" ") }], "during systole affects coronary flow. Therefore, most of the coronary flow")[0]?.how === "exact",
+  "a quote across a line break is found in the page as one run (as checkPageQuote does)");
+check(pg.isPageUrl("https://openstax.org/books/anatomy-and-physiology-2e/pages/19-3-cardiac-cycle") && pg.isPageUrl("https://cvphysiology.com/arrhythmias/a005#:~:text=x") && !pg.isPageUrl("https://en.wikipedia.org/wiki/Heart"),
+  "which pages are read: OpenStax, Klabunde; not others");
+const ws = await pg.checkPageQuote("https://openstax.org/books/anatomy-and-physiology-2e/pages/19-3-cardiac-cycle", "any quote here", { home: "https://cvphysiology.com/" });
+check(ws?.state === "wrong-source", "an OpenStax link filed under Klabunde: wrong source (no fetch needed)", ws);
+const wb = await pg.checkPageQuote("https://openstax.org/books/biology-2e/pages/40-3-mammalian-heart-and-blood-vessels", "any quote here", { home: "https://openstax.org/books/anatomy-and-physiology-2e/pages/1-introduction" });
+check(wb?.state === "wrong-source", "another OpenStax book than the source's: wrong source", wb);
+check((await pg.checkPageQuote("https://www.frontiersin.org/articles/x", "any quote here", {})) === null, "a site this doesn't read: no check (the link rule alone)");
 
 console.log(failed ? `\n${failed} check(s) failed` : "\nAll checks passed");
 process.exit(failed ? 1 : 0);

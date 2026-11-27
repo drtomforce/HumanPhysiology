@@ -1650,7 +1650,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "The retina is actually part of the brain. The optic nerve carries its signals to the back of the brain, where you see. Other nerves move your eyes, change your pupils and focus the lens without you thinking about it.",
    "hs": "Vision uses more of the brain than any other sense. Six cranial nerves serve the eye: II (sight), III, IV and VI (eye movements, and III also the pupil and focus), V (feeling in the cornea) and VII (closing the lids and making tears). Where vision is lost tells a doctor where in the brain a problem is.",
    "college": "The eye is a window on the CNS: papilloedema in raised ICP, optic neuritis in MS, field defects that localise lesions, and pupils that test the brainstem (a dilated unreactive pupil warns of uncal herniation compressing III). Parasympathetic (EW → ciliary ganglion) and sympathetic (T1 → superior cervical ganglion) supplies set pupil and lens.",
-   "phd": "Retinal OCT is being studied as a biomarker of neurodegeneration (thinning of the ganglion cell layer in MS, Parkinson’s and Alzheimer’s disease). The retina’s accessibility makes it the first part of the CNS to receive approved gene and cell therapies."
+   "phd": "Retinal OCT is being studied as a biomarker of neurodegeneration (thinning of the ganglion cell layer in MS, Parkinson’s and Alzheimer’s disease). The retina’s accessibility made it the first part of the CNS to receive an approved gene therapy (voretigene neparvovec for RPE65 retinal dystrophy, 2017), and it is a leading site for trials of cell therapies."
   },
   "endocrine": {
    "ms": "Your eyes tell your body clock when it is day. In the dark, the clock lets a gland in the brain release melatonin, the sleep hormone. Some hormone problems show in the eyes too.",
@@ -1668,7 +1668,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "Your eyes need vitamin A from food to make the pigment for seeing in the dark. It comes from carrots, eggs, liver and green vegetables.",
    "hs": "Vitamin A is absorbed with fat in the gut, stored in the liver and carried to the eye. Without enough, people become night-blind and the cornea dries and scars: vitamin A deficiency still blinds children in some parts of the world. Gut diseases that stop fat absorption can cause it too.",
    "college": "Dietary retinyl esters and β-carotene are absorbed in chylomicrons, stored in hepatic stellate cells and delivered bound to retinol-binding protein and transthyretin; the RPE takes up retinol through STRA6. Fat malabsorption (cystic fibrosis, coeliac disease, bariatric surgery, cholestasis) can cause night blindness.",
-   "phd": "Vitamin A supplementation reduces child mortality as well as xerophthalmia in deficient populations (meta-analysis: Imdad et al. 2022, ~12% lower all-cause mortality). Lutein and zeaxanthin from the diet form the macular pigment; AREDS2 supplements slowed progression to late AMD in people at high risk."
+   "phd": "Vitamin A supplementation reduces child mortality as well as xerophthalmia in deficient populations (meta-analysis: Imdad et al. 2022, ~12% lower all-cause mortality). Lutein and zeaxanthin from the diet form the macular pigment; In people at high risk, the AREDS antioxidant and zinc supplements slowed progression to late AMD, and AREDS2 showed that lutein and zeaxanthin can take the place of the β-carotene in them."
   },
   "urinary": {
    "ms": "The eye makes and drains its own watery fluid, a bit like a small kidney. Some eye drops for glaucoma work on the same chemistry as kidney medicines.",
@@ -1729,7 +1729,7 @@ canvas.trace{ display:block; width:100%; }
      "cataract": 2
     },
     "ms": "A moderate cataract: misty, dim and dazzled, and glasses don’t help. Try replacing the lens.",
-    "college": "Nuclear cataract: scatter and absorption cost ~0.4 logMAR and dim the retinal image; refraction can’t correct it. Phacoemulsification with an IOL restores distance acuity."
+    "college": "Nuclear cataract: scatter and absorption cost ~0.5 logMAR and dim the retinal image; refraction can’t correct it. Phacoemulsification with an IOL restores distance acuity."
    },
    {
     "id": "glaucoma",
@@ -1867,7 +1867,7 @@ canvas.trace{ display:block; width:100%; }
    },
    "lightAge": {
     "ms": "At {age}, rods recover more slowly in the dark: the rod–cone break comes at {brk}.",
-    "college": "Ageing slows rod-mediated dark adaptation (~2 min per decade in the rod recovery rate; Jackson et al. 1999), with a raised floor from a smaller pupil and yellower lens."
+    "college": "Ageing slows rod-mediated dark adaptation: the rods take ~2.8 min longer per decade to come within 0.3 log units of their floor (Jackson et al. 1999), with a raised floor from a smaller pupil and yellower lens."
    },
    "lightCataract": {
     "ms": "The cloudy lens lets less light through, so the eye needs brighter light to see anything.",
@@ -4731,13 +4731,13 @@ const quantum = p => clamp(p.vitA / 100, .05, 1) * (1 - .25 * (p.iol ? 0 : p.cat
    = −log₁₀(10^−cone + 10^−rod), with cone(t) = 3 + 2.2·b·e^(−t/1.5 min) and
    rod(t) = r₀ + 8.2·b·e^(−t/τ), τ = 8 min, b the bleach (1 strong, 0.6 medium, 0.3 weak).
    The rod–cone break comes at ~8–9 min and the rods reach their floor at ~35–40 min (Hecht et al. 1937).
-   Age slows the rods (τ +1.5% a year after 25; Jackson et al. 1999) and raises the floor a little
+   Age slows the rods (τ +1% a year after 25, so the time to within 0.3 log units of the floor grows ~2.7 min a decade; Jackson et al. 1999) and raises the floor a little
    (smaller pupil, yellower lens); vitamin A lack raises and slows the rod branch (night blindness);
    retinitis pigmentosa removes rods; AMD slows rod recovery (Owsley et al.); cataract dims both. */
 const BLEACH = { strong: 1, medium: .6, weak: .3 };
 function darkAdapt(p, bleach){
   const b = BLEACH[bleach], def = 1 - clamp(p.vitA / 100);
-  const tau = 8 * (1 + .015 * Math.max(0, p.age - 25)) * (1 + 2 * def) * (p.amd ? 1.8 : 1);
+  const tau = 8 * (1 + .01 * Math.max(0, p.age - 25)) * (1 + 2 * def) * (p.amd ? 1.8 : 1);
   const r0 = .008 * Math.max(0, p.age - 25) + 3 * def - Math.log10(Math.max(.02, 1 - p.rp / 100)) + .3 * (p.iol ? 0 : p.cataract);
   const c0 = 3 + .3 * def + .3 * (p.iol ? 0 : p.cataract) + (p.amd ? .5 : 0);
   const out = { t: [], th: [], cone: [], rod: [], b };

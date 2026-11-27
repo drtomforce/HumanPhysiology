@@ -9,15 +9,15 @@ When a section is done, replace its plan with a one-line pointer to the README a
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#3-new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 11: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin, eyes | 3 existing organs (ears, throat, spleen & lymph nodes) + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 12: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin, eyes, ears | 2 existing organs (throat, spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 9: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic, muscles & skeleton, skin | 1: reproductive |
 | Journeys ("follow a …") | 9: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step, heat | One per new system, plus cross-system journeys |
-| Prediction questions | 33: three on each of the 11 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
+| Prediction questions | 36: three on each of the 12 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
 | Converging cases (run across pages) | 1: diabetic ketoacidosis | 4: cholera to shock, heart failure, the marathon wall, altitude over weeks |
 
 ## Next up
 
-Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows and its “follow the heat” journey ([2.3](#23-skin-integumentary--done)), and the eyes page ([1.8](#18-eyes-organseyeshtml--done)); next are the ears and throat pages (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows and its “follow the heat” journey ([2.3](#23-skin-integumentary--done)), the eyes page ([1.8](#18-eyes-organseyeshtml--done)) and the ears page ([1.9](#19-ears-organsearshtml--done)); next is the throat page (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -125,11 +125,15 @@ Built; see the README for what it covers. What changed from the plan, and what i
 - **More scenarios**: diabetic retinopathy (shared with the pancreas page), retinal detachment, central retinal artery occlusion, papilloedema (shared with the brain page), a third nerve palsy and Horner's syndrome (pupils), amblyopia, keratoconus, thyroid eye disease and retinopathy of prematurity.
 - **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8f); the PhD and question texts name their key sources, 15 sources were added to `fact-check/sources.json`, and one registry row (pupil, eye pressure, accommodation) was added. The four phase texts are the body view's checked eye texts.
 
-### 1.9 Ears (`organs/ears.html`)
-- **Anatomy**: outer, middle (ossicles, eardrum, Eustachian tube) and inner ear (cochlea, vestibule, semicircular canals), and the organ of Corti.
-- **Hearing**: impedance matching by the ossicles, the travelling wave and tonotopy (play a tone and see where the basilar membrane peaks), and outer hair cells as an amplifier. An audiogram you can take, with a pure-tone test.
-- **Balance**: semicircular canals (rotation) and otoliths (tilt and linear acceleration), the vestibulo-ocular reflex and nystagmus, and motion sickness as a sensory mismatch.
-- **Scenarios**: noise-induced hearing loss, age-related hearing loss, otitis media, otosclerosis, BPPV, Ménière's disease, a cochlear implant.
+### 1.9 Ears (`organs/ears.html`) ✅ Done
+Built; see the README for what it covers. What changed from the plan, and what is still open for this page:
+- **The audiogram is a rule, not a cochlea**: thresholds add up per frequency (ISO 7029 men’s medians for age, a fitted 4 kHz notch for noise combined with age as in ISO 1999, typical shapes for cisplatin, gentamicin and Ménière’s disease, and a share of the amplifier per percent of outer hair cells lost, plus up to 80 dB for inner hair cells), split into outer hair cell loss (up to the amplifier’s gain) and inner hair cell loss beyond it. Women’s ISO 7029 curves, the spread around the medians, hidden hearing loss (synaptopathy, in the text only), temporary threshold shift after a concert, tinnitus and loudness are not modelled. The test is played to the reader frequency by frequency; there is no Hughson–Westlake staircase to run by hand, no masking, and no speech audiometry, otoacoustic emissions or brainstem responses. Only the right ear carries one-sided problems; the left ear follows age, noise and drugs.
+- **The middle ear** uses typical air–bone gaps for each problem and a stiffness rule for pressure behind the drum; there is no impedance model, no tympanogram trace (its type, peak and compliance are readouts), no ossicular discontinuity, cholesteatoma or grommets, and the Eustachian tube doesn’t open or lock with the pressure: the pressure is a slider.
+- **The travelling wave is phenomenological**: a passive envelope plus a compressive Gaussian tip gain at each place on Greenwood’s map, giving a ~40 dB loss and broad tuning without outer hair cells, not a hydromechanical or transmission-line model; the wave’s phase is drawn, not computed. The *Play the tone* button isn’t calibrated, and the page can’t test the reader’s own hearing.
+- **Balance is the horizontal canals**: push–pull afferents with Ewald’s second law, velocity storage, fixation and static and dynamic compensation as rules (constants in `VEST`); the vertical canals appear only as a pulse in the Dix–Hallpike, and the otoliths, the caloric test, VEMPs, the vestibulospinal reflexes and posture (Romberg, falls) are not modelled. Motion sickness is a conflict readout, not a nausea model. No alcohol (positional alcohol nystagmus), cupulolithiasis, horizontal canal BPPV, central (cerebellar or stroke) nystagmus or HINTS.
+- **More scenarios**: sudden sensorineural hearing loss, a vestibular schwannoma (asymmetric loss, absent reflexes), acute otitis media, labyrinthitis, superior canal dehiscence, a perilymph fistula after diving, congenital CMV and newborn screening, a hearing aid (gain and compression), auditory neuropathy (OTOF, with gene therapy) and vestibular migraine.
+- **Not yet built**: sound localisation (interaural time and level differences, the pinna’s cues) as an interactive section, the ascending auditory pathway (shared with the brain page), the head impulse as the VOR’s link to the eyes page, and carrying a condition across to other pages (gentamicin and loop diuretics ↔ the kidneys page, noise and blood pressure ↔ the heart page).
+- **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8g); the PhD and question texts name their key sources, 19 sources were added to `fact-check/sources.json`, and one registry row (hearing and balance) was added. The four phase texts are the body view’s checked ear texts.
 
 ### 1.10 Throat (`organs/throat.html`)
 - **Anatomy**: pharynx, larynx (vocal folds, epiglottis, cartilages), oesophagus, tonsils and adenoids, thyroid and parathyroids nearby.
@@ -281,7 +285,7 @@ These span several organs and are best built as their own pages (for example `ex
 
 ## 6. Questions: predict, then watch ✅ Done (the questions, the hub and the first converging case; four cases still open)
 
-Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all; the skin and eyes pages have since added three more each) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
+Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all; the skin, eyes and ears pages have since added three more each) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
 
 - **Diabetic ketoacidosis runs** ([6.4](#64-converging-cases)) ✅: see the README. The lungs page has a blood-bicarbonate slider in its control section that moves the chemoreflex set point (Winters’ formula for an acidosis, ~0.7 mmHg per mmol/L for an alkalosis) and a *Diabetic ketoacidosis* scenario at HCO₃⁻ 11 mmol/L, the same patient as the pancreas and kidneys pages (PaCO₂ ~24, pH ~7.29). The hub's *Start the case* opens each stop's page on its scenario through `?scenario=`, and the shared engine draws a case strip (stops, back, next, all stops, leave) from the `case`, `ctitle`, `stop` and `route` parameters. What changed from the plan, and what is still open for it:
   - **Each stop applies its own scenario**: nothing is carried from one page to the next. The four scenarios were set to agree (glucose, ketones, bicarbonate, pH), and the registry row in `FACTUAL_CHECK.md` holds them together, but changing a slider on one page doesn't reach the next. Carrying state needs "Changes across pages" ([5](#5-shared-and-supporting-work)).
@@ -328,18 +332,19 @@ Followed. The test, `tests/questions-check.mjs`, checks everything the plan list
 
 - **Predicting a number**: a slider ("GFR will fall to about … mL/min"), judged against the model's result within a margin, with an explanation for each of too high, too low and close.
 - **On the body**: questions on the body view once "Body view scenarios" ([5](#5-shared-and-supporting-work)) exists, so a converging case can end on the whole body with every vital responding.
-- **New pages**: ears, throat and spleen each get a Predict section as they are built (convention 13; the skin and eyes pages have three each), and each new page opens the converging cases that were waiting for it.
+- **New pages**: throat and spleen each get a Predict section as they are built (convention 13; the skin, eyes and ears pages have three each), and each new page opens the converging cases that were waiting for it.
 
 ## Suggested order
 
-Done so far: the kidneys, gut, liver, pancreas, muscles, bones, skin and eyes pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body with its "follow the heat" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
+Done so far: the kidneys, gut, liver, pancreas, muscles, bones, skin, eyes and ears pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body with its "follow the heat" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
 
 1. ~~The first converging case, diabetic ketoacidosis ([6.4](#64-converging-cases)), with the scenarios its stops need.~~ ✅ Done (the heart's low-K⁺ ECG is still open; see [6](#6-questions-predict-then-watch)).
 2. ~~Skin page~~ ✅ Done (see [1.7](#17-skin-organsskinhtml--done) for what is still open on it).
 3. ~~The skin system on the body (heat balance, sweat and skin blood flow; [2.3](#23-skin-integumentary--done))~~ ✅ Done (see 2.3 for what is still open on it).
 4. ~~“Follow the heat” on the body ([2.3](#23-skin-integumentary--done))~~ ✅ Done (see 2.3 for what is still open on it).
 5. ~~Eyes page~~ ✅ Done (see [1.8](#18-eyes-organseyeshtml--done) for what is still open on it).
-6. Ears and throat pages (each page its own task: the ears first).
-7. Endocrine glands, and blood & vessels as new organs with pages.
-8. Reproductive system and organs.
-9. Cross-organ explorations and the extra sections on the heart, lungs and brain.
+6. ~~Ears page~~ ✅ Done (see [1.9](#19-ears-organsearshtml--done) for what is still open on it).
+7. Throat page.
+8. Endocrine glands, and blood & vessels as new organs with pages.
+9. Reproductive system and organs.
+10. Cross-organ explorations and the extra sections on the heart, lungs and brain.

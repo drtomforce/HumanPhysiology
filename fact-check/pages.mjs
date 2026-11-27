@@ -11,7 +11,7 @@ export const isPageUrl = u => { try { return PAGE_HOSTS.has(new URL(u).hostname.
    heading above it, so --find can say where an excerpt is */
 export function pageUnits(html){
   if (!html) return [];
-  const body = html.replace(/<(script|style|noscript|svg|template)\b[\s\S]*?<\/\1>/gi, " ").replace(/<!--[\s\S]*?-->/g, " ");
+  const body = html.replace(/<(script|style|noscript|svg|template)\b[\s\S]*?<\/\1>/gi, " ").replace(/<!--[\s\S]*?-->/g, " ").replace(/<![^>]*>/g, " ");   /* comments, <!DOCTYPE> */
   const out = []; let heading = "page", buf = "";
   const flush = () => { const t = decode(buf.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim(); if (t) out.push({ where: heading, text: t }); buf = ""; };
   for (const m of body.matchAll(/<(\/?)([a-zA-Z][\w-]*)[^>]*>|([^<]+)/g)){

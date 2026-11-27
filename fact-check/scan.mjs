@@ -50,6 +50,10 @@
      node fact-check/scan.mjs --verify <result>   record a verification: confirmed, partial (supports only part of the
          --page --key --cite <id> --by <verifier> row: --note names what it doesn't support), link-broken,
                                                   wrong-locator or not-supported, logged to fact-check/verifications.jsonl
+     node fact-check/scan.mjs --uncite <id>       take a recalled source off the selected rows, where it doesn't bear on
+         --by <who> --note "<why>"                their claim (a blanket citation set applied with --prefix). Status,
+         --key / --keys-from <file> / --prefix    checked date and checker stay; the row's note and narrowed.jsonl record it.
+                                                  Never removes a look-up, never leaves a row citing nothing
      node fact-check/scan.mjs --check-quotes      for every look-up linked to a paper in Europe PMC, PubMed or PMC: is its
                                                   quote in that paper's text, and is it the paper its source id names?
      node fact-check/scan.mjs --check-links       fetch every look-up link in the selection and report dead ones
@@ -79,6 +83,7 @@ const LEDGER = join(root, "fact-check", "ledger.json");
 const SOURCES = join(root, "fact-check", "sources.json");
 const RECHECKS = join(root, "fact-check", "rechecks.jsonl");
 const VERIFICATIONS = join(root, "fact-check", "verifications.jsonl");
+const NARROWED = join(root, "fact-check", "narrowed.jsonl");
 const LINKS = join(root, "fact-check", "links.json");
 const STATUSES = /^(unchecked|ok|fixed|n\/a|issue #\d+)$/;
 
@@ -88,6 +93,9 @@ const flag = f => argv.includes(f);
 const many = f => argv.flatMap((a, i) => a === f && argv[i + 1] != null ? [argv[i + 1]] : []);
 const one = f => many(f)[0];
 const pagesWanted = many("--page"), prefixes = many("--prefix"), keys = many("--key");
+/* --keys-from <file>: exact keys, one per line (blank lines and # comments ignored), added to --key */
+for (const f of many("--keys-from")) keys.push(...readFileSync(f, "utf8").split("\n").map(l => l.replace(/#.*/, "").trim()).filter(Boolean));
+const uncite = one("--uncite");
 const batch = one("--batch"), cites = one("--cites");
 const markStatus = one("--mark"), note = one("--note"), lookArgs = many("--lookup"), memArgs = many("--memory"), viaWanted = one("--via");
 const urlArgs = many("--url"), quoteArgs = many("--quote"), by = one("--by") || process.env.FACT_CHECK_BY;
@@ -136,6 +144,10 @@ if (cited && /^(unchecked|n\/a)$/.test(markStatus)) die(`--mark ${markStatus} ta
 if (markStatus && /^(ok|fixed|issue)/.test(markStatus) && !cited)
   die(`--mark ${markStatus} needs --lookup <id>:<locator> (a source you opened) or --memory <id> (one you recalled); internal:<registry row or key> for a consistency check`);
 if (viaWanted && !/^(lookup|memory|unknown)$/.test(viaWanted)) die("--via: lookup, memory or unknown");
+if (uncite && (markStatus || verifyResult)) die("--uncite goes on its own, not with --mark or --verify");
+if (uncite && !sources[uncite]) die(`--uncite ${uncite}: not in fact-check/sources.json`);
+if (uncite && (!by || !note || (!keys.length && !prefixes.length)))
+  die(`--uncite <id> needs --by <who>, --note "<why it doesn't bear on these rows>" and a selection (--key, --keys-from or --prefix): narrowing is row by row, never a whole page`);
 if (flag("--recheck") && (!markStatus || !keys.length || prefixes.length))
   die("--recheck goes with --mark and --key <exact key> (one or more), not --prefix: re-check items one at a time");
 if (sampleN != null && !(sampleN > 0)) die("--sample: give a positive number");
@@ -327,7 +339,7 @@ function cite(row, keepOld){
 }
 const prefixed = (key, row) => keyed(key) && rowOk(row);
 const days = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5;
-const recheckLog = [], pool = [], verifyLog = [], vpool = [];
+const recheckLog = [], pool = [], verifyLog = [], vpool = [], narrowLog = [], narrowSkipped = [];
 const recheckedToday = new Set();   /* "<page> <key>" already in rechecks.jsonl with today's date */
 let verified = 0;
 
@@ -336,7 +348,7 @@ if (existsSync(RECHECKS)) for (const l of readFileSync(RECHECKS, "utf8").split("
   const e = JSON.parse(l); if (e.date === today) recheckedToday.add(`${e.page} ${e.key}`);
 }
 const report = [];
-let dirty = false, unchecked = 0, marked = 0;
+let dirty = false, unchecked = 0, marked = 0, narrowed = 0;
 
 for (const { id: page, path, engine } of pageFiles()){
   if (!selected(page)) continue;
@@ -395,6 +407,28 @@ for (const { id: page, path, engine } of pageFiles()){
     }
   }
 
+  /* --uncite: take a recalled source off rows it doesn't bear on (a blanket citation set applied with --prefix).
+     A provenance fix, not a re-check: status, checked and by stay; the row's note and fact-check/narrowed.jsonl
+     say who removed what, when and why. A looked-up citation is never removed this way (verification handles
+     those), and a row is never left citing nothing. */
+  if (uncite){
+    for (const [key, row] of Object.entries(ledger.pages[page] || {})){
+      if (!prefixed(key, row) || !items.has(key) || row.hash !== hash(squash(items.get(key)))) continue;
+      const gone = (row.mem || []).filter(m => srcId(m) === uncite);
+      if (!gone.length) continue;
+      if ((row.src || []).some(c => srcId(c) === uncite)){ narrowSkipped.push(`${page} ${key}: ${uncite} is also a look-up citation here; left alone`); continue; }
+      const mem = row.mem.filter(m => srcId(m) !== uncite);
+      if (!mem.length && !(row.src || []).length){ narrowSkipped.push(`${page} ${key}: ${uncite} is its only source; cite a source that bears on it first (--mark … --memory <id>)`); continue; }
+      if (mem.length) row.mem = mem; else delete row.mem;
+      if (row.via) row.via = !mem.length && (row.src || []).length ? "lookup" : "memory";
+      /* one note per checker and day, however many sources they take off */
+      const head = `citation narrowed by ${by}, ${today}: `, item = `${uncite} removed (${note})`;
+      row.note = row.note?.startsWith(head) ? row.note.replace(head, `${head}${item}; `) : head + item + (row.note ? ` | ${row.note}` : "");
+      narrowLog.push({ date: today, page, key, removed: gone, by, note, status: row.status, via: row.via || null });
+      narrowed++;
+    }
+  }
+
   /* ---------- independent verification of look-up citations ---------- */
   for (const [key, row] of Object.entries(ledger.pages[page] || {})){
     if (!items.has(key) || row.hash !== hash(squash(items.get(key))) || !/^(ok|fixed|issue)/.test(row.status)) continue;
@@ -449,10 +483,11 @@ function format(l){
     Object.entries(rows).map(([k, r]) => `   ${JSON.stringify(k)}: ${JSON.stringify(r)}`).join(",\n") + "\n  }").join(",\n");
   return `{\n "version": ${l.version},\n "ignore": {\n${ig}\n },\n "pages": {\n${pg}\n }\n}\n`;
 }
-if ((markStatus || verifyResult) && dirty && !flag("--update"))
+if ((markStatus || verifyResult || uncite) && dirty && !flag("--update"))
   die("The ledger is out of date for the selected pages: run with --update first. Nothing was marked or logged.");
 if (verifyResult && !verified) die(`--verify: no current look-up citation "${citeArg}" on that key (or the row isn't approved)`);
-if (flag("--update") || markStatus || verified) writeFileSync(LEDGER, format(ledger));
+if (flag("--update") || markStatus || verified || narrowed) writeFileSync(LEDGER, format(ledger));
+if (narrowLog.length) appendFileSync(NARROWED, narrowLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 if (verifyLog.length) appendFileSync(VERIFICATIONS, verifyLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 if (recheckLog.length) appendFileSync(RECHECKS, recheckLog.map(r => JSON.stringify(r)).join("\n") + "\n");
 
@@ -522,7 +557,7 @@ function statusJs(){
 }
 const STATUS = join(root, "fact-check", "status.js");
 const statusStale = () => !existsSync(STATUS) || readFileSync(STATUS, "utf8") !== statusJs();
-if ((flag("--update") || markStatus || verified || flag("--status")) && statusStale()) writeFileSync(STATUS, statusJs());
+if ((flag("--update") || markStatus || verified || narrowed || flag("--status")) && statusStale()) writeFileSync(STATUS, statusJs());
 if (flag("--status")){ console.log(`wrote ${STATUS.slice(root.length + 1)}`); process.exit(0); }
 
 /* ---------- random re-check: a uniform sample, so the failure rate estimates the error rate of approvals ---------- */
@@ -662,6 +697,10 @@ if (!flag("--list")){
   report.forEach(r => console.log(line(r)));
   if (verified) console.log(`\nrecorded ${verified} verification(s) "${verifyResult}" (logged to fact-check/verifications.jsonl)`);
   if (markStatus) console.log(`\nmarked ${marked} item(s) "${markStatus}"${flag("--recheck") ? " as a re-check (logged to fact-check/rechecks.jsonl)" : ""}`);
+  if (uncite){
+    console.log(`\nnarrowed ${narrowed} row(s): ${uncite} removed (logged to fact-check/narrowed.jsonl)`);
+    if (narrowSkipped.length) console.log(`${narrowSkipped.length} left alone:\n  ` + narrowSkipped.join("\n  "));
+  }
   if (dirty && !flag("--update")) console.log("\nThe ledger is out of date: run with --update.");
 }
 if (flag("--check") && !flag("--update") && statusStale()){ console.log("\nfact-check/status.js is out of date: run with --status."); process.exit(1); }

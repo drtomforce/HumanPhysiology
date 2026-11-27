@@ -146,7 +146,27 @@ The workflow, now that steps 1–5 are in place:
 
 **What this changes:**
 - **Yield.** The coverage estimate below counts citations, and most are blanket citations. A paper supports perhaps one row in five or ten of those that cite it, and fewer still on its own. Expect tens of look-ups per paper session, not hundreds. The open-textbook route in `improving-lookups.md` (OpenStax, Klabunde) remains the bigger lever.
-- **The blanket citations are a problem in themselves.** A row that cites a myasthenia review for muscle glycogen misstates its own provenance. A verifier or reader following it finds nothing. **Proposed (not done):** when a paper is fetched for step 6, remove it from the rows in its set that it doesn't bear on. Re-mark them with the sources that remain, by `--memory`, with a note that the citation was narrowed. Rows that cite nothing specific to their claim then show up honestly in `--sources`. This rewrites past checkers' citations, so it needs your go-ahead.
+- **The blanket citations are a problem in themselves.** A row that cites a myasthenia review for muscle glycogen misstates where its claim came from, and a verifier or reader following it finds nothing.
+
+**Narrowing the blanket citations ✅ done 2026-11-27, for the six papers above.** There's a new command, `scan.mjs --uncite <id> --by <who> --note "<why>"` with `--key`, `--keys-from` or `--prefix`. It takes a recalled source off the rows it doesn't bear on:
+- **It isn't a re-check:** status, `checked` and `by` stay. The row's note says who removed what and why, and every removal goes into `fact-check/narrowed.jsonl`.
+- **It's refused where it would lose evidence:** it never removes a looked-up citation and never leaves a row citing nothing (both tested).
+- **The rule behind it is now in FACTUAL_CHECK.md:** cite what supports the row, not the section's reading list.
+
+Each row was read and judged against the paper's abstract. A citation came off only where the row clearly makes no claim the paper speaks to; where in doubt, it stayed.
+
+| Paper | Page | Rows citing it | Kept | Removed | Kept on |
+|---|---|---|---|---|---|
+| `daan1984` (two-process model) | brain | 81 | 16 | 65 | sleep pressure and the body clock, Process S in N3, the all-nighter, the model's code (`procS`, `procC`, `WAKE_AT`/`TW`/`TS`, `drawTwo`) |
+| `drachman1994` (myasthenia gravis) | muscles | 132 | 48 | 84 | the myasthenia questions and scenarios, junction safety factor, neostigmine |
+| `coyle1986` (carbohydrate and muscle glycogen) | muscles | 115 | 34 | 81 | the marathon question, glycogen and "the wall", the fuelled and unfuelled marathon scenarios |
+| `schwellnus2009` (cramps) | muscles | 99 | 10 | 89 | the cramp rows |
+| `bergman1979` (minimal model) | pancreas | 79 | 16 | 63 | the minimal model, insulin sensitivity and the insulin-resistance scenarios |
+| `cabrera2006` (human islet layout) | pancreas | 65 | 10 | 55 | islet cell proportions and their arrangement along the capillaries |
+
+437 citations removed. Every narrowed row still cites the textbook (`guyton14`, `boron3`) or the guideline and chapter (`aasm3`, `carskadon2017`) that it was checked against. Next, the same for the other blanket sets that `--sources` and step 6 turn up: `charkoudian2003` (132 rows, skin), `diffey2002` (81) and `gagge1971` (62) are the next by size.
+
+**Found while narrowing: a claim the paper contradicts.** `muscles` `organ-content:alter.scenarios.8.college` says "Loading (~+60% glycogen) and 60 g/h exogenous carbohydrate spare glycogen and liver glycogen", citing `coyle1986`. Its abstract says: "The pattern of muscle glycogen utilization, however, was not different during the first 3 h of exercise with the placebo or the carbohydrate feedings." Carbohydrate maintained blood glucose and carbohydrate oxidation instead. Some running studies do report sparing in type I fibres, but that is recalled, not looked up. So "spare glycogen" should become "maintain blood glucose and carbohydrate oxidation, and spare liver glycogen", or the claim needs a source that supports it. The text is unchanged; this is for whoever checks the muscles page next (or file it as an issue).
 
 ### 7. A stricter verification prompt, and a `partial` result ✅ done 2026-11-27
 - `--verify-sample` prints the prompt below before the sample, and for a paper link, the `fetch.mjs <id> --find` command that counts as opening it:
@@ -203,7 +223,7 @@ These steps need no new hosts: `www.ebi.ac.uk`, `api.crossref.org` and `pmc.ncbi
 | 5 ✅ | The rule in FACTUAL_CHECK.md | done | The nightly checker uses it |
 | 8 ✅ | `--audit` (retractions, metadata, `access`) | done; 15 corrections to read by hand | Catches wrong and retracted citations |
 | 4 ✅ | Excerpt check in `scan.mjs --mark`, and `--check-quotes` | done | Invented quotes refused when written |
-| 6 | Re-cite recalled papers, most-cited first | piloted; ongoing. Narrowing blanket citations needs a decision | The look-up count rises, slowly |
+| 6 | Re-cite recalled papers, most-cited first | piloted; 437 blanket citations narrowed; ongoing | The look-up count rises, slowly, and citations mean what they say |
 | 7 ✅ | Stricter verification prompt, and a `partial` result | done | Fewer excerpts approved for rows they don't support |
 
 Each step should land with a test in `tests/` where it touches `scan.mjs`, like the existing checks.

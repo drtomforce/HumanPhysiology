@@ -47,8 +47,9 @@
                                                   last 60 days
      node fact-check/scan.mjs --verify-sample <n> pick n look-up citations at random for independent verification
          --by <verifier>                          (never one the verifier made themselves)
-     node fact-check/scan.mjs --verify <result>   record a verification: confirmed, link-broken, wrong-locator or
-         --page --key --cite <id> --by <verifier> not-supported, logged to fact-check/verifications.jsonl
+     node fact-check/scan.mjs --verify <result>   record a verification: confirmed, partial (supports only part of the
+         --page --key --cite <id> --by <verifier> row: --note names what it doesn't support), link-broken,
+                                                  wrong-locator or not-supported, logged to fact-check/verifications.jsonl
      node fact-check/scan.mjs --check-quotes      for every look-up linked to a paper in Europe PMC, PubMed or PMC: is its
                                                   quote in that paper's text, and is it the paper its source id names?
      node fact-check/scan.mjs --check-links       fetch every look-up link in the selection and report dead ones
@@ -71,7 +72,7 @@ import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { useEnvProxy, whyFailed } from "./net.mjs";
-import { checkQuote, citeDoi } from "./epmc.mjs";
+import { checkQuote, citeDoi, paperFromUrl } from "./epmc.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LEDGER = join(root, "fact-check", "ledger.json");
@@ -92,7 +93,7 @@ const markStatus = one("--mark"), note = one("--note"), lookArgs = many("--looku
 const urlArgs = many("--url"), quoteArgs = many("--quote"), by = one("--by") || process.env.FACT_CHECK_BY;
 const verifyN = one("--verify-sample") != null ? Number(one("--verify-sample")) : null, verifyResult = one("--verify"), citeArg = one("--cite");
 const squashArg = s => s.replace(/\s+/g, " ").trim();
-const VERIFY_RESULTS = /^(confirmed|link-broken|wrong-locator|not-supported)$/;
+const VERIFY_RESULTS = /^(confirmed|partial|link-broken|wrong-locator|not-supported)$/;
 const sampleN = one("--sample") != null ? Number(one("--sample")) : null;
 const seed = one("--seed") || new Date().toISOString().slice(0, 10);
 const minAge = Number(one("--min-age") ?? 60);
@@ -102,7 +103,7 @@ if ((urlArgs.length && markStatus && !flag("--no-link-check")) || flag("--check-
 
 /* the source registry: every --lookup / --memory must name an id in it */
 const sources = existsSync(SOURCES) ? JSON.parse(readFileSync(SOURCES, "utf8")) : {};
-/* a look-up citation is { id, at, url, quote, by, verified?, verifiedBy? }; a memory citation is "<id>[:<locator>]" */
+/* a look-up citation is { id, at, url, quote, by, verified?, verifiedBy?, partial? }; a memory citation is "<id>[:<locator>]" */
 const srcId = s => typeof s === "string" ? s.split(":")[0] : s.id;
 const srcText = s => typeof s === "string" ? s : `${s.id}:${s.at}`;
 if (many("--source").length) die("--source is gone: use --lookup <id>:<locator> for a source you opened, --memory <id> for one you recalled");
@@ -125,7 +126,8 @@ for (const u of urlArgs){
 }
 for (const q of quoteArgs) if (squashArg(q).length < 8 || squashArg(q).length > 300) die(`--quote: give 8-300 characters copied verbatim from the passage (got ${squashArg(q).length})`);
 if (markStatus && /^(ok|fixed|issue)/.test(markStatus) && !by) die(`--mark ${markStatus} needs --by <who> (or FACT_CHECK_BY): a person's handle or an agent run, e.g. claude-nightly-${new Date().toISOString().slice(0, 10)}`);
-if (verifyResult && !VERIFY_RESULTS.test(verifyResult)) die("--verify: confirmed, link-broken, wrong-locator or not-supported");
+if (verifyResult && !VERIFY_RESULTS.test(verifyResult)) die("--verify: confirmed, partial, link-broken, wrong-locator or not-supported");
+if (verifyResult === "partial" && !note) die(`--verify partial needs --note "<what the excerpt doesn't support>"`);
 if (verifyResult && (!by || !citeArg || keys.length !== 1 || pagesWanted.length !== 1)) die("--verify needs --page <page> --key <key> --cite <source id> --by <verifier>");
 if (verifyN != null && (!(verifyN > 0) || !by)) die("--verify-sample needs a positive number and --by <verifier>, so it can leave out the verifier's own look-ups");
 const cited = lookArgs.length + memArgs.length;
@@ -403,7 +405,12 @@ for (const { id: page, path, engine } of pageFiles()){
       if (verifyResult && keyed(key) && c.id === citeArg){
         if (c.by === by || row.by === by) die(`--verify: ${by} made this check, so can't verify it; verification has to be independent`);
         verifyLog.push({ date: today, page, key, cite: c.id, at: c.at, url: c.url, checkedBy: c.by || row.by || null, by, result: verifyResult, ...(note ? { note } : {}) });
-        if (verifyResult === "confirmed"){ c.verified = today; c.verifiedBy = by; }
+        if (verifyResult === "confirmed" || verifyResult === "partial"){
+          c.verified = today; c.verifiedBy = by;
+          /* partial: the look-up is real and backs part of the row; say which part it doesn't back */
+          if (verifyResult === "partial"){ c.partial = note; row.note = `partial on verification by ${by}, ${today}: ${note}` + (row.note ? ` | ${row.note}` : ""); }
+          else delete c.partial;
+        }
         else {
           /* the look-up can't be reproduced: keep it only as a recollection */
           row.src = row.src.filter(x => x !== c);
@@ -545,6 +552,11 @@ if (verifyN != null){
   for (let i = pick.length - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
   const chosen = pick.slice(0, verifyN);
   console.log(`Verification sample: ${chosen.length} of ${vpool.length} look-up citations not made by ${by} (seed "${seed}", not verified in the last ${minAge} days)\n`);
+  console.log(`For each: open the link, find the excerpt at the locator, read the passage around it, and judge with only the claim and the passage in front of you:
+    List the factual claims in the row. For each, answer SUPPORTED, CONTRADICTED or NOT IN PASSAGE, quoting the sentence
+    that decides it. Flag any mismatch of drug, dose, number, unit, population, direction of effect or structure name.
+  Any CONTRADICTED → not-supported. All SUPPORTED → confirmed. SUPPORTED and NOT IN PASSAGE → partial, with a --note naming
+  the claims the passage doesn't cover. A dead link → link-broken; an excerpt that isn't where the locator says → wrong-locator.\n`);
   for (const { page, key, row, c, text } of chosen){
     const l = links[c.url];
     console.log(`${page} ${key} [${row.status}, checked by ${c.by || row.by || "?"} on ${row.checked}]`);
@@ -553,7 +565,8 @@ if (verifyN != null){
     console.log(`    at:      ${c.at}`);
     console.log(`    link:    ${c.url}${l ? `  (link check ${l.checked}: ${l.state}${l.code ? " " + l.code : ""})` : ""}`);
     console.log(`    excerpt: "${c.quote}"`);
-    console.log(`    record:  node fact-check/scan.mjs --page ${page} --key '${key}' --cite ${c.id} --by ${by} --verify <confirmed|link-broken|wrong-locator|not-supported> [--note "…"]\n`);
+    if (paperFromUrl(c.url)) console.log(`    read:    node fact-check/fetch.mjs ${c.id} --find ${JSON.stringify(c.quote)}   (counts as opening the link)`);
+    console.log(`    record:  node fact-check/scan.mjs --page ${page} --key '${key}' --cite ${c.id} --by ${by} --verify <confirmed|partial|link-broken|wrong-locator|not-supported> [--note "…"]\n`);
   }
   process.exit(0);
 }
@@ -612,8 +625,9 @@ if (flag("--recheck-stats")){
   if (!vlog.length) console.log("  none logged yet.");
   for (const [title, f] of [["checker", e => e.checkedBy || "?"], ["page", e => e.page], ["result", e => e.result]]){
     const g = {};
-    for (const e of vlog){ const k = f(e); (g[k] ||= { n: 0, failed: 0 }).n++; if (e.result !== "confirmed") g[k].failed++; }
-    if (vlog.length) console.log(`  by ${title}:\n` + Object.entries(g).sort().map(([k, v]) => `    ${k.padEnd(28)} ${String(v.n).padStart(4)} verified  ${String(v.failed).padStart(3)} failed  ${(100 * v.failed / v.n).toFixed(0).padStart(3)}%`).join("\n"));
+    /* partial is not a failure: the look-up is real, it just backs less than the whole row */
+    for (const e of vlog){ const k = f(e); const x = (g[k] ||= { n: 0, failed: 0, partial: 0 }); x.n++; if (e.result === "partial") x.partial++; else if (e.result !== "confirmed") x.failed++; }
+    if (vlog.length) console.log(`  by ${title}:\n` + Object.entries(g).sort().map(([k, v]) => `    ${k.padEnd(28)} ${String(v.n).padStart(4)} verified  ${String(v.failed).padStart(3)} failed  ${(100 * v.failed / v.n).toFixed(0).padStart(3)}%${v.partial ? `  (${v.partial} partial)` : ""}`).join("\n"));
   }
   process.exit(0);
 }

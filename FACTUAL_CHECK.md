@@ -107,7 +107,7 @@ A small Node script, `fact-check/scan.mjs`, keeps the ledger up to date. Like `t
 2. Check the unchecked items, using the [method](#method) below. Work through new pages and systems first, then the edited strings.
 3. Fix or file each finding (see [Recording findings](#recording-findings)), and set each row's status, date and sources.
 4. Re-check 10 approved items: `node fact-check/scan.mjs --sample 10 --seed <today>` (see [Random re-checks](#random-re-checks)).
-5. Run `node fact-check/scan.mjs --sources`, `--check-links` and `--check-quotes`, and deal with anything they flag. Once a month, also run `node fact-check/fetch.mjs --audit --cites-only` for new retractions and corrections of cited papers.
+5. Run `node fact-check/scan.mjs --sources`, `--check-links` and `--check-quotes`, and deal with anything they flag. Once a month, also run `node fact-check/fetch.mjs --audit --cites-only` for new retractions and corrections of cited papers; `--write-access` fills in `access` for papers added since.
 6. Separately, and not by whoever did steps 2–4: verify 10 look-up citations (see [Independent verification](#independent-verification)).
 7. Update the [status table](#status).
 
@@ -151,7 +151,7 @@ Every correction has to say where the right value came from, so that a later rea
 - **`kind`** is `textbook`, `guideline`, `review`, `primary` or `internal`. Prefer them in that order for settled physiology; for clinical thresholds the current guideline wins over a textbook.
 - **`access`** says whether a verifier can follow a link into the source:
   - `open`: free online, so anyone can follow the link;
-  - `subscription`: online behind a login (ClinicalKey, AccessMedicine, a journal), so the link works for a verifier with access;
+  - `subscription`: online behind a login (ClinicalKey, AccessMedicine, a journal), so the link works for a verifier with access. For a paper, it also means "not free in Europe PMC": `fetch.mjs --audit --write-access` sets `open` or `subscription` from Europe PMC, and a script can't see past publishers' robot checks to find papers that are free on the journal's own site. Change it to `open` when you find one;
   - `print`: only on paper, so there is no link to the passage;
   - `none`: no copy available.
 
@@ -221,17 +221,22 @@ Random [re-checks](#random-re-checks) ask "is this claim right?". Verification a
 
 - **Independent** means the verifier is not whoever made the look-up or set the row's status: the script refuses a `--by` that matches either. An AI verifier must run in a fresh session, with no access to the checker's conversation, and record itself under its own run name (for example `claude-verify-2027-01-09`). The person or agent who checks content is never the only one who verifies it.
 - **Every run**, verify 10 citations: `node fact-check/scan.mjs --verify-sample 10 --by <verifier> --seed <today>`. The pick is uniform over look-up citations on current, approved rows that the verifier didn't make and that haven't been verified in the last 60 days. For each one it prints the claim, the full citation, the locator, the link (with its last link check) and the excerpt.
-- **For each citation**, open the link (don't search for the source some other way first), find the excerpt at the locator, and decide whether it supports the claim as written. For a link to a paper in Europe PMC, PubMed or PMC, `node fact-check/fetch.mjs <id> --find "<excerpt>"` counts as opening it: it reads the same record and says where the excerpt is. Read the passage around it before deciding. Then record the result:
+- **For each citation**, open the link (don't search for the source some other way first), find the excerpt at the locator, and decide whether it supports the claim as written. For a link to a paper in Europe PMC, PubMed or PMC, `node fact-check/fetch.mjs <id> --find "<excerpt>"` counts as opening it: it reads the same record and says where the excerpt is. Read the passage around it, then judge with only the claim and the passage in front of you:
+
+  > List the factual claims in the row. For each, answer SUPPORTED, CONTRADICTED or NOT IN PASSAGE, quoting the sentence that decides it. Flag any mismatch of drug, dose, number, unit, population, direction of effect or structure name.
+
+  Any CONTRADICTED claim makes the citation `not-supported`; all SUPPORTED makes it `confirmed`; a mix of SUPPORTED and NOT IN PASSAGE makes it `partial`. `--verify-sample` prints this prompt. Then record the result:
   `node fact-check/scan.mjs --page <page> --key <key> --cite <id> --by <verifier> --verify <result> [--note "…"]`.
 
 | Result | Meaning | What happens to the row |
 |---|---|---|
 | `confirmed` | The link works, the excerpt is at the locator, and it supports the claim. | The citation gets `verified` and `verifiedBy`. |
+| `partial` | As for `confirmed`, but the passage supports only some of the row's claims and says nothing against the rest. Needs a `--note` naming what it doesn't cover. | As for `confirmed`, and the citation gets `partial` (the note), which is added to the row's note too. Not a failure: the rest of the row stands on its other sources, or is the next thing to look up. |
 | `link-broken` | The link is dead, or leads somewhere else. | The citation moves to `mem`, so the row becomes `via: memory`. The status stays. |
 | `wrong-locator` | The link works, but the excerpt isn't where the locator says, or isn't in the source at all. | As for `link-broken`, with the verifier's note. |
 | `not-supported` | The excerpt is there but doesn't support the claim. | As for `link-broken`, and the row goes back to `unchecked` (its old status in `was`) to be checked again. |
 
-- Every result goes into `fact-check/verifications.jsonl`. `--recheck-stats` gives failure rates by checker. A checker with more than one failure in 10 verified citations, or any excerpt that isn't in the source at all, has all their look-ups verified (`--verify-sample` with `--cites`, `--batch`, or a large `n`) before they record more.
+- Every result goes into `fact-check/verifications.jsonl`. `--recheck-stats` gives failure rates by checker (`partial` is counted, but not as a failure). A checker with more than one failure in 10 verified citations, or any excerpt that isn't in the source at all, has all their look-ups verified (`--verify-sample` with `--cites`, `--batch`, or a large `n`) before they record more.
 
 Where the id appears:
 - the ledger row's `src` or `mem` (`--mark … --lookup <id>:<locator>` or `--memory <id>`);

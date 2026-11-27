@@ -11,7 +11,7 @@
      node fact-check/fetch.mjs <source id> --find "<excerpt>"   (repeatable) is the excerpt in the abstract, or in the
                                                         open full text? Prints where, and the --lookup, --url and --quote
                                                         to give scan.mjs. Exit 1 if any excerpt isn't there verbatim
-     node fact-check/fetch.mjs --audit [--cites-only]   every paper in sources.json with a PMID, DOI or PMCID: does its
+     node fact-check/fetch.mjs --audit [--cites-only] [--write-access]   every paper in sources.json with a PMID, DOI or PMCID: does its
          [--id <source id>] (repeatable)                record match the cite, has it been retracted or corrected, and is
                                                         its "access" right? --cites-only: only papers the ledger cites.
                                                         Exit 1 if a cited paper is retracted or under an expression of concern
@@ -26,6 +26,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { useEnvProxy } from "./net.mjs";
+import { openSources } from "./sources-file.mjs";
 import { recordFor, fullTextXML, abstractUnits, fullTextUnits, locate, notices, agrees, access, abstractUrl, fullTextUrl, readingUrls, citeDoi } from "./epmc.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,7 +67,7 @@ if (flag("--audit")){
   await Promise.all([1, 2, 3].map(async () => { while (next < todo.length){ const s = todo[next++];
     try { const r = await recordFor(s.ids, maxAge); res.set(s.id, { r, n: await notices(r, r?.doi || s.ids.doi, maxAge) }); }
     catch (e){ res.set(s.id, { err: e.message }); } } }));
-  const serious = [], minor = [], mismatch = [], missing = [], accessFix = [], errors = [];
+  const serious = [], minor = [], mismatch = [], missing = [], accessFix = [], errors = [], accessSet = {};
   for (const s of todo){
     const { r, n = [], err } = res.get(s.id), used = cites[s.id] ? ` (cited by ${cites[s.id]} row(s))` : " (not cited)";
     if (err){ errors.push(`${s.id}: ${err}`); continue; }
@@ -78,16 +79,22 @@ if (flag("--audit")){
        free in Europe PMC may still be free on the publisher's site, so "open" is left alone */
     const acc = access(r), should = acc.free ? "open" : "subscription";
     if (!s.accessField || (acc.free && s.accessField !== "open"))
-      accessFix.push(`${s.id}: "access" is ${s.accessField || "not set"}; Europe PMC says ${acc.free ? "free to read" + (acc.openSubset ? " (open-access subset)" : "") : "not free to read there"} → "${should}"`);
+    { accessFix.push(`${s.id}: "access" is ${s.accessField || "not set"}; Europe PMC says ${acc.free ? "free to read" + (acc.openSubset ? " (open-access subset)" : "") : "not free to read there"} → "${should}"`);
+      accessSet[s.id] = should; }
   }
   const show = (title, list) => { if (list.length) console.log(`\n${title} (${list.length}):\n  ` + list.join("\n  ")); };
   show("RETRACTED, WITHDRAWN OR UNDER AN EXPRESSION OF CONCERN: re-check every row that cites these", serious);
   show("Corrections, errata and unconfirmed notices: check they don't touch what the rows cite", minor);
   show("Record doesn't match the cite: a wrong identifier or a mixed-up citation", mismatch);
   show("Not found", missing);
-  show("\"access\" to set (fill it in by hand; a paper not free in Europe PMC may still be free on the publisher's site, so check before writing \"subscription\")", accessFix);
+  show(`"access" to set${flag("--write-access") ? " (written)" : " (--write-access writes them)"}: "subscription" means not free in Europe PMC; the publisher's site may still have it free, which a script can't see past its robot check`, accessFix);
   show("Errors (try again later)", errors);
-  console.log(`\n${todo.length} audited: ${serious.length} serious notice(s), ${minor.length} correction(s), ${mismatch.length} mismatch(es), ${missing.length} not found, ${accessFix.length} access to check, ${errors.length} error(s).`);
+  console.log(`\n${todo.length} audited: ${serious.length} serious notice(s), ${minor.length} correction(s), ${mismatch.length} mismatch(es), ${missing.length} not found, ${accessFix.length} access to set, ${errors.length} error(s).`);
+  if (flag("--write-access")){
+    const file = openSources();
+    for (const [id, v] of Object.entries(accessSet)) file.set(id, { access: v }, { overwrite: true });
+    console.log(`Wrote "access" for ${file.save()} source(s) to fact-check/sources.json.`);
+  }
   process.exit(serious.some(x => !/\(not cited\)/.test(x)) ? 1 : 0);
 }
 

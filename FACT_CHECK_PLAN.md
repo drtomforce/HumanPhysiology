@@ -132,29 +132,54 @@ Added to FACTUAL_CHECK.md:
 - **[Links](FACTUAL_CHECK.md#links)**: how the quote check at `--mark` works.
 - **[Independent verification](FACTUAL_CHECK.md#independent-verification)**: for a paper link, `fetch.mjs <id> --find` counts as opening the link.
 
-### 6. Turn recalled paper citations into look-ups
-Use the same approach as step 1 of `improving-lookups.md`, but for papers.
-- List them: `node fact-check/scan.mjs --via memory --cites <id> --list --all`, for paper sources in order of how many rows cite them. Among those already fetchable, the top are `daan1984` (82 citations), `bergman1979` (81) and `cabrera2006` (66). After step 2, `charkoudian2003`, `drachman1994`, `coyle1986` and `schwellnus2009` join them, with about 100 each.
-- Fetch each paper once, then re-mark only the rows its abstract or full text actually supports, each with its own excerpt.
-- Where a row also cites a recalled textbook, keep it as `--memory` unless the paper alone fully supports the row. The row stays `memory` until the [open policy question](fact-check/improving-lookups.md#open-policy-question) is settled.
+### 6. Turn recalled paper citations into look-ups — piloted 2026-11-27; ongoing
+The workflow, now that steps 1–5 are in place:
+1. List a paper's rows: `node fact-check/scan.mjs --via memory --cites <id> --list --all --full`.
+2. Read the paper: `node fact-check/fetch.mjs <id>` (add `--full` if it's open access).
+3. For each row the paper actually bears on, confirm the excerpt with `fetch.mjs <id> --find "<excerpt>"`. Then re-mark the row with the `--lookup … --url … --quote …` it prints, plus `--memory` for whatever the excerpt doesn't cover. `--mark` re-checks the quote itself.
+4. Where a row also cites a recalled textbook, keep it as `--memory` unless the paper alone fully supports the row. The row stays `memory` until the [open policy question](fact-check/improving-lookups.md#open-policy-question) is settled.
 
-**Expected yield**: see [Coverage](#coverage-of-the-recalled-papers) below. Realistically, only part of each paper's rows will be supported by its abstract alone.
+**Pilot on `daan1984`** (the two-process sleep model; 82 recalled citations, the most-cited fetchable paper):
+- **All 82 rows are on the brain page's sleep section, and 81 cite the same three sources** (`daan1984`, `aasm3`, `carskadon2017`): a whole-section citation set, applied with `--prefix`. Most of those rows are about sleep stages, spindles, REM or adenosine, which this paper doesn't address.
+- **The abstract bears on 2 rows.** `sections.sleep.procNote.college` (the S thresholds) is now re-marked by look-up: the excerpt matched and `--mark`'s quote check passed. Its second sentence (the evening wake maintenance zone) isn't in the abstract, so it stays `--memory` (`carskadon2017`), and the row stays `via: memory`. `stages.n3.phd` (slow-wave activity as the marker of Process S) is only loosely backed: the abstract says S's time constants were derived from EEG power density.
+- **The same pattern on the other most-cited papers.** On the muscles page, 97 rows cite `drachman1994` (a myasthenia gravis review), `coyle1986` (glycogen), `schwellnus2009` (cramps) and `guyton14` together. Only 22 of `drachman1994`'s 132 rows mention its topic, and 10 of `bergman1979`'s 81 (the minimal model, on the pancreas page).
 
-### 7. A judge pass for excerpts (with verification)
-The independent verifier already asks "does this excerpt support the claim?". Make the question stricter and the same every time, with this prompt, given only the claim (the row's text) and the fetched passage:
+**What this changes:**
+- **Yield.** The coverage estimate below counts citations, and most are blanket citations. A paper supports perhaps one row in five or ten of those that cite it, and fewer still on its own. Expect tens of look-ups per paper session, not hundreds. The open-textbook route in `improving-lookups.md` (OpenStax, Klabunde) remains the bigger lever.
+- **The blanket citations are a problem in themselves.** A row that cites a myasthenia review for muscle glycogen misstates its own provenance. A verifier or reader following it finds nothing. **Proposed (not done):** when a paper is fetched for step 6, remove it from the rows in its set that it doesn't bear on. Re-mark them with the sources that remain, by `--memory`, with a note that the citation was narrowed. Rows that cite nothing specific to their claim then show up honestly in `--sources`. This rewrites past checkers' citations, so it needs your go-ahead.
 
-> List the factual claims in the row. For each one, answer SUPPORTED, CONTRADICTED or NOT IN PASSAGE, quoting the sentence that decides it. Flag any mismatch of drug, dose, number, unit, population, direction of effect or structure name.
+### 7. A stricter verification prompt, and a `partial` result ✅ done 2026-11-27
+- `--verify-sample` prints the prompt below before the sample, and for a paper link, the `fetch.mjs <id> --find` command that counts as opening it:
 
-- Any CONTRADICTED claim → `not-supported`, as now.
-- All SUPPORTED → `confirmed`.
-- A mix of SUPPORTED and NOT IN PASSAGE → `confirmed`, with a note naming the unsupported part. Most verifications already end with "backs only part of its row". If this is common, consider a `partial` result in `scan.mjs`, so partial support can be counted, not only described.
-- The judge must run in a fresh session, as verification does now. A checker grading its own excerpt isn't independent.
+  > List the factual claims in the row. For each one, answer SUPPORTED, CONTRADICTED or NOT IN PASSAGE, quoting the sentence that decides it. Flag any mismatch of drug, dose, number, unit, population, direction of effect or structure name.
 
-### 8. A one-off audit of the paper sources
-Run `node fact-check/fetch.mjs --audit` once, then monthly next to `--check-links`:
-- **Retractions and expressions of concern**: none should be cited as support. If one is, re-check its rows.
-- **Metadata mismatches**: the `cite` string's title, first author, year and journal compared with Crossref. A mismatch means a wrong DOI or a mixed-up citation, and every row citing that id needs a look.
-- **Fill `access`**: 143 sources have no `access` recorded. Europe PMC settles it for papers: `open` if its full text is free to read there (`inEPMC`), otherwise `subscription`. In the test, 7 of these were open and 111 closed.
+- Any CONTRADICTED → `not-supported`. All SUPPORTED → `confirmed`. A mix of SUPPORTED and NOT IN PASSAGE → the new **`partial`** result. It needs a `--note` naming what the passage doesn't cover. The citation counts as verified (it gets `verified`, `verifiedBy` and `partial`), the note is added to the row, and `--recheck-stats` counts it separately, not as a failure.
+- The judge still runs in a fresh session, as verification does now.
+- FACTUAL_CHECK.md's [Independent verification](FACTUAL_CHECK.md#independent-verification) has the prompt and the new row in the results table. Tested on a copy of the repo: refused without a note, recorded with one, and counted apart in the stats.
+
+### 8. An audit of the paper sources ✅ done 2026-11-27 (monthly from now on)
+- **Retractions and expressions of concern**: none on a cited paper (see step 3; the `livingston2020` notice is a publisher's metadata error).
+- **Metadata mismatches**: none.
+- **`access`**: `fetch.mjs --audit --write-access` set it for 148 papers from Europe PMC: `open` for the 49 free to read there (10 of them had been marked `subscription`), and `subscription` for the 99 that aren't. A script can't see past the publishers' robot checks: `journals.physiology.org` serves a Cloudflare challenge. So FACTUAL_CHECK.md now says `subscription`, for a paper, means "not free in Europe PMC"; change it to `open` when a paper turns out to be free on the journal's site. The 5 sources with no identifier were set by hand: `cdc-flu-ve` and `who2018-noise` `open` (free web pages), `acsm11` and `ansi-s36` `subscription` (sold online), `janeway10` `print` (the 10th edition has no linkable online text, unlike the open 5th on Bookshelf). Every source now has an `access`.
+- **Corrections to read by hand.** 15 cited papers have a published correction. None of the erratum texts is in Europe PMC, and the publishers' pages can't be fetched from here (WebFetch failed on `doi.org` as well), so these need a person with a browser. Each needs a check that the correction doesn't touch what its rows cite:
+
+| Paper | Correction | Rows that cite it |
+|---|---|---|
+| `esh2023` | J Hypertens 2024;42(1):194 | body: `systems.circulatory.phases.sleep.phd`, `topics.heart.phases.sleep.college` |
+| `sjoding2020` | N Engl J Med 2021;385(26):2496 | lungs: `lens.integumentary.phd`; skin: `lens.respiratory.{ms,hs,college,phd}` |
+| `pivkin2016` | PNAS 2017;114(22):E4521 | body: `systems.immune.pins.4.phd`, `topics.spleen.phases.rest.{ms,hs,college,phd}` |
+| `dutoit2015` | N Engl J Med 2016;375(4):398 | skin: `lens.digestive.{ms,hs,college,phd}` |
+| `slominski2000` | Endocr Rev 2002;23(3):364 | skin: `lens.endocrine.{ms,college,phd}` |
+| `williams2016` | Cell 2025 (S0092-8674(25)00631-2) | body: `impulse.stops.gutAfferent.phd`, `systems.nervous.phases.meal.phd` |
+| `herold2019` | N Engl J Med 2020;382(6):586 | pancreas: `lens.immune.phd` |
+| `mcdonald2021` | Cell 2021;184(7):1940 | bones: `parts.osteoclast.phd` |
+| `cummings2009` | N Engl J Med 2009;361(19):1914 | bones: `sections.remodelling.intro.phd` |
+| `janssen2000` | J Appl Physiol 2014;116(10):1342 | muscles: `lens.reproductive.college` |
+| `livingston2020` | Lancet 2023;402(10408):1132 | ears: `lens.nervous.phd` |
+| `agrawal2009` | Arch Intern Med 2009;169(15):1419 | ears: `lens.musculoskeletal.phd` |
+| `hofer2005` | J Neurosci 2006;26(2):722 | eyes: `parts.cone.phd` |
+| `muller2003` | Exp Eye Res 2003;77(2):253 | eyes: `parts.cornea.phd` |
+| `russell2017` | Lancet 2017;390(10097):848 | eyes: `parts.rpe.phd` |
 
 ### 9. Network
 These steps need no new hosts: `www.ebi.ac.uk`, `api.crossref.org` and `pmc.ncbi.nlm.nih.gov` are already allowed in the `humanphysiology` environment. Add hosts only when a step needs them:
@@ -176,10 +201,10 @@ These steps need no new hosts: `www.ebi.ac.uk`, `api.crossref.org` and `pmc.ncbi
 | 2 ✅ | `doi` / `pmid` in `sources.json` | done | Everything below; 1,917 more citations fetchable |
 | 3 ✅ | `fetch.mjs` with cache, retries, `--find` and `--audit` | done | Paper look-ups in one command |
 | 5 ✅ | The rule in FACTUAL_CHECK.md | done | The nightly checker uses it |
-| 8 | `--audit` (retractions, metadata, `access`) | an hour | Catches wrong and retracted citations |
+| 8 ✅ | `--audit` (retractions, metadata, `access`) | done; 15 corrections to read by hand | Catches wrong and retracted citations |
 | 4 ✅ | Excerpt check in `scan.mjs --mark`, and `--check-quotes` | done | Invented quotes refused when written |
-| 6 | Re-cite recalled papers, most-cited first | ongoing, nightly quota | The look-up count rises |
-| 7 | Stricter verification prompt, maybe a `partial` result | an hour | Fewer excerpts approved for rows they don't support |
+| 6 | Re-cite recalled papers, most-cited first | piloted; ongoing. Narrowing blanket citations needs a decision | The look-up count rises, slowly |
+| 7 ✅ | Stricter verification prompt, and a `partial` result | done | Fewer excerpts approved for rows they don't support |
 
 Each step should land with a test in `tests/` where it touches `scan.mjs`, like the existing checks.
 
@@ -199,4 +224,4 @@ Test run on 2026-11-27: every recalled paper, review and guideline in the ledger
 - **Not found** (check the DOIs): `sawka2012` (`10.1113/expphysiol.2011.061026`) and `coyle2001` (`10.1249/00003677-200104000-00009`). Either could be a wrong DOI in `sources.json`, which is what the audit (step 8) is for.
 - **No abstract** (16): mostly old papers (`saltin1968`, `nadel1971`, `rowell1974`, `albert1967`, `dimagno1973`), plus reports and commissions (`kdigo2024`, `livingston2020`, `livingston2024`) and `krammer2018`. These need the full text or stay `--memory`.
 - **Free to read is not always machine-readable.** Only 15 of the 63 are in the open-access subset that `fullTextXML` serves; for the rest, the PMC page has the text, and WebFetch may meet a robot check.
-- **Yield.** Up to about 1,000 recalled citations can be checked against an abstract today, and about 1,900 more once step 2 finds identifiers. How many become look-ups depends on how many rows the abstract alone supports. Physiology rows often cite a paper for a single number, so expect well under half. Even so, that is several times the 131 rows looked up so far.
+- **Yield.** Up to about 1,000 recalled citations can be checked against an abstract today, and about 1,900 more once step 2 finds identifiers. How many become look-ups depends on how many rows the abstract alone supports. Physiology rows often cite a paper for a single number, so expect well under half. **The step 6 pilot puts it much lower**: most of these citations are whole-section citation sets, and a paper bears on roughly one in five to ten of the rows that cite it.

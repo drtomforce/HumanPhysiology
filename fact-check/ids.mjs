@@ -17,13 +17,10 @@
    Untouched lines of sources.json are kept byte for byte. Needs network access to www.ebi.ac.uk and
    api.crossref.org; behind an HTTPS proxy it re-runs itself with Node using it (fact-check/net.mjs).
    No dependencies. */
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { useEnvProxy } from "./net.mjs";
+import { openSources } from "./sources-file.mjs";
 import { getJSON, search as epmcSearch, norm, agrees, citeDoi, surname } from "./epmc.mjs";
 
-const SOURCES = join(dirname(fileURLToPath(import.meta.url)), "sources.json");
 const argv = process.argv.slice(2);
 const flag = f => argv.includes(f);
 const ids = argv.flatMap((a, i) => a === "--id" && argv[i + 1] ? [argv[i + 1]] : []);
@@ -33,16 +30,9 @@ useEnvProxy();
 
 const epmc = q => epmcSearch(q, "lite", 5);
 
-/* ---------- sources.json, line by line, so untouched lines stay as they are ---------- */
-const raw = readFileSync(SOURCES, "utf8"), lines = raw.split("\n"), sources = JSON.parse(raw), at = {};
-lines.forEach((l, i) => { const m = l.match(/^ ("[^"]+"): \{/); if (m) at[JSON.parse(m[1])] = i; });
-const fmtEntry = (id, v, comma) => ` ${JSON.stringify(id)}: {${Object.entries(v).map(([k, x]) => `${JSON.stringify(k)}: ${JSON.stringify(x)}`).join(", ")}}${comma ? "," : ""}`;
-function setIds(id, add){
-  const v = sources[id]; let changed = false;
-  for (const [k, x] of Object.entries(add)) if (x && v[k] !== x){ if (v[k]) throw new Error(`${id}: ${k} is ${v[k]} in sources.json, Europe PMC says ${x}: settle it by hand`); v[k] = x; changed = true; }
-  if (changed) lines[at[id]] = fmtEntry(id, v, lines[at[id]].trimEnd().endsWith(","));
-  return changed;
-}
+/* ---------- sources.json, edited so untouched lines stay as they are ---------- */
+const file = openSources(), sources = file.sources;
+const setIds = (id, add) => file.set(id, add);
 
 const PAPERS = new Set(["primary", "review", "guideline"]);
 const todo = Object.entries(sources).filter(([id, s]) => PAPERS.has(s.kind) && (!ids.length || ids.includes(id)));
@@ -106,7 +96,6 @@ const count = f => rows.filter(f).length;
 console.log(`\n${rows.length} papers, reviews and guidelines: ${count(r => !r.note)} matched in Europe PMC (${count(r => r.pmid)} with a PMID, ${count(r => r.pmcid)} with a PMCID), ${count(r => r.note === "no DOI or PMID")} with no DOI or PMID (try --search), ${problems.length} to look at.`);
 if (problems.length) console.log("\nTo look at:\n  " + problems.join("\n  "));
 if (write){
-  if (changedN) writeFileSync(SOURCES, lines.join("\n"));
-  JSON.parse(readFileSync(SOURCES, "utf8"));
+  file.save();
   console.log(`\nWrote identifiers for ${changedN} source(s) to fact-check/sources.json.`);
 }

@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# fact-check API responses (fact-check/fetch.mjs): abstracts and full texts, never committed
+fact-check/cache/

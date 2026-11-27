@@ -82,21 +82,33 @@ Found along the way:
 - **`hofstetter1950`** (Optom World 1950) stays without one; the 1947 *Am J Optom* abstract with the same title is a different publication.
 - The 20 with no identifier, which no API covers: `acsm11`, `ada2026` (a whole supplement, no single DOI), `aasm3`, `cdc-flu-ve`, `gold2027`, `rinzel1989`, `who2006`, `jbds-dka2023`, `gagge1971` (ASHRAE Trans.), `weinstein1968`, `sacn2016`, `nnbc2012`, `hofstetter1950`, `iso7029`, `iso1999`, `bsa2018`, `cnawr2005`, `nice-ng233`, `who2018-noise`, `ansi-s36`.
 
-### 3. A fetch helper: `fact-check/fetch.mjs`
-A small script with no dependencies, like `scan.mjs`, that the checker runs before marking a row:
+### 3. A fetch helper: `fact-check/fetch.mjs` ✅ done 2026-11-27
+A script with no dependencies, like `scan.mjs`, that the checker runs before marking a row. The Europe PMC and Crossref code is in `fact-check/epmc.mjs`, shared with `ids.mjs` (and step 4).
 
 ```
-node fact-check/fetch.mjs <source id>                 # metadata, abstract, open-access status, retraction flag
-node fact-check/fetch.mjs <source id> --full          # also the full text, if open access
-node fact-check/fetch.mjs <source id> --find "<excerpt>"   # is this excerpt verbatim in the fetched text?
-node fact-check/fetch.mjs --audit [--cites-only]      # every paper in sources.json: metadata and retractions
+node fact-check/fetch.mjs <source id>                      # record, match with the cite, notices, links to cite, abstract
+node fact-check/fetch.mjs <source id> --full               # … and the full text, if open access, with a locator per paragraph
+node fact-check/fetch.mjs <source id> --find "<excerpt>"   # is it there? prints the --lookup/--url/--quote for scan.mjs
+node fact-check/fetch.mjs --audit [--cites-only] [--id …]  # every paper: retractions, corrections, mismatches, access
 ```
 
-- **Order of lookup**: Europe PMC by PMID, then by DOI (`/search?query=DOI:"…"&resultType=core`). Full text from `/{PMCID}/fullTextXML` when `isOpenAccess` is `Y`.
-- **The link to record**: the Europe PMC REST URL by PMID, the form the ledger already uses (`…/rest/search?query=EXT_ID:<pmid>%20AND%20SRC:MED&resultType=core&format=json`). For full text, the `pmc.ncbi.nlm.nih.gov/articles/PMC…/` page with a section anchor, so a person can follow it. The script prints both.
-- **Cache** the responses in `fact-check/cache/` (git-ignored), so a verifier re-reads the same text without fetching it again. Don't commit abstracts or full texts: the ledger keeps only the short excerpt, as now.
-- **Be polite**: one request at a time, retries with backoff on 429, 500 and 503, and a `User-Agent` naming the project and its repository URL. Never send a personal email address (Crossref's "polite pool" asks for one; use a project address or leave it out).
-- **Strip markup** before `--find`: abstracts carry `<h4>`, `<i>` and `<sup>` tags, and full text is JAT XML. Normalise whitespace and Unicode (dashes, µ, ±) on both sides.
+A `<source id>` can also be `PMID:<n>`, `DOI:<doi>` or `PMC<n>`, to read a paper before adding it to `sources.json`.
+
+How it works, and where it differs from the plan above:
+- **Lookup order**: PMID, then DOI, then PMCID. Full text comes from `/{PMCID}/fullTextXML`, which answers only for Europe PMC's open-access subset (`isOpenAccess`). For a paper that is free to read but outside the subset, the script says so and gives the reading links; it doesn't scrape them.
+- **Links to cite**: the REST record by PMID for the abstract (the form 7 ledger rows already use), and the `fullTextXML` URL for the full text. **Changed from the plan**: the plan said to cite the PMC article page for full text, but PMC now serves a reCAPTCHA page to scripts (tested on 3 articles), so neither a script nor step 4 could check a quote there. The PMC, PubMed and europepmc.org pages are printed as links "to read" in a browser.
+- **Locators** name where the excerpt is: `abstract`, `abstract, Results`, `Results > Heat loss, para 3`, `Table 2, row`, `Fig 1 caption`. References, front matter and funding are left out, so a quote can't come from someone else's paper in the reference list.
+- **`--find`**: the excerpt and the text are both folded first (dashes and the minus sign to a hyphen, curly quotes straight, all kinds of space to one space, soft hyphens removed, compatibility characters such as `µ` unified). An exact match prints the `--lookup "<id>:<locator>" --url … --quote …` to give `scan.mjs`. A match that differs only in case, spacing or punctuation is reported as **not verbatim**, with the source's own wording to copy instead, and exits 1 like a miss. A retracted paper, or one under an expression of concern, is refused outright.
+- **Notices**: retractions, expressions of concern and errata from Europe PMC (PubMed's records), plus Crossref's `updates` filter (publisher deposits and Retraction Watch data). **Found in testing**: a publisher can deposit one retraction notice against several papers by mistake. A retracted 2023 Lancet Public Health comment names the 2020 Lancet dementia Commission (`livingston2020`) among four retracted DOIs, though PubMed records no retraction of it. So a Crossref-only retraction counts as serious only when Retraction Watch recorded it or the notice names that paper alone; otherwise it is shown as unconfirmed.
+- **Cache**: `fact-check/cache/` (git-ignored), 30 days; `--refresh` fetches again.
+- **Requests**: one at a time for a single paper, 3 at a time for `--audit` (each request takes a few seconds through the cloud proxy, so one at a time would take over half an hour). Retries with backoff on 429 and 5xx; a `User-Agent` naming the project and its repository; no email address.
+- **Tests**: `tests/factcheck-fetch-check.mjs`, offline, against a small JATS sample: section paths, captions, table rows, references left out, the folding, exact, loose and missed excerpts, and the title matching.
+
+**First audit**, of the 246 sources with an identifier:
+- **No cited paper is retracted** or under an expression of concern.
+- **18 corrections and errata** on cited papers, among them `esh2023`, `sjoding2020` (pulse oximetry and race, NEJM; 5 rows), `pivkin2016` (5 rows), `dutoit2015` (4 rows) and `russell2017`. Each needs one look, to see that the correction doesn't touch what the rows cite (step 8).
+- **No record contradicts its cite.** `moon1944` isn't in Europe PMC (J Opt Soc Am isn't in PubMed).
+- **148 `access` values to set**: 49 papers free to read in Europe PMC (10 of them currently marked `subscription`) and 99 not free there. Left for step 8, because a paper that isn't free in Europe PMC may still be free on the publisher's site.
 
 ### 4. Check excerpts against the fetched text in `scan.mjs`
 When a `--lookup` link is a Europe PMC REST URL or a PMC article, `--mark` looks for the `--quote` in the cached text (via `fetch.mjs --find`) and refuses the mark if the excerpt isn't there. That catches an invented quote at the moment it's written, not weeks later in a verification sample. Other sites keep today's rule (the link must answer).
@@ -150,7 +162,7 @@ These steps need no new hosts: `www.ebi.ac.uk`, `api.crossref.org` and `pmc.ncbi
 |---|---|---|---|
 | 1 ✅ | Node proxy fix, and blocked hosts told apart from dead links | done | Link checks that don't lie in this container |
 | 2 ✅ | `doi` / `pmid` in `sources.json` | done | Everything below; 1,917 more citations fetchable |
-| 3 | `fetch.mjs` with cache, retries and `--find` | half a day | Paper look-ups in one command |
+| 3 ✅ | `fetch.mjs` with cache, retries, `--find` and `--audit` | done | Paper look-ups in one command |
 | 5 | The rule in FACTUAL_CHECK.md | minutes | The nightly checker uses it |
 | 8 | `--audit` (retractions, metadata, `access`) | an hour | Catches wrong and retracted citations |
 | 4 | Excerpt check in `scan.mjs --mark` | an hour | Invented quotes refused when written |

@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { useEnvProxy } from "./net.mjs";
+import { getJSON, search as epmcSearch, norm, agrees, citeDoi, surname } from "./epmc.mjs";
 
 const SOURCES = join(dirname(fileURLToPath(import.meta.url)), "sources.json");
 const argv = process.argv.slice(2);
@@ -30,44 +31,7 @@ const write = flag("--write"), search = flag("--search");
 if (write && search) { console.error("--write and --search: one at a time"); process.exit(2); }
 useEnvProxy();
 
-const UA = "HumanPhysiology-factcheck/1.0 (https://github.com/drtomforce/HumanPhysiology)";
-const EPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/search";
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function getJSON(url){
-  for (let attempt = 0; ; attempt++){
-    try {
-      const res = await fetch(url, { headers: { "user-agent": UA, accept: "application/json" }, signal: AbortSignal.timeout(30000) });
-      if (res.ok) return await res.json();
-      if (res.status === 404) return null;
-      if (![429, 500, 502, 503, 504].includes(res.status) || attempt >= 3) throw new Error(`${res.status} from ${new URL(url).host}`);
-    } catch (e){ if (attempt >= 3 || /^\d{3} from/.test(e.message)) throw e; }
-    await sleep(2000 * 2 ** attempt);
-  }
-}
-const epmc = async q => (await getJSON(`${EPMC}?query=${encodeURIComponent(q)}&format=json&resultType=lite&pageSize=5`))?.resultList?.result || [];
-
-/* ---------- matching a record to a cite string ---------- */
-const norm = s => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/<[^>]+>/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
-const STOP = new Set("the and for with from into that this than are was were its their after during between within without".split(" "));
-/* share of the record title's words (4+ letters) that appear in the cite: 1 = every word. A cite often
-   leaves out the subtitle, so the title before its colon counts on its own too */
-function titleScore(title, cite){
-  const c = new Set(norm(cite).split(" "));
-  const score = t => { const w = norm(t).split(" ").filter(x => x.length >= 4 && !STOP.has(x)); return w.length ? w.filter(x => c.has(x)).length / w.length : 0; };
-  const main = title.split(/:\s/)[0];
-  /* … or runs on into a subtitle with no colon: the record title's opening words, word for word, in the cite */
-  const w = norm(title).split(" "), n = norm(cite);
-  let k = 0; while (k < w.length && n.includes(w.slice(0, k + 1).join(" "))) k++;
-  return Math.max(score(title), main.length >= 20 && main !== title ? score(main) : 0, k >= 7 ? 1 : 0);
-}
-const citeYear = cite => (cite.match(/(?:^|[.;,]\s*)((?:18|19|20)\d\d)(?=[;:.,\s]|$)/) || cite.match(/\b((?:18|19|20)\d\d)\b/) || [])[1];
-const citeDoi = cite => (cite.match(/\bdoi:\s*(10\.\d{4,9}\/\S+?)\.?(?:\s|$)/i) || [])[1];
-const surname = cite => norm(cite.split(/[ ,.]/)[0] || "");
-function agrees(rec, cite){
-  const t = titleScore(rec.title || "", cite), y = citeYear(cite), ry = String(rec.pubYear || rec.year || "");
-  const ok = t >= 0.8 && (!y || !ry || Math.abs(Number(y) - Number(ry)) <= 1);
-  return { ok, why: ok ? "" : `title match ${Math.round(t * 100)}%, year ${y || "?"} vs ${ry || "?"}` };
-}
+const epmc = q => epmcSearch(q, "lite", 5);
 
 /* ---------- sources.json, line by line, so untouched lines stay as they are ---------- */
 const raw = readFileSync(SOURCES, "utf8"), lines = raw.split("\n"), sources = JSON.parse(raw), at = {};

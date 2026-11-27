@@ -16,6 +16,12 @@
                                                         its "access" right? --cites-only: only papers the ledger cites.
                                                         Exit 1 if a cited paper is retracted or under an expression of concern
    A <source id> can also be PMID:<n>, DOI:<doi> or PMC<n>, to read a paper before it is in sources.json.
+
+     node fact-check/fetch.mjs <page url> [--source <id>]   an open textbook page (OpenStax, Klabunde's cvphysiology.com,
+         [--full] [--find "<excerpt>"]                  Neuroscience Online): with --find, is the excerpt on the page, and
+                                                        the --lookup/--url/--quote for scan.mjs; with --full, the page's
+                                                        text, paragraph by paragraph. The source id is found from the
+                                                        site (the "home" in sources.json) unless --source names it
    --refresh fetches again instead of using fact-check/cache/ (kept 30 days, git-ignored; never commit it).
 
    What counts as a look-up (FACTUAL_CHECK.md#looked-up-or-from-memory): the abstract or full text printed here,
@@ -27,6 +33,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { useEnvProxy } from "./net.mjs";
 import { openSources } from "./sources-file.mjs";
+import { isPageUrl, pageUnits } from "./pages.mjs";
+import { cached, getText } from "./epmc.mjs";
 import { recordFor, fullTextXML, abstractUnits, fullTextUnits, locate, notices, agrees, access, abstractUrl, fullTextUrl, readingUrls, citeDoi } from "./epmc.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -34,13 +42,46 @@ const sources = JSON.parse(readFileSync(join(here, "sources.json"), "utf8"));
 const argv = process.argv.slice(2);
 const flag = f => argv.includes(f);
 const many = f => argv.flatMap((a, i) => a === f && argv[i + 1] != null ? [argv[i + 1]] : []);
-const VALUED = new Set(["--find", "--id"]);
+const VALUED = new Set(["--find", "--id", "--source"]);
 const positional = argv.filter((a, i) => !a.startsWith("--") && !VALUED.has(argv[i - 1]));
 const finds = many("--find"), maxAge = flag("--refresh") ? 0 : 30;
 const die = (msg, code = 2) => { console.error(msg); process.exit(code); };
 if (!flag("--audit") && positional.length !== 1) die("give one source id (or PMID:<n>, DOI:<doi>, PMC<n>), or --audit; see the top of fact-check/fetch.mjs");
 for (const q of finds) if (q.replace(/\s+/g, " ").trim().length < 8) die(`--find: give at least 8 characters (got "${q}")`);
 useEnvProxy();
+
+/* ---------- an open textbook page ---------- */
+if (/^https?:\/\//.test(positional[0] || "")){
+  const url = positional[0];
+  if (!isPageUrl(url)) die(`${url}: not a page this reads (OpenStax, cvphysiology.com, nba.uth.tmc.edu). Papers: give their source id.`);
+  const host = new URL(url).hostname.replace(/^www\./, ""), book = p => (p.match(/^\/books\/[^/]+\//) || [""])[0];
+  const id = many("--source")[0] || Object.keys(sources).find(k => { try { const h = new URL(sources[k].home || "x:"); return h.hostname.replace(/^www\./, "") === host && book(h.pathname) === book(new URL(url).pathname); } catch { return false; } });
+  if (!id) die(`no source in sources.json has its home on ${host}${book(new URL(url).pathname)}: add one, or name it with --source <id>`);
+  if (!sources[id]) die(`--source ${id}: not in sources.json`);
+  const bare = new URL(url); bare.hash = "";
+  const html = await cached(`page-${bare.href}`, maxAge, () => getText(bare.href));
+  if (!html) die(`${url}: the page answered 404`, 1);
+  const units = pageUnits(html);
+  console.log(`${id}  ${sources[id].cite}\n  page: ${bare.href}  (${units.length} paragraphs)`);
+  if (!finds.length){
+    if (flag("--full")) for (const u of units) console.log(`  [${u.where}]\n    ${u.text}`);
+    else console.log("  --full prints the page's text; --find \"<excerpt>\" checks an excerpt and prints the --lookup for scan.mjs");
+    process.exit(0);
+  }
+  let bad = 0;
+  for (const q of finds){
+    const hit = locate(units, q)[0] || locate([{ where: "page", text: units.map(x => x.text).join(" ") }], q)[0];
+    if (!hit){ bad++; console.log(`NOT FOUND: "${q}"\n  not on the page. Don't cite it as a look-up from this page.`); continue; }
+    if (hit.how === "loose") bad++;
+    const quote = hit.how === "exact" ? q : hit.found;
+    /* link to the passage itself with a text fragment, as FACTUAL_CHECK.md#links prefers */
+    const frag = `${bare.href}#:~:text=${encodeURIComponent(quote.split(/\s+/).slice(0, 10).join(" ")).replace(/-/g, "%2D")}`;
+    console.log(`${hit.how === "exact" ? "FOUND" : "FOUND, BUT NOT VERBATIM (case, spacing or punctuation differ)"} under "${hit.where}": "${q}"\n  ${hit.context}`);
+    if (hit.how === "loose") console.log(`  copy the page's own wording: "${hit.found}"`);
+    console.log(`  --lookup "${id}:<section, e.g. ${hit.where.slice(0, 40)}>" --url "${frag}" --quote ${JSON.stringify(quote)}`);
+  }
+  process.exit(bad ? 1 : 0);
+}
 
 /* a source id from sources.json, or an identifier given directly */
 function resolve(arg){

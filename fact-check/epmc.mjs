@@ -120,9 +120,14 @@ export function agrees(rec, cite){
 }
 
 /* ---------- text ---------- */
-const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", ndash: "–", mdash: "—", minus: "−", plusmn: "±", micro: "µ", deg: "°", times: "×" };
+const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", ensp: " ", emsp: " ", thinsp: " ", shy: "\u00ad",
+  ndash: "–", mdash: "—", minus: "−", hyphen: "‐", plusmn: "±", micro: "µ", deg: "°", times: "×", divide: "÷", middot: "·", bull: "•", hellip: "…",
+  lsquo: "‘", rsquo: "’", sbquo: "‚", ldquo: "“", rdquo: "”", bdquo: "„", laquo: "«", raquo: "»", prime: "′", Prime: "″",
+  le: "≤", ge: "≥", ne: "≠", asymp: "≈", sim: "∼", infin: "∞", rarr: "→", larr: "←", harr: "↔", uarr: "↑", darr: "↓",
+  frac12: "½", frac14: "¼", frac34: "¾", sup1: "¹", sup2: "²", sup3: "³", copy: "©", reg: "®", trade: "™", sect: "§", para: "¶",
+  alpha: "α", beta: "β", gamma: "γ", delta: "δ", epsilon: "ε", kappa: "κ", lambda: "λ", mu: "μ", pi: "π", sigma: "σ", tau: "τ", omega: "ω", Delta: "Δ" };
 export const decode = s => s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) =>
-  e[0] === "#" ? String.fromCodePoint(e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENT[e.toLowerCase()] ?? m);
+  e[0] === "#" ? String.fromCodePoint(e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENT[e] ?? ENT[e.toLowerCase()] ?? m);
 const clean = s => decode(s.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
 
 /* the abstract, split at its headings (<h4>Results</h4>…) into units "abstract" or "abstract, Results" */

@@ -25,6 +25,8 @@ Notes for later consideration, written on 2026-11-19. Nothing here has been acte
 6. **Add more open sources where coverage is thin.** About 30 entries in `sources.json` have no `access` recorded. Find open copies of key papers through PMC or Europe PMC; those mirrors often get past the NCBI robot checks that block fetches. For kidney and gut physiology, look for open NCBI Bookshelf chapters the way the Colloquium Series was used.
 7. **Set a nightly quota in the routine.** For example: "at least N look-ups per run, open-source memory rows first." That way the count rises even on nights that mostly clear new content. Watch it with `--sources` and the overview page, `fact-check.html`.
 
-## Open policy question
+## Open policy question (settled 2026-11-27)
 
-Should a row count as looked up when its main source was opened and a textbook is cited only as backing from memory? The strict rule is the main reason the count stays near zero even where the open source was read. One option is a third label such as "partly looked up", which would show up on `fact-check.html`. That would need a change to `scan.mjs` and the page. Step 1 above works within the current rules, so it can start first.
+Should a row count as looked up when its main source was opened and a textbook is cited only as backing from memory? The strict rule was the main reason the count stayed near zero even where the open source was read.
+
+**Settled with a third label, `partial`**, as suggested here. `lookup` still means every source was looked up. A row with at least one looked-up source and at least one recalled one is now `via: partial`. It shows on `fact-check.html` as "Partly looked up": split squares in the waffle, stripes in the bars, and its own tile. `scan.mjs` derives `via` from the citations, and `--update` brought 121 older rows from `memory` to `partial`. See FACT_CHECK_PLAN.md, "Next priorities", item 2.

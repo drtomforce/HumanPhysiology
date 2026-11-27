@@ -1,7 +1,49 @@
 {
+ "https://cvphysiology.com/arrhythmias/a003#:~:text=Normally%2C%20the%20only%20pathway%20available%20for%20action%20potentials%20to%20enter": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a003",
+  "checked": "2026-11-27"
+ },
+ "https://cvphysiology.com/arrhythmias/a003#:~:text=an%20extensive%20system%20of%20Purkinje%20fibers%20that%20conducts%20the%20impulses": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a003",
+  "checked": "2026-11-27"
+ },
+ "https://cvphysiology.com/arrhythmias/a003#:~:text=follow%20the%20left%20and%20right%20bundle%20branches%20along%20the%20interventricular": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a003",
+  "checked": "2026-11-27"
+ },
+ "https://cvphysiology.com/arrhythmias/a003#:~:text=slows%20the%20impulse%20conduction%20considerably%20(to%20about%200.05%20m%2Fsec)": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a003",
+  "checked": "2026-11-27"
+ },
+ "https://cvphysiology.com/arrhythmias/a003#:~:text=spread%20throughout%20the%20atria%2C%20primarily%20by%20cell%2Dto%2Dcell%20conduction%20at%20a": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a003",
+  "checked": "2026-11-27"
+ },
+ "https://cvphysiology.com/arrhythmias/a004#:~:text=until%20an%20action%20potential%20threshold%20is%20reached%20(usually%20between%20%2D40": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a004",
+  "checked": "2026-11-27"
+ },
  "https://cvphysiology.com/arrhythmias/a004": {
   "state": "ok",
   "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://cvphysiology.com/arrhythmias/a005#:~:text=Circulating%20epinephrine%20causes%20tachycardia%20by%20a%20mechanism%20similar%20to%20norepinephrine": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://cvphysiology.com/arrhythmias/a005",
   "checked": "2026-11-27"
  },
  "https://cvphysiology.com/arrhythmias/a005#:~:text=at%20a%20rate%20of%20100-110%20action%20potentials": {
@@ -131,6 +173,96 @@
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/18-3-erythrocytes",
   "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=Bachmann%E2%80%99s%20bundle%20or%20the%20interatrial%20band%20that%20conducts%20the%20impulse": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=If%20the%20AV%20node%20were%20blocked%2C%20the%20atrioventricular%20bundle%20would": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=Portions%20of%20the%20right%20bundle%20branch%20are%20found%20in%20the": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=Since%20the%20electrical%20stimulus%20begins%20at%20the%20apex%2C%20the%20contraction": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=The%20SA%20node%20initiates%20the%20action%20potential%2C%20which%20sweeps%20across": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=The%20left%20bundle%20branch%20has%20two%20fascicles": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=The%20left%20bundle%20branch%20supplies%20the%20left%20ventricle%2C%20and%20the": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=The%20relative%20importance%20of%20this%20pathway%20has%20been%20debated": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=The%20small%20P%20wave%20represents%20the%20depolarization%20of%20the%20atria": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=allows%20the%20atrial%20cardiomyocytes%20to%20complete%20their%20contraction%20that%20pumps": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=it%20takes%20the%20impulse%20approximately%20100%20ms%20to%20pass%20through": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=known%20as%20the%20pacemaker%20of%20the%20heart": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=located%20in%20the%20superior%20and%20posterior%20walls%20of%20the%20right": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=proceeds%20through%20the%20interventricular%20septum%20before%20dividing%20into%20two%20atrioventricular": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity#:~:text=the%20electrical%20impulse%20reaches%20all%20of%20the%20ventricular%20muscle%20cells": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/19-2-cardiac-muscle-and-electrical-activity",
+  "checked": "2026-11-27"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/21-2-barrier-defenses-and-the-innate-immune-response#:~:text=Cells%20infected%20with%20viruses%20secrete%20interferons": {
   "state": "ok",

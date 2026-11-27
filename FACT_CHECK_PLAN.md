@@ -213,6 +213,32 @@ These steps need no new hosts: `www.ebi.ac.uk`, `api.crossref.org` and `pmc.ncbi
 - **NCBI Bookshelf.** Endotext, Purves, Janeway 5 and the Colloquium Series are open, but the Bookshelf serves scripts a reCAPTCHA page (tested on `NBK279388`), and Europe PMC indexes almost none of it (5 records). These stay as WebFetch-by-hand, or `--memory` when the check page wins. Test the NCBI literature-archive open-access download (`ftp.ncbi.nlm.nih.gov/pub/litarch/`) before giving up on them.
 - **Paywalled papers beyond the abstract.** A dose or sub-group buried in the Results of a closed paper stays `--memory`, unless someone with access looks it up.
 
+## Next priorities (2026-11-27)
+
+After steps 1–8, ranked by how much each raises the share of rows checked against an opened source, for what it costs. At this point 131 rows were `lookup`, out of about 17,000.
+
+1. **Paste the new nightly instructions** (five minutes; the owner). The nightly fact-check's instructions still say to WebFetch papers, so it meets robot checks and doesn't use these tools. The replacement text was handed over on 2026-11-27; it can only be changed at claude.ai.
+2. **Settle the "partly looked up" question** ✅ done 2026-11-27. One recalled textbook kept a row at `memory` even when its main source had been opened and quoted. There's now a third label, `via: partial` (some sources looked up, the rest recalled):
+   - `scan.mjs` derives `via` from the citations everywhere (`--mark`, `--uncite`, `--verify`), and `--update` brings older rows into line. 121 rows moved from `memory` to `partial`.
+   - It's counted in the summary table, `--via partial` and `status.js`.
+   - `fact-check.html` shows it as "Partly looked up": a split swatch, split waffle squares, striped bar segments and its own tile. The ramp's blues are used together rather than adding a fifth shade, which failed the palette check: ΔE 8.6 to "from memory", below the floor of 15.
+   - `lookup` keeps its strict meaning. FACTUAL_CHECK.md and `improving-lookups.md` record the decision.
+3. **Re-cite the open textbooks** — tool ✅ and first section ✅ 2026-11-27; ongoing. (The biggest lever, and cheap.) On 2026-11-19 Klabunde had about 1,070 recalled citations against 3 look-ups, and OpenStax about 556 against 38. Both are free and reachable from the cloud environment, and one fetched page usually covers a part's four reading levels and its glossary entry. Extend the quote check at `--mark` to these pages, so the same refusal of invented or misplaced quotes covers them, and then re-cite section by section.
+   - **The tool** (`fact-check/pages.mjs`). `--mark` and `--check-quotes` read OpenStax, Klabunde's cvphysiology.com and Neuroscience Online pages, which serve their text to scripts. A quote must be on the page, and the link must be on the source's own site (for OpenStax, the same book), so one textbook's quote can't be filed under another. `fetch.mjs <page url> --find "<excerpt>"` prints the `--lookup`, a `--url` with a text fragment at the passage, and the `--quote`. The first `--check-quotes` over the ledger checked 249 of 252 look-up citations (212 OpenStax, 4 Klabunde, 33 papers). None was missing or misattributed; two differ only in punctuation (warnings).
+   - **First section: the heart's conduction system** (SA node, internodal pathways, Bachmann's bundle, AV node, His bundle, bundle branches, Purkinje fibres). 20 of its 32 rows were re-read against OpenStax 19.2 and Klabunde's A003–A005 and re-cited, each through the quote check:
+     - 8 are now `lookup`: OpenStax or Klabunde supports every claim, so Guyton and Boron came off.
+     - 12 are `partial`: the open pages cover part of the row, and the rest stays recalled from Guyton and Boron.
+     - The other 12 were left as they were: 9 phd and 2 college rows on clinical detail or ECG patterns the pages don't cover, and `avNode.hs`, whose `fixed` status a re-mark would misreport.
+     - The heart page went from 2 `lookup` and 1 `partial` row to 10 and 13.
+     - Two small numerical differences were judged within the textbook range rather than errors. OpenStax gives ~50 ms from the SA to the AV node, against the app's ~40 ms. It gives ~75 ms for whole-ventricle activation, against ~80 ms.
+   - **Next sections**, in the same way: the heart's chambers, valves and coronary arteries (OpenStax 19.1, Klabunde's anatomy and blood-flow pages), the cardiac cycle (OpenStax 19.3, Klabunde CF/HD pages), then the body view's circulation topics. One fetched page typically supports 10–20 rows.
+4. **Find and narrow every blanket citation set** (a few hours). A report of sources applied together across whole sections, instead of finding them one at a time. Next by size: `charkoudian2003` (132 rows), `diffey2002` (81), `gagge1971` (62).
+5. **A nightly quota of paper look-ups**: "at least 10 look-ups via `fetch.mjs`, most-cited papers first", in the nightly instructions. After narrowing, the papers' rows are the ones they support, so the quota yields real look-ups (tens per paper, not hundreds).
+6. **One session with institutional access** (ClinicalKey or AccessMedicine) for the rows that carry the most weight: the roughly 22 consistency-registry values, the clinical thresholds and the 271 approved model-code rows. Guyton and Boron make up about 14,400 recalled citations that no API reaches.
+7. **Re-check the 923 approved rows that cite nothing** (897 ok, 26 fixed; approved before sources were tracked). Sample them first to see how good they are.
+8. **Test NCBI's open-access literature archive** (`ftp.ncbi.nlm.nih.gov/pub/litarch/`) for Endotext, Purves, Janeway 5 and the Colloquium Series, whose Bookshelf pages show scripts a reCAPTCHA. If the books download, a reader like `fetch.mjs` unlocks several hundred recalled citations.
+9. **Clear the leftovers**: the `coyle1986` "spare glycogen" claim (step 6), the 15 corrections to read by hand (step 8), and optionally `europepmc.org` on the environment's allowlist so its reading links pass the link check.
+
 ## Order of work
 
 | # | Step | Effort | What it unlocks |

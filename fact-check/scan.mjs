@@ -37,7 +37,7 @@
                                                   paper's text (fact-check/epmc.mjs); --no-quote-check to skip
          [--memory <id>[:<locator>]]              … citing a source recalled from memory, not opened (repeatable)
                                                   ok, fixed and "issue #n" need at least one of the two; the row
-                                                  gets "via": "lookup" only if every source was looked up
+                                                  gets "via": "lookup" if every source was looked up, "partial" if some were
          [--recheck]                              … as the result of a random re-check (needs --key): keeps the
                                                   original "checked" date, sets "rechecked" and logs the outcome
                                                   to fact-check/rechecks.jsonl; once per key per day. Fixed in the
@@ -64,7 +64,8 @@
                                                   overdue guidelines, unknown ids, approved rows that cite nothing
    Select with --page <id> (repeatable), --prefix <key prefix> (repeatable), --key <exact key>
    (repeatable), --batch <YYYY-MM-DD> (rows whose "checked" date is that day), --cites <source id> and
-   --via <lookup|memory|unknown> (how the row was checked; "unknown" = approved before this was recorded);
+   --via <lookup|partial|memory|unknown> (how the row was checked; "partial" = some sources looked up, some recalled;
+   "unknown" = approved before this was recorded);
    --all with --list lists every item, not just the unchecked ones. --mark only touches items whose
    hash is current; add --unchecked to leave rows that already have a status (ok, fixed, an issue) alone.
    Behind an HTTPS proxy, the link-fetching commands re-run themselves with NODE_USE_ENV_PROXY=1, and a
@@ -77,6 +78,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { useEnvProxy, whyFailed } from "./net.mjs";
 import { checkQuote, citeDoi, paperFromUrl } from "./epmc.mjs";
+import { checkPageQuote } from "./pages.mjs";
+/* a look-up's quote against what its link shows: a paper (Europe PMC, PubMed, PMC) or an open textbook page */
+const checkLookup = async (url, quote, id) => (await checkQuote(url, quote, paperIds(id))) ?? (await checkPageQuote(url, quote, sources[id] || {}));
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LEDGER = join(root, "fact-check", "ledger.json");
@@ -143,7 +147,7 @@ if (cited && !markStatus) die("--lookup and --memory go with --mark");
 if (cited && /^(unchecked|n\/a)$/.test(markStatus)) die(`--mark ${markStatus} takes no sources`);
 if (markStatus && /^(ok|fixed|issue)/.test(markStatus) && !cited)
   die(`--mark ${markStatus} needs --lookup <id>:<locator> (a source you opened) or --memory <id> (one you recalled); internal:<registry row or key> for a consistency check`);
-if (viaWanted && !/^(lookup|memory|unknown)$/.test(viaWanted)) die("--via: lookup, memory or unknown");
+if (viaWanted && !/^(lookup|partial|memory|unknown)$/.test(viaWanted)) die("--via: lookup, partial, memory or unknown");
 if (uncite && (markStatus || verifyResult)) die("--uncite goes on its own, not with --mark or --verify");
 if (uncite && !sources[uncite]) die(`--uncite ${uncite}: not in fact-check/sources.json`);
 if (uncite && (!by || !note || (!keys.length && !prefixes.length)))
@@ -191,6 +195,7 @@ function quoteProblem(r){
   if (r.state === "not-verbatim") return `not verbatim (case, spacing or punctuation differ) in ${r.where}; the source has: ${JSON.stringify(r.found)}`;
   if (r.state === "missing") return `not found in ${r.searched}`;
   if (r.state === "wrong-paper") return `wrong paper: ${r.why}`;
+  if (r.state === "wrong-source") return `wrong source: ${r.why}`;
   if (r.state === "retracted") return `the paper is retracted or under an expression of concern: ${r.why}`;
   if (r.state === "error") return `couldn't reach Europe PMC to check it (${r.why}); try again, or --no-quote-check and run --check-quotes later`;
   return null;
@@ -198,7 +203,7 @@ function quoteProblem(r){
 if (lookArgs.length && markStatus && !flag("--no-link-check") && !flag("--no-quote-check")){
   const bad = [];
   for (let i = 0; i < lookArgs.length; i++){
-    const r = await checkQuote(urlArgs[i], squashArg(quoteArgs[i]), paperIds(srcId(lookArgs[i])));
+    const r = await checkLookup(urlArgs[i], squashArg(quoteArgs[i]), srcId(lookArgs[i]));
     const why = quoteProblem(r);
     if (why) bad.push(`--lookup ${lookArgs[i]}: ${why}`);
     else if (r?.state === "unchecked") console.error(`Quote not checked for --lookup ${lookArgs[i]}: ${r.why}. Marking anyway: the excerpt must be from the page you read.`);
@@ -323,7 +328,11 @@ const keyed = key => (!prefixes.length && !keys.length) || keys.includes(key) ||
 const viaOf = row => row?.via || "unknown";
 const rowOk = row => (!batch || row?.checked === batch) && (!cites || [...(row?.src || []), ...(row?.mem || [])].some(s => srcId(s) === cites))
   && (!viaWanted || viaOf(row) === viaWanted);
-/* merge citations: a source looked up wins over the same source recalled; "via" is lookup only if nothing was recalled */
+/* how a row was checked, from its citations: "lookup" if every source was looked up, "partial" if some were and
+   some were recalled, "memory" if none was looked up. A row with no citations has no "via" ("unknown") */
+const viaFrom = row => (row.src || []).length ? ((row.mem || []).length ? "partial" : "lookup") : (row.mem || []).length ? "memory" : undefined;
+function setVia(row){ const v = viaFrom(row); if (v) row.via = v; else delete row.via; }
+/* merge citations: a source looked up wins over the same source recalled */
 function cite(row, keepOld){
   const look = new Map(), mem = new Map();
   if (keepOld){ for (const s of row.src || []) look.set(srcId(s), s); for (const s of row.mem || []) mem.set(srcId(s), s); }
@@ -335,7 +344,7 @@ function cite(row, keepOld){
   delete row.src; delete row.mem; delete row.via;
   if (look.size) row.src = [...look.values()];
   if (mem.size) row.mem = [...mem.values()];
-  if (look.size || mem.size) row.via = mem.size ? "memory" : "lookup";
+  setVia(row);
 }
 const prefixed = (key, row) => keyed(key) && rowOk(row);
 const days = (a, b) => (Date.parse(b) - Date.parse(a)) / 864e5;
@@ -348,7 +357,7 @@ if (existsSync(RECHECKS)) for (const l of readFileSync(RECHECKS, "utf8").split("
   const e = JSON.parse(l); if (e.date === today) recheckedToday.add(`${e.page} ${e.key}`);
 }
 const report = [];
-let dirty = false, unchecked = 0, marked = 0, narrowed = 0;
+let dirty = false, unchecked = 0, marked = 0, narrowed = 0, viaFixed = 0;
 
 for (const { id: page, path, engine } of pageFiles()){
   if (!selected(page)) continue;
@@ -365,6 +374,7 @@ for (const { id: page, path, engine } of pageFiles()){
     else if (row.hash !== h) changed.push(key);
   }
   if (fresh.length || changed.length || removed.length) dirty = true;
+  if (Object.values(rows).some(r => r.via && viaFrom(r) !== r.via)) dirty = true;   /* --update brings "via" into line */
 
   if (flag("--update")){
     for (const key of fresh) rows[key] = { hash: hash(squash(items.get(key))), status: "unchecked" };
@@ -376,6 +386,8 @@ for (const { id: page, path, engine } of pageFiles()){
         ...(approved ? { wasChecked: old.wasChecked || old.checked || null, wasVia: old.wasVia || viaOf(old) } : {}) };
     }
     for (const key of removed) delete rows[key];
+    /* "via" follows the citations (rows recorded before "partial" existed say "memory" when only some were recalled) */
+    for (const row of Object.values(rows)) if (row.via){ const v = row.via; setVia(row); if (row.via !== v) viaFixed++; }
     ledger.pages[page] = Object.fromEntries(Object.entries(rows).sort(([a], [b]) => a.localeCompare(b, "en")));
   }
 
@@ -390,7 +402,7 @@ for (const { id: page, path, engine } of pageFiles()){
           (row.status === "unchecked" && row.was ? ` (its text changed since it was "${row.was}"; a re-check that failed and was fixed in the text is recorded with --mark fixed)` : ""));
         if (recheckedToday.has(`${page} ${key}`)) die(`--recheck: ${page} ${key} was already re-checked today (see fact-check/rechecks.jsonl)`);
         recheckLog.push({ date: today, seed: one("--seed") || today, page, key, was: before, batch: batchDate || null, wasVia: fixedFirst ? row.wasVia || "unknown" : viaOf(row), wasBy: row.by || null, by: by || null, now: markStatus,
-          via: !cited ? null : memArgs.length ? "memory" : "lookup", ...(lookArgs.length ? { lookup: lookArgs } : {}), ...(memArgs.length ? { memory: memArgs } : {}), ...(note ? { note } : {}) });
+          via: !cited ? null : memArgs.length ? (lookArgs.length ? "partial" : "memory") : "lookup", ...(lookArgs.length ? { lookup: lookArgs } : {}), ...(memArgs.length ? { memory: memArgs } : {}), ...(note ? { note } : {}) });
         row.rechecked = today;
         if (markStatus !== before){ row.status = markStatus; row.checked = today; if (by) row.by = by; }
         if (fixedFirst){ row.status = markStatus; row.checked = today; delete row.rechecked; delete row.was; }
@@ -420,7 +432,7 @@ for (const { id: page, path, engine } of pageFiles()){
       const mem = row.mem.filter(m => srcId(m) !== uncite);
       if (!mem.length && !(row.src || []).length){ narrowSkipped.push(`${page} ${key}: ${uncite} is its only source; cite a source that bears on it first (--mark … --memory <id>)`); continue; }
       if (mem.length) row.mem = mem; else delete row.mem;
-      if (row.via) row.via = !mem.length && (row.src || []).length ? "lookup" : "memory";
+      if (row.via) setVia(row);
       /* one note per checker and day, however many sources they take off */
       const head = `citation narrowed by ${by}, ${today}: `, item = `${uncite} removed (${note})`;
       row.note = row.note?.startsWith(head) ? row.note.replace(head, `${head}${item}; `) : head + item + (row.note ? ` | ${row.note}` : "");
@@ -450,7 +462,7 @@ for (const { id: page, path, engine } of pageFiles()){
           row.src = row.src.filter(x => x !== c);
           row.mem = [...new Set([...(row.mem || []), `${c.id}:${c.at}`])];
           if (!row.src.length) delete row.src;
-          row.via = "memory";
+          setVia(row);
           row.note = `${verifyResult} on verification by ${by}, ${today}${note ? ": " + note : ""}` + (row.note ? ` | ${row.note}` : "");
           if (verifyResult === "not-supported"){ row.was = row.status; row.status = "unchecked"; row.checked = today; }
         }
@@ -460,13 +472,13 @@ for (const { id: page, path, engine } of pageFiles()){
   }
 
   const live = ledger.pages[page] || {};
-  const counts = { items: items.size, unchecked: 0, ok: 0, fixed: 0, "n/a": 0, issue: 0, lookup: 0, memory: 0, "via?": 0 };
+  const counts = { items: items.size, unchecked: 0, ok: 0, fixed: 0, "n/a": 0, issue: 0, lookup: 0, partial: 0, memory: 0, "via?": 0 };
   for (const key of items.keys()){
     const row = live[key];
     const st = !row || row.hash !== hash(squash(items.get(key))) ? "unchecked" : row.status.startsWith("issue") ? "issue" : row.status;
     counts[st]++;
     if (st === "unchecked" && prefixed(key, row)) unchecked++;
-    if (/^(ok|fixed|issue)$/.test(st)) counts[{ lookup: "lookup", memory: "memory" }[viaOf(row)] || "via?"]++;
+    if (/^(ok|fixed|issue)$/.test(st)) counts[{ lookup: "lookup", partial: "partial", memory: "memory" }[viaOf(row)] || "via?"]++;
     if (flag("--list") && prefixed(key, row) && (flag("--all") || st === "unchecked"))
       console.log(`${page} ${key} [${row && row.hash === hash(squash(items.get(key))) ? row.status + (st === "n/a" ? "" : ", via " + viaOf(row)) : "unchecked"}]\n    ${squash(items.get(key)).slice(0, flag("--full") ? Infinity : 400)}`);
     /* approved, current, and not (re)checked in the last --min-age days: eligible for a random re-check */
@@ -532,11 +544,11 @@ function statusJs(){
     for (const [key, row] of Object.entries(rows)){
       const sid = sectionOf(key);
       const s = secs.get(sid) || secs.set(sid, { id: sid, label: sectionLabel(sid), n: 0,
-        src: { lookup: 0, memory: 0, unknown: 0, na: 0, changed: 0, unchecked: 0 },
+        src: { lookup: 0, partial: 0, memory: 0, unknown: 0, na: 0, changed: 0, unchecked: 0 },
         out: { ok: 0, fixed: 0, issue: 0, na: 0, unchecked: 0 }, levels: {}, issues: [] }).get(sid);
       const st = row.status, approved = /^(ok|fixed|issue)/.test(st);
       s.n++;
-      s.src[st === "n/a" ? "na" : st === "unchecked" ? (row.was ? "changed" : "unchecked") : { lookup: "lookup", memory: "memory" }[row.via] || "unknown"]++;
+      s.src[st === "n/a" ? "na" : st === "unchecked" ? (row.was ? "changed" : "unchecked") : { lookup: "lookup", partial: "partial", memory: "memory" }[row.via] || "unknown"]++;
       s.out[st === "n/a" ? "na" : st.startsWith("issue") ? "issue" : st]++;
       if (st.startsWith("issue")){ const n = Number(st.slice(7)); if (!s.issues.includes(n)) s.issues.push(n); }
       const lv = key.match(/\.(ms|hs|college|phd)$/);
@@ -612,18 +624,21 @@ if (flag("--check-quotes")){
   for (const [page, rows] of Object.entries(ledger.pages)) if (selected(page)) for (const [key, row] of Object.entries(rows))
     for (const c of row.src || []) if (typeof c === "object" && keyed(key) && rowOk(row)) todo.push({ page, key, c });
   let checked = 0, other = 0;
-  const bad = [], unchecked = [];
+  const bad = [], unchecked = [], loose = [];
   for (const t of todo){
-    const r = await checkQuote(t.c.url, t.c.quote, paperIds(t.c.id));
+    const r = await checkLookup(t.c.url, t.c.quote, t.c.id);
     if (!r){ other++; continue; }
     checked++;
     const why = quoteProblem(r);
-    if (why) bad.push(`${t.page} ${t.key} (${t.c.id}:${t.c.at}): ${why}\n      quote: ${JSON.stringify(t.c.quote)}\n      url:   ${t.c.url}`);
+    /* not verbatim (case or punctuation only) is a warning here: the passage is there; --mark refuses it for new quotes */
+    if (r.state === "not-verbatim") loose.push(`${t.page} ${t.key} (${t.c.id}): ${why}`);
+    else if (why) bad.push(`${t.page} ${t.key} (${t.c.id}:${t.c.at}): ${why}\n      quote: ${JSON.stringify(t.c.quote)}\n      url:   ${t.c.url}`);
     else if (r.state === "unchecked") unchecked.push(`${t.page} ${t.key} (${t.c.id}): ${r.why}`);
   }
-  console.log(`Quotes: ${todo.length} look-up citation(s) in the selection; ${checked} link to a paper in Europe PMC, PubMed or PMC and were checked, ${other} link elsewhere. ${bad.length} problem(s).`);
+  console.log(`Quotes: ${todo.length} look-up citation(s) in the selection; ${checked} link to a paper (Europe PMC, PubMed, PMC) or an open textbook page (OpenStax, Klabunde, Neuroscience Online) and were checked, ${other} link elsewhere. ${bad.length} problem(s).`);
   if (bad.length) console.log("\n" + bad.join("\n\n"));
-  if (unchecked.length) console.log(`\n${unchecked.length} couldn't be checked (closed full text):\n  ` + unchecked.join("\n  "));
+  if (loose.length) console.log(`\n${loose.length} quote(s) differ from the source only in case, spacing or punctuation (re-cite with the source's wording when the row is next checked):\n  ` + loose.join("\n  "));
+  if (unchecked.length) console.log(`\n${unchecked.length} couldn't be checked (closed full text, or a robot check):\n  ` + unchecked.join("\n  "));
   process.exit(bad.length ? 1 : 0);
 }
 
@@ -690,7 +705,7 @@ if (flag("--sources")){
 }
 
 if (!flag("--list")){
-  const cols = ["page", "items", "unchecked", "ok", "fixed", "n/a", "issue", "lookup", "memory", "via?", "new", "changed", "removed"];
+  const cols = ["page", "items", "unchecked", "ok", "fixed", "n/a", "issue", "lookup", "partial", "memory", "via?", "new", "changed", "removed"];
   const w = cols.map(c => Math.max(c.length, ...report.map(r => String(r[c]).length)));
   const line = r => cols.map((c, i) => String(r[c]).padStart(w[i])).join("  ");
   console.log(line(Object.fromEntries(cols.map(c => [c, c]))));
@@ -701,6 +716,7 @@ if (!flag("--list")){
     console.log(`\nnarrowed ${narrowed} row(s): ${uncite} removed (logged to fact-check/narrowed.jsonl)`);
     if (narrowSkipped.length) console.log(`${narrowSkipped.length} left alone:\n  ` + narrowSkipped.join("\n  "));
   }
+  if (viaFixed) console.log(`\n"via" brought into line with the citations on ${viaFixed} row(s)`);
   if (dirty && !flag("--update")) console.log("\nThe ledger is out of date: run with --update.");
 }
 if (flag("--check") && !flag("--update") && statusStale()){ console.log("\nfact-check/status.js is out of date: run with --status."); process.exit(1); }

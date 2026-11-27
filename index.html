@@ -5712,11 +5712,12 @@ const ORGAN_PAGES = {
   muscles: { href: "organs/muscles.html", label: "Explore the muscles in depth", blurb: "Anatomy from a muscle to a sarcomere, calcium and cross-bridges, recruiting motor units, fuel, fatigue and training on the run, and every body system" },
   bones: { href: "organs/bones.html", label: "Explore the bones in depth", blurb: "A long bone, osteons and marrow, remodelling and ten years of the hip, calcium, PTH and vitamin D, fracture healing, blood formation, and every body system" },
   skin: { href: "organs/skin.html", label: "Explore the skin in depth", blurb: "A block of skin layer by layer, heat balance from a heatwave to a cold lake, touch receptors and the pain gate, sun, vitamin D and sunburn, wound healing and burns, and every body system" },
-  eyes: { href: "organs/eyes.html", label: "Explore the eyes in depth", blurb: "The eye and its retina, eye pressure and glaucoma, focusing with glasses and age, a single rod’s flash response, dark adaptation and colour, the pathway to the brain and its lesions, and every body system" }
+  eyes: { href: "organs/eyes.html", label: "Explore the eyes in depth", blurb: "The eye and its retina, eye pressure and glaucoma, focusing with glasses and age, a single rod’s flash response, dark adaptation and colour, the pathway to the brain and its lesions, and every body system" },
+  ears: { href: "organs/ears.html", label: "Explore the ears in depth", blurb: "The ear from the eardrum to the organ of Corti, the middle ear and its problems, the travelling wave and a nerve fibre’s tuning, a hearing test with an audiogram, balance, nystagmus and BPPV, and every body system" }
 };
 /* how many prediction questions each organ page has, for the side panel's link to the hub.
    Kept in step by `node explore/sync-questions.mjs`, which reads the pages themselves. */
-const ORGAN_QUESTIONS = {"bones":3,"brain":3,"eyes":3,"gut":3,"heart":3,"kidneys":3,"liver":3,"lungs":3,"muscles":3,"pancreas":3,"skin":3};
+const ORGAN_QUESTIONS = {"bones":3,"brain":3,"ears":3,"eyes":3,"gut":3,"heart":3,"kidneys":3,"liver":3,"lungs":3,"muscles":3,"pancreas":3,"skin":3};
 const ORGAN_SYSTEMS = {
   brain: ["nervous", "endocrine", "respiratory"], heart: ["circulatory", "nervous"], lungs: ["respiratory", "circulatory"],
   gut: ["digestive", "nervous", "endocrine", "circulatory", "immune"], liver: ["digestive", "circulatory", "endocrine", "immune"],

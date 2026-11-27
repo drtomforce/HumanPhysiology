@@ -105,7 +105,7 @@ section{ margin-top:44px; }
 .sev b{ color:var(--ink); font-weight:600; }
 
 /* ---------- stat tiles ---------- */
-.tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+.tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(132px, 1fr)); gap:10px; }
 .tile{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
 .tile-k{ display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted); }
 .tile-v{ font-size:26px; font-weight:500; line-height:1.15; margin-top:4px; font-variant-numeric:tabular-nums; }
@@ -237,7 +237,7 @@ footer{ margin-top:56px; padding-top:16px; border-top:1px solid var(--line); col
       </div>
       <div class="card">
         <h3>Looked up or from memory</h3>
-        <p>Each approval names its sources and says honestly how they were used. <em>Looked up</em> means the source was opened and read, with a link and a short verbatim quote. <em>From memory</em> means it was recalled, which is weaker evidence. Rows approved before this was recorded show as <em>source not recorded</em>.</p>
+        <p>Each approval names its sources and says honestly how they were used. <em>Looked up</em> means every source was opened and read, with a link and a short verbatim quote. <em>From memory</em> means they were recalled, which is weaker evidence. <em>Partly looked up</em> means some were opened and read and the rest recalled. Rows approved before this was recorded show as <em>source not recorded</em>.</p>
       </div>
       <div class="card">
         <h3>Checking the check</h3>
@@ -320,7 +320,8 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 /* the categories, in drawing order: strongest evidence first, unchecked last */
 const MODES = {
   src: [
-    { k: "lookup",    label: "Looked up",            css: "--c-lookup",  note: "source opened and read, with a link and a quote" },
+    { k: "lookup",    label: "Looked up",            css: "--c-lookup",  note: "every source opened and read, with a link and a quote" },
+    { k: "partial",   label: "Partly looked up",     css: "--c-lookup",  css2: "--c-memory", style: "split", note: "some sources opened and read, the rest recalled" },
     { k: "memory",    label: "From memory",          css: "--c-memory",  note: "checked against a source recalled, not opened" },
     { k: "unknown",   label: "Source not recorded",  css: "--c-unknown", note: "approved before the method was recorded" },
     { k: "na",        label: "No claim",             css: "--c-na",      note: "a label or an id: nothing to check" },
@@ -348,7 +349,11 @@ const sum = (list, m = mode) => {
 };
 const all = S.pages.flatMap(p => p.sections);
 const color = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const sw = c => `<i class="sw ${c.style || ""}" style="background:var(${c.css})"></i>`;
+/* "split": two colours of the evidence ramp together (a row that is partly looked up); drawn as a diagonal split
+   in swatches and waffle squares and as fine stripes in bars, so it never needs a hue of its own */
+const fillOf = c => c.style === "split" ? `linear-gradient(135deg, var(${c.css}) 50%, var(${c.css2}) 50%)` : `var(${c.css})`;
+const sw = c => `<i class="sw ${c.style || ""}" style="background:${fillOf(c)}"></i>`;
+const drawn = c => !c.style || c.style === "split";   /* filled, not an outline */
 
 /* ---------- tiles ---------- */
 function tiles(){
@@ -360,6 +365,7 @@ function tiles(){
   $("#tiles").innerHTML =
     tile("Checked", pct(done, n) + "%", `${fmt(done)} of ${fmt(n)} rows`) +
     tile("Looked up", fmt(t.lookup), `${S.verifiedCites} of ${S.lookupCites} citations verified`, C.lookup) +
+    tile("Partly looked up", fmt(t.partial), "some sources opened, the rest recalled", C.partial) +
     tile("From memory", fmt(t.memory), `${pct(t.memory, done)}% of checked rows`, C.memory) +
     tile("Source not recorded", fmt(t.unknown), "approved before 18 Nov 2026", C.unknown) +
     tile("Fixed", fmt(o.fixed), `${issues.length} open finding${issues.length === 1 ? "" : "s"}`, MODES.out[1]) +
@@ -379,7 +385,7 @@ function bars(){
     const t = sum(p.sections), n = p.sections.reduce((a, s) => a + s.n, 0);
     const done = n - (mode === "src" ? t.unchecked + t.changed : t.unchecked);
     const segs = MODES[mode].filter(c => t[c.k]).map(c =>
-      `<i class="${c.style || ""}" style="flex:${t[c.k]};${c.style ? "" : `background:var(${c.css})`}" title="${c.label}: ${fmt(t[c.k])}"></i>`).join("");
+      `<i class="${c.style || ""}" style="flex:${t[c.k]};${c.style === "split" ? `background:repeating-linear-gradient(135deg, var(${c.css}) 0 3px, var(${c.css2}) 3px 6px)` : drawn(c) ? `background:var(${c.css})` : ""}" title="${c.label}: ${fmt(t[c.k])}"></i>`).join("");
     return `<a class="bar-name" href="#pg-${p.id}">${esc(p.name)}</a><div class="bar" role="img" aria-label="${esc(p.name)}: ${MODES[mode].filter(c => t[c.k]).map(c => `${c.label} ${t[c.k]}`).join(", ")}">${segs}</div>` +
       `<span class="bar-n">${pct(done, n)}%<span class="of"> of ${fmt(n)}</span></span>`;
   }).join("") + `</div>`;
@@ -399,7 +405,7 @@ function pages(){
 }
 function draw(){
   const dpr = window.devicePixelRatio || 1, cats = MODES[mode];
-  const pal = Object.fromEntries(cats.map(c => [c.k, color(c.css)]));
+  const pal = Object.fromEntries(cats.map(c => [c.k, color(c.css)])), pal2 = Object.fromEntries(cats.filter(c => c.css2).map(c => [c.k, color(c.css2)]));
   const wrapW = ($("#pages .secs") || {}).clientWidth || 600;
   const maxCols = Math.max(8, Math.floor(wrapW / PITCH));
   document.querySelectorAll("#pages .sec").forEach(fig => {
@@ -414,7 +420,11 @@ function draw(){
     for (const cat of cats){
       for (let j = 0; j < (c[cat.k] || 0); j++, i++){
         const x = (i % cols) * PITCH, y = Math.floor(i / cols) * PITCH;
-        if (cat.style){ g.strokeStyle = pal[cat.k]; g.lineWidth = 1.2; g.strokeRect(x + .6, y + .6, CELL - 1.2, CELL - 1.2); }
+        if (cat.style === "split"){
+          g.fillStyle = pal2[cat.k]; g.beginPath(); g.roundRect ? g.roundRect(x, y, CELL, CELL, 1) : g.rect(x, y, CELL, CELL); g.fill();
+          g.fillStyle = pal[cat.k]; g.beginPath(); g.moveTo(x, y); g.lineTo(x + CELL, y); g.lineTo(x, y + CELL); g.closePath(); g.fill();
+        }
+        else if (cat.style){ g.strokeStyle = pal[cat.k]; g.lineWidth = 1.2; g.strokeRect(x + .6, y + .6, CELL - 1.2, CELL - 1.2); }
         else { g.fillStyle = pal[cat.k]; g.beginPath(); g.roundRect ? g.roundRect(x, y, CELL, CELL, 1) : g.rect(x, y, CELL, CELL); g.fill(); }
         fig.__cats.push(cat.k);
       }

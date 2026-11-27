@@ -111,6 +111,54 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/12-4-the-action-potential",
   "checked": "2026-11-19"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=At%20the%20end%20of%20the%20auditory%20canal%20is%20the%20tympanic": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=The%20ampulla%20contains%20the%20hair%20cells%20that%20respond%20to%20rotational": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=The%20middle%20ear%20is%20connected%20to%20the%20pharynx%20through%20the": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=The%20organs%20of%20Corti%20lie%20on%20top%20of%20the%20basilar": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=The%20oval%20window%20is%20located%20at%20the%20beginning%20of%20a": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=The%20scala%20tympani%20ends%20at%20the%20round%20window%2C%20which%20is": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=The%20stereocilia%20extend%20up%20from%20the%20hair%20cells%20to%20the": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception#:~:text=When%20the%20pressure%20waves%20from%20the%20scala%20move%20the%20basilar": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception",
+  "checked": "2026-11-27"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception": {
   "state": "ok",
   "code": 200,
@@ -168,6 +216,12 @@
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-6-the-adrenal-glands",
   "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-9-the-endocrine-pancreas#:~:text=Glucagon%20plays%20an%20important%20role%20in%20blood%20glucose%20regulation%3B%20low": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-9-the-endocrine-pancreas",
+  "checked": "2026-11-27"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/17-9-the-endocrine-pancreas": {
   "state": "ok",
@@ -693,7 +747,17 @@
   "final": "https://pubmed.ncbi.nlm.nih.gov/25668261/",
   "checked": "2026-11-19"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:10196533%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:10748929%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:108122%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
@@ -703,7 +767,17 @@
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:12239568%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:12365904%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:12486177%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
@@ -713,7 +787,37 @@
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:15630389%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:15699723%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:16444273%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:17135456%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:1748546%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:19762709%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:19906956%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
@@ -733,12 +837,22 @@
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:23596328%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:26590418%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-21"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:2712129%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:27516544%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
@@ -763,6 +877,11 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:38280389%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:4057091%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -774,6 +893,11 @@
   "checked": "2026-11-21"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:6696142%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:9165730%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"

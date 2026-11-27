@@ -1,4 +1,9 @@
 {
+ "https://cvphysiology.com/arrhythmias/a004": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://cvphysiology.com/arrhythmias/a005#:~:text=at%20a%20rate%20of%20100-110%20action%20potentials": {
   "state": "ok",
   "code": 200,
@@ -65,6 +70,11 @@
   "checked": "2026-11-19"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-1-sensory-perception": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"

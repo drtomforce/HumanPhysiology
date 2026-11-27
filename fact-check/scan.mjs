@@ -57,11 +57,15 @@
    --via <lookup|memory|unknown> (how the row was checked; "unknown" = approved before this was recorded);
    --all with --list lists every item, not just the unchecked ones. --mark only touches items whose
    hash is current; add --unchecked to leave rows that already have a status (ok, fixed, an issue) alone.
+   Behind an HTTPS proxy, the link-fetching commands re-run themselves with NODE_USE_ENV_PROXY=1, and a
+   link whose host the environment's network doesn't allow is reported as not checked, not as dead
+   (fact-check/net.mjs).
    No dependencies. */
 import { readFileSync, writeFileSync, readdirSync, existsSync, appendFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { useEnvProxy, whyFailed } from "./net.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LEDGER = join(root, "fact-check", "ledger.json");
@@ -87,6 +91,8 @@ const sampleN = one("--sample") != null ? Number(one("--sample")) : null;
 const seed = one("--seed") || new Date().toISOString().slice(0, 10);
 const minAge = Number(one("--min-age") ?? 60);
 if (markStatus && !STATUSES.test(markStatus)) die(`--mark: status must be unchecked, ok, fixed, n/a or "issue #<n>"`);
+/* commands that fetch links: behind an HTTPS proxy, re-run with Node using it (fact-check/net.mjs) */
+if ((urlArgs.length && markStatus && !flag("--no-link-check")) || flag("--check-links")) useEnvProxy();
 
 /* the source registry: every --lookup / --memory must name an id in it */
 const sources = existsSync(SOURCES) ? JSON.parse(readFileSync(SOURCES, "utf8")) : {};
@@ -138,12 +144,15 @@ async function probe(url){
     /* 401 / 403 / 429: the server answered but wants a login or blocks robots; a person can still follow it */
     const state = res.ok ? "ok" : [401, 402, 403, 429].includes(res.status) ? "login" : "broken";
     return { state, code: res.status, final: res.url !== url ? res.url : undefined };
-  } catch (e){ return { state: "broken", code: 0, error: String(e.cause?.code || e.name || e.message) }; }
+  } catch (e){ return { code: 0, ...(await whyFailed(url, e)) }; } /* "blocked": the proxy won't let this environment reach the host */
   finally { clearTimeout(timer); }
 }
 async function probeAll(urls){
   const out = {};
-  for (let i = 0; i < urls.length; i += 6) await Promise.all(urls.slice(i, i + 6).map(async u => { out[u] = links[u] = { ...(await probe(u)), checked: new Date().toISOString().slice(0, 10) }; }));
+  for (let i = 0; i < urls.length; i += 6) await Promise.all(urls.slice(i, i + 6).map(async u => {
+    out[u] = { ...(await probe(u)), checked: new Date().toISOString().slice(0, 10) };
+    if (out[u].state !== "blocked") links[u] = out[u]; /* not recorded: still due for a check from an environment that allows the host */
+  }));
   writeFileSync(LINKS, JSON.stringify(Object.fromEntries(Object.entries(links).sort()), null, 1) + "\n");
   return out;
 }
@@ -151,6 +160,8 @@ if (urlArgs.length && markStatus && !flag("--no-link-check")){
   const res = await probeAll([...new Set(urlArgs)]);
   const dead = Object.entries(res).filter(([, r]) => r.state === "broken");
   if (dead.length) die("These links don't work, so nothing was marked:\n  " + dead.map(([u, r]) => `${u}  (${r.code || r.error})`).join("\n  "));
+  for (const [u, r] of Object.entries(res)) if (r.state === "blocked")
+    console.error(`Not link-checked: this environment's network doesn't allow ${new URL(u).hostname} (${r.error}). Marking anyway; run --check-links from an environment that allows it.`);
 }
 
 /* ---------- reading the pages ---------- */
@@ -526,8 +537,10 @@ if (flag("--check-links")){
   const due = Object.keys(uses).filter(u => !(links[u] && days(links[u].checked, today) < maxAge));
   const res = await probeAll(due);
   const bad = Object.entries(uses).filter(([u]) => (res[u] || links[u])?.state === "broken");
-  console.log(`Links: ${Object.keys(uses).length} in the selection, ${due.length} checked now, ${bad.length} broken.`);
-  for (const [u, at] of bad) console.log(`\n${u}  (${links[u].code || links[u].error})\n  ` + at.join("\n  "));
+  const blocked = due.filter(u => res[u]?.state === "blocked");
+  console.log(`Links: ${Object.keys(uses).length} in the selection, ${due.length - blocked.length} checked now, ${bad.length} broken.`);
+  if (blocked.length) console.log(`\n${blocked.length} link(s) not checked: this environment's network doesn't allow their hosts (${[...new Set(blocked.map(u => new URL(u).hostname))].sort().join(", ")}). They stay due; check them from an environment that allows those hosts.`);
+  for (const [u, at] of bad) console.log(`\n${u}  (${(res[u] || links[u]).code || (res[u] || links[u]).error})\n  ` + at.join("\n  "));
   const login = Object.keys(uses).filter(u => links[u]?.state === "login").length;
   if (login) console.log(`\n${login} link(s) answer with a login or robot block (401/403/429): fine for a verifier with access, but confirm by hand once.`);
   process.exit(bad.length ? 1 : 0);

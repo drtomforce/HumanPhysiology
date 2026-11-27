@@ -47,19 +47,40 @@ One more reason to look things up: the pasted advice's own worked example gives 
 
 ## The plan
 
-### 1. Fix the Node proxy problem (small, first)
-In this container, Node 22's built-in `fetch` ignores `HTTPS_PROXY`, so every request fails with `ENOTFOUND`. `scan.mjs` would then refuse a good link as dead, or record it as `broken` in `links.json`. Running with `NODE_USE_ENV_PROXY=1` fixes it (tested). Either:
-- document `NODE_USE_ENV_PROXY=1 node fact-check/scan.mjs …` in FACTUAL_CHECK.md, or
-- have `probe()` in `scan.mjs` print a hint when `HTTPS_PROXY` is set and the error is `ENOTFOUND` (better: the failure is silent today).
+### 1. Fix the Node proxy problem ✅ done 2026-11-27
+In this container, Node 22's built-in `fetch` ignores `HTTPS_PROXY`, so every request fails with `ENOTFOUND`. `scan.mjs` would then refuse a good link as dead, or record it as `broken` in `links.json`. A second problem turned up while testing: through the cloud proxy, a host the environment's network doesn't allow fails exactly like a host that doesn't exist, so a working link to, say, `nejm.org` would also be called dead.
 
-Expect each request to take a few seconds through the proxy.
+Done, in `fact-check/net.mjs` (shared with the fetch helper in step 3):
+- `scan.mjs` re-runs itself with `NODE_USE_ENV_PROXY=1` when it needs the network and a proxy is set (Node 22.21+ or 24.5+), so nobody has to remember the variable.
+- When a fetch fails, it asks the proxy for a tunnel to the host. A `403` or `407` means the environment's policy refuses the host: the link is **not checked**, not dead. `--mark` goes ahead with a warning, and `--check-links` reports it separately and leaves it due, instead of writing `broken` into `links.json`. This matters because WebFetch runs outside the container, so a checker can read a page the container can't reach.
+- If the proxy allows the host but Node didn't use the proxy, the error says so and names the fix.
+- `tests/factcheck-net-check.mjs` checks all of this against a fake local proxy, with no network.
 
-### 2. Add identifiers to `sources.json`
-Give each paper, review and guideline the optional `doi`, `pmid` and `pmcid` fields, filled from its `cite` string and Europe PMC.
-- 175 of the 241 recalled paper sources have a DOI in their `cite`; parse it out once.
-- The 66 without one carry **more** recalled citations (1,917) than those with one (1,164), including the most-cited papers: `charkoudian2003` and `drachman1994` (132 each), `coyle1986` (115), `schwellnus2009` (99), `diffey2002` (81). Find each identifier with Crossref's `query.bibliographic` search or a Europe PMC title search, and **confirm each match by hand**. A wrong match is worse than none. This is the highest-value part of the step.
-- Guidelines and standards without a DOI (`aasm3`, `acsm11`, `gold2027`, `iso7029`, `ansi-s36`) stay as they are: no API covers them.
-- Guidelines and books often have no PMID; leave the field out. Their `access` and `home` matter more.
+Each request still takes a few seconds through the proxy.
+
+### 2. Add identifiers to `sources.json` ✅ done 2026-11-27
+Each paper, review and guideline now has the optional `doi`, `pmid` and `pmcid` fields where they exist. `fact-check/ids.mjs` fills them in and keeps them up to date as new sources arrive (see [Sources](FACTUAL_CHECK.md#sources)):
+- `--write` writes only what is certain: the DOI already in the `cite`, plus the PMID and PMCID of the Europe PMC record with that exact DOI, when its title and year agree with the `cite`.
+- `--search` lists candidates from Crossref and Europe PMC for sources with no DOI, and never writes.
+
+Result, out of 266 papers, reviews and guidelines:
+
+| | Sources |
+|---|---|
+| DOI from the `cite`, matched in Europe PMC | 194 |
+| DOI found by search, confirmed by hand against the `cite` (first author, title, journal, volume, first page, year) | 51 |
+| PMID only (no DOI exists: `brubaker1991`, IOVS 1991) | 1 |
+| With a PMID / with a PMCID | 245 / 82 |
+| No identifier: guidelines, standards, books, chapters and unindexed journals | 20 |
+
+**What it unlocks:** 2,602 of the 3,081 recalled paper citations now point to a source with a PMID, so step 3 can fetch its abstract from Europe PMC; 467 of them also have a PMCID, for the full text. Before this step it was 1,157.
+
+Found along the way:
+- **Two wrong DOIs in `cite`, now corrected.** `coyle2001` had the journal's old prefix (`10.1249/…`); PubMed and Europe PMC use `10.1097/00003677-200104000-00009`. `sawka2012` had the early-view DOI (`…061026`, no pages); the published version is `10.1113/expphysiol.2011.061002`, 97(3):327-332, now in the `cite`.
+- **`esh2023` has a correction** (J Hypertens 2024;42(1):194, `10.1097/hjh.0000000000003621`). Worth a look when the blood-pressure rows are next checked.
+- **`moon1944`** (J Opt Soc Am) has a DOI but no PMID: the journal isn't in PubMed.
+- **`hofstetter1950`** (Optom World 1950) stays without one; the 1947 *Am J Optom* abstract with the same title is a different publication.
+- The 20 with no identifier, which no API covers: `acsm11`, `ada2026` (a whole supplement, no single DOI), `aasm3`, `cdc-flu-ve`, `gold2027`, `rinzel1989`, `who2006`, `jbds-dka2023`, `gagge1971` (ASHRAE Trans.), `weinstein1968`, `sacn2016`, `nnbc2012`, `hofstetter1950`, `iso7029`, `iso1999`, `bsa2018`, `cnawr2005`, `nice-ng233`, `who2018-noise`, `ansi-s36`.
 
 ### 3. A fetch helper: `fact-check/fetch.mjs`
 A small script with no dependencies, like `scan.mjs`, that the checker runs before marking a row:
@@ -127,8 +148,8 @@ These steps need no new hosts: `www.ebi.ac.uk`, `api.crossref.org` and `pmc.ncbi
 
 | # | Step | Effort | What it unlocks |
 |---|---|---|---|
-| 1 | Node proxy fix or hint | minutes | Link checks that don't lie in this container |
-| 2 | `doi` / `pmid` in `sources.json` | an hour, plus hand checks for 66 | Everything below; 1,917 more citations fetchable |
+| 1 ✅ | Node proxy fix, and blocked hosts told apart from dead links | done | Link checks that don't lie in this container |
+| 2 ✅ | `doi` / `pmid` in `sources.json` | done | Everything below; 1,917 more citations fetchable |
 | 3 | `fetch.mjs` with cache, retries and `--find` | half a day | Paper look-ups in one command |
 | 5 | The rule in FACTUAL_CHECK.md | minutes | The nightly checker uses it |
 | 8 | `--audit` (retractions, metadata, `access`) | an hour | Catches wrong and retracted citations |

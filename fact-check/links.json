@@ -116,6 +116,24 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing#:~:text=A%20growth%20of%20the%20pituitary%20gland%20presses%20against%20the%20optic": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing#:~:text=Within%20each%20eye%2C%20the%20axons%20projecting%20from%20the%20medial%20side": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing",
+  "checked": "2026-11-27"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing#:~:text=loses%20the%20outermost%20areas%20of%20their%20field%20of%20vision%20and": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing",
+  "checked": "2026-11-27"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/14-2-central-processing": {
   "state": "ok",
   "code": 200,
@@ -675,15 +693,40 @@
   "final": "https://pubmed.ncbi.nlm.nih.gov/25668261/",
   "checked": "2026-11-19"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:10748929%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:10904038%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:12365904%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:12813151%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-21"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:1748546%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:20573916%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:20884587%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:22923574%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
@@ -694,6 +737,31 @@
   "state": "ok",
   "code": 200,
   "checked": "2026-11-21"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:2712129%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31015713%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31138694%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31971679%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:35294044%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-27"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:4057091%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",

@@ -2543,12 +2543,14 @@ function urlParams(){
 }
 function writeURL(now){
   if (!ALT || !ALT.toParams) return;
-  clearTimeout(urlTimer);
+  /* the write reads the state when it runs, so a pending one is kept rather than pushed back:
+     a page that calls altered() every few hundred ms (the heart's stenosis status) must not starve it */
   const go = () => {
+    clearTimeout(urlTimer); urlTimer = 0;
     const p = urlParams();
     try { history.replaceState(history.state, "", location.pathname + "?" + p.toString() + location.hash); } catch(e){}
   };
-  now ? go() : (urlTimer = setTimeout(go, 250));
+  if (now) go(); else if (!urlTimer) urlTimer = setTimeout(go, 250);
 }
 function altered(){ renderAlter(); writeURL(); }
 

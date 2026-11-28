@@ -912,7 +912,7 @@ canvas.trace{ display:block; width:100%; }
    },
    "listenNote": {
     "ms": "Listen plays the air through the throat on your speakers: quiet breaths through the nose at rest, louder ones through the mouth when running, and the night’s breathing and snoring asleep. Turn the volume down first.",
-    "college": "Synthesised in the browser (Web Audio), not a recording: filtered noise for the airflow, louder through the mouth, following the body’s breathing rate; asleep, the same sounds as the sleep section. Not calibrated to your speakers."
+    "college": "Synthesised in the browser (Web Audio), not a recording: pink noise for the airflow, hissing high through the nose and a lower, louder “haa” through the mouth, brighter on the in-breath than the out-breath. Each breath swells and fades (turbulent noise grows faster than the flow), the out-breath is softer and ends in a pause, and no two breaths are quite alike. Asleep, the same sounds as the sleep section. Not calibrated to your speakers."
    },
    "now": {
     "ms": "What your throat is doing at this time of the body’s day. Change the person to see it in the other sections too.",
@@ -973,7 +973,7 @@ canvas.trace{ display:block; width:100%; }
    },
    "listenNote": {
     "ms": "Listen plays these three minutes through your speakers, at real speed: soft breaths, a buzzing snore when the throat narrows, silence when it closes, and a loud snort as the brain half-wakes and opens it again. Turn the volume down first.",
-    "college": "Synthesised in the browser (Web Audio), not a recording, from the model’s airflow each second: breath noise scaled by flow, a low flutter of the soft palate on flow-limited in-breaths (higher pitched with big tonsils or in a child), silence once flow stops, a snort on the first breath of each arousal, and a steady hiss of the mask leak on CPAP. While listening, the window plays in real time instead of six times faster. Not calibrated to your speakers."
+    "college": "Synthesised in the browser (Web Audio), not a recording, from the model’s airflow each second: breath noise scaled by flow, a rattle on flow-limited in-breaths, built as the soft palate opening and slapping shut about 35 times a second with each puff of air and slap a little different (about 85 times a second and higher pitched with big tonsils or in a child), silence once flow stops, a snort on the first breath of each arousal, and a steady hiss of the mask leak on CPAP. While listening, the window plays in real time instead of six times faster. Not calibrated to your speakers."
    }
   },
   "systems": {
@@ -5469,74 +5469,139 @@ function playVowel(){
    (one breath every 4.6 s), so the sound lines up with the trace and its playback line.
    ========================================================================= */
 const BREATH_T = 4.6;
+/* how loud one breath is, x the fraction of the cycle (0–.5 in, .5–1 out). Turbulent noise grows
+   faster than the flow, so a breath swells and fades rather than hissing evenly; the out-breath is
+   softer, front-loaded (the lungs recoil) and followed by a pause before the next in-breath */
+function breathEnv(x){
+  x = ((x % 1) + 1) % 1;
+  if (x < .5) return Math.pow(Math.sin(Math.PI * x / .5), 1.8);
+  const u = (x - .5) / .5;
+  return u < .7 ? .55 * Math.pow(Math.sin(Math.PI * u / .7), 1.4) * (1.15 - .3 * u) : 0;
+}
+/* no two breaths are quite alike: a fixed ±15% per breath, so the sound repeats with the trace */
+const breathVar = n => .85 + .3 * ((Math.sin(n * 12.9898 + 4.1) * 43758.5453 % 1 + 1) % 1);
 function soundAt(N, s, p){
-  const i = clamp(Math.floor(s), 0, N.N - 1), f = N.flow[i], ph = Math.sin(2 * Math.PI * s / BREATH_T);
-  const ins = Math.max(0, ph), ar = !!N.ar[i];
-  const env = ins + .5 * Math.max(0, -ph);
+  const i = clamp(Math.floor(s), 0, N.N - 1), f = N.flow[i], x = s / BREATH_T, ar = !!N.ar[i];
+  const inhale = ((x % 1) + 1) % 1 < .5, env = breathEnv(x), v = breathVar(Math.floor(x));
   return {
-    i, flow: f,
-    air: env * f * (ar ? 1 : .55),
-    snore: f < .95 && f > .05 ? (.9 * (1 - f) + .2) * ins : 0,
+    i, flow: f, inhale,
+    air: env * f * (ar ? 1 : .55) * v,
+    snore: f < .95 && f > .05 && inhale ? (.9 * (1 - f) + .2) * env * v : 0,
     snort: ar && !(i > 0 && N.ar[i - 1]) ? 1 : 0,
-    pitch: p.tonsils || p.age < 13 ? 90 : 40,
-    mouth: false, cpap: p.cpap
+    high: !!(p.tonsils || p.age < 13), mouth: false, cpap: p.cpap
   };
 }
-/* the body's day: breaths at its breathing rate, through the mouth too above ~35 L/min */
-function daySoundAt(d, br){
-  const env = Math.max(0, br) + .5 * Math.max(0, -br);
-  return { i: -1, flow: 1, air: env * clamp(.35 + .65 * Math.sqrt(d.ve / 48)), snore: 0, snort: 0, pitch: 40, mouth: d.mouth, cpap: 0 };
+/* the body's day: breaths at its breathing rate (x the fraction of the breath), through the mouth
+   too above ~35 L/min */
+function daySoundAt(d, x){
+  const env = breathEnv(x), v = breathVar(Math.floor(x));
+  return { i: -1, flow: 1, inhale: ((x % 1) + 1) % 1 < .5, air: env * v * clamp(.35 + .65 * Math.sqrt(d.ve / 48)), snore: 0, snort: 0, high: false, mouth: d.mouth, cpap: 0 };
+}
+/* the airway's colour: high-pass, a resonance (Hz, dB, Q) and low-pass for each route and
+   direction. Through the nose the air hisses high in the narrow nostrils and turbinates; through
+   the open mouth it is a lower, breathier "haa"; in-breaths are brighter than out-breaths */
+const AIR = {
+  nose:  { in: [550, 2600, 9, 1.4, 7500, .9], out: [300, 1500, 6, 1.1, 4200, 1] },
+  mouth: { in: [200, 1150, 8, .9, 5500, 1.15], out: [160, 800, 8, 1, 3200, 1.2] }
+};
+/* builds the sound into an audio context (the page's, or an offline one to record it) */
+function buildSound(ac){
+  const sr = ac.sampleRate, rnd = Math.random;
+  const buffer = (sec, fill) => { const b = ac.createBuffer(1, Math.floor(sr * sec), sr); fill(b.getChannelData(0)); return b; };
+  const norm = (d, to) => { let s = 0; for (const v of d) s += v * v; const k = to / Math.sqrt(s / d.length || 1); for (let i = 0; i < d.length; i++) d[i] *= k; };
+  /* pink noise (Kellet's filter), cross-faded at the loop so the seam does not click */
+  const pink = buffer(4, d => {
+    const L = d.length, F = Math.floor(sr * .15), tmp = new Float32Array(L + F);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < L + F; i++){
+      const w = rnd() * 2 - 1;
+      b0 = .99886 * b0 + w * .0555179; b1 = .99332 * b1 + w * .0750759; b2 = .969 * b2 + w * .153852;
+      b3 = .8665 * b3 + w * .3104856; b4 = .55 * b4 + w * .5329522; b5 = -.7616 * b5 - w * .016898;
+      tmp[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * .5362; b6 = w * .115926;
+    }
+    for (let i = 0; i < L; i++) d[i] = i < F ? tmp[i] * (i / F) + tmp[L + i] * (1 - i / F) : tmp[i];
+    norm(d, .3);
+  });
+  const white = buffer(2, d => { for (let i = 0; i < d.length; i++) d[i] = rnd() * 2 - 1; norm(d, .3); });
+  /* the flutter of a snore: the soft palate (or the tonsils) slapping open and shut f0 times a
+     second. Each opening lets out a puff of air and a pulse of pressure, each closure a dull slap
+     that rings in the throat; the rate wanders and no two puffs are alike, which is what makes it
+     a rattle and not a buzzer */
+  const flutter = (d, f0, ring, wobble, from = 0, to = d.length) => {
+    let t = from, f = f0;
+    for (;;){
+      f = clamp(f * (1 + (rnd() - .5) * .08), f0 * .8, f0 * 1.25);
+      const T = Math.round(sr / f * (1 + (rnd() - .5) * wobble)); if (t + T > to) break;
+      const A = .6 + .6 * rnd(), oN = Math.round(T * (.45 + .25 * rnd())), w = 2 * Math.PI * ring * (.8 + .4 * rnd()) / sr, dec = Math.exp(-1 / (sr * (.004 + .004 * rnd())));
+      for (let k = 0; k < T; k++){
+        let v;
+        if (k < oN){ const e = Math.sin(Math.PI * k / oN); v = e * e * ((rnd() * 2 - 1) * .7 + .5); }
+        else { const q = k - oN; v = 1.2 * Math.pow(dec, q) * Math.sin(w * q); }
+        d[t + k] = A * v;
+      }
+      t += T;
+    }
+  };
+  const snoreLow = buffer(3, d => { flutter(d, 34, 190, .18); norm(d, .3); });   /* the soft palate */
+  const snoreHigh = buffer(3, d => { flutter(d, 85, 330, .12); norm(d, .3); });  /* tonsils, or a child */
+  /* the snort: the airway snapping open as the brain half-wakes, a burst of ragged flutter and a gasp */
+  const snortBuf = buffer(.8, d => {
+    flutter(d, 30, 220, .4);
+    for (let i = 0; i < d.length; i++){
+      const t = i / sr, env = Math.min(1, t / .02) * (t < .25 ? 1 : Math.exp(-(t - .25) / .15));
+      d[i] = env * (d[i] + (rnd() * 2 - 1) * .5);
+    }
+    norm(d, .35);
+  });
+  const node = (type, f, q, g) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; if (g) b.gain.value = g; return b; };
+  const gain = v => { const g = ac.createGain(); g.gain.value = v; return g; };
+  const loop = b => { const s = ac.createBufferSource(); s.buffer = b; s.loop = true; s.loopStart = 0; s.loopEnd = b.duration; return s; };
+  const master = gain(0); master.connect(ac.destination);
+  /* the air */
+  const nPink = loop(pink), airHp = node("highpass", 400, .7), airPk = node("peaking", 2000, 1, 6), airLp = node("lowpass", 6000, .7), gAir = gain(0);
+  nPink.connect(airHp).connect(airPk).connect(airLp).connect(gAir).connect(master);
+  /* the snore, through the throat's resonance */
+  const sLow = loop(snoreLow), sHigh = loop(snoreHigh), gLow = gain(1), gHigh = gain(0);
+  const sLp = node("lowpass", 1300, .8), sPk = node("peaking", 260, 1, 6), gSnore = gain(0), gSnort = gain(0);
+  sLow.connect(gLow).connect(sLp); sHigh.connect(gHigh).connect(sLp); sLp.connect(sPk).connect(gSnore).connect(master);
+  gSnort.connect(sPk);
+  /* CPAP: the steady hiss of air leaking from the mask */
+  const nWhite = loop(white), gCpap = gain(0); nWhite.connect(node("highpass", 2500, .5)).connect(gCpap).connect(master);
+  nPink.start(); nWhite.start(); sLow.start(); sHigh.start(rnd() * .5);
+  return { ac, master, gAir, airHp, airPk, airLp, gLow, gHigh, gSnore, gSnort, gCpap, snortBuf, on: false, snortI: -1, snortTill: 0, idle: null };
 }
 let snd = null;
 function soundEngine(){
   if (snd) return snd;
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const ac = audioCtx, len = ac.sampleRate * 2, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    const node = (type, f, q) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
-    const gain = v => { const g = ac.createGain(); g.gain.value = v; return g; };
-    const noise = ac.createBufferSource(); noise.buffer = buf; noise.loop = true;
-    const master = gain(0); master.connect(ac.destination);
-    /* the air: noise shaped by the nose (higher, softer) or the open mouth (lower, louder) */
-    const airF = node("bandpass", 1300, .7), gAir = gain(0);
-    noise.connect(airF).connect(gAir).connect(master);
-    /* the snore: a low buzz of the fluttering palate, and noise chopped at the same rate */
-    const osc = ac.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = 40;
-    const sLp = node("lowpass", 450, 2), sBp = node("bandpass", 300, 1), chop = gain(0), depth = gain(.8), gSnore = gain(0);
-    osc.connect(depth).connect(chop.gain); noise.connect(sBp).connect(chop);
-    osc.connect(sLp).connect(gSnore); chop.connect(gSnore); gSnore.connect(master);
-    /* CPAP: the steady hiss of air leaking from the mask */
-    const gCpap = gain(0); noise.connect(node("highpass", 2000, .5)).connect(gCpap).connect(master);
-    noise.start(); osc.start();
-    snd = { ac, master, gAir, airF, osc, gSnore, gCpap, on: false, snortI: -1, snortTill: 0, idle: null };
-  } catch(e){ snd = null; }
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); snd = buildSound(audioCtx); snd.live = true; }
+  catch(e){ snd = null; }
   return snd;
 }
-/* levels from soundAt or daySoundAt, or null for silence */
-function soundUpdate(lv){
-  const e = snd; if (!e) return;
-  const t = e.ac.currentTime, k = .03;
+/* levels from soundAt or daySoundAt, or null for silence; e and t to drive an offline recording */
+function soundUpdate(lv, e = snd, t = e && e.ac.currentTime){
+  if (!e) return;
+  const k = .03;
   if (!lv){
-    if (e.on){ e.on = false; e.master.gain.setTargetAtTime(0, t, .05); clearTimeout(e.idle); e.idle = setTimeout(() => { if (!e.on) e.ac.suspend().catch(() => {}); }, 400); }
+    if (e.on){ e.on = false; e.master.gain.setTargetAtTime(0, t, .05); if (e.live){ clearTimeout(e.idle); e.idle = setTimeout(() => { if (!e.on) e.ac.suspend().catch(() => {}); }, 400); } }
     return;
   }
-  if (!e.on){ e.on = true; clearTimeout(e.idle); if (e.ac.state === "suspended") e.ac.resume().catch(() => {}); e.master.gain.setTargetAtTime(.1, t, .05); }
-  e.gAir.gain.setTargetAtTime(lv.air * (lv.mouth ? 1.1 : .8), t, k);
-  e.airF.frequency.setTargetAtTime(lv.mouth ? 650 : 1300, t, .2);
-  e.airF.Q.setTargetAtTime(lv.mouth ? .5 : .7, t, .2);
+  if (!e.on){ e.on = true; clearTimeout(e.idle); if (e.live && e.ac.state === "suspended") e.ac.resume().catch(() => {}); e.master.gain.setTargetAtTime(.12, t, .05); }
+  const [hp, pf, pg, pq, lp, lg] = AIR[lv.mouth ? "mouth" : "nose"][lv.inhale ? "in" : "out"];
+  e.airHp.frequency.setTargetAtTime(hp, t, .08); e.airPk.frequency.setTargetAtTime(pf, t, .08);
+  e.airPk.gain.setTargetAtTime(pg, t, .08); e.airPk.Q.setTargetAtTime(pq, t, .08); e.airLp.frequency.setTargetAtTime(lp, t, .08);
   e.gCpap.gain.setTargetAtTime(lv.cpap ? .05 + .01 * lv.cpap : 0, t, .2);
+  e.gLow.gain.setTargetAtTime(lv.high ? 0 : 1, t, .3); e.gHigh.gain.setTargetAtTime(lv.high ? 1 : 0, t, .3);
   if (lv.snort && lv.i !== e.snortI){
-    /* the snort: the airway snapping open as the brain half-wakes */
-    e.snortI = lv.i; e.snortTill = t + .5;
-    e.osc.frequency.cancelScheduledValues(t); e.osc.frequency.setValueAtTime(lv.pitch * 1.4, t); e.osc.frequency.setTargetAtTime(lv.pitch, t + .15, .1);
-    e.gSnore.gain.cancelScheduledValues(t); e.gSnore.gain.setTargetAtTime(1.5, t, .02); e.gSnore.gain.setTargetAtTime(0, t + .3, .06);
-    e.gAir.gain.cancelScheduledValues(t); e.gAir.gain.setTargetAtTime(1.3, t, .02); e.gAir.gain.setTargetAtTime(lv.air, t + .35, .1);
+    e.snortI = lv.i; e.snortTill = t + .6;
+    const s = e.ac.createBufferSource(); s.buffer = e.snortBuf; s.playbackRate.value = lv.high ? 1.6 : 1;
+    s.connect(e.gSnort); e.gSnort.gain.setValueAtTime(2.2, t); s.start(t);
+    e.gSnore.gain.cancelScheduledValues(t); e.gSnore.gain.setTargetAtTime(0, t, .03);
+    e.gAir.gain.cancelScheduledValues(t); e.gAir.gain.setTargetAtTime(1.4, t + .1, .05); e.gAir.gain.setTargetAtTime(lv.air, t + .5, .15);
     return;
   }
   if (t < e.snortTill) return;
-  e.osc.frequency.setTargetAtTime(lv.pitch, t, .1);
-  e.gSnore.gain.setTargetAtTime(lv.snore, t, k);
+  e.gAir.gain.setTargetAtTime(lv.air * AIR[lv.mouth ? "mouth" : "nose"][lv.inhale ? "in" : "out"][5] * (lv.mouth ? 1.1 : .8), t, k);
+  e.gSnore.gain.setTargetAtTime(lv.snore * 1.3, t, k);
 }
 const exportOpen = () => { const m = document.querySelector(".xp"); return !!(m && !m.hidden); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) soundUpdate(null); });
@@ -5891,7 +5956,7 @@ O.onTick((dt, real) => {
     if (O.visible(nFig) || O.visible(charts.psg.node)) lv = soundAt(Sim.S.N, V.at * 3600 + psgT, P);
     else if (O.visible(aFig)){
       const m = ph === "sleep" ? nightMin(O.state().hour) : -1;
-      lv = m >= 0 ? soundAt(Sim.S.N, m * 60 + anT % 60, P) : daySoundAt(dayAt(ph), br);
+      lv = m >= 0 ? soundAt(Sim.S.N, m * 60 + anT % 60, P) : daySoundAt(dayAt(ph), anT / (60 / rr));
       if (P.choke) lv = { ...lv, air: 0, snore: 0, snort: 0 };
     }
   }
@@ -5927,7 +5992,7 @@ recompute(); syncUI();
 buildAll();
 renderAll();
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => requestAnimationFrame(() => { buildAll(); renderAll(); drawCharts(); }));
-window.__throat = { P, V, Sim, swallow, voice, night, tract, spectrum, soundAt, sound: () => snd && { on: snd.on, state: snd.ac.state, at: V.at * 3600 + psgT } }; /* for debugging in the console */
+window.__throat = { P, V, Sim, swallow, voice, night, tract, spectrum, soundAt, daySoundAt, buildSound, soundUpdate, sound: () => snd && { on: snd.on, state: snd.ac.state, at: V.at * 3600 + psgT } }; /* for debugging in the console */
 O.start();
 drawCharts();
 

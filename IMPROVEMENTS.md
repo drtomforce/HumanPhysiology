@@ -9,15 +9,15 @@ When a section is done, replace its plan with a one-line pointer to the README a
 | | Done | Remaining |
 |---|---|---|
 | Organs on the body (close-up + phase text) | 14: brain, heart, lungs, stomach & gut, liver, pancreas, kidneys, muscles, skin, bones, eyes, ears, throat, spleen & lymph nodes | New organs: see [New organs for the body](#3-new-organs-for-the-body) |
-| Organ deep-dive pages (`organs/<id>.html`) | 12: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin, eyes, ears | 2 existing organs (throat, spleen & lymph nodes) + any new ones |
+| Organ deep-dive pages (`organs/<id>.html`) | 13: heart, lungs, brain, kidneys, stomach & gut, liver, pancreas, muscles, bones, skin, eyes, ears, throat | 1 existing organ (spleen & lymph nodes) + any new ones |
 | Body systems animated on the body | 9: circulatory, nervous, endocrine, respiratory, digestive, urinary, immune & lymphatic, muscles & skeleton, skin | 1: reproductive |
 | Journeys ("follow a …") | 9: red cell, nerve impulse, hormone cascade, breath, bite, drop, infection, step, heat | One per new system, plus cross-system journeys |
-| Prediction questions | 36: three on each of the 12 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
+| Prediction questions | 39: three on each of the 13 deep-dive pages, with the hub | One per new page: see [Questions](#6-questions-predict-then-watch) |
 | Converging cases (run across pages) | 1: diabetic ketoacidosis | 4: cholera to shock, heart failure, the marathon wall, altitude over weeks |
 
 ## Next up
 
-Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows and its “follow the heat” journey ([2.3](#23-skin-integumentary--done)), the eyes page ([1.8](#18-eyes-organseyeshtml--done)) and the ears page ([1.9](#19-ears-organsearshtml--done)); next is the throat page (see [Suggested order](#suggested-order)).
+Both items below are built; what is listed under them is still open. The prediction questions, their hub and the first converging case (diabetic ketoacidosis) are built ([6](#6-questions-predict-then-watch)), and so are the skin page ([1.7](#17-skin-organsskinhtml--done)) and the skin system on the body, with its heat flows and its “follow the heat” journey ([2.3](#23-skin-integumentary--done)), the eyes page ([1.8](#18-eyes-organseyeshtml--done)), the ears page ([1.9](#19-ears-organsearshtml--done)) and the throat page ([1.10](#110-throat-organsthroathtml--done)); next are the endocrine glands and blood & vessels as new organs with pages (see [Suggested order](#suggested-order)).
 
 ### A. Export: figures, animations, context and settings ✅ Done
 Built as planned; see the README for what it covers. Checked by `node tests/export-check.mjs`. Still open:
@@ -67,7 +67,7 @@ Ordered roughly by teaching value and by how much the existing body simulation a
 Built; see the README for what it covers. Still open for this page: a Starling-based clearance calculator you fill in yourself, K⁺ handling as its own interactive section, an AKI section that separates prerenal, renal and postrenal injury, and passing a condition across to the heart and lungs pages.
 
 ### 1.2 Stomach & gut (`organs/gut.html`) ✅ Done
-Built; see the README for what it covers. Still open for this page: tie the enterocyte and the meal clock to the body’s bite journeys (open the page at the stage a bite has reached), an interactive enzyme cascade you can step through (trypsinogen → trypsin is a list for now), serotonin and the enterochromaffin cells (with IBS and anti-nausea drugs), bile acids and the enterohepatic circulation (the liver page now exists, so the loop can be shared between the two), and the oesophagus and reflux, which belong with the throat page.
+Built; see the README for what it covers. Still open for this page: tie the enterocyte and the meal clock to the body’s bite journeys (open the page at the stage a bite has reached), an interactive enzyme cascade you can step through (trypsinogen → trypsin is a list for now), serotonin and the enterochromaffin cells (with IBS and anti-nausea drugs), and bile acids and the enterohepatic circulation (the liver page now exists, so the loop can be shared between the two). The oesophagus, its manometry and reflux are now on the throat page ([1.10](#110-throat-organsthroathtml--done)); the gut page's oesophagus could link to it.
 
 ### 1.3 Liver (`organs/liver.html`) ✅ Done
 Built; see the README for what it covers. Still open for this page: the enterohepatic circulation of bile acids as its own interactive section (it is a readout and a paragraph for now, and needs the gut page's ileum to tie into), an ammonia and urea-cycle section with hepatic encephalopathy, a drug of the reader's choosing followed through absorption, first pass, effect and clearance (the first-pass table is static apart from this liver's extraction), regeneration after a resection or an injury over weeks, zonation beyond three zones, and carrying a condition across to the pancreas page once it exists (fatty liver and insulin resistance belong to both).
@@ -135,12 +135,17 @@ Built; see the README for what it covers. What changed from the plan, and what i
 - **Not yet built**: sound localisation (interaural time and level differences, the pinna’s cues) as an interactive section, the ascending auditory pathway (shared with the brain page), the head impulse as the VOR’s link to the eyes page, and carrying a condition across to other pages (gentamicin and loop diuretics ↔ the kidneys page, noise and blood pressure ↔ the heart page).
 - **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8g); the PhD and question texts name their key sources, 19 sources were added to `fact-check/sources.json`, and one registry row (hearing and balance) was added. The four phase texts are the body view’s checked ear texts.
 
-### 1.10 Throat (`organs/throat.html`)
-- **Anatomy**: pharynx, larynx (vocal folds, epiglottis, cartilages), oesophagus, tonsils and adenoids, thyroid and parathyroids nearby.
-- **Swallowing**: the oral, pharyngeal and oesophageal phases, airway protection, and oesophageal manometry with the upper and lower sphincters.
-- **Voice**: vocal fold vibration (myoelastic–aerodynamic theory), pitch and loudness, and formants from the vocal tract filter.
-- **Airway and sleep**: upper-airway collapse in sleep (the snoring the body already shows), with obstructive sleep apnoea and its oxygen dips linked to the lungs' chemoreflex.
-- **Scenarios**: choking and the Heimlich manoeuvre, aspiration after a stroke, GERD, achalasia, laryngitis, sleep apnoea, tonsillitis.
+### 1.10 Throat (`organs/throat.html`) ✅ Done
+Built; see the README for what it covers, and `node tests/throat-check.mjs` for its controls. What changed from the plan, and what is still open for this page:
+- **The swallow is a timeline, not a biomechanical model**: one swallow's events (oral transit, the delay before the pharyngeal response, laryngeal vestibule closure, swallow apnoea, UES opening, the pharyngeal squeeze) are typical healthy timings shifted by rules for age, a stroke, alcohol and the bolus (constants in `BOLUS` and `fn:swallow`), and aspiration is a rule on how long the airway is open when the bolus arrives × how fast it flows, plus residue and a paralysed fold, mapped to the penetration–aspiration scale. There is no tongue pressure, hyoid excursion in mm, bolus rheology (IDDSI levels), chin tuck or head turn, no cough strength, no Parkinson’s disease, motor neurone disease or head and neck cancer after radiotherapy, and only one representative swallow is scored (the Chicago Classification uses ten). The UES opening is drawn, not computed from traction and relaxation.
+- **Manometry is drawn from rules**: the pressure map is a sum of Gaussian waves (pharyngeal stripping, UES relaxation and after-contraction, peristalsis at ~3.6 cm/s with a transition-zone trough, LES relaxation with crural respiratory swings and a hiatus hernia as a double hump), and the IRP, DCI and distal latency are measured from it as a clinician’s software would. Type I and III achalasia, EGJ outflow obstruction and hypercontractile (jackhammer) oesophagus are in the classifier but not offered as choices; there are no multiple rapid swallows, rapid drink challenge or impedance (bolus clearance).
+- **Reflux is a rule over the day** (episodes × clearance time → acid exposure time, Lyon 2.0), not a pH trace through the body’s meals and sleep; there is no Barrett’s oesophagus, eosinophilic oesophagitis or laryngopharyngeal reflux model, and the oesophagus and reflux are not yet linked from the gut page.
+- **The voice is a static source–filter model**: Peterson & Barney’s formant averages, a −12 dB/octave source tilted by loudness and breathiness, rules for f0 (+2 Hz per cmH₂O), SPL (~9 dB per doubling of subglottal pressure) and the phonation threshold pressure, a string model for the folds’ tension, and fixed jitter and HNR for each fold problem; it is not a self-oscillating fold model (a two-mass or body–cover model), there are no consonants, no registers (falsetto), no singer’s formant, no vowel chart to drag, and the formants don’t follow the jaw and tongue in the anatomy figure. Heliox scales every formant by the speed of sound, without the yielding-wall correction that makes F1 shift less. Played sound is synthesised, uncalibrated.
+- **Sleep apnoea** uses Gold & Schwartz’s Pcrit bands with rules for BMI, age, tonsils, position, alcohol and a jaw-forward splint, a dilator compensation by stage, an arousal threshold on the accumulated obstruction and an undershoot of tone after each arousal; it reproduces cyclical events but not loop gain from the lungs page’s chemoreflex, CO₂, heart rate or blood-pressure surges, central apnoeas, positional change within a sleep cycle, REM-dominant phenotypes in women, hypoglossal nerve stimulation or drugs (atomoxetine with oxybutynin, tirzepatide), and the body view’s night doesn’t read it. Children are scored with paediatric severity bands, but obstructive hypoventilation is not modelled.
+- **Not yet built from the plan**: the oesophageal manometry of the upper and lower sphincters is in, but GERD from the plan is GORD (the UK term) with a PPI; tonsillitis is a lens text, not a scenario (the immune layer’s “follow an infection” starts at the throat); the thyroid and parathyroids are figure parts only, for the endocrine glands page. Choking is a switch with one rescue button rather than a timed event with falling oxygen.
+- **More scenarios**: Parkinson’s disease, motor neurone disease (bulbar palsy), head and neck cancer after radiotherapy, eosinophilic oesophagitis with a food bolus, Zenker’s diverticulum, scleroderma (weak peristalsis with a weak LES), Reinke’s oedema in a smoker, a singer’s voice (registers), the voice at puberty, obesity hypoventilation, sleep apnoea after a stroke, positional OSA, and a hypoglossal nerve stimulator.
+- **Not yet carried across pages**: aspiration → pneumonia on the lungs page, sleep apnoea → blood pressure and AF on the heart page and nocturia on the kidneys page, reflux → the gut page’s stomach, the recurrent laryngeal nerve → the heart’s aortic arch.
+- **Facts**: listed as unchecked in `FACTUAL_CHECK.md` (row 8h); the PhD and question texts name their key sources, 31 sources were added to `fact-check/sources.json` (DOIs confirmed on Crossref), and one registry row (swallowing, voice and the upper airway in sleep) was added. The four phase texts are the body view’s checked throat texts.
 
 ---
 
@@ -285,7 +290,7 @@ These span several organs and are best built as their own pages (for example `ex
 
 ## 6. Questions: predict, then watch ✅ Done (the questions, the hub and the first converging case; four cases still open)
 
-Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all; the skin, eyes and ears pages have since added three more each) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
+Built as planned: a Predict section on each of the nine deep-dive pages (three questions each, 27 in all; the skin, eyes, ears and throat pages have since added three more each) and the hub at `explore/questions.html`. See the README for what they cover, and `node tests/questions-check.mjs` for their check. What changed from the plan, and what is still open:
 
 - **Diabetic ketoacidosis runs** ([6.4](#64-converging-cases)) ✅: see the README. The lungs page has a blood-bicarbonate slider in its control section that moves the chemoreflex set point (Winters’ formula for an acidosis, ~0.7 mmHg per mmol/L for an alkalosis) and a *Diabetic ketoacidosis* scenario at HCO₃⁻ 11 mmol/L, the same patient as the pancreas and kidneys pages (PaCO₂ ~24, pH ~7.29). The hub's *Start the case* opens each stop's page on its scenario through `?scenario=`, and the shared engine draws a case strip (stops, back, next, all stops, leave) from the `case`, `ctitle`, `stop` and `route` parameters. What changed from the plan, and what is still open for it:
   - **Each stop applies its own scenario**: nothing is carried from one page to the next. The four scenarios were set to agree (glucose, ketones, bicarbonate, pH), and the registry row in `FACTUAL_CHECK.md` holds them together, but changing a slider on one page doesn't reach the next. Carrying state needs "Changes across pages" ([5](#5-shared-and-supporting-work)).
@@ -332,11 +337,11 @@ Followed. The test, `tests/questions-check.mjs`, checks everything the plan list
 
 - **Predicting a number**: a slider ("GFR will fall to about … mL/min"), judged against the model's result within a margin, with an explanation for each of too high, too low and close.
 - **On the body**: questions on the body view once "Body view scenarios" ([5](#5-shared-and-supporting-work)) exists, so a converging case can end on the whole body with every vital responding.
-- **New pages**: throat and spleen each get a Predict section as they are built (convention 13; the skin, eyes and ears pages have three each), and each new page opens the converging cases that were waiting for it.
+- **New pages**: the spleen gets a Predict section when it is built (convention 13; the skin, eyes, ears and throat pages have three each), and each new page opens the converging cases that were waiting for it.
 
 ## Suggested order
 
-Done so far: the kidneys, gut, liver, pancreas, muscles, bones, skin, eyes and ears pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body with its "follow the heat" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
+Done so far: the kidneys, gut, liver, pancreas, muscles, bones, skin, eyes, ears and throat pages, export, the mobile view of the body, the immune & lymphatic system on the body with the spleen & lymph nodes, the muscles & skeleton system on the body with its "follow a step" journey, the skin system on the body with its "follow the heat" journey, the prediction questions with their hub, and the first converging case (diabetic ketoacidosis).
 
 1. ~~The first converging case, diabetic ketoacidosis ([6.4](#64-converging-cases)), with the scenarios its stops need.~~ ✅ Done (the heart's low-K⁺ ECG is still open; see [6](#6-questions-predict-then-watch)).
 2. ~~Skin page~~ ✅ Done (see [1.7](#17-skin-organsskinhtml--done) for what is still open on it).
@@ -344,7 +349,7 @@ Done so far: the kidneys, gut, liver, pancreas, muscles, bones, skin, eyes and e
 4. ~~“Follow the heat” on the body ([2.3](#23-skin-integumentary--done))~~ ✅ Done (see 2.3 for what is still open on it).
 5. ~~Eyes page~~ ✅ Done (see [1.8](#18-eyes-organseyeshtml--done) for what is still open on it).
 6. ~~Ears page~~ ✅ Done (see [1.9](#19-ears-organsearshtml--done) for what is still open on it).
-7. Throat page.
+7. ~~Throat page~~ ✅ Done (see [1.10](#110-throat-organsthroathtml--done) for what is still open on it).
 8. Endocrine glands, and blood & vessels as new organs with pages.
 9. Reproductive system and organs.
 10. Cross-organ explorations and the extra sections on the heart, lungs and brain.

@@ -1269,7 +1269,7 @@ canvas.trace{ display:block; width:100%; }
    "ms": "Two small bands across your voice box, like a pair of curtains. When you breathe they open; when you speak they close and air from your lungs makes them shake. That makes your voice. When you swallow they shut tight to protect your lungs.",
    "hs": "Each vocal fold is muscle (the vocalis) covered by a loose, jelly-like layer and a thin skin. Air pushes the closed folds apart, then they snap back, hundreds of times a second, chopping the airflow into puffs. Tighter folds vibrate faster and make higher notes. Shouting or a cold can make them swollen and hoarse; years of strain can make small calluses called nodules.",
    "college": "Layered structure (Hirano’s body–cover model): epithelium, the superficial lamina propria (Reinke’s space, the loose cover that carries the mucosal wave), the vocal ligament and the thyroarytenoid muscle (body). Length ~16–20 mm in men and ~10–13 mm in women; f0 ~100–120 Hz and ~200–220 Hz. Adduction by the lateral cricoarytenoid and interarytenoid muscles, abduction by the posterior cricoarytenoid (the only abductor); cricothyroid lengthens and tenses them.",
-   "phd": "Reinke’s oedema (polypoid swelling of the superficial lamina propria in smokers) lowers f0 markedly. Laryngeal stroboscopy freezes the vibration by flashing at a frequency slightly different from f0, so a slow apparent motion of the mucosal wave is seen; this figure shows it slowed the same way."
+   "phd": "Reinke’s oedema (polypoid swelling of the superficial lamina propria in smokers) lowers f0 markedly. Laryngeal stroboscopy freezes the vibration by flashing at a frequency slightly different from f0, so a slow apparent motion of the mucosal wave is seen at a rate set by the flashes, not the voice; this figure shows it slowed the same way. While a vowel plays it is slowed instead by a fixed factor, as in high-speed videoendoscopy, so a higher pitch is seen to vibrate faster."
   },
   "glottis": {
    "name": "Glottis",
@@ -5144,8 +5144,13 @@ let anT = 0, swT = -2.6, psgT = 0, gT = 0, nextSw = 4, daySwT = 99, chartAcc = 0
    Play the vowel moves the folds with the sound: a quick breath in with them wide apart, then they
    close (the voice starts ~0.15 s after they begin to, as in speech), vibrate while the vowel
    sounds, swelling and fading with it, and swing open again before they go back to what the
-   switch above shows.
+   switch above shows. While it plays, the vibration is slowed by a fixed factor, as in a
+   high-speed video (SLOW_MO, more for the highest notes so it never flickers faster than
+   MAX_SEEN cycles a second), so a higher voice is seen to vibrate faster, with a caption of the
+   real rate; otherwise it is the stroboscope's steady 1.5.
    ========================================================================= */
+const SLOW_MO = 75, MAX_SEEN = 5, STROBE = 1.5;
+const slowOf = f0 => Math.max(SLOW_MO, f0 / MAX_SEEN);
 const gFig = $("#glottisFig");
 const PLAY_LEAD = .4, PLAY_CLOSE = .15, PLAY_LEN = 1.25, PLAY_OPEN = .3, PLAY_BACK = .3;
 let playT = null; /* the audio clock's time the vowel starts, while one is playing */
@@ -5195,6 +5200,9 @@ function buildGlottis(){
   label(LB, 330, 254, "Arytenoid", 258, 244, "start");
   label(LB, 18, 200, lvl({ ms: "Gap (glottis)", college: "Glottis" }), 196, 190, "start");
   label(LB, 18, 70, lvl({ ms: "Fold to the epiglottis", college: "Aryepiglottic fold" }), 116, 116, "start");
+  /* the slow-motion caption, shown while a vowel plays (not a label: it stays when labels are off) */
+  L.cap = el("g", { opacity: 0 }, gFig);
+  L.cap1 = label(L.cap, 10, 20, ""); L.cap2 = label(L.cap, 10, 33, "");
   O.bindParts(gFig);
 }
 /* the folds at apparent time t; a = how far each vocal process is from the midline */
@@ -5202,13 +5210,25 @@ function drawGlottis(t){
   const L = gFig.__L; if (!L) return;
   const v = Sim.S.Vo, ph = O.state().phase, palsy = P.fold === "palsy", say = V.mode === "say";
   const br = Math.sin(t * 2 * Math.PI / (60 / O.vitals().rr));
-  let aR, aL, vib = 0, phase = (t * 1.5) % 1;
+  let aR, aL, vib = 0;
   if (say && v.on){ aR = 3; aL = palsy ? 16 : 3; vib = 1; }
   else if (say && !v.on && !P.choke){ aR = 6; aL = palsy ? 16 : 6; }     /* a whisper: a chink at the back */
   else { const open = ph === "exercise" ? 50 + 8 * br : ph === "sleep" ? 24 + 4 * br : 30 + 8 * br; aR = open; aL = palsy ? 16 : open; }
   /* a vowel being played takes over from the switch's view (the paralysed fold stays where it is) */
   const pl = v.on ? playPhase() : null;
   if (pl){ aR = lerp(aR, pl.a, pl.k); if (!palsy) aL = lerp(aL, pl.a, pl.k); vib = lerp(vib, pl.amp, pl.k); }
+  /* the vibration's phase, carried on so it does not jump when the rate changes; a played vowel
+     runs on the real clock (it plays even while the page is paused) */
+  const now = performance.now() / 1000, slow = slowOf(v.f0);
+  const dt = clamp(pl ? now - L.now : t - L.t, 0, .1) || 0; L.now = now; L.t = t;
+  L.ph = ((L.ph || 0) + dt * lerp(STROBE, v.f0 / slow, pl ? pl.k : 0)) % 1;
+  const phase = L.ph;
+  setA(L.cap, "opacity", pl ? f1(pl.k) : "0");
+  if (pl){
+    const c1 = lvl({ ms: `Slow motion: ${Math.round(slow)}× slower`, college: `Slowed ${Math.round(slow)}× (as high-speed video)` }), c2 = `Really ${Math.round(v.f0)} times a second`;
+    if (L.cap1.textContent !== c1) L.cap1.textContent = c1;
+    if (L.cap2.textContent !== c2) L.cap2.textContent = c2;
+  }
   const amp = v.on ? vib * clamp((v.spl - 55) / 22, .25, 1) * (palsy ? .6 : 1) : 0;
   /* the medial edge opens like a spindle in each cycle, for the open quotient of it */
   const open = v.on ? (phase < v.oq ? Math.sin(Math.PI * phase / v.oq) : 0) : 0;

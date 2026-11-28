@@ -663,6 +663,7 @@ canvas.trace{ display:block; width:100%; }
         <div class="fig-tools" id="anatTools"></div>
         <svg id="throatFig" data-export-name="The head and neck in section" viewBox="0 0 600 440" role="img" aria-label="A cut down the middle of the head and neck, the face to the left: the nasal cavity with its turbinates, the hard and soft palate, the tongue with genioglossus and the hypoglossal nerve, the adenoids, the opening of the Eustachian tube and a tonsil on the wall of the pharynx, the epiglottis and hyoid, the larynx with the thyroid and cricoid cartilages, the arytenoid and the vocal folds, the trachea with its rings and the thyroid and parathyroid glands in front of it, the oesophagus behind it closed by the upper sphincter, the recurrent laryngeal nerve and the cervical spine. Air moves in and out with the body’s breathing, through the nose at rest and the mouth on the run; at meals swallows carry food from the tongue past the closing airway into the oesophagus; asleep the soft palate and tongue fall back, the throat narrows and snores"></svg>
         <div class="legend"><span><i class="dot" style="--c:var(--airc)"></i>Air</span><span><i class="dot" style="--c:var(--bolus)"></i>Food or drink</span><span><i class="dash" style="--c:var(--nervec)"></i>Nerves (behind the cut)</span></div>
+        <p class="note" data-text="sections.anatomy.listenNote"></p>
       </div>
       <aside class="side">
         <div class="panel insp" data-inspector></div>
@@ -787,6 +788,7 @@ canvas.trace{ display:block; width:100%; }
           <p class="ctl-lab">Sleeping</p><div id="posChoice" class="seg-wrap"></div>
           <div class="sliders" id="sleepSliders" style="margin-top:10px"></div>
           <div class="btn-row" id="sleepBtns"></div>
+          <p class="note" data-text="sections.sleep.listenNote"></p>
           <div class="readouts" id="sleepRO"></div>
           <div id="sleepMsg"></div>
         </div>
@@ -908,6 +910,10 @@ canvas.trace{ display:block; width:100%; }
     "college": "The pharynx (naso-, oro- and laryngopharynx) is a fibromuscular tube without rigid support for most of its length, which is why it can both squeeze a bolus and collapse in sleep. The larynx guards the lower airway with three tiers of closure (true vocal folds, ventricular folds, the epiglottis and aryepiglottic folds) and makes the voice. The oesophagus begins at the upper oesophageal sphincter (cricopharyngeus, at C6). The hyoid suspends the larynx from the skull and jaw; the tongue’s base forms the front wall of the oropharynx.",
     "phd": "The figure is a schematic midsagittal section, not to scale. Humans pay for speech with a descended larynx: the supralaryngeal tract is two tubes of nearly equal length at right angles, which gives a large vowel space but makes the airway and the food path cross further from the nose than in other mammals, where the epiglottis can lock behind the soft palate (Lieberman 2007). Infants keep a high larynx until about 4–6 months and can suckle and breathe almost at once."
    },
+   "listenNote": {
+    "ms": "Listen plays the air through the throat on your speakers: quiet breaths through the nose at rest, louder ones through the mouth when running, and the night’s breathing and snoring asleep. Turn the volume down first.",
+    "college": "Synthesised in the browser (Web Audio), not a recording: filtered noise for the airflow, louder through the mouth, following the body’s breathing rate; asleep, the same sounds as the sleep section. Not calibrated to your speakers."
+   },
    "now": {
     "ms": "What your throat is doing at this time of the body’s day. Change the person to see it in the other sections too.",
     "college": "Minute ventilation through the upper airway (the body’s values: ~7 L/min at rest, ~48 L/min in the run), the breathing route (oronasal above ~35 L/min), swallow frequency and unstimulated or stimulated salivary flow. Age, BMI and alcohol feed every model on the page."
@@ -964,6 +970,10 @@ canvas.trace{ display:block; width:100%; }
    },
    "hint": {
     "ms": "Tap a part of the throat."
+   },
+   "listenNote": {
+    "ms": "Listen plays these three minutes through your speakers, at real speed: soft breaths, a buzzing snore when the throat narrows, silence when it closes, and a loud snort as the brain half-wakes and opens it again. Turn the volume down first.",
+    "college": "Synthesised in the browser (Web Audio), not a recording, from the model’s airflow each second: breath noise scaled by flow, a low flutter of the soft palate on flow-limited in-breaths (higher pitched with big tonsils or in a child), silence once flow stops, a snort on the first breath of each arousal, and a steady hiss of the mask leak on CPAP. While listening, the window plays in real time instead of six times faster. Not calibrated to your speakers."
    }
   },
   "systems": {
@@ -4520,7 +4530,7 @@ const DEFAULTS = { age: 30, bmi: 23, alcohol: false,
   pos: "mixed", tonsils: false, cpap: 0, mad: false };
 const P = { ...DEFAULTS };
 /* the view: what the reader is looking at, not a change to the throat */
-const V = { bolus: "w5", speaker: "man", vowel: "a", pitch: 0, push: 7, mode: "say", at: 4.5, labels: true };
+const V = { bolus: "w5", speaker: "man", vowel: "a", pitch: 0, push: 7, mode: "say", at: 4.5, labels: true, sound: false };
 const isChanged = k => P[k] !== DEFAULTS[k];
 
 /* ---------- the throat through the day ----------
@@ -5425,6 +5435,7 @@ function playVowel(){
   const v = Sim.S.Vo; if (!v.on) return;
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
     const n = Math.floor(Math.min(8000, audioCtx.sampleRate / 2.2) / v.f0), re = new Float32Array(n + 1), im = new Float32Array(n + 1);
     let mx = 0;
     for (let k = 1; k <= n; k++){ const f = k * v.f0, a = Math.pow(10, (v.tilt * Math.log2(k) + tract(v.fm, f)) / 20); im[k] = a; mx = Math.max(mx, a); }
@@ -5450,6 +5461,93 @@ function playVowel(){
 }
 
 /* =========================================================================
+   SOUND: breathing and snoring through the speakers
+   soundAt gives the loudness of the breath, the snore and a snort for one moment of a night:
+   breath noise follows the flow (silent once an apnoea stops it, though the chest still heaves),
+   the soft palate flutters on flow-limited in-breaths (the rule the sleep study's snore trace
+   uses), and the first breath of an arousal is a snort. The breath phase is the sleep study's
+   (one breath every 4.6 s), so the sound lines up with the trace and its playback line.
+   ========================================================================= */
+const BREATH_T = 4.6;
+function soundAt(N, s, p){
+  const i = clamp(Math.floor(s), 0, N.N - 1), f = N.flow[i], ph = Math.sin(2 * Math.PI * s / BREATH_T);
+  const ins = Math.max(0, ph), ar = !!N.ar[i];
+  const env = ins + .5 * Math.max(0, -ph);
+  return {
+    i, flow: f,
+    air: env * f * (ar ? 1 : .55),
+    snore: f < .95 && f > .05 ? (.9 * (1 - f) + .2) * ins : 0,
+    snort: ar && !(i > 0 && N.ar[i - 1]) ? 1 : 0,
+    pitch: p.tonsils || p.age < 13 ? 90 : 40,
+    mouth: false, cpap: p.cpap
+  };
+}
+/* the body's day: breaths at its breathing rate, through the mouth too above ~35 L/min */
+function daySoundAt(d, br){
+  const env = Math.max(0, br) + .5 * Math.max(0, -br);
+  return { i: -1, flow: 1, air: env * clamp(.35 + .65 * Math.sqrt(d.ve / 48)), snore: 0, snort: 0, pitch: 40, mouth: d.mouth, cpap: 0 };
+}
+let snd = null;
+function soundEngine(){
+  if (snd) return snd;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ac = audioCtx, len = ac.sampleRate * 2, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const node = (type, f, q) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
+    const gain = v => { const g = ac.createGain(); g.gain.value = v; return g; };
+    const noise = ac.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    const master = gain(0); master.connect(ac.destination);
+    /* the air: noise shaped by the nose (higher, softer) or the open mouth (lower, louder) */
+    const airF = node("bandpass", 1300, .7), gAir = gain(0);
+    noise.connect(airF).connect(gAir).connect(master);
+    /* the snore: a low buzz of the fluttering palate, and noise chopped at the same rate */
+    const osc = ac.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = 40;
+    const sLp = node("lowpass", 450, 2), sBp = node("bandpass", 300, 1), chop = gain(0), depth = gain(.8), gSnore = gain(0);
+    osc.connect(depth).connect(chop.gain); noise.connect(sBp).connect(chop);
+    osc.connect(sLp).connect(gSnore); chop.connect(gSnore); gSnore.connect(master);
+    /* CPAP: the steady hiss of air leaking from the mask */
+    const gCpap = gain(0); noise.connect(node("highpass", 2000, .5)).connect(gCpap).connect(master);
+    noise.start(); osc.start();
+    snd = { ac, master, gAir, airF, osc, gSnore, gCpap, on: false, snortI: -1, snortTill: 0, idle: null };
+  } catch(e){ snd = null; }
+  return snd;
+}
+/* levels from soundAt or daySoundAt, or null for silence */
+function soundUpdate(lv){
+  const e = snd; if (!e) return;
+  const t = e.ac.currentTime, k = .03;
+  if (!lv){
+    if (e.on){ e.on = false; e.master.gain.setTargetAtTime(0, t, .05); clearTimeout(e.idle); e.idle = setTimeout(() => { if (!e.on) e.ac.suspend().catch(() => {}); }, 400); }
+    return;
+  }
+  if (!e.on){ e.on = true; clearTimeout(e.idle); if (e.ac.state === "suspended") e.ac.resume().catch(() => {}); e.master.gain.setTargetAtTime(.1, t, .05); }
+  e.gAir.gain.setTargetAtTime(lv.air * (lv.mouth ? 1.1 : .8), t, k);
+  e.airF.frequency.setTargetAtTime(lv.mouth ? 650 : 1300, t, .2);
+  e.airF.Q.setTargetAtTime(lv.mouth ? .5 : .7, t, .2);
+  e.gCpap.gain.setTargetAtTime(lv.cpap ? .05 + .01 * lv.cpap : 0, t, .2);
+  if (lv.snort && lv.i !== e.snortI){
+    /* the snort: the airway snapping open as the brain half-wakes */
+    e.snortI = lv.i; e.snortTill = t + .5;
+    e.osc.frequency.cancelScheduledValues(t); e.osc.frequency.setValueAtTime(lv.pitch * 1.4, t); e.osc.frequency.setTargetAtTime(lv.pitch, t + .15, .1);
+    e.gSnore.gain.cancelScheduledValues(t); e.gSnore.gain.setTargetAtTime(1.5, t, .02); e.gSnore.gain.setTargetAtTime(0, t + .3, .06);
+    e.gAir.gain.cancelScheduledValues(t); e.gAir.gain.setTargetAtTime(1.3, t, .02); e.gAir.gain.setTargetAtTime(lv.air, t + .35, .1);
+    return;
+  }
+  if (t < e.snortTill) return;
+  e.osc.frequency.setTargetAtTime(lv.pitch, t, .1);
+  e.gSnore.gain.setTargetAtTime(lv.snore, t, k);
+}
+const exportOpen = () => { const m = document.querySelector(".xp"); return !!(m && !m.hidden); };
+document.addEventListener("visibilitychange", () => { if (document.hidden) soundUpdate(null); });
+function setSound(on){
+  V.sound = on;
+  if (on) soundEngine(); /* on the click itself, so the browser lets it play */
+  else soundUpdate(null);
+  syncUI();
+}
+
+/* =========================================================================
    CONTROLS
    ========================================================================= */
 const UI = {};
@@ -5469,6 +5567,8 @@ function buildControls(){
   UI.alcohol = toggle($("#personBtns"), "tAlc", "A few drinks tonight");
   UI.alcohol.addEventListener("click", () => { P.alcohol = !P.alcohol; changed(); });
   UI.labels = toggle($("#anatTools"), "tLabels", "Labels", "chip"); UI.labels.setAttribute("aria-pressed", "true");
+  UI.listenA = toggle($("#anatTools"), "tListenA", "Listen", "chip");
+  UI.listenA.addEventListener("click", () => setSound(!V.sound));
   UI.labels.addEventListener("click", () => { V.labels = !V.labels; UI.labels.setAttribute("aria-pressed", String(V.labels)); for (const f of [aFig, sFig, nFig, gFig]) f.classList.toggle("hide-labels", !V.labels); });
   /* swallowing */
   UI.bolus = O.choice($("#bolusChoice"), { label: "What is swallowed", options: Object.entries({ w5: "Sip of water", w20: "Gulp of water", thick: "Thickened drink", solid: "Bread" }), value: V.bolus, onChange: v => { V.bolus = v; reswallow(); swT = -2.6; changed(true); } });
@@ -5512,6 +5612,8 @@ function buildControls(){
   UI.tonsils.addEventListener("click", () => { P.tonsils = !P.tonsils; changed(); });
   UI.mad = toggle($("#sleepBtns"), "tMad", "Jaw-forward splint");
   UI.mad.addEventListener("click", () => { P.mad = !P.mad; changed(); });
+  UI.listenS = toggle($("#sleepBtns"), "tListen", "Listen");
+  UI.listenS.addEventListener("click", () => setSound(!V.sound));
 }
 let thrustDone = false;
 function out(id, s){ const n = $(`#${id}-o`); if (n && n.textContent !== s) n.textContent = s; }
@@ -5524,6 +5626,7 @@ function syncUI(){
   out("sPitch", `${V.pitch > 0 ? "+" : V.pitch < 0 ? "−" : ""}${Math.abs(V.pitch)} semitones`); out("sPush", `${fs(V.push)} cmH₂O`);
   out("sCpap", P.cpap ? `${P.cpap} cmH₂O` : "off"); out("sAt", `${clock(V.at * 3600)}–${clock(V.at * 3600 + PSG_WIN)}`);
   UI.thrust.disabled = !P.choke;
+  UI.listenA.setAttribute("aria-pressed", String(V.sound)); UI.listenS.setAttribute("aria-pressed", String(V.sound));
 }
 function changed(view){
   if (!view) recompute();
@@ -5745,7 +5848,7 @@ O.exportData(() => {
     { name: "The night", columns: ["Clock time", "Sleep stage", "Airflow (fraction of normal)", "SpO₂ (%)", "Healthy SpO₂ (%)", "Pcrit − nasal pressure (cmH₂O)"], rows: nr }
   ];
 });
-O.exportLengths(() => [{ id: "swallow", label: "One swallow", seconds: 14 }, { id: "night", label: "Three minutes of the night (sped up)", seconds: 30 }]);
+O.exportLengths(() => [{ id: "swallow", label: "One swallow", seconds: 14 }, V.sound ? { id: "night", label: "Three minutes of the night (real time)", seconds: PSG_WIN } : { id: "night", label: "Three minutes of the night (sped up)", seconds: 30 }]);
 
 /* =========================================================================
    LOOP
@@ -5779,9 +5882,20 @@ O.onTick((dt, real) => {
   swT += dt * (swT < 1.2 ? .3 : 1.4);
   if (swT > 12.5) swT = -2.6;
   if (O.visible(sFig)) drawHead(sFig, swallowFrame(Sim.S.SW, swT, { ...base, velum: 0, back: 0, air: br * .5 }), anT);
-  /* the sleep figure: the chosen three minutes, six times faster */
-  psgT += dt * 6; if (psgT >= PSG_WIN) psgT = 0;
+  /* the sleep figure: the chosen three minutes, six times faster (in real time while listening) */
+  psgT += dt * (V.sound ? 1 : 6); if (psgT >= PSG_WIN) psgT = 0;
   if (O.visible(nFig)){ const i = Math.min(Sim.S.N.N - 1, Math.floor(V.at * 3600 + psgT)); drawHead(nFig, sleepFrame(Sim.S.N, i, base), anT); }
+  /* the sound: the sleep section if it is on screen, else the anatomy figure's day */
+  let lv = null;
+  if (V.sound && snd && !O.state().paused && !document.hidden && !exportOpen()){
+    if (O.visible(nFig) || O.visible(charts.psg.node)) lv = soundAt(Sim.S.N, V.at * 3600 + psgT, P);
+    else if (O.visible(aFig)){
+      const m = ph === "sleep" ? nightMin(O.state().hour) : -1;
+      lv = m >= 0 ? soundAt(Sim.S.N, m * 60 + anT % 60, P) : daySoundAt(dayAt(ph), br);
+      if (P.choke) lv = { ...lv, air: 0, snore: 0, snort: 0 };
+    }
+  }
+  soundUpdate(lv);
   gT += dt; if (O.visible(gFig)) drawGlottis(gT);
   chartAcc += real; roAcc += real;
   if (charts.hrm && O.visible(charts.hrm.node)) charts.hrm.dirty = true;
@@ -5813,7 +5927,7 @@ recompute(); syncUI();
 buildAll();
 renderAll();
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => requestAnimationFrame(() => { buildAll(); renderAll(); drawCharts(); }));
-window.__throat = { P, V, Sim, swallow, voice, night, tract, spectrum }; /* for debugging in the console */
+window.__throat = { P, V, Sim, swallow, voice, night, tract, spectrum, soundAt, sound: () => snd && { on: snd.on, state: snd.ac.state, at: V.at * 3600 + psgT } }; /* for debugging in the console */
 O.start();
 drawCharts();
 

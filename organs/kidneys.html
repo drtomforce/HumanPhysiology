@@ -2286,6 +2286,26 @@ canvas.trace{ display:block; width:100%; }
    "abAcei": {
     "ms": "Less angiotensin II means less aldosterone, so the kidney keeps more potassium: {k} mmol/L.",
     "college": "Lower aldosterone reduces ENaC and ROMK activity: K⁺ {k} mmol/L."
+   },
+   "anatDry": {
+    "ms": "With nothing to drink, ADH rises to {adh} pg/mL. The collecting ducts open their water channels and pull water back into the salty deep kidney, so the urine becomes scarce ({v} mL/min) and dark ({uosm} mOsm/kg).",
+    "college": "Rising plasma osmolality lifts ADH to {adh} pg/mL: AQP2 inserts into the collecting duct, water leaves into the hypertonic medulla and urine falls to {v} mL/min at {uosm} mOsm/kg."
+   },
+   "anatAcid": {
+    "ms": "The tubules get rid of the extra acid: the proximal tubule makes more ammonium from glutamine ({nh4} mmol a day instead of about 40), and the collecting duct pumps acid into the urine (pH {uph}).",
+    "college": "Proximal ammoniagenesis from glutamine rises ({nh4} mmol/day NH₄⁺), each NH₄⁺ excreted returning a new HCO₃⁻ to the blood, while α-intercalated cells secrete H⁺ (urine pH {uph})."
+   },
+   "anatRespAcid": {
+    "ms": "Over days the tubules answer the extra CO₂: they pump more acid into the urine (pH {uph}) and keep more bicarbonate, which rises to {hco3} mmol/L and brings the pH back towards normal.",
+    "college": "Chronic hypercapnia raises tubular H⁺ secretion and HCO₃⁻ reclamation and generation: plasma HCO₃⁻ {hco3} mmol/L, urine pH {uph}."
+   },
+   "anatRespAlk": {
+    "ms": "Over days the tubules answer the low CO₂ by letting bicarbonate escape into the urine (pH {uph}), so blood bicarbonate falls to {hco3} mmol/L and the pH comes back towards normal.",
+    "college": "Chronic hypocapnia reduces proximal HCO₃⁻ reclamation and distal H⁺ secretion: plasma HCO₃⁻ {hco3} mmol/L, a more alkaline urine (pH {uph})."
+   },
+   "anatVomit": {
+    "ms": "Losing stomach acid leaves extra bicarbonate in the blood ({hco3} mmol/L). The kidney would normally pass it out, but vomiting also costs salt, water and chloride, so the tubules hold on to sodium, and with it bicarbonate; potassium is lost in the urine ({k} mmol/L) and the urine stays acidic (pH {uph}).",
+    "college": "Generation by gastric H⁺ loss (HCO₃⁻ {hco3} mmol/L), maintenance by volume and Cl⁻ depletion: avid proximal Na⁺–HCO₃⁻ reabsorption, too little Cl⁻ for pendrin to secrete HCO₃⁻, renal K⁺ wasting ({k} mmol/L) and a paradoxically acidic urine (pH {uph})."
    }
   }
  }
@@ -5852,7 +5872,7 @@ O.alter({
   sync(){ syncUI(); drawAll(); },
   notes(sec){
     const p = P(), R = Kid.stat(), D = Kid.K.D, A = R.AB, out = []; if (!D) return out;
-    const v = { gfr: f0(R.G), rbf: f2(R.RBF / 1000), renin: f1(R.renin), tip: f0(D.tip), uosm: f0(D.uosm), v: fV(D.V), umax: f0(D.umax), adh: f1(D.adh), hco3: f0(A.hco3), k: f1(A.k), exc: f0(R.E * 1.44), pgc: f0(R.P), pbs: p.pbs };
+    const v = { gfr: f0(R.G), rbf: f2(R.RBF / 1000), renin: f1(R.renin), tip: f0(D.tip), uosm: f0(D.uosm), v: fV(D.V), umax: f0(D.umax), adh: f1(D.adh), hco3: f0(A.hco3), k: f1(A.k), exc: f0(R.E * 1.44), pgc: f0(R.P), pbs: p.pbs, nh4: f0(A.nh4), uph: f1(A.uph) };
     const N = (cause, key) => out.push({ cause, html: O.fill(O.get(`alter.notes.${key}`), v) });
     const hemo = ["map", "aff", "eff", "acei", "auto"].filter(k => k === "map" ? mapChanged() : k === "auto" ? !p.auto : k === "acei" ? p.acei : Math.abs(p[k] - 1) > .005);
     const H = Ref.stat();
@@ -5864,6 +5884,10 @@ O.alter({
       if (hemo.length && Math.abs(R.G - H.G) > 10) N(hemo, "anatGfr");
       if (p.loop) N("loop", "anatLoop");
       if (R.E * 1.44 > 5) N([p.glu !== 95 ? "glu" : null, p.sglt2 ? "sglt2" : null].filter(Boolean), "anatGlu");
+      if (p.drink === "none") N("drink", "anatDry");
+      if (p.ab === "keto" || p.ab === "diarr") N("ab", "anatAcid");
+      if (p.ab === "vomit") N("ab", "anatVomit");
+      if (p.comp !== "minutes"){ if (p.ab === "hypo") N("ab", "anatRespAcid"); if (p.ab === "hyper") N("ab", "anatRespAlk"); }
     }
     if (sec === "filtration"){
       if (p.loop) N("loop", "filtLoop");

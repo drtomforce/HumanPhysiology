@@ -1509,6 +1509,14 @@ canvas.trace{ display:block; width:100%; }
         "ms": "There is extra bicarbonate in the blood ({hco3} mmol/L), so it is less acidic than it should be. The brainstem lets you breathe a little less, so CO₂ builds up ({paco2} mmHg) to balance it.",
         "college": "Metabolic alkalosis (HCO₃⁻ {hco3} mmol/L): the chemoreflex allows hypoventilation, raising PaCO₂ to {paco2} mmHg (~0.7 mmHg per mmol/L of bicarbonate). Compensation is limited, because hypoventilation lowers PaO₂ ({pao2} mmHg) and the hypoxic drive pushes back."
       },
+      "exTemp": {
+        "ms": "Blood at {temp} °C: the oxygen curve shifts {dir} (P50 {p50} mmHg), so haemoglobin lets go of oxygen {ease} in the tissues.",
+        "college": "Temperature {temp} °C shifts the dissociation curve {dir} (P50 {p50} mmHg), {ease2} O₂ unloading at the tissues."
+      },
+      "sysFever": {
+        "ms": "A fever makes the whole body burn more fuel: oxygen use and CO₂ output rise by roughly a tenth for each degree, so you breathe faster and the heart beats faster to deliver it.",
+        "college": "Metabolic rate rises ~10–13% per °C, raising V̇O₂ and V̇CO₂; ventilation and cardiac output rise to match (heart rate ~10 beats/min per °C), and the right-shifted curve helps unload O₂ to the tissues."
+      },
       "mechAcid": {
         "ms": "The acid in the blood makes the breaths deep and a bit faster ({vt} mL, {rr} a minute): this sighing pattern is called Kussmaul breathing.",
         "college": "Kussmaul breathing: ventilation rises to {ve} L/min mostly through tidal volume ({vt} mL) rather than rate ({rr}/min), which keeps dead-space ventilation low and raises alveolar ventilation efficiently."
@@ -4414,7 +4422,8 @@ O.alter({
     const S = Lung.S, c = Lung.cond(), out = [], hyp = Lung.hypoxia();
     const v = { cond: condName(), pao2: Math.round(S.PaO2), paco2: Math.round(S.PaCO2), aa: Math.round(S.Aa + S.diff), ve: S.VE.toFixed(1),
       ph: S.pH.toFixed(2), p50: S.p50.toFixed(1), alt: S.alt.toLocaleString(), pio2: Math.round(Lung.PIO2()), hyp: (1 + hyp).toFixed(1),
-      hco3: S.hco3m.toFixed(1), winter: (1.5 * S.hco3m + 8).toFixed(0), sp: Math.round(Lung.setPoint()), vt: Math.round((S.vtLast || S.VTt) * 1000), rr: S.f.toFixed(0) };
+      hco3: S.hco3m.toFixed(1), winter: (1.5 * S.hco3m + 8).toFixed(0), sp: Math.round(Lung.setPoint()), vt: Math.round((S.vtLast || S.VTt) * 1000), rr: S.f.toFixed(0), temp: S.temp.toFixed(1),
+      dir: S.temp > 37 ? "right" : "left", ease: S.temp > 37 ? "more easily" : "less easily", ease2: S.temp > 37 ? "favouring" : "hindering" };
     const acid = S.hco3m < 23.75, base = S.hco3m > 24.25;
     const N = (cause, key) => out.push({ cause, html: O.fill(O.get(`alter.notes.${key}`), v) });
     const EX = { asthma: "exAsthma", copd: "exCopd", fibrosis: "exFibrosis", pneumonia: "exPneumonia", pe: "exPe" };
@@ -4435,6 +4444,7 @@ O.alter({
       if (S.mode === "hold") N("mode", "exHold");
       else if (S.mode === "hyper") N("mode", "exHyper");
       else if (S.co2) N("co2", "exCo2");
+      if (tempChanged()) N("temp", "exTemp");
       if (acid && S.mode !== "hold") N("hco3", "exAcid");
       else if (base && S.mode !== "hold") N("hco3", "exBase");
     }
@@ -4445,6 +4455,7 @@ O.alter({
       if (acid) N("hco3", "ctlAcid");
       else if (base) N("hco3", "ctlBase");
     }
+    if (sec === "systems" && tempChanged() && S.temp >= 38) N("temp", "sysFever");
     return out;
   },
   toParams(){

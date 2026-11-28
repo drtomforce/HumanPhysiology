@@ -420,6 +420,18 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
   "checked": "2026-11-28"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=Conchae%20serve%20to%20increase%20the%20surface%20area%20of%20the%20nasal": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=Each%20lateral%20wall%20of%20the%20nasal%20cavity%20has%20three%20bony": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20epiglottis%2C%20attached%20to%20the%20thyroid%20cartilage%2C%20is%20a%20very": {
   "state": "ok",
   "code": 200,
@@ -432,7 +444,19 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
   "checked": "2026-11-28"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20pharyngeal%20tonsils%20are%20large%20in%20children%2C%20but%20interestingly%2C%20tend": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20pharynx%20is%20divided%20into%20three%20major%20regions%3A%20the%20nasopharynx%2C": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20thick%20cricoid%20cartilage%20forms%20a%20ring%2C%20with%20a%20wide": {
   "state": "ok",
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
@@ -445,6 +469,12 @@
   "checked": "2026-11-28"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20trachea%20is%20formed%20by%2016%20to%2020%20stacked%2C%20C%2Dshaped": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=swinging%20upward%20to%20close%20off%20the%20nasopharynx%20to%20prevent%20ingested": {
   "state": "ok",
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
@@ -1039,7 +1069,22 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:23692173%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:23721582%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:24401051%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:24533007%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-28"
@@ -1084,6 +1129,11 @@
   "code": 200,
   "checked": "2026-11-28"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:30395486%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31015713%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -1104,6 +1154,11 @@
   "code": 200,
   "checked": "2026-11-28"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31918559%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31971679%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -1114,12 +1169,22 @@
   "code": 200,
   "checked": "2026-11-28"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:34558067%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:35294044%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:36331190%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:3792782%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-28"
@@ -1149,7 +1214,17 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:6863086%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:7444224%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:7585069%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-28"
@@ -1168,6 +1243,11 @@
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:9227489%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
  },
  "https://www.frontiersin.org/articles/10.3389/fimmu.2018.00648/full": {
   "state": "ok",

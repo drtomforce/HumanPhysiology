@@ -1603,6 +1603,38 @@ canvas.trace{ display:block; width:100%; }
       "nightSleep": {
         "ms": "It’s daytime now, so staying up all night changes nothing yet. Move to the night (or press a ‘Deep sleep’ button) to see the brain stay awake.",
         "college": "The all-nighter only acts during the sleep hours; move the clock into the night to see its effect on activity, the EEG and blood flow."
+      },
+      "zoneAnat": {
+        "ms": "The pressure ({map} mmHg) is below the range where the brain can keep its blood flow steady (from {ll} mmHg). Flow has dropped to {cbf} mL per 100 g each minute: the cortex still works, but there is no reserve left, and the thin borders between artery territories are the first to suffer.",
+        "college": "MAP {map} mmHg is below the lower autoregulatory limit ({ll} mmHg), so flow is pressure-passive at {cbf} mL/100 g/min. Function is preserved for now, but the vasodilator reserve is exhausted and the watershed zones are at risk of ischaemia."
+      },
+      "coffeeAnat": {
+        "ms": "About {pct}% of the 4 pm coffee is still in your blood. Caffeine blocks the adenosine receptors all over the brain, so the cortex stays alert and the sleep-promoting nerve cells near the hypothalamus are held back.",
+        "college": "About {pct}% of the 4 pm dose remains. Caffeine antagonises A1 and A2A adenosine receptors: it disinhibits cortical and basal-forebrain arousal neurons and blunts the adenosine signal to the sleep-promoting ventrolateral preoptic nucleus."
+      },
+      "msAnat": {
+        "ms": "MS damages the white matter, the bundles of myelinated axons under the cortex. The patches (plaques) are typically around the fluid-filled ventricles, in the optic nerves, the brainstem, the cerebellum and the spinal cord.",
+        "college": "Demyelinating plaques form in the white matter: classically periventricular (Dawson’s fingers), juxtacortical, infratentorial (brainstem and cerebellum), in the optic nerves and in the spinal cord, disseminated in space and time."
+      },
+      "msSys": {
+        "ms": "Which signals slow down depends on where the plaques are: blurred, painful vision (optic nerve), weakness or numbness of the limbs, poor balance, double vision and bladder trouble. A hot bath or exercise can make it worse for a while.",
+        "college": "Symptoms follow plaque location: optic neuritis, internuclear ophthalmoplegia, limb weakness and sensory loss, ataxia, Lhermitte’s sign and bladder dysfunction. Heat lowers the safety factor of demyelinated axons (Uhthoff’s phenomenon)."
+      },
+      "highKSys": {
+        "ms": "With potassium at {ko} mM outside the cells, every excitable cell in the body is affected, not just nerves. The heart is the most at risk: its rhythm can slow, become chaotic or stop. That is why high potassium is an emergency.",
+        "college": "Extracellular K⁺ {ko} mM depolarises all excitable tissue. The heart is most vulnerable: peaked T waves, a wide QRS and then a sine-wave pattern, ventricular fibrillation or asystole. Calcium stabilises the membrane while insulin and glucose shift K⁺ into cells."
+      },
+      "lowKSys": {
+        "ms": "With potassium at {ko} mM outside the cells, the cells’ resting voltage goes more negative and they are harder to fire. Muscles become weak and cramp, the gut slows down and the heart can beat irregularly.",
+        "college": "Hypokalaemia ({ko} mM) hyperpolarises excitable cells: muscle weakness and cramps, ileus, U waves and a long QU interval, and a higher risk of arrhythmias, especially with digoxin."
+      },
+      "naBAnat": {
+        "ms": "With the sodium channels blocked, nothing from the numb area reaches the brain. A dental injection blocks a branch of the trigeminal nerve, so the face area of the sensory strip receives no signal from that side of the mouth.",
+        "college": "Conduction block in the trigeminal branch means no afferent volleys reach the trigeminal nucleus, thalamus (VPM) and face area of the primary somatosensory cortex."
+      },
+      "naBSys": {
+        "ms": "A local anaesthetic only works where it is injected: pain fibres switch off first, then touch, then movement. If too much reaches the blood, it can block sodium channels in the brain (twitching, seizures) and in the heart.",
+        "college": "Differential block: thin, unmyelinated C and Aδ fibres block first, then Aβ and motor fibres. Systemic toxicity (high plasma levels) acts on cerebral and cardiac Na⁺ channels: perioral tingling, seizures, arrhythmias and cardiovascular collapse."
       }
     }
   }
@@ -2389,12 +2421,14 @@ function urlParams(){
 }
 function writeURL(now){
   if (!ALT || !ALT.toParams) return;
-  clearTimeout(urlTimer);
+  /* the write reads the state when it runs, so a pending one is kept rather than pushed back:
+     a page that calls altered() every few hundred ms (the heart's stenosis status) must not starve it */
   const go = () => {
+    clearTimeout(urlTimer); urlTimer = 0;
     const p = urlParams();
     try { history.replaceState(history.state, "", location.pathname + "?" + p.toString() + location.hash); } catch(e){}
   };
-  now ? go() : (urlTimer = setTimeout(go, 250));
+  if (now) go(); else if (!urlTimer) urlTimer = setTimeout(go, 250);
 }
 function altered(){ renderAlter(); writeURL(); }
 
@@ -4621,8 +4655,22 @@ O.alter({
       if (flowFactor() < .999) N(flowCauses(), "flowAnat", { cbf: c100 });
       if (night) N("night", "nightAnat");
     }
+    if (sec === "anatomy"){
+      const [LL] = limits(blood.htn);
+      if (blood.map < LL && flowFactor() >= .999) N(["map", "htn"], "zoneAnat", { map: blood.map, ll: LL, cbf: c100 });
+      const pct = Math.round(caffeine(wrapH(O.state().hour - 6) + 6) * 100);
+      if (proc.coffee && pct >= 10) N("coffee", "coffeeAnat", { pct });
+      if (race.ms) N("ms", "msAnat");
+      if (HH.S.naB) N("naB", "naBAnat");
+    }
     if (sec === "sleep" && proc.night && !night) N("night", "nightSleep");
     if (sec === "blood" && night) N("night", "nightBlood", { cbf: Math.round(cbfTotal()) });
+    if (sec === "systems"){
+      if (race.ms) N("ms", "msSys");
+      if (HH.S.Ko >= 6) N("Ko", "highKSys", { ko: HH.S.Ko });
+      else if (HH.S.Ko <= 3) N("Ko", "lowKSys", { ko: HH.S.Ko });
+      if (HH.S.naB) N("naB", "naBSys");
+    }
     return out;
   },
   toParams(){

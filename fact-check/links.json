@@ -414,6 +414,42 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/21-4-the-adaptive-immune-response-b-lymphocytes-and-antibodies",
   "checked": "2026-11-19"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=A%20pharyngeal%20tonsil%2C%20also%20called%20an%20adenoid%2C%20is%20an%20aggregate": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20epiglottis%2C%20attached%20to%20the%20thyroid%20cartilage%2C%20is%20a%20very": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20inner%20edges%20of%20the%20true%20vocal%20cords%20are%20free%2C": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20pharynx%20is%20divided%20into%20three%20major%20regions%3A%20the%20nasopharynx%2C": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20thick%20cricoid%20cartilage%20forms%20a%20ring": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system#:~:text=The%20trachea%20is%20formed%20by%2016%20to%2020%20stacked%2C%20C%2Dshaped": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system",
+  "checked": "2026-11-28"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-1-organs-and-structures-of-the-respiratory-system": {
   "state": "ok",
   "code": 200,
@@ -454,11 +490,47 @@
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/22-5-transport-of-gases",
   "checked": "2026-11-24"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=It%20is%20approximately%2025.4%20cm%20(10%20in)%20in%20length": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=Relaxation%20of%20the%20upper%20esophageal%20sphincter%20then%20allows%20food%20to": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=Rhythmic%20waves%20of%20peristalsis%2C%20which%20begin%20in%20the%20upper%20esophagus%2C": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=There%20are%20three%20stages%20in%20deglutition%3A%20the%20voluntary%20phase%2C%20the": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
+  "checked": "2026-11-28"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=These%20two%20nuclei%20then%20send%20back%20parasympathetic%20impulses": {
   "state": "ok",
   "code": 200,
   "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
   "checked": "2026-11-19"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=an%20average%20of%201%20to%201.5%20liters%20of%20saliva%20is": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus#:~:text=the%20soft%20palate%20and%20uvula%20rise%20reflexively%20to%20close%20off": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-3-the-mouth-pharynx-and-esophagus",
+  "checked": "2026-11-28"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/23-4-the-stomach#:~:text=Partially%20digested%20proteins": {
   "state": "ok",
@@ -837,6 +909,11 @@
   "final": "https://pubmed.ncbi.nlm.nih.gov/25668261/",
   "checked": "2026-11-19"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC10846564/fullTextXML": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:10196533%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -892,6 +969,11 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:16269630%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:16444273%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -937,6 +1019,11 @@
   "code": 200,
   "checked": "2026-11-28"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:21528411%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:22923574%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -951,6 +1038,11 @@
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:23721582%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:24969420%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
@@ -977,7 +1069,17 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:27571048%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:27989461%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:30170898%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-28"
@@ -991,6 +1093,11 @@
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31300334%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31535829%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
@@ -1022,6 +1129,11 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:38912654%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:4057091%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -1036,6 +1148,21 @@
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:7444224%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:8721066%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:8898748%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:9165730%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",

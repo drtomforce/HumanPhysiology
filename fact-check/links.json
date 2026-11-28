@@ -499,15 +499,105 @@
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-1-physical-characteristics-of-urine#:~:text=The%20normal%20range%20is%20one%20to%20two%20liters%20per%20day": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-1-physical-characteristics-of-urine",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-2-gross-anatomy-of-urine-transport#:~:text=The%20resulting%20parasympathetic%20neural%20outflow%20causes%20contraction%20of%20the%20detrusor": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-2-gross-anatomy-of-urine-transport",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-2-gross-anatomy-of-urine-transport#:~:text=The%20ureters%20are%20approximately%2030%20cm%20long": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-2-gross-anatomy-of-urine-transport",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-2-gross-anatomy-of-urine-transport#:~:text=When%20bladder%20volume%20reaches%20about%20150%20mL%2C%20an%20urge%20to": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-2-gross-anatomy-of-urine-transport",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-4-microscopic-anatomy-of-the-kidney#:~:text=The%20wall%20of%20the%20DCT%20at%20that%20point%20forms%20a": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-4-microscopic-anatomy-of-the-kidney",
+  "checked": "2026-11-28"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-4-microscopic-anatomy-of-the-kidney": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-20"
  },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-5-physiology-of-urine-formation#:~:text=Approximately%2020%20percent%20or%20one%20liter%20enters%20the%20kidneys%20to": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-5-physiology-of-urine-formation",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-5-physiology-of-urine-formation#:~:text=about%20125%20mL%2Fmin%20filtrate%20produced%20in%20males%20(range%20of%2090": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-5-physiology-of-urine-formation",
+  "checked": "2026-11-28"
+ },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-5-physiology-of-urine-formation": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-20"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-6-tubular-reabsorption#:~:text=About%2067%20percent%20of%20the%20water%2C%20Na%2B%2C%20and%20K%2B%20entering": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-6-tubular-reabsorption",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-6-tubular-reabsorption#:~:text=It%20is%20completely%20impermeable%20to%20water%20due%20to%20the%20absence": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-6-tubular-reabsorption",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-6-tubular-reabsorption#:~:text=osmolarity%20increases%20from%20about%20300%20mOsmol%2Fkg%20to%20about%201200%20mOsmol%2Fkg": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-6-tubular-reabsorption",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function#:~:text=At%20the%20same%20time%20that%20aldosterone%20causes%20increased%20recovery%20of": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function#:~:text=It%20enzymatically%20converts%20angiotensinogen%20(made%20by%20the%20liver%2C%20freely%20circulating)": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function#:~:text=It%20is%20produced%20in%20the%20lungs%20but%20binds%20to%20the": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function#:~:text=released%20from%20the%20adrenal%20cortex%20in%20response%20to%20angiotensin%20II": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function",
+  "checked": "2026-11-28"
+ },
+ "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function#:~:text=stimulating%20the%20movement%20of%20aquaporin%20proteins%20into%20the%20apical%20cell": {
+  "state": "ok",
+  "code": 200,
+  "final": "https://openstax.org/books/anatomy-and-physiology-2e/pages/25-8-endocrine-regulation-of-kidney-function",
+  "checked": "2026-11-28"
  },
  "https://openstax.org/books/anatomy-and-physiology-2e/pages/5-1-layers-of-the-skin#:~:text=Collagen%20fibers%20provide%20structure": {
   "state": "ok",
@@ -787,6 +877,11 @@
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:15123796%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:15630389%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -812,6 +907,11 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:19587447%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:19762709%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -832,15 +932,35 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:21311022%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:22923574%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-21"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:23121378%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:23596328%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:24969420%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:26378978%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:26590418%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
@@ -857,6 +977,11 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:27989461%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31015713%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
@@ -867,15 +992,30 @@
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31535829%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:31971679%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
  },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:32142651%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
+ },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:35294044%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",
   "code": 200,
   "checked": "2026-11-27"
+ },
+ "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:36331190%20AND%20SRC:MED&resultType=core&format=json": {
+  "state": "ok",
+  "code": 200,
+  "checked": "2026-11-28"
  },
  "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:38280389%20AND%20SRC:MED&resultType=core&format=json": {
   "state": "ok",

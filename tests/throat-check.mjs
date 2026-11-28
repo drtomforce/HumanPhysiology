@@ -11,6 +11,9 @@
      - achalasia and oesophageal spasm are classified as such (Chicago v4.0);
      - BMI 38 gives sleep apnoea (AHI > 15) and CPAP 12 cmH₂O takes it below 5;
      - an octave up doubles the voice's pitch, and below the phonation threshold there is no voice;
+     - the two Listen switches share one state, are views and start the sound engine, and the
+       sound model is silent in an apnoea, snores in a hypopnoea, snorts at the arousal after an
+       apnoea and gives a healthy sleeper audible breaths with little snoring;
      - the reading levels and parts of the day switch without errors, every part of the anatomy
        figure opens the inspector, every figure part has content at four levels and every
        content part is drawn;
@@ -72,6 +75,30 @@ for (const scheme of ['light', 'dark']){
   const f1 = await ro('vF0'); await setR('sPitch', 12); const f2 = await ro('vF0'); ok(parseInt(f2) > 1.8 * parseInt(f1), `${scheme}: an octave up doubles the pitch (${f1} → ${f2})`); await setR('sPitch', 0);
   await setR('sPush', 2); ok((await ro('vF0')).trim() === '–', `${scheme}: below threshold there is no voice`); await setR('sPush', 7);
   await setR('sAt', 2); ok(await bar() === 0, `${scheme}: the night window is a view, not a change`);
+  /* sound: the two Listen switches share one state, are views, and start the audio */
+  const pressed = async () => [await pg.getAttribute('#tListenA', 'aria-pressed'), await pg.getAttribute('#tListen', 'aria-pressed')].join();
+  await pg.click('#tListen'); await pg.waitForTimeout(400);
+  ok(await pressed() === 'true,true' && await bar() === 0, `${scheme}: Listen turns on both switches and is a view (${await pressed()})`);
+  const snd = await pg.evaluate(() => window.__throat.sound());
+  ok(snd && snd.state !== 'closed', `${scheme}: the sound engine runs (${JSON.stringify(snd)})`);
+  await pg.click('#tListenA'); await pg.waitForTimeout(150);
+  ok(await pressed() === 'false,false', `${scheme}: Listen turns off again`);
+  const sm = await pg.evaluate(() => {
+    const T = window.__throat, p = { ...T.P, bmi: 38, cpap: 0 }, N = T.night(p);
+    const ap = N.ev.find(e => e.type === 'apnoea' && e.dur >= 15), hy = N.ev.find(e => e.type === 'hypopnoea');
+    if (!ap || !hy) return null;
+    let apMax = 0, hyMax = 0, snort = 0, hAir = 0, hSn = 0;
+    for (let s = ap.t; s < ap.t + ap.dur; s += .1){ if (N.flow[Math.floor(s)] > .05) continue; const l = T.soundAt(N, s, p); apMax = Math.max(apMax, l.air, l.snore); }
+    for (let s = hy.t; s < hy.t + hy.dur; s += .1) hyMax = Math.max(hyMax, T.soundAt(N, s, p).snore);
+    for (let s = ap.t + ap.dur - 1; s < ap.t + ap.dur + 8; s += .5) snort = Math.max(snort, T.soundAt(N, s, p).snort);
+    const h = { ...T.P, bmi: 23, age: 30, cpap: 0 }, HN = T.night(h);
+    for (let s = 3600; s < 3700; s += .1){ const l = T.soundAt(HN, s, h); hAir = Math.max(hAir, l.air); hSn = Math.max(hSn, l.snore); }
+    return { apMax, hyMax, snort, hAir, hSn };
+  });
+  ok(sm && sm.apMax < .01, `${scheme}: an apnoea is silent once the flow stops (${sm && sm.apMax.toFixed(3)})`);
+  ok(sm && sm.hyMax > .2, `${scheme}: a hypopnoea snores (${sm && sm.hyMax.toFixed(2)})`);
+  ok(sm && sm.snort === 1, `${scheme}: the arousal after an apnoea snorts`);
+  ok(sm && sm.hAir > .3 && sm.hSn < .5, `${scheme}: a healthy sleeper breathes audibly and snores little (air ${sm && sm.hAir.toFixed(2)}, snore ${sm && sm.hSn.toFixed(2)})`);
   await pg.click('#tPlay'); await pg.click('#tSwallow'); await pg.click('#tLabels'); await pg.waitForTimeout(300); await pg.click('#tLabels');
   /* levels and phases */
   for (const lv of ['ms', 'college', 'phd', 'hs']){ await pg.click(`.op-ctrls [data-v="${lv}"]`); await pg.waitForTimeout(250); }

@@ -732,7 +732,7 @@ canvas.trace{ display:block; width:100%; }
     <div class="sec-grid">
       <div class="panel fig">
         <h3>The vocal folds from above</h3>
-        <svg id="glottisFig" data-export-name="The vocal folds from above" viewBox="0 0 400 300" role="img" aria-label="The larynx seen from above as through a laryngoscope, the front at the top: the epiglottis, the aryepiglottic folds, the false (ventricular) folds, the two white vocal folds meeting at the front and the arytenoid cartilages at the back, with the gap between the folds, the glottis, and the trachea’s rings below it. Breathing, the folds swing open; saying a vowel, they close and vibrate, shown slowed down as by a stroboscope"></svg>
+        <svg id="glottisFig" data-export-name="The vocal folds from above" viewBox="0 0 400 300" role="img" aria-label="The larynx seen from above as through a laryngoscope, the front at the top: the epiglottis, the aryepiglottic folds, the false (ventricular) folds, the two white vocal folds meeting at the front and the arytenoid cartilages at the back, with the gap between the folds, the glottis, and the trachea’s rings below it. Breathing, the folds swing open; saying a vowel, they close and vibrate, shown slowed down as by a stroboscope; playing the vowel, they open for a breath, close and vibrate while it sounds, then open again"></svg>
         <p class="ctl-lab">The folds</p><div id="modeChoice" class="seg-wrap"></div>
       </div>
       <aside class="side">
@@ -5141,8 +5141,28 @@ let anT = 0, swT = -2.6, psgT = 0, gT = 0, nextSw = 4, daySwT = 99, chartAcc = 0
    Front (the epiglottis) at the top, back (the arytenoids) at the bottom; the patient's left
    fold is on the viewer's right. Vibration is shown slowed down as a stroboscope would, at an
    apparent 1.5 cycles a second.
+   Play the vowel moves the folds with the sound: a quick breath in with them wide apart, then they
+   close (the voice starts ~0.15 s after they begin to, as in speech), vibrate while the vowel
+   sounds, swelling and fading with it, and swing open again before they go back to what the
+   switch above shows.
    ========================================================================= */
 const gFig = $("#glottisFig");
+const PLAY_LEAD = .4, PLAY_CLOSE = .15, PLAY_LEN = 1.25, PLAY_OPEN = .3, PLAY_BACK = .3;
+let playT = null; /* the audio clock's time the vowel starts, while one is playing */
+/* where a played vowel is now: k the blend from the switch's view to it, a the width of the folds'
+   back ends and amp the vibration (0–1, the sound's loudness), or null if none is playing */
+function playPhase(){
+  if (playT == null || !audioCtx) return null;
+  const u = audioCtx.currentTime - (audioCtx.outputLatency || audioCtx.baseLatency || 0) - playT;
+  const ss = x => { x = clamp(x); return x * x * (3 - 2 * x); }, WIDE = 42, SHUT = 3;
+  if (u < -PLAY_LEAD) return { k: 0, a: WIDE, amp: 0 };
+  if (u < -PLAY_CLOSE) return { k: ss((u + PLAY_LEAD) / (PLAY_LEAD - PLAY_CLOSE) * 1.6), a: WIDE, amp: 0 };
+  if (u < 0) return { k: 1, a: lerp(WIDE, SHUT, ss((u + PLAY_CLOSE) / PLAY_CLOSE)), amp: 0 };
+  if (u < PLAY_LEN) return { k: 1, a: SHUT, amp: u < .06 ? u / .06 : u < 1.1 ? 1 : (PLAY_LEN - u) / .15 };
+  if (u < PLAY_LEN + PLAY_OPEN) return { k: 1, a: lerp(SHUT, WIDE, ss((u - PLAY_LEN) / PLAY_OPEN)), amp: 0 };
+  if (u < PLAY_LEN + PLAY_OPEN + PLAY_BACK) return { k: 1 - ss((u - PLAY_LEN - PLAY_OPEN) / PLAY_BACK), a: WIDE, amp: 0 };
+  playT = null; return null;
+}
 function buildGlottis(){
   const L = (gFig.__L = {});
   gFig.innerHTML = "";
@@ -5182,13 +5202,17 @@ function drawGlottis(t){
   const L = gFig.__L; if (!L) return;
   const v = Sim.S.Vo, ph = O.state().phase, palsy = P.fold === "palsy", say = V.mode === "say";
   const br = Math.sin(t * 2 * Math.PI / (60 / O.vitals().rr));
-  let aR, aL, amp = 0, phase = (t * 1.5) % 1;
-  if (say && v.on){ aR = 3; aL = palsy ? 16 : 3; amp = clamp((v.spl - 55) / 22, .25, 1) * (palsy ? .6 : 1); }
+  let aR, aL, vib = 0, phase = (t * 1.5) % 1;
+  if (say && v.on){ aR = 3; aL = palsy ? 16 : 3; vib = 1; }
   else if (say && !v.on && !P.choke){ aR = 6; aL = palsy ? 16 : 6; }     /* a whisper: a chink at the back */
   else { const open = ph === "exercise" ? 50 + 8 * br : ph === "sleep" ? 24 + 4 * br : 30 + 8 * br; aR = open; aL = palsy ? 16 : open; }
+  /* a vowel being played takes over from the switch's view (the paralysed fold stays where it is) */
+  const pl = v.on ? playPhase() : null;
+  if (pl){ aR = lerp(aR, pl.a, pl.k); if (!palsy) aL = lerp(aL, pl.a, pl.k); vib = lerp(vib, pl.amp, pl.k); }
+  const amp = v.on ? vib * clamp((v.spl - 55) / 22, .25, 1) * (palsy ? .6 : 1) : 0;
   /* the medial edge opens like a spindle in each cycle, for the open quotient of it */
-  const open = say && v.on ? (phase < v.oq ? Math.sin(Math.PI * phase / v.oq) : 0) : 0;
-  const gap = say && v.on ? v.gap : 0;
+  const open = v.on ? (phase < v.oq ? Math.sin(Math.PI * phase / v.oq) : 0) : 0;
+  const gap = v.on ? v.gap * Math.min(1, vib * 4) : 0;
   const ant = [200, 92], swell = P.fold === "laryngitis" ? 7 : 0;
   const fold = (side, a) => {
     const sgn = side, vp = [200 + sgn * a, 224];
@@ -5441,13 +5465,14 @@ function playVowel(){
     for (let k = 1; k <= n; k++){ const f = k * v.f0, a = Math.pow(10, (v.tilt * Math.log2(k) + tract(v.fm, f)) / 20); im[k] = a; mx = Math.max(mx, a); }
     for (let k = 1; k <= n; k++) im[k] /= mx;
     const wave = audioCtx.createPeriodicWave(re, im, { disableNormalization: false });
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime, vol = clamp(.04 * Math.pow(10, (v.spl - 72) / 40), .005, .1);
+    /* the sound starts once the folds have closed (see playPhase) */
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime + PLAY_LEAD, vol = clamp(.04 * Math.pow(10, (v.spl - 72) / 40), .005, .1);
     o.setPeriodicWave(wave); o.frequency.value = v.f0;
     /* a little vibrato-free jitter: wobble the pitch by the jitter % */
     o.frequency.setValueAtTime(v.f0, t);
     for (let i = 1; i < 12; i++) o.frequency.setValueAtTime(v.f0 * (1 + (Math.random() - .5) * v.jit / 50), t + i * .1);
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .06); g.gain.setValueAtTime(vol, t + 1.1); g.gain.linearRampToValueAtTime(0, t + 1.25);
-    o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 1.3);
+    o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 1.3); playT = t;
     if (v.hnr < 18){
       const len = Math.floor(audioCtx.sampleRate * 1.3), buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate), d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -5582,7 +5607,7 @@ function soundUpdate(lv, e = snd, t = e && e.ac.currentTime){
   if (!e) return;
   const k = .03;
   if (!lv){
-    if (e.on){ e.on = false; e.master.gain.setTargetAtTime(0, t, .05); if (e.live){ clearTimeout(e.idle); e.idle = setTimeout(() => { if (!e.on) e.ac.suspend().catch(() => {}); }, 400); } }
+    if (e.on){ e.on = false; e.master.gain.setTargetAtTime(0, t, .05); if (e.live){ clearTimeout(e.idle); e.idle = setTimeout(() => { if (!e.on && playT == null) e.ac.suspend().catch(() => {}); }, 400); } }
     return;
   }
   if (!e.on){ e.on = true; clearTimeout(e.idle); if (e.live && e.ac.state === "suspended") e.ac.resume().catch(() => {}); e.master.gain.setTargetAtTime(.12, t, .05); }
